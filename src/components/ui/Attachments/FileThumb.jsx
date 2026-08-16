@@ -48,7 +48,12 @@ const KIND_ICONS = {
   file: FileText,
 };
 
-const GLYPH_SIZES = { sm: 13, md: 16, lg: 22 };
+// Even numbers, for the same reason `Button.ICON_SIZES` is even: the squares
+// are 28, 36 and 56 pixels and the glyph is flex-centred in them, so an odd
+// size puts it on a half-pixel and the browser picks a side — a different one
+// at every zoom level.
+const GLYPH_SIZES = { sm: 14, md: 16, lg: 22 };
+const PLAY_BADGE_SIZES = { sm: 10, md: 12, lg: 18 };
 
 /**
  * One file, as a square: its own picture where it has one, its family's glyph
@@ -100,7 +105,7 @@ export default function FileThumb({
           )}
           {kind === 'video' && (
             <span className="absolute inset-0 flex items-center justify-center bg-black/25 text-white">
-              <Play size={GLYPH_SIZES[density] - 3} fill="currentColor" className="ml-[1px]" />
+              <Play size={PLAY_BADGE_SIZES[density] || PLAY_BADGE_SIZES.md} fill="currentColor" className="ml-[1px]" />
             </span>
           )}
         </span>

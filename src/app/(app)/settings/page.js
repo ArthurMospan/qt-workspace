@@ -2351,10 +2351,10 @@ export default function SettingsPage() {
             <Row label="Telegram" desc="Ваш нікнейм без @ (наприклад: username)">
               <InlineEditField value={telegram} onChange={setTelegram} saved={currentUser?.telegram || ''} onSave={() => saveProfileField('telegram', telegram)} placeholder="username" className="w-[260px]" />
             </Row>
-            <Row label="Телефон" desc="Контактний номер">
+            <Row label="Телефон">
               <InlineEditField value={phone} onChange={setPhone} saved={currentUser?.phone || ''} onSave={() => saveProfileField('phone', phone)} placeholder="+380..." className="w-[260px]" />
             </Row>
-            <Row label="Локація" desc="Місто, країна">
+            <Row label="Локація">
               <InlineEditField value={location} onChange={setLocation} saved={currentUser?.location || ''} onSave={() => saveProfileField('location', location)} placeholder="Київ, Україна" className="w-[260px]" />
             </Row>
             <Row label="День народження" desc="Показується команді в профілі та календарі">

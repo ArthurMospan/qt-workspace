@@ -288,7 +288,7 @@ export default function ProfileView({ user, onClose }) {
                     <Phone size={14} className="text-ink" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold text-muted leading-none mb-1">Телефон (Контактний номер)</span>
+                    <span className="text-[11px] font-bold text-muted leading-none mb-1">Телефон</span>
                     {details.phone ? (
                       <span className="text-[13px] text-ink font-medium leading-none truncate">{details.phone}</span>
                     ) : (
@@ -303,7 +303,7 @@ export default function ProfileView({ user, onClose }) {
                     <MapPin size={14} className="text-ink" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold text-muted leading-none mb-1">Локація (Місто, країна)</span>
+                    <span className="text-[11px] font-bold text-muted leading-none mb-1">Локація</span>
                     {details.location ? (
                       <span className="text-[13px] text-ink font-medium leading-none truncate">{details.location}</span>
                     ) : (
@@ -351,9 +351,16 @@ export default function ProfileView({ user, onClose }) {
         {activeTab === 'tasks' && (
           <div className="flex flex-col gap-2">
             {allActiveTasks.length === 0 ? (
-              <div data-ui-surface="local" className="bg-canvas rounded-[16px] p-8 text-center border border-[#f0f0f0]">
-                <p className="text-[14px] text-muted">Немає активних задач</p>
-              </div>
+              // The «Події» tab one panel over says the same kind of thing with
+              // `EmptyState` — a glyph, a title and a sentence. This one was a
+              // hand-written grey box with a single line of muted text, so two
+              // tabs of the same profile answered "nothing here" in two
+              // different shapes.
+              <EmptyState
+                icon={TaskIcon}
+                title="Немає активних задач"
+                description="Задачі, призначені на учасника, з’являться тут автоматично"
+              />
             ) : (
               <>
                 {allActiveTasks.map(task => {

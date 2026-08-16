@@ -45,11 +45,23 @@ export const SIZES = {
 // places each held their own copy of a decision that belongs here — changing
 // the icon scale could not propagate while that prop existed.
 //
-// The values below deliberately reproduce what each size renders today rather
-// than imposing a consistent icon-to-box ratio. Normalising the ratio is a real
-// design decision, but a separate one; now that it lives here, making it is a
-// one-line change instead of a 175-call-site migration.
-const ICON_SIZES = {
+// ── Every number here is even, and that is a rule ───────────────────────────
+// An icon button centres its glyph with flexbox, so the gap on each side is
+// `(box - icon) / 2`. Every box in `SIZES` is an even number of pixels, so an
+// **odd** icon size puts the glyph on a half-pixel — and a half-pixel offset is
+// not a rounding curiosity, it is a visibly crooked button: the browser has to
+// pick a side for the sub-pixel, it picks a different one at every zoom level,
+// and a stroked glyph antialiases asymmetrically across the boundary.
+//
+// That is exactly what the board column's kebab did. It was 13px in a 20px box
+// — a 3.5px gap — while the plus right beside it was 16px in the same box, a
+// clean 2px. One looked centred and the other did not, and which way the kebab
+// leaned changed as you zoomed, because 3.5 CSS pixels is 4.375 device pixels
+// at 125% and a whole 7 at 200%.
+//
+// Eight of these numbers were odd. `tests/kit-icon-alignment.test.mjs` keeps
+// them even, so the next icon size cannot reintroduce it.
+export const ICON_SIZES = {
   sm: 12,
   md: 14,
   lg: 16,
@@ -58,31 +70,34 @@ const ICON_SIZES = {
   'icon-lg': 14,   // 36px box
   'icon-sm': 14,   // 28px box
   'icon-xs': 16,   // 20px box
-  'icon-24': 15,
-  'icon-30': 15,
+  'icon-24': 14,
+  'icon-30': 14,
 };
 
 // A composition may legitimately want a different icon than its size implies.
 // Naming it keeps the intent in the kit; `settings-row-action` is the ghost
 // "add row" button, which reads better with an icon smaller than its lg box.
+// Same rule as `ICON_SIZES`: even numbers only, because every box is even and a
+// half-pixel gap is a crooked button. Six of these were odd.
 export const COMPOSITION_ICON_SIZES = {
-  'settings-row-action': 13,
-  'sidebar-help-action': 17,
+  'settings-row-action': 12,
+  'sidebar-help-action': 16,
 
   // The section kebab, beside a plus in the same 20px box. Three filled dots
   // and two hairline strokes are not the same amount of ink at the same pixel
-  // size: at 16 the kebab read as the darker of the two. 13 matches its optical
-  // weight to the plus without changing either box.
-  'section-kebab': 13,
+  // size: at 16 the kebab read as the darker of the two, so it is set smaller
+  // than the plus — 14, the nearest even step, which keeps that relationship
+  // and lands the glyph on a whole 3px gap instead of 3.5.
+  'section-kebab': 14,
 
   // Chat-only icon sizes. The generic size scale gives a 20px box a 16px icon,
   // which is right for dense toolbars and wrong for a chat message action —
   // those were 12px and jumped by four when the free `iconSize` prop went away.
-  'chat-message-action': 15,
-  'chat-composer-action': 17,
+  'chat-message-action': 14,
+  'chat-composer-action': 16,
   'chat-panel-action': 16,
   'chat-micro-action': 12,
-  'chat-composer-cancel': 13,
+  'chat-composer-cancel': 12,
   // The auth shell's close button. Named rather than migrated: login and
   // onboarding are out of scope for kit changes, so this keeps that screen
   // pixel-identical while still holding the number here instead of there.
