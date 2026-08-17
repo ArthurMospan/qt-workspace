@@ -50,8 +50,7 @@ projects no shared vocabulary exists.
 ### Table view — what it deliberately does not do
 
 The project board's third view shipped (see
-[docs/VIEWS_AND_FILTERS.md](VIEWS_AND_FILTERS.md)). Three omissions are choices,
-not gaps:
+[ARCHITECTURE.md](ARCHITECTURE.md)). Three omissions are choices, not gaps:
 
 - **Column order is not in the address.** The picker says which columns, never
   where they sit. Reordering is a drag interaction whose whole value is local,
@@ -67,14 +66,20 @@ not gaps:
 - Add a “hide completed” toggle to My Tasks, enabled by default.
 - Implement a verified email-change flow with recent re-authentication.
 - Continue accessibility and mobile-layout checks on the main workspace flows.
-- Work the open items in [docs/PRODUCT_GAPS.md](PRODUCT_GAPS.md): the
-  remaining reliability/performance pieces (self-hosted fonts, notification
-  delivery receipts, session-expiry recovery) and the UX proposals behind them.
+- Ask for the Web Notification permission. In-app, email and Telegram exist;
+  the one channel that reaches a laptop with the tab in the background is the
+  one never requested.
+- Recover from an expired session in one place. Two files translate an expired
+  token into Ukrainian; everywhere else it surfaces as a generic failure, and a
+  half-written form is lost with it.
+- Give a failed background write a retry. The optimistic overlay rolls back
+  correctly, and then the person is left to redo the action by hand with no
+  record of what was lost.
+- Set a bundle budget. Nothing fails today when a page's JavaScript doubles.
 
 ### Notification delivery
 
-See [docs/NOTIFICATION_DELIVERY.md](NOTIFICATION_DELIVERY.md) for the analysis
-and the target architecture.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the two paths and their guarantees.
 
 - Point an external HTTP cron (cron-job.org, one-minute granularity) at
   `/api/cron/notifications`. No code change; fixes latency today. GitHub Actions
@@ -86,6 +91,20 @@ and the target architecture.
   recorded and neither is visible.
 - When QuickTeam moves to its own server: run the worker in-process on a real
   interval and drop the external trigger.
+- Send a digest instead of an interruption per event. A daily or end-of-day
+  summary («3 задачі на завтра, 1 прострочена») is usually the only kind of
+  notification people keep switched on.
+
+### Operational facts worth knowing
+
+- **The GitHub repository is public.** `ArthurMospan/qt-workspace` answers to an
+  unauthenticated API call. Nothing secret is committed and the checks for that
+  hold, but the data model, the Firestore rules and every internal route are
+  readable by anyone. If that is deliberate it stays written down here; if it is
+  not, it is one setting.
+- **Production runs on Firestore's free read quota.** The queries are bounded
+  now, but nothing measures the daily total or warns before it is spent. Scope
+  and window every new read path.
 
 ## Unprioritized product backlog
 

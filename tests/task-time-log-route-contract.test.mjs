@@ -168,7 +168,7 @@ test('all trusted issue creators initialize the accounting mirror', async () => 
 test('reconciliation stamps legacy mirrors even when their numeric sum matches', async () => {
   const [script, docs] = await Promise.all([
     readSource('scripts/reconcile-issue-spent-minutes.mjs'),
-    readSource('docs/migrations/ISSUE_SPENT_MINUTES.md'),
+    readSource('docs/MIGRATIONS.md'),
   ]);
   assert.match(
     script,

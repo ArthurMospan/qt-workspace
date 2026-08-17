@@ -134,7 +134,7 @@ test('the task detail route resolves a key then canonicalizes legacy URLs', asyn
 test('the historical key migration is explicit, dry-run-first and retry-safe', async () => {
   const [migration, documentation, packageJson] = await Promise.all([
     read('../scripts/migrate-issue-keys.mjs'),
-    read('../docs/migrations/ISSUE_KEYS_ASCII.md'),
+    read('../docs/MIGRATIONS.md'),
     read('../package.json'),
   ]);
 

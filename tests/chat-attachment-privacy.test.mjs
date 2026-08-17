@@ -57,7 +57,7 @@ test('chat attachment migration is explicit, dry-run-first and retry-safe', asyn
   const [migration, packageJson, documentation] = await Promise.all([
     read('../scripts/migrate-chat-attachments.mjs'),
     read('../package.json'),
-    read('../docs/migrations/CHAT_ATTACHMENTS.md'),
+    read('../docs/MIGRATIONS.md'),
   ]);
 
   assert.match(migration, /const APPLY = process\.argv\.includes\('--apply'\)/);

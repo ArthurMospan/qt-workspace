@@ -19,7 +19,7 @@ import {
 
 // The two halves of scheduled delivery. Materialising is expensive and rare;
 // dispatching is cheap and frequent, and only the second one's cadence decides
-// how late a reminder is. See docs/NOTIFICATION_DELIVERY.md for why they were
+// how late a reminder is. See docs/ARCHITECTURE.md for why they were
 // split.
 
 function outboxRef() {

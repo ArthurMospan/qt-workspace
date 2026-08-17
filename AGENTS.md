@@ -10,7 +10,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # QuickTeam repository instructions
 
-This is a single Next.js 16.3.0 App Router application with React 19 and Firebase. Read [README.md](README.md) before changing the project and consult the relevant document under `docs/` for integration or product-specific work.
+This is a single Next.js 16.3.0 App Router application with React 19 and Firebase. Read [README.md](README.md) before changing the project.
+
+## Where things are written down
+
+Six documents, and nothing else. A plan, a session report or a description of
+work already done is not one of them — that history belongs in Git.
+
+| Document | What it answers |
+| --- | --- |
+| [README.md](README.md) | Setup, environment, commands, data model, security model |
+| **AGENTS.md** (this file) | The rules a change must obey |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the task model, view state, read state and notification delivery actually work |
+| [docs/UI_KIT_CONTRACT.md](docs/UI_KIT_CONTRACT.md) | The shared-UI contract and its generated reports |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Product guardrails and confirmed open work |
+| [docs/MIGRATIONS.md](docs/MIGRATIONS.md) | Runbooks for the one-time data migration scripts |
+
+Cross-repository contracts live in `docs/integrations/` (QuickTeam+, Telegram,
+YouTrack). Add a seventh document only when a subject genuinely has no home
+above — a new file is a place for the next reader not to look.
 
 ## Framework and commands
 
@@ -53,7 +71,10 @@ This is a single Next.js 16.3.0 App Router application with React 19 and Firebas
 ## Repository hygiene
 
 - Будь-яка зміна видимої користувачеві поведінки, назви, дозволів або workflow оновлює відповідну статтю довідки в тому самому PR. Довідка не може описувати функцію, якої продукт не має.
-- Новини (`NEWS_ARTICLES`) та історія версій (`VERSION_HISTORY`) НЕ оновлюються з кожною зміною. Це матеріал для читача, а не журнал комітів, і він буде переписаний цілком перед першим релізом. Додавати запис туди — тільки коли про це попросили явно.
+- Новини (`NEWS_ARTICLES`) НЕ оновлюються з кожною зміною. Список навмисно порожній, поки продукт у беті: це матеріал для читача, а не журнал комітів. Додавати запис — тільки коли про це попросили явно.
+- Контакти підтримки беруться лише з перевірених даних OneB (`supportContacts.mjs`). Не вигадувати username, Viber URI чи адресу — «контакт скоро» теж не варіант.
+- Юридичні сторінки (Terms, Privacy, Offer) не заповнюються вигаданими реквізитами. Немає реальних даних — сторінка не публікується.
+- Масовими не робляться дії, що залежать від контексту однієї задачі: перенесення між проєктами, зміна ієрархії, створення звʼязків, списання часу, редагування опису чи коментарів. `ISSUE_BULK_ACTIONS` — єдиний реєстр того, що є масовим, і він живить UI, серверну валідацію й довідку одночасно.
 
 - Never commit `.env*`, service-account keys, build output, logs, or local agent scratch data.
 - Keep durable setup and architecture documentation under `docs/`. Do not add generated reports, session notes, or temporary plans to the repository root.

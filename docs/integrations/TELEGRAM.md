@@ -19,7 +19,7 @@ CRON_SECRET=<random production-only bearer secret>
 
 `NEXT_PUBLIC_APP_URL` must be the public HTTPS production origin. The webhook is registered automatically through Bot API `setWebhook` when someone starts either connection flow.
 
-The protected `/api/cron/notifications` route creates calendar and deadline notifications even when no browser tab is open. During hosted testing, an external HTTP scheduler should call `?mode=dispatch` every minute and `?mode=materialise` every twenty minutes using `Authorization: Bearer $CRON_SECRET`; the GitHub workflow is a fallback only. `CRON_SECRET` must hold the same value in the deployed environment and every scheduler. Notification and outbox IDs are deterministic, and channel outcomes are recorded separately, so a late/retried pass does not resend a channel that already succeeded. See [notification delivery](../NOTIFICATION_DELIVERY.md).
+The protected `/api/cron/notifications` route creates calendar and deadline notifications even when no browser tab is open. During hosted testing, an external HTTP scheduler should call `?mode=dispatch` every minute and `?mode=materialise` every twenty minutes using `Authorization: Bearer $CRON_SECRET`; the GitHub workflow is a fallback only. `CRON_SECRET` must hold the same value in the deployed environment and every scheduler. Notification and outbox IDs are deterministic, and channel outcomes are recorded separately, so a late/retried pass does not resend a channel that already succeeded. See [notification delivery](../ARCHITECTURE.md).
 
 Recommended BotFather settings:
 

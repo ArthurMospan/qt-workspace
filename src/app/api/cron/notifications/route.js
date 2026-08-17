@@ -10,7 +10,7 @@ import { runScheduledNotificationSweep } from '@/lib/server/reminderJobs';
 //   ?mode=materialise   — restock the outbox and post birthday greetings.
 //   (default) full      — both, with materialising self-throttled internally.
 //
-// See docs/NOTIFICATION_DELIVERY.md.
+// See docs/ARCHITECTURE.md.
 const MODES = new Set(['full', 'dispatch', 'materialise']);
 
 export async function GET(request) {

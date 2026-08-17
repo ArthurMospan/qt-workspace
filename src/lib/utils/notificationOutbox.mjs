@@ -10,7 +10,7 @@
 // A row is written when a reminder becomes knowable and carries its own
 // delivery time. The pass that matters — the one whose cadence sets the
 // latency — then runs a single indexed query bounded by `limit`, and costs
-// nothing when nothing is due. See docs/NOTIFICATION_DELIVERY.md.
+// nothing when nothing is due. See docs/ARCHITECTURE.md.
 
 export const OUTBOX_COLLECTION = 'scheduledNotifications';
 
