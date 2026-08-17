@@ -83,13 +83,19 @@ test('QUI-75 exposes column visibility settings in both My Tasks views', async (
 test('QUI-74 gives sprint backlog cards the canonical Kanban card width', async () => {
   const source = await read('../src/app/(app)/sprints/page.js');
 
+  // The sprint rows keep the board's inset; a phone gets a tighter one, because
+  // 16px of gutter on each side of a 390px screen is a sixth of the card.
   assert.match(
     source,
-    /isBacklogCol \? 'px-\[8px\]' : 'px-4'/,
+    /isBacklogCol \? 'px-\[8px\]' : 'px-2 sm:px-4'/,
   );
+  // 82vw was the board's *peek*: a column that shows a slice of the next one so
+  // you know to swipe. Below lg the sprints page has no next column — «Без
+  // спринта» is stacked under the sprints — so the peek was 18% of the screen
+  // reserved for nothing. The column is full width there and fixed on desktop.
   assert.match(
     source,
-    /w-\[82vw\] max-w-\[320px\][^"]*md:w-\[280px\] md:max-w-none/,
+    /w-full shrink-0 flex-col overflow-hidden lg:w-\[280px\]/,
   );
 });
 
@@ -323,10 +329,12 @@ test('QUI-67 and QUI-87 keep the sprint task column responsive and fixed on desk
   );
 
   assert.ok(backlogSurface, 'the sprint backlog surface must be present');
-  assert.match(backlogSurface[1], /w-\[82vw\]/);
-  assert.match(backlogSurface[1], /max-w-\[320px\]/);
-  assert.match(backlogSurface[1], /md:w-\[280px\]/);
-  assert.match(backlogSurface[1], /md:max-w-none/);
+  // Responsive below the breakpoint where the two columns sit side by side,
+  // fixed at 280px above it. That breakpoint is `lg`, which is where the layout
+  // itself turns into a row — it used to be declared at `md`, a width at which
+  // the column was still stacked and therefore still had the whole screen.
+  assert.match(backlogSurface[1], /w-full/);
+  assert.match(backlogSurface[1], /lg:w-\[280px\]/);
   assert.doesNotMatch(backlogSurface[1], /(?:lg|xl|2xl):w-\[[\d.]+%\]/);
-  assert.match(source, /isBacklogCol \? 'px-\[8px\]' : 'px-4'/);
+  assert.match(source, /isBacklogCol \? 'px-\[8px\]' : 'px-2 sm:px-4'/);
 });

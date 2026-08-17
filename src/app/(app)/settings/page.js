@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
@@ -166,14 +166,30 @@ function Row({ label, desc, children, danger = false }) {
   );
 }
 
+// The one way back on a phone, published to every Section on the screen rather
+// than threaded through fifteen call sites. It always means "one level up":
+// out of an integration, out of a migration source, and otherwise out of the
+// section entirely — see `mobileBack` below. A screen shows at most one.
+const SectionBackContext = createContext(null);
+
 function Section({ title, desc, backAction, rightAction, children }) {
+  const mobileBack = useContext(SectionBackContext);
   return (
     <div className="flex flex-col">
-      {backAction && <div className="mb-3 flex items-center">{backAction}</div>}
+      {/* Desktop keeps the labelled way back: there are no panes there, so
+          «Усі інтеграції» is the only thing that says where the arrow goes.
+          On a phone the arrow beside the title replaces it — two stacked back
+          buttons pointing at different places was the bug. */}
+      {backAction && <div className="mb-3 hidden items-center md:flex">{backAction}</div>}
       <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h2 className="ui-type-detail-title text-ink tracking-tight">{title}</h2>
-          {desc && <p className="text-[13px] text-muted mt-[4px] leading-relaxed">{desc}</p>}
+        <div className="flex min-w-0 flex-1 items-start gap-[10px]">
+          {mobileBack && (
+            <MobilePaneBack onClick={mobileBack} label="Назад" className="mt-[2px]" />
+          )}
+          <div className="min-w-0 flex-1">
+            <h2 className="ui-type-detail-title text-ink tracking-tight">{title}</h2>
+            {desc && <p className="text-[13px] text-muted mt-[4px] leading-relaxed">{desc}</p>}
+          </div>
         </div>
         {rightAction && <div className="shrink-0 flex items-center gap-2">{rightAction}</div>}
       </div>
@@ -3741,13 +3757,24 @@ export default function SettingsPage() {
     />
   );
 
+  // One level up, whatever level you are on. A settings section can be two
+  // deep — «Інтеграції» → одна інтеграція, «Перенесення даних» → одне джерело —
+  // and each of those used to draw its own way back *above* the pane's way
+  // back, so a phone showed two.
+  const mobileBack = () => {
+    if (activeSection === 'integrations' && integrationDetail) { setIntegrationDetail(''); return; }
+    if (activeSection === 'migration' && migrationProvider) { setMigrationProvider(''); return; }
+    requestPaneClose();
+  };
+
   return (
     <SidebarLayout context="settings" sidebar={sidebarContent} hasBorder={false} mobilePane={mobilePane}>
       <main className="flex-1 overflow-y-auto custom-scrollbar bg-canvas relative">
         <div className="max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col">
-          <MobilePaneBack onClick={requestPaneClose} label="Всі налаштування" className="pb-[16px]" />
           <div className="flex-1 pb-[100px]">
-            {renderSection()}
+            <SectionBackContext.Provider value={mobileBack}>
+              {renderSection()}
+            </SectionBackContext.Provider>
           </div>
         </div>
       </main>

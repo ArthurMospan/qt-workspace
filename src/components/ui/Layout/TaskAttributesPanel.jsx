@@ -3,7 +3,11 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const CONTEXT_GRIDS = {
-  task: 'grid w-full grid-cols-[repeat(3,minmax(0,1fr))_32px] items-center gap-1.5 overflow-visible sm:grid-cols-[repeat(5,minmax(0,1fr))_92px] [&>*]:min-w-0',
+  // The last column is «Деталі». At 32px wide and 28px tall once the header
+  // condensed it was a 32×28 target on a touch screen — under every guideline
+  // there is, and the one control on the strip people reported missing with a
+  // thumb. It is 44px on a phone and unchanged on a mouse.
+  task: 'grid w-full grid-cols-[repeat(3,minmax(0,1fr))_44px] items-center gap-1.5 overflow-visible sm:grid-cols-[repeat(5,minmax(0,1fr))_92px] [&>*]:min-w-0',
   calendar: 'grid w-full grid-cols-2 items-center gap-1.5 overflow-visible sm:grid-cols-4 lg:grid-cols-[1fr_1fr_1fr_1fr_1.1fr_1.15fr_92px] [&>*]:min-w-0',
 };
 
@@ -13,7 +17,10 @@ export function getTaskAttributeChrome({ condensed = false } = {}) {
     attributeLabelClass: `block h-[14px] overflow-hidden text-[10px] font-bold leading-[14px] uppercase tracking-wider text-muted transition-[height,max-height,opacity] duration-200 ${condensed ? 'h-0 max-h-0 opacity-0' : 'max-h-[14px] opacity-100'}`,
     compactSelectClass: 'h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]',
     compactInputClass: 'm-0 h-[22px] w-full cursor-pointer rounded-[10px] bg-transparent p-0 text-[13px] font-medium leading-[22px] text-ink outline-none placeholder:font-medium placeholder:text-faint placeholder:opacity-100',
-    detailsButtonClass: `flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-[height,background-color,color] duration-200 hover:bg-[#ebebeb] hover:text-ink ${condensed ? 'h-[28px]' : 'h-[42px]'}`,
+    // `max-sm:h-[44px]`: the condensed strip halves this control's height, which
+    // is fine under a mouse and not fine under a thumb. A phone keeps the full
+    // target whether or not the header has condensed.
+    detailsButtonClass: `flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-[height,background-color,color] duration-200 hover:bg-[#ebebeb] hover:text-ink max-sm:h-[44px] ${condensed ? 'h-[28px]' : 'h-[42px]'}`,
   };
 }
 

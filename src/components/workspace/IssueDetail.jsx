@@ -279,6 +279,24 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const handleTaskPaneChange = (pane) => {
     setTaskPaneSelection({ issueId, pane });
   };
+  // Below lg the page shows one pane at a time, so the pane switch is the whole
+  // navigation of this screen — and QuickTeam+ was not on it. It was a second
+  // pair of tabs *inside* the chat pane, which meant reaching the portal
+  // conversation on a phone took two switches on two different strips. One
+  // strip now: Завдання · Чат · QuickTeam+, the last only when the project is
+  // actually linked.
+  const compactTaskTab = taskPane === 'chat' && chatView === 'qtplus' && qtplusLink?.projectId
+    ? 'qtplus'
+    : taskPane;
+  const handleCompactTabChange = (id) => {
+    if (id === 'qtplus') {
+      setChatView('qtplus');
+      handleTaskPaneChange('chat');
+      return;
+    }
+    if (id === 'chat') setChatView('chat');
+    handleTaskPaneChange(id);
+  };
   const handleTaskChatUnreadChange = (count) => {
     setTaskChatUnreadState(current => (
       current.issueId === issueId && current.count === count
@@ -1082,6 +1100,73 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     />
   );
 
+  // What you can do to this task, as one block. It is rendered in two places —
+  // beside the title on a phone, at the far right of the header row from `sm`
+  // up — because on a narrow screen these buttons used to fall to a line of
+  // their own *below* the author/created/updated strip: three rows of chrome
+  // before the description, and the two controls people actually reach for
+  // parked furthest from the thing they act on.
+  const headerActions = (
+    <>
+      {isEditing ? (
+        // Beside the title on a phone there is room for the title or for two
+        // labelled buttons, not both — so below sm they collapse to the two
+        // glyphs everything else in the product uses for these two answers.
+        <>
+          <Button style="secondary" size="md" icon={X} collapseAt="sm" onClick={cancelEdit}>Скасувати</Button>
+          <Button style="primary" size="md" icon={Check} collapseAt="sm" onClick={saveEdit}>Зберегти</Button>
+        </>
+      ) : (
+        <>
+          {!isArchived && <Button style="secondary" size="icon-lg" icon={Pencil} onClick={enterEdit} aria-label="Редагувати завдання" title="Редагувати завдання" />}
+          <ContextMenu
+            trigger={(
+              <Button
+                style="secondary"
+                size="icon-lg"
+                icon={MoreHorizontal}
+                aria-label="Опції завдання"
+                title="Опції"
+              />
+            )}
+            dropdownClassName="w-[210px]"
+            items={[
+              { label: 'Копіювати посилання', icon: Copy, onClick: copyIssueLink },
+              ...(!isArchived ? [{ label: 'Дублювати', icon: CopyPlus, onClick: handleDuplicate }] : []),
+              { label: 'Скопіювати AI-промпт', icon: Sparkles, onClick: copyAiPrompt },
+              ...(!isArchived ? [
+                {
+                  label: isWatching ? 'Не стежити' : 'Стежити',
+                  icon: isWatching ? EyeOff : Eye,
+                  onClick: toggleWatch,
+                },
+                ...(can(orgRole, 'delete:issue')
+                  ? [{ label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true }]
+                  : []),
+              ] : []),
+            ]}
+          />
+        </>
+      )}
+      {isModal && onClose && (
+        <>
+          <Button
+            style="secondary"
+            size="icon"
+            icon={Maximize2}
+            onClick={() => {
+              onClose();
+              router.push(canonicalIssuePath);
+            }}
+            aria-label="Відкрити на повній сторінці"
+            title="Відкрити на повній сторінці"
+          />
+          <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" title="Закрити" />
+        </>
+      )}
+    </>
+  );
+
   // ════════════════════════════════════════════════════════════════
   // RENDER
   // ════════════════════════════════════════════════════════════════
@@ -1097,21 +1182,25 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
         onScrolledChange={setIsHeaderScrolled}
         mobilePane={!isModal && taskPane === 'chat' ? 'aside' : 'content'}
         lead={!isModal ? (
-          <div className="page-gutter shrink-0 bg-white py-2 lg:hidden">
+          // The kit's standard strip, not the stepper. `underline` says "you are
+          // at step two of a sequence"; these are three views of one record, and
+          // a third of them only exists on some projects — which a stretched
+          // stepper cannot express without the tabs changing width under you.
+          <div className="page-gutter shrink-0 overflow-x-auto hide-scrollbar bg-white pb-1 pt-2 lg:hidden">
             <Tabs
-              variant="underline"
-              className="w-full"
+              className="w-max"
               tabs={[
                 { id: 'task', label: 'Завдання', icon: TaskIcon },
                 { id: 'chat', label: 'Чат', icon: MessageCircle, count: unreadTaskChatCount },
+                ...(qtplusLink?.projectId ? [{ id: 'qtplus', label: 'QuickTeam+' }] : []),
               ]}
-              activeTab={taskPane}
-              onTabChange={handleTaskPaneChange}
+              activeTab={compactTaskTab}
+              onTabChange={handleCompactTabChange}
             />
           </div>
         ) : null}
         header={(
-             <div className="flex w-full flex-col items-stretch justify-between gap-[10px] pb-[12px] pt-[12px] sm:flex-row sm:items-start sm:gap-[16px]">
+             <div className="flex w-full flex-col gap-[10px] pb-[12px] pt-[12px] sm:flex-row sm:items-start sm:justify-between sm:gap-[16px]">
                <div className="flex flex-col gap-[4px] flex-1 min-w-0">
             {parentIssueId && (
               <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted">
@@ -1142,12 +1231,22 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 )}
               </div>
             )}
-            {isEditing ? (
-              <TitleInput autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} placeholder="Назва завдання..." />
-            ) : (
-              <h1 className="ui-type-page-title text-ink tracking-tight leading-tight">{issue.title}</h1>
-            )}
-            
+            {/* Below sm the actions ride here, level with the title they act
+                on. From sm up they sit at the end of the header row instead —
+                see `headerActions`. */}
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                {isEditing ? (
+                  <TitleInput autoFocus value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} placeholder="Назва завдання..." />
+                ) : (
+                  <h1 className="ui-type-page-title text-ink tracking-tight leading-tight">{issue.title}</h1>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-2 sm:hidden">
+                {headerActions}
+              </div>
+            </div>
+
             {/* Metadata strip for non-editable details */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted font-medium mt-1.5">
               {/* A member's name opens the two things you can do with a person,
@@ -1241,60 +1340,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               )}
             </div>
           </div>
-          <div className="flex shrink-0 items-center self-end gap-2 pt-1 sm:self-auto">
-            {isEditing ? (
-              <>
-                <Button style="secondary" size="md" onClick={cancelEdit}>Скасувати</Button>
-                <Button style="primary" size="md" icon={Check} onClick={saveEdit}>Зберегти</Button>
-              </>
-            ) : (
-              <>
-              {!isArchived && <Button style="secondary" size="icon-lg" icon={Pencil} onClick={enterEdit} aria-label="Редагувати завдання" title="Редагувати завдання" />}
-              <ContextMenu
-                trigger={(
-                  <Button
-                    style="secondary"
-                    size="icon-lg"
-                    icon={MoreHorizontal}
-                    aria-label="Опції завдання"
-                    title="Опції"
-                  />
-                )}
-                dropdownClassName="w-[210px]"
-                items={[
-                  { label: 'Копіювати посилання', icon: Copy, onClick: copyIssueLink },
-                  ...(!isArchived ? [{ label: 'Дублювати', icon: CopyPlus, onClick: handleDuplicate }] : []),
-                  { label: 'Скопіювати AI-промпт', icon: Sparkles, onClick: copyAiPrompt },
-                  ...(!isArchived ? [
-                    {
-                      label: isWatching ? 'Не стежити' : 'Стежити',
-                      icon: isWatching ? EyeOff : Eye,
-                      onClick: toggleWatch,
-                    },
-                    ...(can(orgRole, 'delete:issue')
-                      ? [{ label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true }]
-                      : []),
-                  ] : []),
-                ]}
-              />
-              </>
-            )}
-            {isModal && onClose && (
-              <>
-                <Button
-                  style="secondary"
-                  size="icon"
-                  icon={Maximize2}
-                  onClick={() => {
-                    onClose();
-                    router.push(canonicalIssuePath);
-                  }}
-                  aria-label="Відкрити на повній сторінці"
-                  title="Відкрити на повній сторінці"
-                />
-                <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" title="Закрити" />
-              </>
-            )}
+          <div className="hidden shrink-0 items-center gap-2 pt-1 sm:flex">
+            {headerActions}
           </div>
             </div>
         )}
@@ -1413,6 +1460,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     position="bottom"
                     hideCloseIcon
                     className="flex h-full items-center"
+                    // Without this the wrapper Popover puts around a trigger is
+                    // a bare block in a flex row, so it shrinks to the glyph:
+                    // «Деталі» was a 14px-wide hit area inside a 44px column,
+                    // which is why it took three tries to hit with a thumb.
+                    triggerClassName="h-full w-full"
                     onOpenChange={setShowDetailsDropdown}
                     trigger={(
                       <AttributeTrigger
@@ -1511,19 +1563,26 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
           // Chat is only useful on the full task page.
           <div className="flex h-full flex-col overflow-hidden rounded-[16px] bg-canvas">
             {/* Звʼязаний QT+ проєкт → маленькі таби над чатом */}
+            {/* Below lg the pane switch at the top of the page already carries
+                the QuickTeam+ tab, so this strip stops being a second place to
+                choose from and keeps only the way out to the portal. */}
             {qtplusLink?.projectId && (
-              <div className="relative flex shrink-0 items-center justify-center bg-canvas px-4 pb-2 pt-3">
-                <Tabs
-                  tabs={[{ id: 'chat', label: 'Чат' }, { id: 'qtplus', label: 'QuickTeam+' }]}
-                  activeTab={chatView}
-                  onTabChange={setChatView}
-                />
+              <div className={`relative flex min-h-[36px] shrink-0 items-center justify-center bg-canvas px-4 pb-2 pt-3 ${
+                chatView === 'qtplus' ? '' : 'max-lg:hidden'
+              }`}>
+                <div className="max-lg:hidden">
+                  <Tabs
+                    tabs={[{ id: 'chat', label: 'Чат' }, { id: 'qtplus', label: 'QuickTeam+' }]}
+                    activeTab={chatView}
+                    onTabChange={setChatView}
+                  />
+                </div>
                 {chatView === 'qtplus' && process.env.NEXT_PUBLIC_QTPLUS_URL && (
                   <a
                     href={`${process.env.NEXT_PUBLIC_QTPLUS_URL}/project/${qtplusLink.projectId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="absolute right-4 rounded-[8px] p-2 text-muted transition-colors hover:bg-white hover:text-ink"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-[8px] p-2 text-muted transition-colors hover:bg-white hover:text-ink"
                     title="Відкрити проєкт у QuickTeam+"
                     aria-label="Відкрити проєкт у QuickTeam+"
                   >

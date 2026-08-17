@@ -199,12 +199,13 @@ export default function NavMenuSection() {
       <PreviewBlock
         title="Вихід із панелі на мобільному"
         component="MobilePaneBack"
-        description="SidebarLayout показує нижче md лише одну панель, тож та панель мусить пропонувати шлях назад. Тут control видно завжди — у продукті він ховається на md і вище, де обидві панелі й так на екрані. Команда й Налаштування малювали його кожен окремо."
+        description="SidebarLayout показує нижче md лише одну панель, тож та панель мусить пропонувати шлях назад. Стрілка стоїть у заголовку — рядок із підписом коштував телефону цілий рядок і, гірше, дублювався: розділ налаштувань зі своїм «Усі інтеграції» малював дві кнопки назад одна над одною. Підпис лишився як доступна назва й підказка. Тут control видно завжди — у продукті він ховається на md і вище, де обидві панелі й так на екрані."
         filePath="src/components/ui/Navigation/MobilePaneBack.jsx"
       >
-        <div className="flex flex-col gap-3 rounded-[12px] bg-white p-[16px] [&_button]:!flex">
+        <div className="flex items-center gap-4 rounded-[12px] bg-white p-[16px] [&_button]:!flex">
           <MobilePaneBack label="До списку команди" onClick={() => {}} />
           <MobilePaneBack label="Всі налаштування" onClick={() => {}} />
+          <MobilePaneBack label="До списку чатів" onClick={() => {}} />
         </div>
       </PreviewBlock>
     </div>

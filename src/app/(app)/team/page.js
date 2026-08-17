@@ -124,8 +124,12 @@ export default function TeamPage() {
         data-ui-padding="sm"
         className={`ui-surface ${mobilePane === 'list' ? 'hidden' : 'flex'} md:flex flex-1 flex-col h-full overflow-hidden`}
       >
-        <MobilePaneBack onClick={requestPaneClose} label="До списку команди" className="pb-[10px]" />
-        <Surface preset="nested-card" className="flex-1 w-full overflow-hidden flex flex-col">
+        {/* The arrow rides on the profile itself, opposite the close button
+            the modal version of this view draws — it used to be a labelled
+            text button on its own line above the card, which spent a row of a
+            phone screen saying what an arrow says. */}
+        <Surface preset="nested-card" className="relative flex-1 w-full overflow-hidden flex flex-col">
+          <MobilePaneBack onClick={requestPaneClose} label="До списку команди" className="absolute left-[16px] top-[16px] z-20" />
           {selectedMember ? (
             <ProfileView user={selectedMember} />
           ) : (

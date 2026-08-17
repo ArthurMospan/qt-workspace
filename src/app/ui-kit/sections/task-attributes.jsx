@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Select } from '@/components/ui/Select';
-import { DatePicker, Popover, TaskAttributesPanel, getTaskAttributeChrome } from '@/components/ui';
+import { AttributeTrigger, DatePicker, Popover, TaskAttributesPanel, getTaskAttributeChrome } from '@/components/ui';
 import { DEFAULT_STATUSES, DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { CALENDAR_EVENT_TYPE_OPTIONS } from '@/components/workspace/calendar/CalendarEventDialog';
@@ -32,7 +32,6 @@ export default function TaskAttributesSection() {
     attributeLabelClass,
     compactInputClass,
     compactSelectClass,
-    detailsButtonClass,
   } = getTaskAttributeChrome();
 
   return (
@@ -108,16 +107,18 @@ export default function TaskAttributesSection() {
                   position="bottom"
                   hideCloseIcon
                   className="flex h-full items-center"
+                  // Same as the product: without it the wrapper shrinks to the
+                  // glyph and «Деталі» becomes a 14px target inside its column.
+                  triggerClassName="h-full w-full"
                   trigger={(
-                    <button
-                      type="button"
-                      className={`${detailsButtonClass} max-sm:px-0 text-muted`}
+                    <AttributeTrigger
+                      className="max-sm:px-0"
                       aria-label="Деталі завдання"
                       title="Пріоритет і тип"
                     >
                       <Settings2 size={14} />
                       <span className="max-sm:hidden">Деталі</span>
-                    </button>
+                    </AttributeTrigger>
                   )}
                 >
                   <div className="flex w-[248px] max-w-full flex-col gap-4">
@@ -197,10 +198,10 @@ export default function TaskAttributesSection() {
                     <button type="button" className="min-w-0 truncate text-[11px] font-bold text-ink">45 хв</button>
                   </div>
                 </div>
-                <button type="button" className={`${detailsButtonClass} text-muted`}>
+                <AttributeTrigger aria-label="Деталі події">
                   <Settings2 size={14} />
                   <span>Деталі</span>
-                </button>
+                </AttributeTrigger>
               </>
             )}
           />

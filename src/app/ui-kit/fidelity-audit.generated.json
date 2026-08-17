@@ -11,17 +11,17 @@
     "productFiles": 218,
     "parsedFiles": 218,
     "parseErrors": 0,
-    "nativeControls": 18,
+    "nativeControls": 19,
     "structures": {
       "analytics": 2,
       "qtplus": 1,
       "board": 1,
       "settings": 1,
-      "shell": 12,
+      "shell": 13,
       "other": 1
     },
-    "styledNativeControls": 13,
-    "reviewedNativeControls": 3,
+    "styledNativeControls": 14,
+    "reviewedNativeControls": 4,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 17,
+    "button": 18,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -115,7 +115,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:261",
+      "location": "src/components/MobileNav.jsx:258",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -125,6 +125,22 @@
       "ariaLabel": "",
       "styled": true,
       "reviewed": "",
+      "resembles": "IconAction",
+      "structure": "shell",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/MobileNav.jsx:332",
+      "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
+      "text": "",
+      "childElements": [
+        "Icon",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "navigation-sheet-row",
       "resembles": "IconAction",
       "structure": "shell",
       "routes": []
@@ -255,7 +271,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHelpMenu.jsx:143",
+      "location": "src/components/WorkspaceHelpMenu.jsx:126",
       "className": "mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted hover:text-ink",
       "text": "QuickTeam",
       "childElements": [
@@ -351,12 +367,12 @@
       "count": 3
     },
     {
-      "file": "src/components/UserStatusSetter.jsx",
+      "file": "src/components/MobileNav.jsx",
       "count": 3
     },
     {
-      "file": "src/components/MobileNav.jsx",
-      "count": 2
+      "file": "src/components/UserStatusSetter.jsx",
+      "count": 3
     },
     {
       "file": "src/components/workspace/WorkloadTab.jsx",
@@ -381,6 +397,11 @@
   ],
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
+    {
+      "location": "src/components/MobileNav.jsx:332",
+      "tag": "button",
+      "context": "navigation-sheet-row"
+    },
     {
       "location": "src/components/WorkspaceSidebar.jsx:268",
       "tag": "button",
@@ -428,37 +449,37 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:368",
+      "location": "src/app/(app)/settings/page.js:384",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:388",
+      "location": "src/app/(app)/settings/page.js:404",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:432",
+      "location": "src/app/(app)/settings/page.js:448",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:551",
+      "location": "src/app/(app)/settings/page.js:567",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:629",
+      "location": "src/app/(app)/sprints/page.js:643",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:759",
+      "location": "src/app/(app)/sprints/page.js:822",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:769",
+      "location": "src/app/(app)/sprints/page.js:836",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
@@ -618,7 +639,7 @@
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:308",
+      "location": "src/components/WorkspaceHeader.jsx:470",
       "tag": "div",
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },

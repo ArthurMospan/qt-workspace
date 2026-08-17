@@ -23,7 +23,8 @@ import {
 import { CalendarIcon, ChatIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import IconAction from '@/components/ui/IconAction';
-import { Counter, Pill, ResponseChoice, TextAction } from '@/components/ui';
+import { Counter, Dialog, Pill, ResponseChoice, TextAction } from '@/components/ui';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { useRouter, usePathname } from 'next/navigation';
 import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
@@ -189,6 +190,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   const removeNotification = notificationActions?.removeNotification;
   const clearRead = notificationActions?.clearRead;
 
+  // A dropdown anchored to a 32px bell is a desktop idea. On a phone it opened
+  // as a 380px card pinned under the top-right corner, with its own inner
+  // scroller inside the page's — so the list was a letterbox you had to aim at,
+  // and a tap anywhere near its edge dismissed it. Below md the same content is
+  // the kit's sheet: full width, the page's own scroll, one obvious way out.
+  const isMobile = useIsMobile();
   const [bellOpen, setBellOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState('all'); // 'all' | 'unread'
   const [userOpen, setUserOpen] = useState(false);
@@ -226,8 +233,13 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 
   useEffect(() => {
     const clickOut = e => {
+      // The sheet is a modal with its own backdrop and its own escape hatch.
+      // Click-away belongs to the anchored dropdown only — applied to the sheet
+      // it closed on the first tap *inside* it, since the sheet is portalled
+      // well outside the bell it hangs from.
       if (
         bellOpen
+        && !isMobile
         && bellRef.current
         && !bellRef.current.contains(e.target)
         && !notificationPanelRef.current?.contains(e.target)
@@ -236,7 +248,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
     };
     document.addEventListener('mousedown', clickOut);
     return () => document.removeEventListener('mousedown', clickOut);
-  }, [bellOpen, userOpen]);
+  }, [bellOpen, isMobile, userOpen]);
 
   const handleNotifClick = (n) => {
     if (n.organizationId && !allOrgs.some(org => org.id === n.organizationId)) {
@@ -291,6 +303,138 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
       .catch(() => showToast('Не вдалося очистити сповіщення', 'error'));
   };
 
+  // ── The centre's contents, drawn once ────────────────────────────────
+  // Two shells wear them: the anchored dropdown on a desktop, the kit's sheet
+  // on a phone. Only the shell differs, so only the shell is written twice.
+  const notificationActionsRow = (
+    <>
+      {unreadCount > 0 && (
+        <Button
+          onClick={handleMarkAllRead}
+          title="Позначити всі прочитаними"
+          style="ghost"
+          size="icon-sm"
+          icon={CheckCheck}
+          shape="compact"
+          surface="canvas"
+        />
+      )}
+      <Button
+        onClick={() => { setBellOpen(false); router.push('/settings?section=notifications'); }}
+        title="Налаштування сповіщень"
+        style="ghost"
+        size="icon-sm"
+        icon={Settings}
+        shape="compact"
+        surface="canvas"
+      />
+    </>
+  );
+
+  const notificationFilterRow = (
+    <Segmented
+      className="w-max"
+      surface="canvas"
+      value={notifFilter}
+      onChange={setNotifFilter}
+      options={[
+        { value: 'all', label: 'Всі' },
+        { value: 'unread', label: unreadCount > 0 ? `Непрочитані · ${unreadCount}` : 'Непрочитані' },
+      ]}
+    />
+  );
+
+  const notificationList = shownNotifications.length === 0 ? (
+    <div className="flex flex-col items-center py-12">
+      <Bell size={24} className="text-line mb-3" />
+      <p className="text-[12px] text-faint">
+        {notifFilter === 'unread' ? 'Все прочитано 👌' : 'Немає сповіщень'}
+      </p>
+    </div>
+  ) : notifGroups.map(group => (
+    <div key={group.label}>
+      <p className="px-4 pt-3 pb-1 text-[10px] font-bold text-faint uppercase tracking-wider">
+        {group.label}
+      </p>
+      {group.items.map(n => (
+        <div key={n.id} onClick={() => handleNotifClick(n)}
+          // The row carries its own dismiss button, so it is not
+          // a `<button>` itself.
+          role="button"
+          tabIndex={0}
+          onKeyDown={event => {
+            if (event.target !== event.currentTarget) return;
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            handleNotifClick(n);
+          }}
+          className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-canvas transition-colors ${
+            n.type === 'emergency' && !n.read ? 'bg-red-50' : !n.read ? 'bg-[#f5f7ff]' : ''
+          }`}>
+          <NotifIcon n={n} />
+          <div className="flex-1 min-w-0">
+            <p className={`text-[12px] leading-snug pr-4 ${!n.read ? 'font-semibold text-ink' : 'text-[#4a4a4a]'}`}>
+              {n.title}
+            </p>
+            {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
+            {n.type === 'calendar_invite' && n.calendarEventId && (
+              <CalendarResponseActions
+                notification={n}
+                response={calendarResponses[n.id]}
+                responding={respondingNotificationId === n.id}
+                onRespond={handleCalendarResponse}
+              />
+            )}
+            <p className="text-[10px] text-faint mt-[3px] flex items-center gap-1">
+              <span>{timeAgo(n.createdAt)}</span>
+            </p>
+          </div>
+          {!n.read && (
+            <span className="w-[6px] h-[6px] bg-ink rounded-full shrink-0 mt-2 group-hover:opacity-0 transition-opacity" />
+          )}
+          {/* Hover actions */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
+            <IconAction
+              label={n.read ? 'Позначити непрочитаним' : 'Позначити прочитаним'}
+              onClick={e => {
+                e.stopPropagation();
+                const action = n.read ? markUnread : markRead;
+                action?.(n.id).catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
+              }}
+              icon={n.read ? Mail : Check}
+              size="xs"
+              appearance="surface"
+            />
+            <IconAction
+              label="Видалити"
+              onClick={e => {
+                e.stopPropagation();
+                removeNotification?.(n.id).catch(() => showToast('Не вдалося видалити сповіщення', 'error'));
+              }}
+              icon={Trash2}
+              size="xs"
+              appearance="surface-danger"
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  ));
+
+  const notificationFooter = scopedNotifications.length > 0 ? (
+    <>
+      <TextAction
+        tone="danger-quiet"
+        size="sm"
+        onClick={handleClearRead}
+        disabled={readCount === 0}
+      >
+        Очистити прочитані{readCount > 0 ? ` (${readCount})` : ''}
+      </TextAction>
+      <span className="text-[10px] text-faint">останні {scopedNotifications.length}</span>
+    </>
+  ) : null;
+
   return (
     <>
       <div className="ml-2 flex shrink-0 items-center gap-[6px] z-50 sm:ml-4">
@@ -304,7 +448,25 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               onToggle={() => { setBellOpen(o => !o); setUserOpen(false); }}
             />
 
-          {bellOpen && typeof document !== 'undefined' && createPortal(
+          {bellOpen && isMobile && (
+            <Dialog
+              isOpen
+              onClose={() => setBellOpen(false)}
+              title="Сповіщення"
+              description={unreadCount > 0 ? `${unreadCount} нових` : null}
+              size="sm"
+              bodyPadding="flush"
+              headerAction={notificationActionsRow}
+              footer={notificationFooter ? (
+                <div className="flex w-full items-center justify-between">{notificationFooter}</div>
+              ) : null}
+            >
+              <div className="px-4 pt-[10px] pb-2">{notificationFilterRow}</div>
+              {notificationList}
+            </Dialog>
+          )}
+
+          {bellOpen && !isMobile && typeof document !== 'undefined' && createPortal(
             <div
               ref={notificationPanelRef}
               id="notification-center-panel"
@@ -328,135 +490,24 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                   )}
                 </div>
                 <div className="flex items-center gap-1">
-                  {unreadCount > 0 && (
-                    <Button
-                      onClick={handleMarkAllRead}
-                      title="Позначити всі прочитаними"
-                      style="ghost"
-                      size="icon-sm"
-                      icon={CheckCheck}
-                      shape="compact"
-                      surface="canvas"
-                    />
-                  )}
-                  <Button
-                    onClick={() => { setBellOpen(false); router.push('/settings?section=notifications'); }}
-                    title="Налаштування сповіщень"
-                    style="ghost"
-                    size="icon-sm"
-                    icon={Settings}
-                    shape="compact"
-                    surface="canvas"
-                  />
+                  {notificationActionsRow}
                 </div>
               </div>
 
               {/* Filter */}
               <div className="px-4 pt-[10px] pb-2">
-                <Segmented
-                  className="w-max"
-                  surface="canvas"
-                  value={notifFilter}
-                  onChange={setNotifFilter}
-                  options={[
-                    { value: 'all', label: 'Всі' },
-                    { value: 'unread', label: unreadCount > 0 ? `Непрочитані · ${unreadCount}` : 'Непрочитані' },
-                  ]}
-                />
+                {notificationFilterRow}
               </div>
 
               {/* List */}
               <div className="max-h-[400px] overflow-y-auto">
-                {shownNotifications.length === 0 ? (
-                  <div className="flex flex-col items-center py-12">
-                    <Bell size={24} className="text-line mb-3" />
-                    <p className="text-[12px] text-faint">
-                      {notifFilter === 'unread' ? 'Все прочитано 👌' : 'Немає сповіщень'}
-                    </p>
-                  </div>
-                ) : notifGroups.map(group => (
-                  <div key={group.label}>
-                    <p className="px-4 pt-3 pb-1 text-[10px] font-bold text-faint uppercase tracking-wider">
-                      {group.label}
-                    </p>
-                    {group.items.map(n => (
-                      <div key={n.id} onClick={() => handleNotifClick(n)}
-                        // The row carries its own dismiss button, so it is not
-                        // a `<button>` itself.
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={event => {
-                          if (event.target !== event.currentTarget) return;
-                          if (event.key !== 'Enter' && event.key !== ' ') return;
-                          event.preventDefault();
-                          handleNotifClick(n);
-                        }}
-                        className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-canvas transition-colors ${
-                          n.type === 'emergency' && !n.read ? 'bg-red-50' : !n.read ? 'bg-[#f5f7ff]' : ''
-                        }`}>
-                        <NotifIcon n={n} />
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-[12px] leading-snug pr-4 ${!n.read ? 'font-semibold text-ink' : 'text-[#4a4a4a]'}`}>
-                            {n.title}
-                          </p>
-                          {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
-                          {n.type === 'calendar_invite' && n.calendarEventId && (
-                            <CalendarResponseActions
-                              notification={n}
-                              response={calendarResponses[n.id]}
-                              responding={respondingNotificationId === n.id}
-                              onRespond={handleCalendarResponse}
-                            />
-                          )}
-                          <p className="text-[10px] text-faint mt-[3px] flex items-center gap-1">
-                            <span>{timeAgo(n.createdAt)}</span>
-                          </p>
-                        </div>
-                        {!n.read && (
-                          <span className="w-[6px] h-[6px] bg-ink rounded-full shrink-0 mt-2 group-hover:opacity-0 transition-opacity" />
-                        )}
-                        {/* Hover actions */}
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
-                          <IconAction
-                            label={n.read ? 'Позначити непрочитаним' : 'Позначити прочитаним'}
-                            onClick={e => {
-                              e.stopPropagation();
-                              const action = n.read ? markUnread : markRead;
-                              action?.(n.id).catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
-                            }}
-                            icon={n.read ? Mail : Check}
-                            size="xs"
-                            appearance="surface"
-                          />
-                          <IconAction
-                            label="Видалити"
-                            onClick={e => {
-                              e.stopPropagation();
-                              removeNotification?.(n.id).catch(() => showToast('Не вдалося видалити сповіщення', 'error'));
-                            }}
-                            icon={Trash2}
-                            size="xs"
-                            appearance="surface-danger"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
+                {notificationList}
               </div>
 
               {/* Footer */}
-              {scopedNotifications.length > 0 && (
+              {notificationFooter && (
                 <div className="flex items-center justify-between px-4 py-[10px] border-t border-canvas bg-[#fafafa]">
-                  <TextAction
-                    tone="danger-quiet"
-                    size="sm"
-                    onClick={handleClearRead}
-                    disabled={readCount === 0}
-                  >
-                    Очистити прочитані{readCount > 0 ? ` (${readCount})` : ''}
-                  </TextAction>
-                  <span className="text-[10px] text-faint">останні {scopedNotifications.length}</span>
+                  {notificationFooter}
                 </div>
               )}
             </div>,

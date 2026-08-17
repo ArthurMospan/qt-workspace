@@ -178,7 +178,13 @@ export default function WorkspaceLayout({ children }) {
     <FaviconBadge />
     <Suspense fallback={<div className="w-full h-full bg-[#f5f5f5]" />}>
     <WorkspaceOrganizationRouteGuard>
-    <div className="w-full h-full flex overflow-hidden bg-[#f5f5f5]">
+    {/* The grey is the gutter *between* the floating panels, and on a phone
+        there are no floating panels: the content fills the width edge to edge
+        and the only grey left was the strip the bottom bar reserves, which read
+        as a mystery band under the navigation. Below md the shell is the same
+        white as the pane, so the bar floats over the page instead of over a
+        wall of its own. */}
+    <div className="w-full h-full flex overflow-hidden bg-white md:bg-[#f5f5f5]">
       {/* The first stop for Tab, invisible until it is focused. */}
       <a href="#qt-main" className="qt-skip-link rounded-[10px] bg-ink px-[14px] py-[8px] text-[13px] font-bold text-white">
         Перейти до вмісту

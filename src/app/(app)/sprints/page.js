@@ -18,6 +18,7 @@ import { BulkActionBar, ContextMenu, DatePicker, FormGroup, PageHeader, Pill, us
 import { can } from '@/lib/utils/can';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { useLocalization } from '@/lib/hooks/useLocalization';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import {
   Plus, Play, Check, Trash2, Edit2, Calendar,
   ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
@@ -228,6 +229,9 @@ export default function GlobalSprintsPage() {
   }, []);
 
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  // Який спринт відкрив діалог створення — «Додати завдання» у шапці спринта
+  // одразу підставляє його, а «+» над беклогом лишає порожнім.
+  const [createTaskSprintId, setCreateTaskSprintId] = useState(null);
   const [showCreateSprintModal, setShowCreateSprintModal] = useState(false);
   const [showCompleteSprintModal, setShowCompleteSprintModal] = useState(null); // sprint object
   const [editingSprint, setEditingSprint] = useState(null);
@@ -242,6 +246,10 @@ export default function GlobalSprintsPage() {
   const [backlogCollapsed, setBacklogCollapsed] = useState(false);
 
   const isManager = can(orgRole, 'manage:sprints');
+  // Below md the sprint header keeps the title, the plus and the kebab; every
+  // управлінська дія moves inside the kebab. `null` on the first render means
+  // desktop, which is the layout that has room either way.
+  const compactSprintActions = useIsMobile() === true;
   const projectIds = (projects || []).map(p => p.id);
   const {
     issues: snapshotIssues,
@@ -451,7 +459,7 @@ export default function GlobalSprintsPage() {
       <Droppable droppableId={droppableId} isDropDisabled={selectionActive}>
         {(provided, snapshot) => (
           <div 
-            className={`flex min-h-[60px] flex-col pb-4 pt-1 ${isBacklogCol ? 'px-[8px]' : 'px-4'}`}
+            className={`flex min-h-[60px] flex-col pb-4 pt-1 ${isBacklogCol ? 'px-[8px]' : 'px-2 sm:px-4'}`}
             ref={provided.innerRef} 
             {...provided.droppableProps}
           >
@@ -521,7 +529,7 @@ export default function GlobalSprintsPage() {
               <div className="py-8 text-center text-[12px] text-faint">
                 {isBacklogCol
                   ? 'Завдань без спринта не знайдено'
-                  : 'У цьому спринті ще немає задач — перетягніть їх зі списку нижче'}
+                  : 'У цьому спринті ще немає задач — додайте їх кнопкою «+» у шапці спринта або перетягніть зі списку «Без спринта»'}
               </div>
             )}
             {provided.placeholder}
@@ -532,9 +540,15 @@ export default function GlobalSprintsPage() {
   };
 
   return (
-    <div className="flex-1 h-full overflow-hidden bg-transparent">
-      <div className="workspace-page-layout h-full pb-[24px]">
-      
+    // Below lg the two columns become one stack, and a stack is taller than the
+    // viewport — so the page itself has to scroll. It did not: the shell was
+    // `overflow-hidden` and the only scroller was the sprint column's own, which
+    // is `lg:` and therefore absent on a phone. Everything past the first screen
+    // was simply clipped, which is what made planning on a phone impossible
+    // rather than merely cramped.
+    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent lg:overflow-hidden">
+      <div className="workspace-page-layout min-h-full pb-[24px] lg:h-full">
+
       <PageHeader
         title="Спринти"
         actions={
@@ -617,17 +631,17 @@ export default function GlobalSprintsPage() {
               onDragEnd(result);
             }}
           >
-            <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 items-stretch">
+            <div className="flex-1 flex flex-col lg:flex-row gap-6 lg:min-h-0 items-stretch">
 
               {/* Left Column: Sprints (65%) */}
-              <div className="flex-1 flex flex-col gap-4 overflow-visible lg:overflow-y-auto custom-scrollbar lg:pr-2 min-h-0">
+              <div className="flex-1 flex flex-col gap-4 overflow-visible lg:overflow-y-auto custom-scrollbar lg:pr-2 lg:min-h-0">
                 {sprints.map(sprint => {
                   const sprintIssues = filteredIssues.filter(i => i.sprintId === sprint.id);
                   const isExpanded = isSectionExpanded(sprint.id, sprint.status !== 'completed');
 
                   return (
                     <div key={sprint.id} data-ui-surface="local" className="bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0">
-                      <div className="px-5 py-4 flex items-center justify-between">
+                      <div className="flex items-center justify-between px-3 py-3 sm:px-5 sm:py-4">
                         {/* The bare 16px chevron was the only reliable target and
                             the row shrank to its content, so the empty space beside
                             the title did nothing. Now the whole strip toggles and
@@ -668,7 +682,7 @@ export default function GlobalSprintsPage() {
                               is closed, so it takes the ink tone: definitive, and
                               distinct from active green and planned grey. */}
                           {sprint.status === 'completed' && <StatusPill label="Завершено" color="#1f1f1f" />}
-                          <span className="text-[11px] text-muted shrink-0">
+                          <span className="text-[11px] text-muted shrink-0 max-sm:hidden">
                             {sprintIssues.length} {plural(sprintIssues.length, ['завдання', 'завдання', 'завдань'])}
                           </span>
                           {sprint.startDate && (
@@ -678,7 +692,24 @@ export default function GlobalSprintsPage() {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* A phone fits a title and two square controls on this
+                            line, and the row used to ask it for a title, a
+                            status, a count, a kebab, a labelled primary button
+                            and two more squares. Below md every управлінська дія
+                            lives in the kebab; the plus stays out because adding
+                            a task to a sprint is the whole job on a phone, where
+                            dragging a card between two stacked lists is not a
+                            real gesture. */}
+                        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+                          <Button
+                            onClick={() => { setCreateTaskSprintId(sprint.id); setShowCreateTaskModal(true); }}
+                            style="ghost"
+                            size="icon-xs"
+                            icon={Plus}
+                            className="hover:!bg-white"
+                            aria-label={`Додати завдання у спринт ${sprint.name}`}
+                            title="Додати завдання у спринт"
+                          />
                           <ContextMenu
                             trigger={(
                               <Button
@@ -691,15 +722,39 @@ export default function GlobalSprintsPage() {
                                 title="Дії зі списком"
                               />
                             )}
-                            items={[{
-                              label: sprintIssues.length > 0 && sprintIssues.every(issue => activeSelectedIssueIds.has(issue.id))
-                                ? 'Зняти вибір у списку'
-                                : 'Вибрати всі у списку',
-                              icon: CheckSquare,
-                              onClick: () => toggleSectionSelection(sprintIssues),
-                            }]}
+                            items={[
+                              {
+                                label: sprintIssues.length > 0 && sprintIssues.every(issue => activeSelectedIssueIds.has(issue.id))
+                                  ? 'Зняти вибір у списку'
+                                  : 'Вибрати всі у списку',
+                                icon: CheckSquare,
+                                onClick: () => toggleSectionSelection(sprintIssues),
+                              },
+                              ...(isManager && compactSprintActions ? [
+                                { isDivider: true },
+                                ...(sprint.status === 'planned' ? [{
+                                  label: 'Почати спринт',
+                                  icon: Play,
+                                  onClick: () => handleStartSprint(sprint.id),
+                                }] : []),
+                                ...(sprint.status === 'active' ? [{
+                                  label: 'Завершити спринт',
+                                  icon: Check,
+                                  onClick: () => setShowCompleteSprintModal(sprint),
+                                }] : []),
+                                { label: 'Редагувати', icon: Edit2, onClick: () => setEditingSprint(sprint) },
+                                ...(sprint.status !== 'active' ? [{
+                                  label: 'Видалити',
+                                  icon: Trash2,
+                                  isDanger: true,
+                                  onClick: async () => {
+                                    if (await confirmDialog({ title: 'Видалити спринт?', confirmText: 'Видалити', danger: true })) deleteSprint(sprint.id);
+                                  },
+                                }] : []),
+                              ] : []),
+                            ]}
                           />
-                          {isManager && (<>
+                          {isManager && !compactSprintActions && (<>
                             {sprint.status === 'planned' && (
                               <Button
                                 style="primary"
@@ -745,8 +800,16 @@ export default function GlobalSprintsPage() {
                         </div>
                       </div>
 
+                      {/* The count moves under the title on a phone, where the
+                          header line has no room for it, and takes the dates
+                          with it. */}
+                      <p className="px-3 pb-1 text-[11px] text-muted sm:hidden">
+                        {sprintIssues.length} {plural(sprintIssues.length, ['завдання', 'завдання', 'завдань'])}
+                        {sprint.startDate ? ` · ${formatSprintDates(sprint.startDate, sprint.endDate)}` : ''}
+                      </p>
+
                       {isExpanded && sprint.goal && (
-                        <p className="px-5 pb-2 text-[12px] text-muted italic">Ціль: {sprint.goal}</p>
+                        <p className="px-3 pb-2 text-[12px] text-muted italic sm:px-5">Ціль: {sprint.goal}</p>
                       )}
 
                       {isExpanded && (
@@ -764,8 +827,12 @@ export default function GlobalSprintsPage() {
                 )}
               </div>
 
-              {/* Right column mirrors the global board column contract. */}
-              {backlogCollapsed ? (
+              {/* Right column mirrors the global board column contract.
+                  Collapsing it is a two-column idea: below lg the list is not
+                  beside anything, so a 48px vertical spine of text would be a
+                  stranger sitting under the sprints rather than a folded
+                  column. */}
+              {backlogCollapsed && !compactSprintActions ? (
                 <div
                   data-ui-surface="local"
                   className="flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
@@ -801,7 +868,7 @@ export default function GlobalSprintsPage() {
                   preset="panel"
                   padding="none"
                   composition="scroll-pane"
-                  className="flex w-[82vw] max-w-[320px] shrink-0 flex-col overflow-hidden md:w-[280px] md:max-w-none"
+                  className="flex w-full shrink-0 flex-col overflow-hidden lg:w-[280px]"
                 >
                   {/* A board column header, drawn exactly as the board draws
                       one: no rule under it. The panel already separates the
@@ -814,7 +881,7 @@ export default function GlobalSprintsPage() {
                         style="ghost"
                         size="icon-xs"
                         icon={ChevronLeft}
-                        className="-ml-2 hover:!bg-white"
+                        className="-ml-2 hover:!bg-white max-lg:hidden"
                         title="Згорнути колонку завдань"
                       />
                       <span className="h-[8px] w-[8px] rounded-full bg-muted" />
@@ -843,7 +910,7 @@ export default function GlobalSprintsPage() {
                         }]}
                       />
                       <Button
-                        onClick={() => setShowCreateTaskModal(true)}
+                        onClick={() => { setCreateTaskSprintId(null); setShowCreateTaskModal(true); }}
                         style="ghost"
                         size="icon-xs"
                         icon={Plus}
@@ -937,7 +1004,8 @@ export default function GlobalSprintsPage() {
       {/* Create Task Modal */}
       <CreateTaskModal
         isOpen={showCreateTaskModal}
-        onClose={() => setShowCreateTaskModal(false)}
+        initialSprintId={createTaskSprintId}
+        onClose={() => { setShowCreateTaskModal(false); setCreateTaskSprintId(null); }}
         onSubmit={async (formData) => {
           if (!formData.projectId) {
             throw new Error('Будь ласка, оберіть проєкт');

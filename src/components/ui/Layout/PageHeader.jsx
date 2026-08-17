@@ -80,13 +80,23 @@ export function PageHeader({
       {/* LAYER 2 (Top): Pure frosted backdrop-blur layer to smoothly dissolve scrolling text/images */}
       <div className="absolute inset-0 z-[-1] backdrop-blur-md bg-white/20 pointer-events-none" />
 
-      {/* Row 1: Title + Actions — actions ALWAYS sit right of the title */}
-      <div className="flex w-full flex-col items-stretch justify-between gap-[8px] sm:flex-row sm:items-center sm:gap-[12px] md:gap-[16px]">
-        <h1 className="min-w-0 truncate text-[22px] font-bold tracking-tight text-ink sm:text-[24px]">
+      {/* Row 1: Title + Actions — actions ALWAYS sit right of the title, on
+          every width. They used to drop onto a second line below the title
+          under 640px, which cost a phone a whole row of vertical space and put
+          «Фільтри» and «Створити» somewhere no thumb expects them. Every action
+          that ships here either collapses to a square at `sm` or already is
+          one, so the row fits. */}
+      <div className="flex w-full items-center justify-between gap-[10px] sm:gap-[12px] md:gap-[16px]">
+        {/* A floor under the title, not `min-w-0`: with the actions on the same
+            line a wide, non-collapsing action group could squeeze the h1 to
+            nothing, and a screen with no name on it is worse than one whose
+            buttons have to scroll. Which they now can — that is what the
+            overflow on the actions row is for. */}
+        <h1 className="min-w-[92px] flex-1 truncate text-[20px] font-bold tracking-tight text-ink sm:text-[24px]">
           {title}
         </h1>
 
-        <div className="flex w-full shrink-0 items-center justify-end gap-[8px] overflow-x-auto hide-scrollbar sm:w-auto sm:overflow-visible">
+        <div className="flex min-w-0 items-center justify-end gap-[8px] overflow-x-auto hide-scrollbar">
           {tabs?.length > 0 && (
             <div className="hidden md:block">
               <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />

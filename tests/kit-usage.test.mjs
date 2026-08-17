@@ -75,7 +75,15 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     // other category was pinned at zero, so new hand-written markup simply
     // landed here and the report grew without anything objecting. It may fall
     // freely; raising it has to be a decision somebody makes on purpose.
-    nativeControls: 18,
+    //
+    // 18 → 19, on purpose: the «Ще» sheet gained a help section, and its rows
+    // are the sheet's own row — the sidebar's theme variables, the 40px height
+    // and the radius the two lists above them already use. Those two are
+    // `Link`s because they navigate; these open a dialog in place. Nothing in
+    // the kit is that row: `ListRow` is a light divided-list row with its own
+    // hover, and dressing it for a dark sheet would be the chrome override this
+    // audit exists to prevent. Marked `data-ui-control="navigation-sheet-row"`.
+    nativeControls: 19,
   };
   for (const [category, maximum] of Object.entries(maximums)) {
     assert.ok(
@@ -468,7 +476,17 @@ test('high-risk composed previews keep the product markup signatures', () => {
 
   assert.match(issueDetail, /<TaskAttributesPanel[\s\S]{0,120}context="task"/);
   assert.match(calendarEvent, /<TaskAttributesPanel[\s\S]{0,180}context="calendar"/);
-  assert.match(taskAttributes, /task: 'grid w-full grid-cols-\[repeat\(3,minmax\(0,1fr\)\)_32px\]/);
+  // The last column carries «Деталі», which is a target before it is a column:
+  // 32px wide next to a 28px condensed height is a 32×28 hit area, and a thumb
+  // misses it. 44px on a phone, unchanged from `sm` up where the label is back.
+  assert.match(taskAttributes, /task: 'grid w-full grid-cols-\[repeat\(3,minmax\(0,1fr\)\)_44px\]/);
+  assert.match(taskAttributes, /detailsButtonClass: `[^`]*max-sm:h-\[44px\]/);
+  // …and the wrapper Popover puts around that trigger has to fill the column,
+  // or the button inside is only as wide as its glyph however wide the column
+  // is. Both the product and its preview say so.
+  for (const source of [issueDetail, kit]) {
+    assert.match(source, /<Popover[\s\S]{0,600}triggerClassName="h-full w-full"/);
+  }
   assert.match(taskAttributes, /calendar: 'grid w-full grid-cols-2/);
   assert.match(taskAttributes, /compactSelectClass: 'h-\[22px\][^']*rounded-\[10px\]/);
   assert.match(kit, /getTaskAttributeChrome\(\)/);

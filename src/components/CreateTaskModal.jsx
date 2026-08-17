@@ -39,7 +39,7 @@ import {
 // asks for: the composer has no project yet, and a category has a different
 // status in every project, so the status can only be resolved once a project is
 // chosen — and again if it is changed.
-export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, initialCategory = null, initialAssignees = null }) {
+export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, initialCategory = null, initialAssignees = null, initialSprintId = null }) {
   const router = useRouter();
   const { currentUser, activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
@@ -111,7 +111,9 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     dueDate: '',
     estimateHours: '',
     projectId: projects?.[0]?.id || projectContext?.id || '',
-    sprintId: '',
+    // Планування спринтів на телефоні — це не перетягування картки, а «додати
+    // завдання сюди». Спринт, з якого відкрили діалог, уже обраний.
+    sprintId: initialSprintId || '',
   });
 
   const resetDraft = () => {
@@ -169,7 +171,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       resetDraft();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, initialAssignees, initialStatus, categoryStatusId, visibleStatuses, projects]);
+  }, [isOpen, initialAssignees, initialStatus, initialSprintId, categoryStatusId, visibleStatuses, projects]);
 
   useEffect(() => {
     if (isOpen && form.status) {

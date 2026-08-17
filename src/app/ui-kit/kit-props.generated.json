@@ -3661,14 +3661,14 @@
           "default": "''",
           "type": "string",
           "values": [],
-          "description": "Placement in the parent only — the gap under it."
+          "description": "Placement in the parent only."
         },
         {
           "name": "label",
           "default": "",
           "type": "string",
           "values": [],
-          "description": "Where it goes back to, in words: «До списку команди»."
+          "description": "Where it goes back to, in words. Read by screen readers, shown as the tooltip."
         },
         {
           "name": "onClick",

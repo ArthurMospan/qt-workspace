@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Hash, Info, Pin } from 'lucide-react';
+import { Hash, Info, Pin } from 'lucide-react';
 import IconAction from '../IconAction';
+import MobilePaneBack from '../Navigation/MobilePaneBack';
 import UserAvatar from '../DataDisplay/UserAvatar';
 import PresenceDot from '../DataDisplay/PresenceDot';
 
@@ -55,20 +56,9 @@ export default function ChatConversationHeader({
     // and correct in Firefox. Giving the bar the pane's own radius makes its
     // box the thing being rounded, so no ancestor clip is needed.
     <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 rounded-t-[var(--ui-radius-surface)] border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
-      {/* A 26px box: an 18px glyph with 4px around it, which is not on the
-          IconAction scale (20/24/28/30/32/36). Inventing a size for one caller
-          is what the variant budget exists to stop, so the geometry stays here
-          in the component that owns it — the same treatment the pinned counter
-          below gets. When Settings and Team adopt this back control, it earns a
-          shared component of its own. */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="md:hidden -ml-1 p-1 text-muted hover:text-ink transition-colors shrink-0"
-        title="До списку чатів"
-      >
-        <ArrowLeft size={18} />
-      </button>
+      {/* Settings and Team have adopted this arrow, so it is shared now — see
+          the note that used to stand here. */}
+      <MobilePaneBack onClick={onBack} label="До списку чатів" />
       {type === 'channel' ? (
         <Hash size={17} className="text-ink shrink-0" />
       ) : (

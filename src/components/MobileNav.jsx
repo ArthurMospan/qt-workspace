@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
+import { useWorkspaceHelp } from '@/components/WorkspaceHelpMenu';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
@@ -82,6 +83,10 @@ export default function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const moreDialogRef = useModalFocus({ isOpen: moreOpen, onClose: () => setMoreOpen(false) });
+  // Довідка, підтримка, новини та правові документи — той самий список, що
+  // висить на кебабі бічної рейки. Його діалоги живуть поза шторкою: шторка
+  // закривається від дотику, а діалог має лишитися на екрані.
+  const { items: helpItems, overlays: helpOverlays } = useWorkspaceHelp();
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
@@ -190,11 +195,6 @@ export default function MobileNav() {
                   <Counter value={displayedUnreadChats} size="sm" status="muted" dark />
                 </span>
               )}
-              {/* The active tab is named, not merely tinted: at 10px a colour
-                  shift alone is not a reliable signal of where you are. */}
-              {active && (
-                <span className="absolute bottom-0 h-[2px] w-[20px] rounded-t-full bg-[var(--sb-text)]" />
-              )}
             </Link>
           );
         })}
@@ -215,9 +215,6 @@ export default function MobileNav() {
             <span className="absolute top-[6px] left-[calc(50%+4px)]">
               <Counter value={otherOrgUnreadCount} size="sm" status="info" dark />
             </span>
-          )}
-          {moreActive && (
-            <span className="absolute bottom-0 h-[2px] w-[20px] rounded-t-full bg-[var(--sb-text)]" />
           )}
         </button>
       </nav>
@@ -322,9 +319,37 @@ export default function MobileNav() {
                   );
                 })}
             </div>
+
+            {/* Довідка. На десктопі вона висить на кебабі внизу рейки; на
+                телефоні рейки немає, тож підтримка, довідка, новини й правові
+                документи не мали жодного входу взагалі. */}
+            <div className="mx-[16px] border-t border-white/[0.08] my-[10px]" />
+            <p className="px-[20px] pb-[8px] text-[11px] font-bold text-[#666666] uppercase tracking-wider">
+              Довідка
+            </p>
+            <div className="flex flex-col gap-[2px] px-[8px]">
+              {helpItems.filter(item => !item.isDivider).map(({ label, icon: Icon, onClick }) => (
+                <button
+                  key={label}
+                  type="button"
+                  // The sheet's own row, wearing the sidebar theme variables the
+                  // two lists above it wear. Those are `Link`s because they go
+                  // somewhere; these open a dialog in place, which is the one
+                  // difference — so the element differs and nothing else does.
+                  data-ui-control="navigation-sheet-row"
+                  onClick={() => { setMoreOpen(false); onClick(); }}
+                  className="flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]"
+                >
+                  <Icon size={17} className="shrink-0" />
+                  <span className="text-[13px] font-medium truncate">{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
+
+      {helpOverlays}
 
       {showOrgSwitcher && <OrgSwitcherScreen onClose={() => setShowOrgSwitcher(false)} />}
     </>

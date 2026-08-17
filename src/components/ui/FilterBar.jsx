@@ -61,6 +61,13 @@ export function getFilterControlWidth(role, context = 'default') {
 // A filter counts as active when it is not on its neutral value: 'all' for a
 // single Select, an empty array for a MultiSelect. PageHeader badges the mobile
 // filters button with this count.
+//
+// Sorting is not filtering. A sort control always holds a real value — «Останні
+// оновлення» is as much a choice as any other — so counting it meant the
+// projects screen opened with «Фільтри (1)» before anyone had touched a thing,
+// and the badge stopped meaning "something here is hiding rows from you".
+const UNCOUNTED_ROLES = new Set(['sort']);
+
 export function countActiveFilters(node) {
   let count = 0;
   const walk = children => Children.forEach(children, child => {
@@ -69,6 +76,7 @@ export function countActiveFilters(node) {
       if (child.props.children) walk(child.props.children);
       return;
     }
+    if (UNCOUNTED_ROLES.has(child.props.filterRole)) return;
     const { value } = child.props;
     if (Array.isArray(value)) {
       if (value.length > 0) count += 1;

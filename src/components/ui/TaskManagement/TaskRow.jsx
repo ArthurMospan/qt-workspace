@@ -265,7 +265,12 @@ export default function TaskRow({
             made a list of ten read as ten ragged lines. The badges keep their
             natural widths — giving them a fixed track too opened a wide hole in
             front of the avatars on every row without labels. */}
-        <div className="flex flex-wrap items-center justify-end gap-x-[12px] gap-y-[6px] shrink-0 md:flex-nowrap">
+        {/* `shrink-0` is a desktop instruction. Below md the row wraps, and a
+            cluster that refuses to shrink kept its full natural width on the
+            second line — wider than the card, which clips: the sprint chip and
+            the labels were simply cut off the right edge of every row on a
+            phone. Here it takes the whole second line and wraps inside it. */}
+        <div className="flex w-full flex-wrap items-center justify-end gap-x-[12px] gap-y-[6px] md:w-auto md:shrink-0 md:flex-nowrap">
           {/* Type Badge */}
           <span className="flex min-w-0 shrink-0 items-center">
             {typeObj && (

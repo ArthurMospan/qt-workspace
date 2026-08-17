@@ -493,6 +493,7 @@
       "task-elements"
     ],
     "AttributeTrigger": [
+      "task-attributes",
       "task-elements",
       "variant-matrix"
     ],

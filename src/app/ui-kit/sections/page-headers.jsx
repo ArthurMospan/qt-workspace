@@ -5,7 +5,7 @@ import { Select, MultiSelect } from '@/components/ui/Select';
 import Tabs from '@/components/ui/Tabs';
 import FilterBar from '@/components/ui/FilterBar';
 import { PageHeader } from '@/components/ui';
-import { Plus, Settings2, List, Kanban } from 'lucide-react';
+import { Check, Plus, Settings2, List, Kanban } from 'lucide-react';
 import { PreviewBlock } from '../preview';
 import { DEFAULT_PRIORITIES } from '@/lib/hooks/useWorkflowConfig';
 import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
@@ -31,7 +31,7 @@ export default function PageHeadersSection() {
             actions={
               <div className="flex gap-2">
                 <Button onClick={() => alert('Налаштування')} icon={Settings2} size="icon-lg" style="secondary" title="Налаштування" />
-                <Button onClick={() => alert('Створити')} icon={Plus} size="lg" style="primary" color="dark">Створити завдання</Button>
+                <Button onClick={() => alert('Створити')} icon={Plus} size="lg" style="primary" color="dark" collapseAt="sm">Створити завдання</Button>
               </div>
             }
             filters={
@@ -79,7 +79,7 @@ export default function PageHeadersSection() {
           <PageHeader
             title="Профіль учасника"
             actions={
-              <Button onClick={() => alert('Зберегти')} style="primary" color="dark" size="lg">Зберегти профіль</Button>
+              <Button onClick={() => alert('Зберегти')} style="primary" color="dark" size="lg" icon={Check} collapseAt="sm">Зберегти профіль</Button>
             }
           />
         </div>
@@ -116,7 +116,7 @@ export default function PageHeadersSection() {
               activeTab={tab2}
               onTabChange={setTab2}
               actions={
-                <Button onClick={() => alert('Створити проєкт')} style="primary" color="dark" size="lg" icon={Plus}>Новий проєкт</Button>
+                <Button onClick={() => alert('Створити проєкт')} style="primary" color="dark" size="lg" icon={Plus} collapseAt="sm">Новий проєкт</Button>
               }
             />
           </div>
