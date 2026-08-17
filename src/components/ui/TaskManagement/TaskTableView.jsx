@@ -26,8 +26,11 @@ import {
   CheckSquare,
   ChevronDown,
   ChevronRight,
+  Columns3,
   Lock,
+  Minus,
   MoreVertical,
+  Rows3,
 } from 'lucide-react';
 import { CalendarIcon, TaskIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
@@ -68,6 +71,8 @@ import {
   memberId,
   memberName,
   nextTaskTableSort,
+  PINNED_TASK_TABLE_COLUMNS,
+  TASK_TABLE_COLUMNS,
   taskTableContext,
   taskTableSections,
   UNGROUPED_SECTION_ID,
@@ -78,6 +83,13 @@ import {
 // number lives here rather than being written into three class strings.
 const SELECT_COLUMN_WIDTH = 40;
 const ALIGNMENT = { left: 'text-left', right: 'text-right', center: 'text-center' };
+
+// The header's rule is a shadow, not a border. `border-collapse` hands a
+// cell's border to the table, and a table does not scroll with a sticky cell —
+// so the line under a pinned header vanished the moment anybody scrolled. The
+// grey is the other half of it: a white header over white rows had nothing but
+// that missing line to separate them.
+const HEADER_CELL = 'sticky top-0 bg-canvas px-[10px] py-[7px] shadow-[inset_0_-1px_0_var(--color-line)]';
 
 function formatDay(value, timeZone) {
   const date = parseDueDate(value, { timeZone });
@@ -140,6 +152,7 @@ function TextCellEditor({ value, type = 'text', suffix, ariaLabel, onCommit, onC
     <div ref={hostRef} className="w-full">
       <Input
         size="sm"
+        composition="table-cell"
         type={type}
         suffix={suffix}
         value={draft}
@@ -169,6 +182,7 @@ function ChoiceCellEditor({ value, options, placeholder, ariaLabel, onCommit }) 
     <div ref={hostRef} className="w-full">
       <Select
         size="sm"
+        composition="table-cell"
         value={value ?? ''}
         options={options}
         placeholder={placeholder}
@@ -186,6 +200,7 @@ function MultiCellEditor({ value, options, placeholder, searchPlaceholder, ariaL
     <div ref={hostRef} className="w-full">
       <MultiSelect
         size="sm"
+        composition="table-cell"
         value={value}
         options={options}
         placeholder={placeholder}
@@ -205,6 +220,7 @@ function DateCellEditor({ value, ariaLabel, onCommit }) {
     <div ref={hostRef} className="w-full">
       <DatePicker
         size="sm"
+        composition="table-cell"
         compact
         value={value || ''}
         aria-label={ariaLabel}
@@ -232,6 +248,9 @@ function DateCellEditor({ value, ariaLabel, onCommit }) {
  * @param {'asc'|'desc'} props.dir Direction of that sort.
  * @param {string} props.group What a band is: a status, an assignee, a priority, a type, a sprint — or nothing.
  * @param {(next: {sort: string, dir: string}) => void} props.onSortChange Fires when a column header is clicked.
+ * @param {(group: string) => void} props.onGroupChange Fires from a column's own menu. Omit to hide the grouping control.
+ * @param {(columnId: string) => void} props.onColumnsChange Toggles one column on or off. Omit to hide the columns control.
+ * @param {(issue: object) => void} props.onOpenIssue Opens a task for reading — the quick modal. Falls back to a link to its page.
  * @param {string[]} props.hiddenGroupIds Statuses the project folds into «Приховані».
  * @param {string} props.activeTimerIssueId The task whose timer is running, if any.
  * @param {(issueId: string, patch: object) => Promise<unknown>} props.onUpdateIssue Saves one cell. Omit to make the table read-only.
@@ -255,6 +274,9 @@ export default function TaskTableView({
   dir = 'asc',
   group = 'status',
   onSortChange,
+  onGroupChange,
+  onColumnsChange,
+  onOpenIssue,
   hiddenGroupIds = [],
   activeTimerIssueId,
   onUpdateIssue,
@@ -443,20 +465,33 @@ export default function TaskTableView({
     switch (column.id) {
       case 'key': {
         const path = issuePath(issue, project || projectId);
+        const identity = issue.issueKey || '—';
+        const identityClass = 'truncate font-mono text-[11px] font-bold text-muted hover:text-ink hover:underline';
         return (
           <span className="flex items-center gap-[5px]">
-            {path ? (
+            {/* Reading a task and leaving the table are two different things. In
+                a grid you are working down, the first one wins: the id opens the
+                quick modal, which has its own «на повній сторінці». Without a
+                handler it stays the plain link it was. */}
+            {onOpenIssue ? (
+              <button
+                type="button"
+                onClick={event => { event.stopPropagation(); onOpenIssue(issue); }}
+                title={`Переглянути ${identity}`}
+                className={identityClass}
+              >
+                {identity}
+              </button>
+            ) : path ? (
               <Link
                 href={path}
                 onClick={event => event.stopPropagation()}
-                className="truncate font-mono text-[11px] font-bold text-muted hover:text-ink hover:underline"
+                className={identityClass}
               >
-                {issue.issueKey || '—'}
+                {identity}
               </Link>
             ) : (
-              <span className="truncate font-mono text-[11px] font-bold text-muted">
-                {issue.issueKey || '—'}
-              </span>
+              <span className="truncate font-mono text-[11px] font-bold text-muted">{identity}</span>
             )}
             {activeTimerIssueId === issue.id && (
               <span
@@ -705,33 +740,69 @@ export default function TaskTableView({
     const active = sort === column.id;
     const Arrow = dir === 'desc' ? ArrowDown : ArrowUp;
     const pinned = column.pinned;
+    const grouped = column.group && column.group === group;
     return (
       <th
         key={column.id}
         scope="col"
         aria-sort={active ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'}
         style={pinned ? { left: pinnedOffsets[column.id] } : undefined}
-        className={`sticky top-0 border-b border-line bg-white px-[10px] py-[7px] ${ALIGNMENT[column.align]} ${
+        className={`${HEADER_CELL} ${ALIGNMENT[column.align]} ${
           pinned
-            ? `z-[3] ${column.id === 'title' ? 'md:sticky' : 'sticky'} ${column.id === 'title' ? 'md:border-r md:border-line' : ''}`
+            ? `z-[3] ${column.id === 'title' ? 'md:sticky' : 'sticky'}`
             : 'z-[2]'
         }`}
       >
-        {column.sortable && onSortChange ? (
-          <button
-            type="button"
-            onClick={() => onSortChange(nextTaskTableSort(column.id, { sort, dir }))}
-            title={active ? 'Змінити напрям сортування' : `Сортувати за: ${column.label}`}
-            className={`ui-type-eyebrow inline-flex max-w-full items-center gap-[4px] uppercase tracking-wide transition-colors hover:text-ink ${
-              active ? 'text-ink' : 'text-muted'
-            } ${column.align === 'right' ? 'flex-row-reverse' : ''}`}
-          >
-            <span className="truncate">{column.label}</span>
-            {active && <Arrow size={11} strokeWidth={3} className="shrink-0" />}
-          </button>
-        ) : (
-          <span className="ui-type-eyebrow uppercase tracking-wide text-muted">{column.label}</span>
-        )}
+        <span className={`group/head flex min-w-0 items-center gap-[2px] ${column.align === 'right' ? 'justify-end' : ''}`}>
+          {column.sortable && onSortChange ? (
+            <button
+              type="button"
+              onClick={() => onSortChange(nextTaskTableSort(column.id, { sort, dir }))}
+              title={active ? 'Змінити напрям сортування' : `Сортувати за: ${column.label}`}
+              className={`ui-type-eyebrow inline-flex min-w-0 items-center gap-[4px] uppercase tracking-wide transition-colors hover:text-ink ${
+                active ? 'text-ink' : 'text-muted'
+              } ${column.align === 'right' ? 'flex-row-reverse' : ''}`}
+            >
+              <span className="truncate">{column.label}</span>
+              {active && <Arrow size={11} strokeWidth={3} className="shrink-0" />}
+            </button>
+          ) : (
+            <span className="ui-type-eyebrow truncate uppercase tracking-wide text-muted">{column.label}</span>
+          )}
+          {/* Grouping belongs to the column it groups by. It used to be a select
+              beside the filters, where a choice that hides nothing sat among the
+              controls that do. The chevron shows on hover, and stays put while
+              this column is the one banding the table. */}
+          {column.group && onGroupChange && (
+            <ContextMenu
+              align="start"
+              className={grouped ? '' : 'opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100'}
+              trigger={(
+                <Button
+                  style="ghost"
+                  size="icon-xs"
+                  icon={grouped ? Rows3 : ChevronDown}
+                  aria-label={`Групування за колонкою ${column.label}`}
+                  title={grouped ? 'Таблиця згрупована за цією колонкою' : 'Групувати за цією колонкою'}
+                />
+              )}
+              items={[
+                {
+                  label: 'Групувати за цією колонкою',
+                  icon: Rows3,
+                  selected: Boolean(grouped),
+                  onClick: () => onGroupChange(column.group),
+                },
+                {
+                  label: 'Без групування',
+                  icon: Minus,
+                  selected: group === 'none',
+                  onClick: () => onGroupChange('none'),
+                },
+              ]}
+            />
+          )}
+        </span>
       </th>
     );
   };
@@ -741,8 +812,10 @@ export default function TaskTableView({
       {/* The table owns its own scrolling in both directions. A sticky header
           and a pinned identity column stick to the nearest scroll container, so
           letting the page scroll instead would leave both of them behind. */}
+      {/* The tighter radius: a table is a grid of straight lines, and a 16px
+          corner on it reads as a card that happens to contain one. */}
       <Surface
-        preset="bordered-card"
+        preset="compact-bordered-card"
         padding="none"
         className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
       >
@@ -759,11 +832,33 @@ export default function TaskTableView({
             </colgroup>
             <thead>
               <tr>
-                <th
-                  scope="col"
-                  className="sticky left-0 top-0 z-[4] border-b border-line bg-white px-[10px] py-[7px]"
-                >
-                  <span className="sr-only">Вибір</span>
+                {/* The corner cell. Which columns are on is a fact about this
+                    table, so it is reached from the table — not from the row of
+                    filters, where it sat looking like something that hides
+                    rows. Pinned left, so scrolling sideways never loses it. */}
+                <th scope="col" className={`${HEADER_CELL} left-0 z-[4] !px-[8px]`}>
+                  {onColumnsChange ? (
+                    <ContextMenu
+                      closeOnSelect={false}
+                      align="start"
+                      trigger={(
+                        <Button
+                          style="ghost"
+                          size="icon-xs"
+                          icon={Columns3}
+                          aria-label="Які колонки показувати"
+                          title="Які колонки показувати"
+                        />
+                      )}
+                      items={TASK_TABLE_COLUMNS
+                        .filter(column => !PINNED_TASK_TABLE_COLUMNS.includes(column.id))
+                        .map(column => ({
+                          label: column.label,
+                          selected: visibleColumns.some(visible => visible.id === column.id),
+                          onClick: () => onColumnsChange(column.id),
+                        }))}
+                    />
+                  ) : <span className="sr-only">Вибір</span>}
                 </th>
                 {visibleColumns.map(headerCell)}
               </tr>

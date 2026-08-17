@@ -12,6 +12,13 @@ export default function TaskCRMSection() {
   // The catalogue holds the table's arrangement the same way the address does
   // in the product: the component never keeps a copy of it.
   const [tableSort, setTableSort] = useState({ sort: 'manual', dir: 'asc' });
+  const [tableGroup, setTableGroup] = useState('status');
+  const [tableColumns, setTableColumns] = useState(['key', 'title', 'status', 'assignees', 'priority', 'due']);
+  const toggleTableColumn = columnId => setTableColumns(current => (
+    current.includes(columnId)
+      ? current.filter(id => id !== columnId)
+      : [...current, columnId]
+  ));
   const { statuses } = useWorkflowConfig();
   const firstStatusId = statuses[0]?.id || DEFAULT_STATUSES[0].id;
   const secondStatusId = statuses[1]?.id || firstStatusId;
@@ -264,7 +271,7 @@ export default function TaskCRMSection() {
 
       <PreviewBlock
         title="Task Table View — таблиця з редагуванням у клітинці"
-        description="Третє прочитання тих самих задач. Заголовок і колонка з ключем та назвою примерзають до свого контейнера прокрутки, тому таблиця скролиться всередині себе, а не разом зі сторінкою. Клік по заголовку колонки: ▲ → ▼ → назад до порядку дошки. Клік по клітинці відкриває той самий kit-контрол, що і всюди — Select, MultiSelect, DatePicker, Input — і рівно один за раз: контрол, залишений змонтованим у кожній клітинці, повісив би по одному слухачу документа на клітинку. Ключ лишається посиланням, бо відкрити задачу й перейменувати її — різні наміри."
+        description="Третє прочитання тих самих задач. Шапка сіра з лінією-тінню — межа клітинки при border-collapse належить таблиці й не їде разом із примерзлою шапкою, тому лінія зникала при скролі. Колонка ID і назва примерзають ліворуч. Клік по заголовку: ▲ → ▼ → назад до порядку дошки; шеврон поруч (видно на наведенні) групує саме за цією колонкою — групування належить колонці, а не рядку фільтрів. Іконка в кутовій клітинці вмикає колонки. Клітинка відкриває той самий kit-контрол, що і всюди, з композицією table-cell, щоб рядок не підстрибував; рівно один за раз — контрол у кожній клітинці повісив би по слухачу документа на клітинку. Клік по ID відкриває модалку швидкого перегляду."
         filePath="src/components/ui/TaskManagement/TaskTableView.jsx"
         component="TaskTableView"
         fullWidth
@@ -277,9 +284,14 @@ export default function TaskCRMSection() {
             labels={demoLabels}
             sprints={demoSprints}
             projectId="ui-kit-project"
+            columns={tableColumns}
             sort={tableSort.sort}
             dir={tableSort.dir}
+            group={tableGroup}
             onSortChange={setTableSort}
+            onGroupChange={setTableGroup}
+            onColumnsChange={toggleTableColumn}
+            onOpenIssue={() => {}}
             hiddenGroupIds={[lastStatusId]}
             onUpdateIssue={async () => {}}
             onBulkUpdate={() => {}}

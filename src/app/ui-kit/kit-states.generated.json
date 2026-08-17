@@ -418,7 +418,7 @@
     },
     "TaskTableView": {
       "hover": "own",
-      "focus": "global",
+      "focus": "own",
       "long-text": "placeholder"
     },
     "TextAction": {

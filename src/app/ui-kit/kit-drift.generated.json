@@ -9,11 +9,11 @@
   },
   "totals": {
     "componentsWithVariants": 44,
-    "declaredValues": 367,
+    "declaredValues": 368,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 229,
+    "usedAndPreviewed": 228,
     "usedWithoutPreview": 0,
     "declaredUnused": 106
   },
@@ -313,12 +313,6 @@
     {
       "component": "MultiSelect",
       "prop": "filterRole",
-      "value": "group",
-      "namespace": null
-    },
-    {
-      "component": "MultiSelect",
-      "prop": "filterRole",
       "value": "member",
       "namespace": null
     },
@@ -601,6 +595,12 @@
     {
       "component": "Surface",
       "prop": "preset",
+      "value": "bordered-card",
+      "namespace": null
+    },
+    {
+      "component": "Surface",
+      "prop": "preset",
       "value": "compact-bordered-panel",
       "namespace": null
     },
@@ -717,6 +717,7 @@
         "sidebar-help-action",
         "status-entry",
         "status-submit",
+        "table-cell",
         "workspace-guard"
       ]
     },
@@ -773,6 +774,7 @@
         "sidebar-help-action",
         "status-entry",
         "status-submit",
+        "table-cell",
         "workspace-guard"
       ]
     },
@@ -796,6 +798,7 @@
         "settings-row-action",
         "status-entry",
         "status-submit",
+        "table-cell",
         "workspace-guard"
       ],
       "preset": [
@@ -824,7 +827,6 @@
       ],
       "filterRole": [
         "date",
-        "group",
         "member",
         "priority",
         "project",
@@ -847,7 +849,6 @@
       ],
       "filterRole": [
         "date",
-        "group",
         "member",
         "priority",
         "project",
@@ -1305,18 +1306,16 @@
     "Button.style.secondary": 67,
     "Button.style.primary": 42,
     "Select.filterRole.sprint": 2,
-    "Select.variant.ghost": 24,
+    "Select.variant.ghost": 23,
     "Select.filterRole.member": 7,
     "Select.filterRole.priority": 5,
     "Select.filterRole.type": 7,
-    "Select.filterRole.group": 1,
-    "Button.style.ghost": 78,
-    "Button.size.md": 55,
     "Card.preset.borderless": 22,
     "Card.padding.lg": 17,
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
+    "Button.style.ghost": 79,
     "Button.size.icon-sm": 21,
     "Button.size.sm": 46,
     "Button.size.icon": 22,
@@ -1344,8 +1343,9 @@
     "IconAction.appearance.quiet-danger": 3,
     "IconAction.composition.chat-micro-action": 4,
     "Dialog.size.md": 6,
+    "Button.size.md": 54,
     "SidebarLayout.context.chat": 1,
-    "Button.size.icon-xs": 20,
+    "Button.size.icon-xs": 22,
     "Dialog.titleContext.dialog": 5,
     "Dialog.size.sm": 12,
     "Dialog.presentation.sheet": 1,
@@ -1470,7 +1470,7 @@
     "Input.composition.duration-minutes": 3,
     "Input.composition.metric-text": 1,
     "MarkdownViewer.size.lg": 1,
-    "Surface.preset.compact-bordered-card": 1,
+    "Surface.preset.compact-bordered-card": 2,
     "Button.composition.inline-add-action": 3,
     "EmptyState.context.flexible": 2,
     "Input.composition.duration-compact-hours": 1,
@@ -1522,8 +1522,8 @@
     "Select.size.sm": 7,
     "Input.composition.project-name": 1,
     "Textarea.composition.project-description": 1,
-    "MultiSelect.size.sm": 1,
-    "Surface.preset.bordered-card": 1
+    "Input.composition.table-cell": 1,
+    "MultiSelect.size.sm": 1
   },
   "previewedValues": [
     "Alert.variant.danger",
@@ -1566,6 +1566,7 @@
     "Button.composition.sidebar-help-action",
     "Button.composition.status-entry",
     "Button.composition.status-submit",
+    "Button.composition.table-cell",
     "Button.composition.workspace-guard",
     "Button.shape.circle",
     "Button.shape.compact",
@@ -1695,6 +1696,7 @@
     "IconAction.composition.sidebar-help-action",
     "IconAction.composition.status-entry",
     "IconAction.composition.status-submit",
+    "IconAction.composition.table-cell",
     "IconAction.composition.workspace-guard",
     "IconAction.shape.circle",
     "IconAction.shape.compact",
@@ -1721,6 +1723,7 @@
     "Input.composition.settings-row-action",
     "Input.composition.status-entry",
     "Input.composition.status-submit",
+    "Input.composition.table-cell",
     "Input.composition.workspace-guard",
     "Input.preset.money",
     "Input.size.lg",
@@ -1741,7 +1744,6 @@
     "Meter.tone.neutral",
     "Meter.tone.warning",
     "MultiSelect.filterRole.date",
-    "MultiSelect.filterRole.group",
     "MultiSelect.filterRole.member",
     "MultiSelect.filterRole.priority",
     "MultiSelect.filterRole.project",
@@ -1795,7 +1797,6 @@
     "Segmented.surface.canvas",
     "Segmented.surface.transparent",
     "Select.filterRole.date",
-    "Select.filterRole.group",
     "Select.filterRole.member",
     "Select.filterRole.priority",
     "Select.filterRole.project",

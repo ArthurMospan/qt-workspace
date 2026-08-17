@@ -22,23 +22,26 @@ import { NO_PRIORITY_ID } from './priorities.mjs';
 // `pinned` columns stay put while the rest scroll sideways, and cannot be
 // switched off — a row you cannot identify is not a row.
 // `editor` names the control a cell opens; `null` is a value you can only read.
+// `group` is the banding this column can produce, and it is what puts the
+// grouping choice on the column it is about rather than in a control beside the
+// filters, where it looked like a filter and was not one.
 
 const COLUMNS = [
-  { id: 'key', label: 'Ключ', width: 96, align: 'left', pinned: true, sortable: true, editor: null },
-  { id: 'title', label: 'Назва', width: 320, align: 'left', pinned: true, sortable: true, editor: 'text' },
-  { id: 'status', label: 'Статус', width: 150, align: 'left', pinned: false, sortable: true, editor: 'status' },
-  { id: 'assignees', label: 'Виконавці', width: 156, align: 'left', pinned: false, sortable: true, editor: 'assignees' },
-  { id: 'priority', label: 'Пріоритет', width: 148, align: 'left', pinned: false, sortable: true, editor: 'priority' },
-  { id: 'due', label: 'Дедлайн', width: 132, align: 'left', pinned: false, sortable: true, editor: 'due' },
-  { id: 'type', label: 'Тип', width: 136, align: 'left', pinned: false, sortable: true, editor: 'type' },
-  { id: 'sprint', label: 'Спринт', width: 148, align: 'left', pinned: false, sortable: true, editor: 'sprint' },
-  { id: 'labels', label: 'Мітки', width: 180, align: 'left', pinned: false, sortable: false, editor: 'labels' },
-  { id: 'estimate', label: 'Оцінка', width: 104, align: 'right', pinned: false, sortable: true, editor: 'estimate' },
-  { id: 'checklist', label: 'Чекліст', width: 104, align: 'right', pinned: false, sortable: true, editor: null },
-  { id: 'comments', label: 'Коментарі', width: 112, align: 'right', pinned: false, sortable: true, editor: null },
-  { id: 'blocked', label: 'Блокування', width: 128, align: 'left', pinned: false, sortable: true, editor: null },
-  { id: 'created', label: 'Створено', width: 116, align: 'left', pinned: false, sortable: true, editor: null },
-  { id: 'updated', label: 'Оновлено', width: 116, align: 'left', pinned: false, sortable: true, editor: null },
+  { id: 'key', label: 'ID', width: 96, align: 'left', pinned: true, sortable: true, editor: null, group: '' },
+  { id: 'title', label: 'Назва', width: 320, align: 'left', pinned: true, sortable: true, editor: 'text', group: '' },
+  { id: 'status', label: 'Статус', width: 150, align: 'left', pinned: false, sortable: true, editor: 'status', group: 'status' },
+  { id: 'assignees', label: 'Виконавці', width: 156, align: 'left', pinned: false, sortable: true, editor: 'assignees', group: 'assignee' },
+  { id: 'priority', label: 'Пріоритет', width: 148, align: 'left', pinned: false, sortable: true, editor: 'priority', group: 'priority' },
+  { id: 'due', label: 'Дедлайн', width: 132, align: 'left', pinned: false, sortable: true, editor: 'due', group: '' },
+  { id: 'type', label: 'Тип', width: 136, align: 'left', pinned: false, sortable: true, editor: 'type', group: 'type' },
+  { id: 'sprint', label: 'Спринт', width: 148, align: 'left', pinned: false, sortable: true, editor: 'sprint', group: 'sprint' },
+  { id: 'labels', label: 'Мітки', width: 180, align: 'left', pinned: false, sortable: false, editor: 'labels', group: '' },
+  { id: 'estimate', label: 'Оцінка', width: 104, align: 'right', pinned: false, sortable: true, editor: 'estimate', group: '' },
+  { id: 'checklist', label: 'Чекліст', width: 104, align: 'right', pinned: false, sortable: true, editor: null, group: '' },
+  { id: 'comments', label: 'Коментарі', width: 112, align: 'right', pinned: false, sortable: true, editor: null, group: '' },
+  { id: 'blocked', label: 'Блокування', width: 128, align: 'left', pinned: false, sortable: true, editor: null, group: '' },
+  { id: 'created', label: 'Створено', width: 116, align: 'left', pinned: false, sortable: true, editor: null, group: '' },
+  { id: 'updated', label: 'Оновлено', width: 116, align: 'left', pinned: false, sortable: true, editor: null, group: '' },
 ];
 
 export const TASK_TABLE_COLUMNS = Object.freeze(COLUMNS.map(column => Object.freeze({ ...column })));
@@ -78,6 +81,22 @@ const COLUMN_BY_ID = new Map(TASK_TABLE_COLUMNS.map(column => [column.id, column
 
 export function taskTableColumn(columnId) {
   return COLUMN_BY_ID.get(columnId) || null;
+}
+
+/**
+ * The banding a column can produce, or `''` when it cannot band anything.
+ *
+ * Grouping used to be a select beside the filters, which put a choice about one
+ * column somewhere that looked like it hid rows. It belongs on the column.
+ */
+export function taskTableGroupForColumn(columnId) {
+  return COLUMN_BY_ID.get(columnId)?.group || '';
+}
+
+/** Which column, if any, is producing the current banding. */
+export function taskTableColumnForGroup(group) {
+  if (!group || group === 'none') return '';
+  return TASK_TABLE_COLUMNS.find(column => column.group === group)?.id || '';
 }
 
 /**

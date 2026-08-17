@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 111,
-    "props": 823,
-    "documentedProps": 823,
+    "props": 826,
+    "documentedProps": 826,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -561,6 +561,7 @@
             "sidebar-help-action",
             "status-entry",
             "status-submit",
+            "table-cell",
             "workspace-guard"
           ],
           "description": "Named size contract for a specific place, resolved in globals.css."
@@ -2914,6 +2915,7 @@
             "settings-row-action",
             "status-entry",
             "status-submit",
+            "table-cell",
             "workspace-guard"
           ],
           "description": "Named size contract for a specific place, resolved in globals.css."
@@ -3745,7 +3747,6 @@
           "type": "string",
           "values": [
             "date",
-            "group",
             "member",
             "priority",
             "project",
@@ -4759,7 +4760,6 @@
           "type": "string",
           "values": [
             "date",
-            "group",
             "member",
             "priority",
             "project",
@@ -6053,6 +6053,27 @@
           "type": "(action: string, value: unknown, issues: object[]) => Promise<unknown>",
           "values": [],
           "description": "Applies one bulk action to the selected rows."
+        },
+        {
+          "name": "onColumnsChange",
+          "default": "",
+          "type": "(columnId: string) => void",
+          "values": [],
+          "description": "Toggles one column on or off. Omit to hide the columns control."
+        },
+        {
+          "name": "onGroupChange",
+          "default": "",
+          "type": "(group: string) => void",
+          "values": [],
+          "description": "Fires from a column's own menu. Omit to hide the grouping control."
+        },
+        {
+          "name": "onOpenIssue",
+          "default": "",
+          "type": "(issue: object) => void",
+          "values": [],
+          "description": "Opens a task for reading — the quick modal. Falls back to a link to its page."
         },
         {
           "name": "onSortChange",

@@ -424,7 +424,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:317",
+      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },

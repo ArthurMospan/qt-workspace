@@ -14,10 +14,10 @@ import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
-import { ContextMenu, PageHeader, Pill, TaskListView, TaskTableView, Tabs } from '@/components/ui';
+import { PageHeader, Pill, TaskListView, TaskTableView, Tabs } from '@/components/ui';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
-import { LayoutGrid, BarChart2, Columns3, Plus, Settings2, List, Plug, Kanban, Table2 } from 'lucide-react';
+import { LayoutGrid, BarChart2, Plus, Settings2, List, Plug, Kanban, Table2 } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -34,13 +34,8 @@ import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mj
 import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { useViewState } from '@/lib/hooks/useViewState';
 import { BOARD_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
-import {
-  PINNED_TASK_TABLE_COLUMNS,
-  serializeTaskTableColumns,
-  TASK_TABLE_COLUMNS,
-  TASK_TABLE_GROUPS,
-  visibleTaskTableColumns,
-} from '@/lib/utils/taskTable.mjs';
+import { serializeTaskTableColumns, visibleTaskTableColumns } from '@/lib/utils/taskTable.mjs';
+import IssueModal from '@/components/workspace/IssueModal';
 
 const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
@@ -165,6 +160,10 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
 
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  // Reading a task while working down a table is not the same errand as leaving
+  // for its page. The modal is the reading; it carries its own «на повній
+  // сторінці» for when the errand changes.
+  const [quickViewIssue, setQuickViewIssue] = useState(null);
 
   const activeSprints = sprints.filter(s => s.status === 'active');
   const boardIssues = issues.filter(i => {
@@ -452,46 +451,6 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                   variant="ghost"
                 />
               </FilterBar>
-              {/* The table's own arrangement. Grouping and columns hide nothing,
-                  so they are not filters and are never counted into the mobile
-                  «Фільтри» badge — but they do travel into that dialog, because
-                  a phone has nowhere else to put them. */}
-              {boardView === 'table' && (
-                <FilterBar>
-                  <Select
-                    filterRole="group"
-                    ariaLabel="Групування рядків таблиці"
-                    value={tableGroup}
-                    onChange={value => setBoardViewState({ group: value })}
-                    options={TASK_TABLE_GROUPS.map(group => ({
-                      value: group.id,
-                      label: group.label,
-                    }))}
-                    variant="ghost"
-                  />
-                  <ContextMenu
-                    closeOnSelect={false}
-                    align="start"
-                    trigger={(
-                      <Button
-                        style="ghost"
-                        size="md"
-                        icon={Columns3}
-                        title="Які колонки показувати"
-                      >
-                        Колонки
-                      </Button>
-                    )}
-                    items={TASK_TABLE_COLUMNS
-                      .filter(column => !PINNED_TASK_TABLE_COLUMNS.includes(column.id))
-                      .map(column => ({
-                        label: column.label,
-                        selected: visibleTableColumnIds.includes(column.id),
-                        onClick: () => toggleTableColumn(column.id),
-                      }))}
-                  />
-                </FilterBar>
-              )}
               <div className="ml-auto flex items-center gap-2 max-md:hidden">
                 <Tabs
                   tabs={BOARD_VIEW_TABS}
@@ -572,6 +531,9 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               dir={tableSortDirection}
               group={tableGroup}
               onSortChange={setTableSort}
+              onGroupChange={value => setBoardViewState({ group: value })}
+              onColumnsChange={toggleTableColumn}
+              onOpenIssue={setQuickViewIssue}
               hiddenGroupIds={project?.hiddenColumns || []}
               activeTimerIssueId={activeTimer?.issueId}
               // An archived project is read-only: its cells open nothing.
@@ -619,6 +581,10 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
           onDelete={handleDeleteProject}
           onClose={() => setShowConfigModal(false)}
         />
+      )}
+
+      {quickViewIssue && (
+        <IssueModal issue={quickViewIssue} onClose={() => setQuickViewIssue(null)} />
       )}
 
       <CreateTaskModal

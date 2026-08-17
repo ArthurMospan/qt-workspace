@@ -8,7 +8,6 @@ import {
   CircleDot,
   Flag,
   Folder,
-  Rows3,
   Search,
   Shapes,
   Users,
@@ -43,7 +42,6 @@ const FILTER_ROLE_ICONS = {
   member: Users,
   project: Folder,
   sort: ArrowUpDown,
-  group: Rows3,
 };
 
 function OptionIdentity({ option, size = 14 }) {
