@@ -74,10 +74,40 @@ Shipped schemas: `BOARD_VIEW_SCHEMA`, `MY_TASKS_VIEW_SCHEMA`,
   with a different vocabulary — periods and a date anchor — and converting them
   is a separate change.
 
+## The table view
+
+The board's `view` key was the extension point for further readings of the same
+tasks, and the table is the first one to use it: `view=table` sits beside
+`kanban` and `list`, with four keys of its own.
+
+| key | default | what it says |
+| --- | --- | --- |
+| `group` | `status` | What a band is: `none`, `status`, `assignee`, `priority`, `type`, `sprint` |
+| `sort` | `manual` | Which column orders the rows; `manual` is the board's own order |
+| `dir` | `asc` | Direction of that sort |
+| `cols` | *(empty)* | Which columns are on; empty means the default six |
+
+Their accepted values come from `src/lib/utils/taskTable.mjs` rather than being
+typed into the schema, so adding a column adds a sortable value to the address
+in the same change. `taskTable.mjs` also owns the sorting comparators and the
+grouping, and is covered by `tests/task-table.test.mjs`; the component in
+`src/components/ui/TaskManagement/TaskTableView.jsx` renders what those
+functions return and holds none of it.
+
+Four consequences worth stating:
+
+- **The keys stay declared while the kanban is showing.** They belong to the
+  screen, not to one of its modes, so switching to the board and back does not
+  throw away the columns you chose.
+- **`cols` is empty for the default set, not a list of six.** Rule 1 again: an
+  untouched table is `?view=table` and nothing else.
+- **Column order is not in the address.** `cols` is a set; the table always
+  draws the canonical order. What you send somebody is which columns, not a
+  layout.
+- **The table adds no reads.** It arranges the tasks the board already loaded.
+  Sorting and grouping are pure functions over that array, and an edited cell
+  goes back through `updateIssue` — the same path a drag on the board takes.
+
 ## Extending it
 
-Add a key to a schema; there is nothing else to register. In particular the
-board's `view` key is the extension point for further readings of the same
-tasks: adding a table view means adding its value to `BOARD_VIEW_SCHEMA.view.values`
-and the columns/sort/grouping keys beside it, so a link to a configured table
-works the same way a link to a filtered board already does.
+Add a key to a schema; there is nothing else to register.

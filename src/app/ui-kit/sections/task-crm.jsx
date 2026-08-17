@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Button, StatusTransitionPicker, TaskCounters, TaskIdentity, TaskListCard, TaskListView } from '@/components/ui';
+import { Button, StatusTransitionPicker, TaskCounters, TaskIdentity, TaskListCard, TaskListView, TaskTableView } from '@/components/ui';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import { DEFAULT_STATUSES, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -9,6 +9,9 @@ import { PreviewBlock } from '../preview';
 
 export default function TaskCRMSection() {
   const [statusPickerOpen, setStatusPickerOpen] = useState(false);
+  // The catalogue holds the table's arrangement the same way the address does
+  // in the product: the component never keeps a copy of it.
+  const [tableSort, setTableSort] = useState({ sort: 'manual', dir: 'asc' });
   const { statuses } = useWorkflowConfig();
   const firstStatusId = statuses[0]?.id || DEFAULT_STATUSES[0].id;
   const secondStatusId = statuses[1]?.id || firstStatusId;
@@ -257,6 +260,55 @@ export default function TaskCRMSection() {
           onBulkUpdate={() => {}}
           canArchive
         />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Task Table View — таблиця з редагуванням у клітинці"
+        description="Третє прочитання тих самих задач. Заголовок і колонка з ключем та назвою примерзають до свого контейнера прокрутки, тому таблиця скролиться всередині себе, а не разом зі сторінкою. Клік по заголовку колонки: ▲ → ▼ → назад до порядку дошки. Клік по клітинці відкриває той самий kit-контрол, що і всюди — Select, MultiSelect, DatePicker, Input — і рівно один за раз: контрол, залишений змонтованим у кожній клітинці, повісив би по одному слухачу документа на клітинку. Ключ лишається посиланням, бо відкрити задачу й перейменувати її — різні наміри."
+        filePath="src/components/ui/TaskManagement/TaskTableView.jsx"
+        component="TaskTableView"
+        fullWidth
+      >
+        <div className="h-[420px] min-w-0">
+          <TaskTableView
+            issues={demoIssues}
+            allIssues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
+            projectId="ui-kit-project"
+            sort={tableSort.sort}
+            dir={tableSort.dir}
+            onSortChange={setTableSort}
+            hiddenGroupIds={[lastStatusId]}
+            onUpdateIssue={async () => {}}
+            onBulkUpdate={() => {}}
+            canArchive
+          />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Task Table View — без групування, свій набір колонок"
+        description="group=&quot;none&quot; знімає смуги й лишає одне полотно — вигляд для масової чистки беклогу. columns задає видимі колонки; «Ключ» і «Назву» вимкнути не можна, бо рядок, який неможливо впізнати, — не рядок. Порядок колонок канонічний, а не той, у якому їх перелічили: у посиланні їде набір, а не розкладка. Таблиця без права на запис (архівний проєкт) просто не відкриває клітинок."
+        filePath="src/components/ui/TaskManagement/TaskTableView.jsx"
+        fullWidth
+      >
+        <div className="h-[340px] min-w-0">
+          <TaskTableView
+            issues={demoIssues}
+            allIssues={demoIssues}
+            members={demoMembers}
+            labels={demoLabels}
+            sprints={demoSprints}
+            projectId="ui-kit-project"
+            group="none"
+            sort="priority"
+            dir="asc"
+            columns={['type', 'title', 'labels', 'estimate', 'checklist', 'due']}
+            onSortChange={() => {}}
+          />
+        </div>
       </PreviewBlock>
 
       <PreviewBlock

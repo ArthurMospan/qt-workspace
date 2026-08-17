@@ -18,6 +18,12 @@
  * `new` and `member` survive a filter change untouched.
  */
 
+import {
+  TASK_TABLE_GROUP_VALUES,
+  TASK_TABLE_SORT_DIRECTIONS,
+  TASK_TABLE_SORT_VALUES,
+} from './taskTable.mjs';
+
 const LIST_SEPARATOR = ',';
 
 function readParams(source) {
@@ -138,13 +144,26 @@ export function restoredViewQuery(schema, storedQuery, currentQuery) {
 
 // `view` is the board's own key rather than a filter: it says which reading of
 // the same tasks you are looking at, and a link to «the list» has to arrive as
-// the list. The table view extends this set rather than adding a key.
+// the list. The table view extended this set rather than adding a key.
+//
+// `cols`, `sort`, `dir` and `group` belong to the table the way `view` belongs
+// to the board: they say what you are looking at, not which tasks are in it.
+// They stay declared while the kanban is showing — a key the schema owns is a
+// key the address may carry, and switching to the table and back must not throw
+// away the columns you chose. Their values come from `taskTable.mjs`, so adding
+// a column adds a sortable value to the address in the same breath.
 export const BOARD_VIEW_SCHEMA = Object.freeze({
-  view: { default: 'kanban', values: ['kanban', 'list'] },
+  view: { default: 'kanban', values: ['kanban', 'list', 'table'] },
   sprint: { default: 'all' },
   assignee: { default: 'all' },
   priority: { default: 'all' },
   type: { default: 'all' },
+  group: { default: 'status', values: TASK_TABLE_GROUP_VALUES },
+  sort: { default: 'manual', values: TASK_TABLE_SORT_VALUES },
+  dir: { default: 'asc', values: TASK_TABLE_SORT_DIRECTIONS },
+  // Empty means «the default six». An untouched table therefore stays `?view=table`
+  // rather than spelling out a column set nobody chose.
+  cols: { default: [], type: 'list' },
 });
 
 // `/my` deliberately has no `assignee` key: that address already carries

@@ -14,10 +14,10 @@ import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import AnalyticsTab  from '@/components/workspace/AnalyticsTab';
-import { PageHeader, Pill, TaskListView, Tabs } from '@/components/ui';
+import { ContextMenu, PageHeader, Pill, TaskListView, TaskTableView, Tabs } from '@/components/ui';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
-import { LayoutGrid, BarChart2, Plus, Settings2, List, Plug, Kanban } from 'lucide-react';
+import { LayoutGrid, BarChart2, Columns3, Plus, Settings2, List, Plug, Kanban, Table2 } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -34,10 +34,26 @@ import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mj
 import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { useViewState } from '@/lib/hooks/useViewState';
 import { BOARD_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
+import {
+  PINNED_TASK_TABLE_COLUMNS,
+  serializeTaskTableColumns,
+  TASK_TABLE_COLUMNS,
+  TASK_TABLE_GROUPS,
+  visibleTaskTableColumns,
+} from '@/lib/utils/taskTable.mjs';
 
 const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
   { id: 'analytics',  label: 'Аналітика', icon: BarChart2  },
+];
+
+// One switcher, three readings of the same tasks. It is not a filter — nothing
+// is hidden by choosing one — which is why it sits outside `FilterBar` and
+// stays on screen when the filters move into the mobile dialog.
+const BOARD_VIEW_TABS = [
+  { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
+  { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
+  { id: 'table', icon: Table2, title: 'Таблиця', ariaLabel: 'Таблиця' },
 ];
 const QTPLUS_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_QTPLUS_URL);
 
@@ -104,8 +120,23 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
     assignee: boardAssigneeFilter,
     priority: boardPriorityFilter,
     type: boardTypeFilter,
+    group: tableGroup,
+    sort: tableSort,
+    dir: tableSortDirection,
+    cols: tableColumns,
   } = boardViewState;
   const setBoardView = useCallback(value => setBoardViewState({ view: value }), [setBoardViewState]);
+  const setTableSort = useCallback(next => setBoardViewState(next), [setBoardViewState]);
+  const visibleTableColumnIds = useMemo(
+    () => visibleTaskTableColumns(tableColumns).map(column => column.id),
+    [tableColumns],
+  );
+  const toggleTableColumn = useCallback(columnId => {
+    const current = new Set(visibleTableColumnIds);
+    if (current.has(columnId)) current.delete(columnId);
+    else current.add(columnId);
+    setBoardViewState({ cols: serializeTaskTableColumns([...current]) });
+  }, [setBoardViewState, visibleTableColumnIds]);
   const [analyticsPriorityFilter, setAnalyticsPriorityFilter] = useState('all');
   const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('all');
 
@@ -254,7 +285,21 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
     await applyBulkAction(action, value, selectedIssues);
   }, [applyBulkAction]);
 
-  const isBoard = activeTab === 'board' && boardView === 'kanban';
+  // One cell of the table, saved. `updateIssue` already owns the optimistic
+  // overlay and the rollback, including the status route — so a cell edit and a
+  // drag on the board take exactly the same path to Firestore.
+  const handleUpdateIssue = useCallback(async (issueId, patch) => {
+    try {
+      await updateIssue(issueId, patch, actor);
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося зберегти зміну'), 'error');
+    }
+  }, [updateIssue, showToast]); // eslint-disable-line
+
+  // The kanban and the table both fill the screen and scroll inside themselves:
+  // the table's header row and its identity column are pinned to its own scroll
+  // container, and a page that scrolled instead would leave both behind.
+  const isBoard = activeTab === 'board' && (boardView === 'kanban' || boardView === 'table');
   const isQtPlusWorkspace = activeTab === 'qtplus' && showQtPlusTab;
 
   if (!resourceContextReady || projectsLoading) {
@@ -310,10 +355,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
         // модалку. Перемикач лишається на екрані.
         mobileActions={activeTab === 'board' ? (
           <Tabs
-            tabs={[
-              { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
-              { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
-            ]}
+            tabs={BOARD_VIEW_TABS}
             activeTab={boardView}
             onTabChange={setBoardView}
           />
@@ -410,12 +452,49 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                   variant="ghost"
                 />
               </FilterBar>
+              {/* The table's own arrangement. Grouping and columns hide nothing,
+                  so they are not filters and are never counted into the mobile
+                  «Фільтри» badge — but they do travel into that dialog, because
+                  a phone has nowhere else to put them. */}
+              {boardView === 'table' && (
+                <FilterBar>
+                  <Select
+                    filterRole="group"
+                    ariaLabel="Групування рядків таблиці"
+                    value={tableGroup}
+                    onChange={value => setBoardViewState({ group: value })}
+                    options={TASK_TABLE_GROUPS.map(group => ({
+                      value: group.id,
+                      label: group.label,
+                    }))}
+                    variant="ghost"
+                  />
+                  <ContextMenu
+                    closeOnSelect={false}
+                    align="start"
+                    trigger={(
+                      <Button
+                        style="ghost"
+                        size="md"
+                        icon={Columns3}
+                        title="Які колонки показувати"
+                      >
+                        Колонки
+                      </Button>
+                    )}
+                    items={TASK_TABLE_COLUMNS
+                      .filter(column => !PINNED_TASK_TABLE_COLUMNS.includes(column.id))
+                      .map(column => ({
+                        label: column.label,
+                        selected: visibleTableColumnIds.includes(column.id),
+                        onClick: () => toggleTableColumn(column.id),
+                      }))}
+                  />
+                </FilterBar>
+              )}
               <div className="ml-auto flex items-center gap-2 max-md:hidden">
                 <Tabs
-                  tabs={[
-                    { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
-                    { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
-                  ]}
+                  tabs={BOARD_VIEW_TABS}
                   activeTab={boardView}
                   onTabChange={setBoardView}
                 />
@@ -474,6 +553,31 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               issueLinks={issueLinks}
               sprints={sprints}
               isArchived={isArchived}
+              canArchive={can(orgRole, 'delete:issue')}
+              selectionScopeKey={selectionScopeKey}
+            />
+          </div>
+        ) : boardView === 'table' ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <TaskTableView
+              issues={boardIssues}
+              allIssues={issues}
+              issueLinks={issueLinks}
+              members={members}
+              labels={labels}
+              sprints={sprints}
+              projectId={projectId}
+              columns={tableColumns}
+              sort={tableSort}
+              dir={tableSortDirection}
+              group={tableGroup}
+              onSortChange={setTableSort}
+              hiddenGroupIds={project?.hiddenColumns || []}
+              activeTimerIssueId={activeTimer?.issueId}
+              // An archived project is read-only: its cells open nothing.
+              onUpdateIssue={isArchived ? undefined : handleUpdateIssue}
+              onBulkUpdate={handleBulkUpdate}
+              bulkProgress={bulkProgress}
               canArchive={can(orgRole, 'delete:issue')}
               selectionScopeKey={selectionScopeKey}
             />

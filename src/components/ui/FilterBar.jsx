@@ -14,6 +14,9 @@ const WIDTHS = {
     member: 'w-[148px]',
     project: 'w-[200px]',
     sort: 'w-[180px]',
+    // How a view arranges its rows. Like `sort`, it is not a filter: it hides
+    // nothing, so it is wide enough for «За виконавцем» and never badged.
+    group: 'w-[172px]',
     priority: 'w-[148px]',
     sprint: 'w-[148px]',
     status: 'w-[148px]',
@@ -24,6 +27,7 @@ const WIDTHS = {
     member: 'w-[148px]',
     project: 'w-[210px]',
     sort: 'w-[180px]',
+    group: 'w-[172px]',
     priority: 'w-[148px]',
     sprint: 'w-[148px]',
     status: 'w-[148px]',
@@ -36,6 +40,7 @@ const WIDTHS = {
     member: 'w-max max-w-full',
     project: 'w-max max-w-full',
     sort: 'w-max max-w-full',
+    group: 'w-max max-w-full',
     priority: 'w-max max-w-full',
     sprint: 'w-max max-w-full',
     status: 'w-max max-w-full',
@@ -47,6 +52,7 @@ const WIDTHS = {
     member: 'w-full',
     project: 'w-full',
     sort: 'w-full',
+    group: 'w-full',
     priority: 'w-full',
     sprint: 'w-full',
     status: 'w-full',
@@ -62,11 +68,12 @@ export function getFilterControlWidth(role, context = 'default') {
 // single Select, an empty array for a MultiSelect. PageHeader badges the mobile
 // filters button with this count.
 //
-// Sorting is not filtering. A sort control always holds a real value — «Останні
-// оновлення» is as much a choice as any other — so counting it meant the
-// projects screen opened with «Фільтри (1)» before anyone had touched a thing,
-// and the badge stopped meaning "something here is hiding rows from you".
-const UNCOUNTED_ROLES = new Set(['sort']);
+// Sorting is not filtering, and neither is grouping. Both always hold a real
+// value — «Останні оновлення» and «За статусом» are as much a choice as any
+// other — so counting them meant a screen opened with «Фільтри (1)» before
+// anyone had touched a thing, and the badge stopped meaning "something here is
+// hiding rows from you".
+const UNCOUNTED_ROLES = new Set(['sort', 'group']);
 
 export function countActiveFilters(node) {
   let count = 0;

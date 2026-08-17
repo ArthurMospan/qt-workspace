@@ -53,6 +53,11 @@ test('the known board controls, tab icons, headings and breadcrumbs carry access
     assert.match(source, /title: 'Дошка', ariaLabel: 'Дошка'/);
     assert.match(source, /title: 'Список', ariaLabel: 'Список'/);
   }
+  // The third reading of a project's tasks. `/my` deliberately has no table:
+  // it spans projects, so its rows share no status vocabulary and a cell edit
+  // would write into whichever project owns the row.
+  assert.match(project, /title: 'Таблиця', ariaLabel: 'Таблиця'/);
+  assert.doesNotMatch(mine, /ariaLabel: 'Таблиця'/);
   assert.match(topHeader, /aria-label=\{unreadCount > 0/);
   assert.match(topHeader, /aria-label="Відкрити меню користувача"/);
   assert.match(breadcrumb, /<li key=\{index\}/);

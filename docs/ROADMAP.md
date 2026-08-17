@@ -47,6 +47,21 @@ it a project board — and «fewer columns» is what hiding a column is for, at 
 cost in precision. Only «Мої завдання» groups by category, because across
 projects no shared vocabulary exists.
 
+### Table view — what it deliberately does not do
+
+The project board's third view shipped (see
+[docs/VIEWS_AND_FILTERS.md](VIEWS_AND_FILTERS.md)). Three omissions are choices,
+not gaps:
+
+- **Column order is not in the address.** The picker says which columns, never
+  where they sit. Reordering is a drag interaction whose whole value is local,
+  and a link that carried a layout would be a second thing to keep in sync.
+- **«Мої завдання» has no table.** That list spans projects, so its rows have no
+  shared status vocabulary and a cell edit would write into whichever project
+  owns the row. Both are solvable; neither is solved by copying this component.
+- **Time logged is not a column.** It lives in `timeLogs`, and a table that read
+  it would be one query per row.
+
 ### Product polish
 
 - Add a “hide completed” toggle to My Tasks, enabled by default.
@@ -80,7 +95,6 @@ Do not start these without an explicit owner decision:
 - Intake forms for external requests.
 - Goals/OKR tracking.
 - User-configurable automation rules.
-- Table/spreadsheet view for issues.
 - AI project summaries and task assistance.
 - A client-safe AI status digest delivered through QuickTeam+.
 
