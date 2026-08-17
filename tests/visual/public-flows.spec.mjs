@@ -1,6 +1,16 @@
 import { test, expect } from '@playwright/test';
+import { searchHelpArticles } from '../../src/lib/content/helpArticles.mjs';
 
 const DEV_SERVER_NOISE = /webpack-hmr|WebSocket connection to 'ws:/;
+
+// The search assertion below used to spell out a query and an article title as
+// literals, and both went stale the moment the help was rewritten for readers:
+// the title it waited for no longer existed, so the run spent 45 seconds
+// retrying a phrase nothing could match. The query still has to be written by
+// hand — only a person can pick one worth typing — but what it must find comes
+// from the same function the page searches with, so a rewritten article moves
+// the expectation with it.
+const HELP_QUERY = 'багато завдань';
 
 async function preparePage(page) {
   const errors = [];
@@ -87,6 +97,12 @@ test('help, releases and legal pages are public, searchable and mobile-safe', as
     expect(overflow, `${route} horizontal overflow`).toBeLessThanOrEqual(0);
   }
 
+  const expectedMatches = searchHelpArticles(HELP_QUERY);
+  expect(
+    expectedMatches.length,
+    `"${HELP_QUERY}" must still name exactly one article — pick another query`,
+  ).toBe(1);
+
   await page.goto('/help', { waitUntil: 'domcontentloaded' });
   // The first server frame is readable before hydration. Retry the gesture
   // until the client handler is attached instead of sleeping for an arbitrary
@@ -95,10 +111,10 @@ test('help, releases and legal pages are public, searchable and mobile-safe', as
   await expect(async () => {
     const search = page.getByRole('textbox', { name: 'Пошук у довідці' });
     await search.fill('');
-    await search.fill('масові дії');
-    await expect(page.getByText('Знайдено матеріалів: 1')).toBeVisible({ timeout: 1_000 });
+    await search.fill(HELP_QUERY);
+    await expect(page.getByText(`Знайдено матеріалів: ${expectedMatches.length}`)).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 45_000 });
-  await expect(page.getByRole('link', { name: /Kanban, Shift-вибір і масові дії/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: expectedMatches[0].title })).toBeVisible();
 
   await page.goto('/help/kanban-and-bulk-actions', { waitUntil: 'domcontentloaded' });
   await page.getByRole('link', { name: /Робота із задачами/ }).click();

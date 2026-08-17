@@ -161,8 +161,16 @@ function VariantCell({ component, prop, value, count, previewed }) {
 
   return (
     <div className={`flex min-w-0 flex-col gap-[4px] overflow-hidden rounded-[10px] border p-[8px] ${tone}`}>
+      {/* A cell is 80px wide and already crops what does not fit sideways. The
+          same has to be true downwards: one EmptyState renders 381px tall in
+          here and one Surface preset 573px, and because a grid row is as tall
+          as its tallest cell, three such components were carrying ~1800px of
+          this section on their own. The matrix answers "what does this value
+          look like", not "what is this component made of" — the anatomy is in
+          the component's own section. Without the cap the section outgrew the
+          16000px screenshot ceiling and the whole run failed on 7 pixels. */}
       <div
-        className={`relative isolate flex min-h-[32px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
+        className={`relative isolate flex max-h-[120px] min-h-[32px] items-center justify-center overflow-hidden rounded-[8px] p-2 ${
           NEEDS_DARK.test(value) ? 'bg-ink' : 'bg-[#fafafa]'
         }`}
       >
