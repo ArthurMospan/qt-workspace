@@ -53,3 +53,43 @@ export function isIssueUnread(issue, lastSeenAt, currentUserId) {
 
   return activityAt > timestampMillis(lastSeenAt);
 }
+
+const ACTIVITY_LABELS = {
+  comment: 'Нове: повідомлення',
+  status: 'Нове: зміна статусу',
+  created: 'Нове завдання',
+  restored: 'Нове: завдання відновлено',
+};
+
+/**
+ * What the dot on a card or a row is about. The type is already on the document
+ * that drew the card, so saying it costs no read — and «Є нове в задачі» was the
+ * one thing the reader already knew from seeing the dot at all.
+ */
+export function unreadActivityLabel(issue) {
+  const type = issue?.lastActivityType || '';
+  if (ACTIVITY_LABELS[type]) return ACTIVITY_LABELS[type];
+  // Bulk actions arrive as `bulk_<actionId>`; every one of them is a field of
+  // the task being set from a selection, and none of them is worth its own
+  // phrase on a card.
+  return 'Нове: зміни в задачі';
+}
+
+/**
+ * Whether one line of a task's history is new to this reader.
+ *
+ * The comparison is server clock against server clock: `createdAt` is written by
+ * Firestore, and the cursor it is measured against was copied from the task's
+ * own `lastActivityAt`. That is why the boundary in the timeline needs no second
+ * cursor of its own.
+ *
+ * A change you made yourself is never new to you — the same rule the dot on the
+ * card follows.
+ */
+export function isIssueChangeUnread(entry, lastSeenAt, currentUserId) {
+  if (!entry || !currentUserId) return false;
+  const at = timestampMillis(entry.createdAt);
+  if (!at) return false;
+  if (entry.userId && entry.userId === currentUserId) return false;
+  return at > timestampMillis(lastSeenAt);
+}

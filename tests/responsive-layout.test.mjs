@@ -15,7 +15,10 @@ test('mobile keeps Kanban as a first-class horizontally swipeable board', () => 
 test('task chat exposes an unread boundary and reads it only after visibility', () => {
   const timeline = read('src/components/workspace/UnifiedTimeline.jsx');
   const detail = read('src/components/workspace/IssueDetail.jsx');
-  assert.match(timeline, /<UnreadDivider count=\{unreadCommentIds\.length\}/);
+  // The boundary counts everything the feed carries — messages and changes both.
+  // Drawn from the messages alone, it left a task where somebody moved the
+  // deadline and said nothing looking untouched.
+  assert.match(timeline, /<UnreadDivider count=\{unreadTotal\}/);
   assert.match(timeline, /new IntersectionObserver/);
   assert.match(timeline, /scrollToUnread/);
   assert.match(detail, /label: 'Чат'.*count: unreadTaskChatCount/);

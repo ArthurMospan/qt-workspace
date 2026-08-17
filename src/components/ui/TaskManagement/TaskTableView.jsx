@@ -52,7 +52,9 @@ import { taskTypeIcon, taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { isDueDateOverdue, parseDueDate } from '@/lib/utils/date';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
+import { isIssueUnread, unreadActivityLabel } from '@/lib/utils/issueReadState.mjs';
 import { columnOf } from '@/lib/utils/optimistic.mjs';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import {
   ensureSystemPriorities,
@@ -263,10 +265,15 @@ export default function TaskTableView({
   emptyTitle = 'Завдань не знайдено',
   emptyDescription = 'Змініть фільтри або створіть нове завдання.',
 }) {
-  const { projects = [], activeOrg } = useAppContext();
+  const { currentUser, projects = [], activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
   const project = projects.find(candidate => candidate.id === projectId);
   const { statuses, priorities, types, closedStatusIds } = useWorkflowConfig();
+  const currentUserId = currentUser?.uid || currentUser?.id || null;
+  // Subscribed once for the whole table rather than per row: the map is one
+  // object in the store, and six hundred selectors over the same object is six
+  // hundred subscriptions for one fact.
+  const issueReadState = useWorkspaceStore(state => state.issueReadState);
   const [collapsedSections, setCollapsedSections] = useState([]);
   const [editing, setEditing] = useState(null);
   const editable = Boolean(onUpdateIssue);
@@ -456,6 +463,15 @@ export default function TaskTableView({
                 title="Таймер запущено"
                 className="h-[5px] w-[5px] shrink-0 animate-pulse rounded-full bg-ink"
               />
+            )}
+            {/* «Є нове» beside the key, where the timer dot already lives. The
+                third reading of a board had no unread mark at all, so a table
+                showed a task as settled while the same task carried a dot two
+                clicks away on the kanban. */}
+            {isIssueUnread(issue, issueReadState[issue.id] || 0, currentUserId) && (
+              <span role="status" aria-label={unreadActivityLabel(issue)} title={unreadActivityLabel(issue)}>
+                <Counter variant="dot" size="sm" status="info" />
+              </span>
             )}
           </span>
         );

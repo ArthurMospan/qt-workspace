@@ -16,6 +16,8 @@ import TaskCounters from './TaskCounters';
 import TaskIdentity from './TaskIdentity';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
+import { isIssueUnread, unreadActivityLabel } from '@/lib/utils/issueReadState.mjs';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
@@ -74,6 +76,13 @@ export default function TaskRow({
   const currentUserId = currentUser?.uid || currentUser?.id;
   const isDraggingRef = useRef(false);
   const { types, priorities, statuses, closedStatusIds } = useWorkflowConfig();
+  // The same read cursor a board card reads, from the same organization-wide
+  // stream. A row used to light its dot for an unread message only, so the list
+  // and the board disagreed about the very same task the moment somebody changed
+  // a field instead of writing one.
+  const lastSeenAt = useWorkspaceStore(state => (
+    issue?.id ? state.issueReadState[issue.id] || 0 : 0
+  ));
 
   const task = issue;
   if (!task) return null;
@@ -117,6 +126,7 @@ export default function TaskRow({
     !(task.lastCommentReadBy || []).includes(currentUserId)
   );
   const mentionCount = Number(task.unreadMentions?.[currentUserId]) || 0;
+  const hasUnreadActivity = isIssueUnread(task, lastSeenAt, currentUserId);
 
   const isBlocked = openBlockerIssues(
     task.id,
@@ -253,7 +263,10 @@ export default function TaskRow({
             <TaskCounters
               mentions={mentionCount}
               messages={msgCount}
-              unread={hasUnreadChat}
+              unread={hasUnreadActivity || hasUnreadChat}
+              unreadLabel={hasUnreadChat && !hasUnreadActivity
+                ? 'Нове: повідомлення'
+                : unreadActivityLabel(task)}
               size="sm"
             />
           </div>

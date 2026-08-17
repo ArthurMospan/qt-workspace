@@ -17,16 +17,13 @@ import { createResponseError, reportLoadError } from '@/lib/utils/errors';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
+import {
+  AUDITED_ISSUE_FIELDS,
+  FACT_ONLY_AUDITED_FIELDS,
+  auditValue,
+} from '@/lib/utils/issueAuditEvents.mjs';
 import { compareIssues, pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-
-// Stable string form of an audited field, so array values compare by content
-// rather than by identity. Order-insensitive for arrays: reordering assignees
-// is not a change worth an activity entry.
-function auditValue(value) {
-  if (Array.isArray(value)) return JSON.stringify([...value].map(String).sort());
-  return String(value ?? '');
-}
 
 // ---------------------------------------------------------------------------
 // Helper — write an audit log entry to issues/{issueId}/audit subcollection
@@ -300,18 +297,26 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     // Write audit for notable field changes. Arrays are compared by VALUE —
     // comparing them by reference logged a "changed_assigneeIds" entry on every
     // single save, because a fresh array is never `===` the stored one.
-    const auditFields = ['priority', 'title', 'assigneeIds'];
-    for (const field of auditFields) {
+    //
+    // Which fields those are lives in `issueAuditEvents.mjs`, next to the phrases
+    // that read them out. The two used to be written in different files and drift
+    // was the result: three fields were logged here while the timeline knew how
+    // to say five, so a moved deadline or a task dropped into another sprint left
+    // no trace anywhere in the product.
+    for (const field of AUDITED_ISSUE_FIELDS) {
       if (directData[field] === undefined || !current) continue;
       const from = auditValue(current[field]);
       const to = auditValue(directData[field]);
       if (from === to) continue;
+      // A description is logged as a fact. Both versions of a task's body inside
+      // one log entry is a document nobody reads in a feed.
+      const factOnly = FACT_ONLY_AUDITED_FIELDS.includes(field);
       await writeAudit(issueId, {
-        userId,
+        userId: userId || currentUserId,
         userName,
         action: `changed_${field}`,
-        from,
-        to
+        from: factOnly ? null : from,
+        to: factOnly ? null : to,
       });
     }
   }, [issues, projectId, applyPatch, revertPatch, currentUser, currentUserId]);

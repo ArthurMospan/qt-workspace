@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/[projectId]/issue/[issueId]/page.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAppContext }        from '@/lib/context/AppContext';
@@ -53,7 +53,7 @@ import {
   AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
   Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon,
-  Maximize2, User,
+  Maximize2, User, CircleDot,
 } from 'lucide-react';
 import { ParentTaskIcon, TaskIcon } from '@/lib/design/icons';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
@@ -66,7 +66,11 @@ import { downloadMaterial } from '@/lib/portal/downloadMaterial';
 import { buildTaskAiPrompt } from '@/lib/utils/taskPrompt.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
-import { markIssueSeen } from '@/lib/services/issueReadState';
+import {
+  cancelScheduledIssueSeen,
+  markIssueUnread,
+  scheduleIssueSeen,
+} from '@/lib/services/issueReadState';
 import { issueActivityCursor } from '@/lib/utils/issueReadState.mjs';
 import { reportLoadError } from '@/lib/utils/errors';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
@@ -368,6 +372,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
 
   const issueActivityAt = issueActivityCursor(issue);
   const currentUserId = currentUser?.uid || currentUser?.id || null;
+  const lastActivityActorId = issue?.lastActivityActorId || issue?.updatedBy || issue?.createdBy || null;
 
   // Who this task can be given to: the project's team, exactly as the create
   // dialog already offers. Offering the whole organization made assigning
@@ -382,20 +387,67 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     ? members
     : members.filter(member => assignableIds.has(member.id || member.uid));
 
-  // Opening a task consumes exactly the activity revision currently on screen.
-  // If newer activity arrives while the detail remains open, the dependency
-  // changes and advances the same per-issue cursor again.
+  // Leaving a task consumes it, not opening it.
+  //
+  // The cursor used to advance the moment the detail rendered, which made the
+  // boundary in the timeline useless in the one case it exists for: open a task,
+  // get called away, come back — and nothing was marked as new any more, because
+  // the render had already answered for you. What is on screen when you walk
+  // away is the revision you are recorded as having seen.
+  //
+  // The revision itself is read from a ref rather than from the effect's
+  // dependencies: activity arriving while the task is open must not restart this
+  // effect, or leaving would consume whatever the last render happened to hold.
+  const consumeRef = useRef({ millis: 0, suppressed: false });
   useEffect(() => {
-    if (!issueActivityAt || !activeOrgId || !currentUserId) return;
-    void markIssueSeen({
-      organizationId: activeOrgId,
-      issueId,
-      userId: currentUserId,
-      lastSeenAt: new Date(issueActivityAt),
-    }).catch(error => {
-      reportLoadError('[IssueDetail] mark issue seen', error);
-    });
-  }, [activeOrgId, currentUserId, issueActivityAt, issueId]);
+    consumeRef.current.millis = issueActivityAt;
+  }, [issueActivityAt]);
+  useEffect(() => {
+    if (!activeOrgId || !currentUserId || !issueId) return undefined;
+    // Arriving cancels a consume scheduled by the visit that just ended — the
+    // canonical-key redirect below remounts this component a beat after a task
+    // opens, and that remount is not a reader walking away.
+    cancelScheduledIssueSeen(issueId);
+    consumeRef.current.suppressed = false;
+    return () => {
+      // Reading the ref *at cleanup time* is the point: the value the reader is
+      // recorded as having seen is the one on screen when they walked away, not
+      // the one this effect happened to start with.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const { millis, suppressed } = consumeRef.current;
+      if (suppressed || !millis) return;
+      scheduleIssueSeen({
+        organizationId: activeOrgId,
+        issueId,
+        userId: currentUserId,
+        lastSeenAt: new Date(millis),
+        onError: error => reportLoadError('[IssueDetail] mark issue seen', error),
+      });
+    };
+  }, [activeOrgId, currentUserId, issueId]);
+
+  // Putting a task back into your own inbox. The cursor goes to just before the
+  // newest activity, so the dot returns on the board and the boundary in the
+  // timeline lands on the change that made you want to come back — and this
+  // visit stops consuming, or closing the task would immediately undo it.
+  const lastSeenMillis = useWorkspaceStore(state => state.issueReadState[issueId] || 0);
+  const handleMarkUnread = async () => {
+    consumeRef.current.suppressed = true;
+    try {
+      await markIssueUnread({
+        organizationId: activeOrgId,
+        issueId,
+        userId: currentUserId,
+        activityMillis: issueActivityAt,
+        currentSeenMillis: lastSeenMillis,
+      });
+      showToast('Задачу позначено непрочитаною');
+    } catch (error) {
+      consumeRef.current.suppressed = false;
+      reportLoadError('[IssueDetail] mark issue unread', error);
+      showToast('Не вдалося позначити непрочитаною', 'error');
+    }
+  };
 
   useEffect(() => {
     if (isModal || !canonicalIssuePath || issueLocator === issueRouteIdentifier(issue, project)) return;
@@ -1134,6 +1186,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               { label: 'Копіювати посилання', icon: Copy, onClick: copyIssueLink },
               ...(!isArchived ? [{ label: 'Дублювати', icon: CopyPlus, onClick: handleDuplicate }] : []),
               { label: 'Скопіювати AI-промпт', icon: Sparkles, onClick: copyAiPrompt },
+              // Only offered when there is somebody else's activity to un-see.
+              // Marking a task you were the last to touch as unread would light
+              // no dot: your own change is never new to you, on a card or here.
+              ...(issueActivityAt && lastActivityActorId !== currentUserId
+                ? [{ label: 'Позначити непрочитаним', icon: CircleDot, onClick: handleMarkUnread }]
+                : []),
               ...(!isArchived ? [
                 {
                   label: isWatching ? 'Не стежити' : 'Стежити',
@@ -1602,6 +1660,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   isArchived={isArchived}
                   org={activeOrg}
                   members={members}
+                  sprints={sprints}
                   isActive={!isCompactTaskLayout || taskPane === 'chat'}
                   onUnreadCountChange={handleTaskChatUnreadChange}
                 />

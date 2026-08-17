@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 221,
-    "parsedFiles": 221,
+    "productFiles": 222,
+    "parsedFiles": 222,
     "parseErrors": 0,
     "nativeControls": 19,
     "structures": {
@@ -629,7 +629,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:675",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:680",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

@@ -28,6 +28,7 @@ import {
   articleSearchText,
 } from '@/lib/content/helpArticles.mjs';
 import { NEWS_ARTICLES, VERSION_HISTORY } from '@/lib/content/releaseContent.mjs';
+import { useLocalization } from '@/lib/hooks/useLocalization';
 
 export const INFO_CENTER_PANES = Object.freeze(['help', 'news', 'versions']);
 
@@ -93,6 +94,7 @@ function BackRow({ label, onClick }) {
 function HelpPane({ openArticle, onOpenArticle, onCloseArticle }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
+  const { formatDate } = useLocalization();
 
   const filtered = useMemo(() => {
     const words = query.trim().toLocaleLowerCase('uk-UA').split(/\s+/).filter(Boolean);
@@ -115,7 +117,7 @@ function HelpPane({ openArticle, onOpenArticle, onCloseArticle }) {
         </div>
         <ArticleBody sections={openArticle.sections} />
         <p className="border-t border-line pt-[12px] text-[11px] text-faint">
-          Оновлено: {openArticle.updatedAt}
+          Оновлено: {formatDate(openArticle.updatedAt)}
         </p>
       </div>
     );
@@ -174,13 +176,17 @@ function HelpPane({ openArticle, onOpenArticle, onCloseArticle }) {
 }
 
 function NewsPane({ openArticle, onOpenArticle, onCloseArticle }) {
+  // A date inside the workspace is written the way this organization writes
+  // dates. These three read `2026-08-17` straight out of the content module,
+  // which is the one date format the settings screen offers and nobody picked.
+  const { formatDate } = useLocalization();
   if (openArticle) {
     return (
       <div className="flex flex-col gap-[16px]">
         <BackRow label="Усі новини" onClick={onCloseArticle} />
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wide text-faint">
-            {openArticle.category} · {openArticle.publishedAt}
+            {openArticle.category} · {formatDate(openArticle.publishedAt)}
           </span>
           <h3 className="mt-[8px] ui-type-section-title text-ink">{openArticle.title}</h3>
           <p className="mt-[6px] text-[13px] leading-[1.6] text-muted">{openArticle.summary}</p>
@@ -207,7 +213,7 @@ function NewsPane({ openArticle, onOpenArticle, onCloseArticle }) {
       {NEWS_ARTICLES.map(article => (
         <ClickableRow key={article.id} onOpen={() => onOpenArticle(article)}>
           <span className="text-[10px] font-bold uppercase tracking-wide text-faint">
-            {article.publishedAt} · v{article.version}
+            {formatDate(article.publishedAt)} · v{article.version}
           </span>
           <span className="mt-[4px] block text-[13px] font-bold text-ink">{article.title}</span>
           <span className="mt-[2px] block text-[12px] leading-[1.55] text-muted">{article.summary}</span>
@@ -218,13 +224,17 @@ function NewsPane({ openArticle, onOpenArticle, onCloseArticle }) {
 }
 
 function VersionsPane() {
+  const { formatDate } = useLocalization();
   return (
     <div className="flex flex-col gap-[16px]">
+      {/* Two releases can share a version — the version is what shipped, the
+          entry is one story about it — so the news slug is what makes a row
+          unique. */}
       {VERSION_HISTORY.map(release => (
-        <Card key={release.version} preset="bordered-compact" padding="md">
+        <Card key={release.newsSlug || release.version} preset="bordered-compact" padding="md">
           <div className="flex flex-wrap items-baseline gap-[8px]">
             <h4 className="ui-type-item-title text-ink">Версія {release.version}</h4>
-            <span className="text-[11px] text-muted">{release.date}</span>
+            <span className="text-[11px] text-muted">{formatDate(release.date)}</span>
           </div>
           <div className="mt-[12px] flex flex-col gap-[12px]">
             {release.groups.map(group => (

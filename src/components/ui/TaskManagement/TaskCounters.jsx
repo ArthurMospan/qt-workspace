@@ -36,6 +36,7 @@ const SIZES = {
  * @param {number} props.mentions Unread messages naming the current user.
  * @param {number} props.messages Messages in the task chat.
  * @param {boolean} props.unread Whether anything on the task is new to this user.
+ * @param {string} props.unreadLabel What the new thing is — a comment, a status change, edits. The dot already says that there is something; the tooltip is where the reader learns what, and it is free: the task document that drew this row carries the kind of the last activity.
  * @param {'sm'|'md'} props.size `sm` for a list row, `md` for a board card.
  * @param {string} props.className Placement in the parent only.
  */
@@ -44,6 +45,7 @@ export default function TaskCounters({
   mentions = 0,
   messages = 0,
   unread = false,
+  unreadLabel = 'Є нове в задачі',
   size = 'md',
   className = '',
 }) {
@@ -74,7 +76,7 @@ export default function TaskCounters({
         </span>
       )}
       {unread && (
-        <span role="status" aria-label="Є нове в задачі" title="Є нове в задачі">
+        <span role="status" aria-label={unreadLabel} title={unreadLabel}>
           <Counter variant="dot" size="sm" status="info" />
         </span>
       )}

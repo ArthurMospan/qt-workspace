@@ -10,8 +10,8 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 330,
-    "elements": 4168,
+    "files": 331,
+    "elements": 4170,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -223,14 +223,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:705",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:721",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:856",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:872",
       "attributes": [
         "title"
       ]
@@ -266,14 +266,14 @@
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:541",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:545",
       "attributes": [
         "label"
       ]
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:561",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:565",
       "attributes": [
         "label"
       ]

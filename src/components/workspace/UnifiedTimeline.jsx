@@ -19,6 +19,10 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { useComments } from '@/lib/hooks/useComments';
 import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
+import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { describeAuditEvent } from '@/lib/utils/issueAuditEvents.mjs';
+import { isIssueChangeUnread } from '@/lib/utils/issueReadState.mjs';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import MentionText from '@/components/workspace/MentionText';
@@ -30,24 +34,6 @@ import {
   ATTACHMENT_UPLOAD_ACCEPT,
   uploadFilePolicy,
 } from '@/lib/utils/uploadPolicy.mjs';
-
-const FIELD_LABELS = {
-  status: 'статус',
-  columnId: 'статус',
-  priority: 'пріоритет',
-  title: 'назву',
-  assigneeIds: 'виконавця',
-};
-
-const STATUS_LABELS = {
-  backlog: 'Беклог',
-  todo: 'До виконання',
-  'in-progress': 'У роботі',
-  'code-review': 'Код-ревʼю',
-  qa: 'QA',
-  'client-approval': 'Погодження клієнтом',
-  done: 'Готово',
-};
 
 function fmtTime(minutes) {
   if (!minutes && minutes !== 0) return '—';
@@ -89,39 +75,6 @@ function dayLabel(timestamp) {
     month: 'long',
     ...(date.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}),
   });
-}
-
-function parseArrayValue(value) {
-  if (Array.isArray(value)) return value;
-  if (typeof value !== 'string' || !value.startsWith('[')) return null;
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function formatAuditValue(field, value, members) {
-  if (value === null || value === undefined || value === '') return 'не вказано';
-  if (field === 'assigneeIds') {
-    const ids = parseArrayValue(value) || [value];
-    if (ids.length === 0) return 'не призначено';
-    return ids.map(id => members.find(member => (member.id || member.uid) === id)?.name || 'учасника').join(', ');
-  }
-  if (field === 'status' || field === 'columnId') return STATUS_LABELS[value] || value;
-  return String(value);
-}
-
-function formatAuditEvent(item, members) {
-  const field = item.field || item.action?.replace(/^changed_/, '');
-  if (item.action === 'created') return 'Створено завдання';
-  if (!field || !FIELD_LABELS[field]) return 'Оновлено завдання';
-  const fieldLabel = `${FIELD_LABELS[field][0].toUpperCase()}${FIELD_LABELS[field].slice(1)}`;
-  const from = formatAuditValue(field, item.from ?? item.oldValue, members);
-  const to = formatAuditValue(field, item.to ?? item.newValue, members);
-  if (from === to || from === 'не вказано') return `${fieldLabel} змінено на «${to}»`;
-  return `${fieldLabel} змінено: «${from}» → «${to}»`;
 }
 
 function ReplyQuote({ replyTo, dark = false }) {
@@ -182,6 +135,7 @@ export default function UnifiedTimeline({
   isArchived,
   org,
   members = [],
+  sprints = [],
   isActive = true,
   onUnreadCountChange,
 }) {
@@ -190,6 +144,18 @@ export default function UnifiedTimeline({
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirmDialog = useConfirm();
   const project = projects.find(item => item.id === projectId);
+  // The history is read out through the live workflow: a project that renamed a
+  // status or added one of its own has to read its own words back.
+  const { statuses, priorities, types, labels } = useWorkflowConfig();
+  const auditContext = useMemo(() => ({
+    statuses,
+    priorities,
+    types,
+    labels,
+    sprints,
+    members,
+    timeZone: organizationTimeZone(org),
+  }), [statuses, priorities, types, labels, sprints, members, org]);
 
   const { comments, addComment, updateComment, deleteComment, markCommentsRead } = useComments(issueId);
   const { entries: auditLogs } = useAuditLog(issueId);
@@ -228,7 +194,16 @@ export default function UnifiedTimeline({
       .filter(comment => comment.authorId !== myId && !(comment.readBy || []).includes(myId))
       .map(comment => comment.id);
   }, [comments, myId]);
-  const firstUnreadCommentId = unreadCommentIds[0] || null;
+  // The same cursor the dot on the card reads. It only moves when the reader
+  // leaves the task, so it does not shift under them mid-visit — and it is
+  // already in the store, so the boundary costs no read of its own.
+  const lastSeenAt = useWorkspaceStore(state => state.issueReadState[issueId] || 0);
+  const unreadChangeIds = useMemo(() => {
+    if (!myId) return [];
+    return auditLogs
+      .filter(entry => isIssueChangeUnread(entry, lastSeenAt, myId))
+      .map(entry => entry.id);
+  }, [auditLogs, lastSeenAt, myId]);
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
@@ -254,6 +229,35 @@ export default function UnifiedTimeline({
     }));
     return items.sort((a, b) => a._time - b._time);
   }, [comments, auditLogs, timeLogs]);
+
+  // One boundary for the whole feed. Messages and changes are two kinds of the
+  // same thing to a reader coming back to a task — «що тут сталося без мене» —
+  // and the line used to be drawn from the messages alone, so a task where
+  // somebody moved the deadline and said nothing looked untouched below it.
+  //
+  // The two halves are still consumed differently, and deliberately: a message
+  // is read when the boundary has been on screen for half a second, a change
+  // when the reader leaves the task. Turning away from an open task must not
+  // count as having read what changed in it.
+  const unreadTotal = unreadCommentIds.length + unreadChangeIds.length;
+  const firstUnreadKey = useMemo(() => {
+    if (unreadTotal === 0) return null;
+    const unreadComments = new Set(unreadCommentIds);
+    const unreadChanges = new Set(unreadChangeIds);
+    const first = timeline.find(item => (
+      (item._type === 'comment' && unreadComments.has(item.id))
+      || (item._type === 'audit' && unreadChanges.has(item.id))
+    ));
+    return first ? `${first._type}-${first.id}` : null;
+  }, [timeline, unreadCommentIds, unreadChangeIds, unreadTotal]);
+  const unreadLabel = unreadChangeIds.length === 0
+    ? 'Нові повідомлення'
+    : (unreadCommentIds.length === 0 ? 'Нові зміни' : 'Нове в задачі');
+  const renderUnreadBoundary = itemKey => (itemKey === firstUnreadKey ? (
+    <div ref={unreadMarkerRef}>
+      <UnreadDivider count={unreadTotal} label={unreadLabel} />
+    </div>
+  ) : null);
 
   const resetComposer = () => {
     setInput('');
@@ -363,7 +367,7 @@ export default function UnifiedTimeline({
     const shouldPositionConversation = isFirstPositionForIssue || becameActive;
 
     const frame = requestAnimationFrame(() => {
-      if (shouldPositionConversation && firstUnreadCommentId) {
+      if (shouldPositionConversation && firstUnreadKey) {
         scrollToUnread(previousLength === 0 ? 'auto' : 'smooth');
         return;
       }
@@ -373,7 +377,7 @@ export default function UnifiedTimeline({
       }
     });
     return () => cancelAnimationFrame(frame);
-  }, [firstUnreadCommentId, isActive, issueId, timeline.length]);
+  }, [firstUnreadKey, isActive, issueId, timeline.length]);
 
   // A compact task screen keeps the timeline mounted while its chat pane is
   // hidden. That preserves the live unread badge without falsely consuming the
@@ -385,17 +389,21 @@ export default function UnifiedTimeline({
   // Read receipts: a visible pane alone is not enough. The unread boundary has
   // to enter the scroll viewport, so opening a long task chat cannot consume
   // messages that remained above or below the fold.
+  //
+  // The observer also runs for a boundary made only of changes: it is what tells
+  // the jump button whether the line is already on screen. Only the messages are
+  // consumed here — the changes are consumed by leaving the task.
   useEffect(() => {
     const marker = unreadMarkerRef.current;
     const scroll = scrollRef.current;
-    if (!isActive || !myId || unreadCommentIds.length === 0 || !marker || !scroll) {
+    if (!isActive || !myId || unreadTotal === 0 || !marker || !scroll) {
       return undefined;
     }
 
     let readTimer = null;
     const observer = new IntersectionObserver(([entry]) => {
       setIsUnreadMarkerVisible(entry.isIntersecting);
-      if (!entry.isIntersecting || readTimer) return;
+      if (!entry.isIntersecting || readTimer || unreadCommentIds.length === 0) return;
       readTimer = window.setTimeout(() => {
         markCommentsRead(unreadCommentIds, myId);
       }, 500);
@@ -406,7 +414,7 @@ export default function UnifiedTimeline({
       observer.disconnect();
       if (readTimer) window.clearTimeout(readTimer);
     };
-  }, [isActive, markCommentsRead, myId, unreadCommentIds]);
+  }, [isActive, markCommentsRead, myId, unreadCommentIds, unreadTotal]);
 
   const addPendingFiles = fileList => {
     const files = Array.from(fileList || []);
@@ -526,11 +534,7 @@ export default function UnifiedTimeline({
             return (
               <Fragment key={`comment-${item.id}`}>
               {separator}
-              {item.id === firstUnreadCommentId && (
-                <div ref={unreadMarkerRef}>
-                  <UnreadDivider count={unreadCommentIds.length} />
-                </div>
-              )}
+              {renderUnreadBoundary(`comment-${item.id}`)}
               <div className={`group grid items-end gap-x-2.5 ${isMe ? 'grid-cols-[minmax(0,1fr)_28px]' : 'grid-cols-[28px_minmax(0,1fr)]'}`}>
                 {isExternalAuthor ? (
                   <Popover
@@ -630,8 +634,9 @@ export default function UnifiedTimeline({
             return (
               <Fragment key={`audit-${item.id}`}>
                 {separator}
+                {renderUnreadBoundary(`audit-${item.id}`)}
                 <SystemEventMessage
-                  text={formatAuditEvent(item, members)}
+                  text={describeAuditEvent(item, auditContext)}
                   time={fmtClock(item.createdAt)}
                   actorName={actorName}
                 />
@@ -644,7 +649,7 @@ export default function UnifiedTimeline({
 
       {!isArchived && (
         <ChatComposerDock ref={wrapperRef} scrollRef={scrollRef} composition="timeline-composer">
-          {unreadCommentIds.length > 0 && !isUnreadMarkerVisible && (
+          {unreadTotal > 0 && !isUnreadMarkerVisible && (
             <div className="absolute inset-x-0 -top-10 z-20 flex justify-center">
               <Button
                 style="primary"
@@ -652,7 +657,7 @@ export default function UnifiedTimeline({
                 icon={ChevronDown}
                 onClick={() => scrollToUnread()}
               >
-                {unreadCommentIds.length} нових
+                {unreadTotal} нових
               </Button>
             </div>
           )}

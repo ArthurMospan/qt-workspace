@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 111,
-    "props": 822,
-    "documentedProps": 822,
+    "props": 823,
+    "documentedProps": 823,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5512,6 +5512,13 @@
           "type": "boolean",
           "values": [],
           "description": "Whether anything on the task is new to this user."
+        },
+        {
+          "name": "unreadLabel",
+          "default": "'Є нове в задачі'",
+          "type": "string",
+          "values": [],
+          "description": "What the new thing is — a comment, a status change, edits. The dot already says that there is something; the tooltip is where the reader learns what, and it is free: the task document that drew this row carries the kind of the last activity."
         }
       ]
     },

@@ -17,7 +17,7 @@ import Pill from '@/components/ui/DataDisplay/Pill';
 import { issueDisplayParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
-import { isIssueUnread } from '@/lib/utils/issueReadState.mjs';
+import { isIssueUnread, unreadActivityLabel } from '@/lib/utils/issueReadState.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskCounters from '@/components/ui/TaskManagement/TaskCounters';
 import TaskIdentity from '@/components/ui/TaskManagement/TaskIdentity';
@@ -396,6 +396,9 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               mentions={mentionCount}
               messages={msgCount}
               unread={hasUnreadActivity || hasUnreadChat}
+              unreadLabel={hasUnreadChat && !hasUnreadActivity
+                ? 'Нове: повідомлення'
+                : unreadActivityLabel(issue)}
             />
           </div>
 
