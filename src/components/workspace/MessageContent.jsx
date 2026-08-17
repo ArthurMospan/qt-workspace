@@ -1,5 +1,6 @@
 import React from 'react';
 import HoverCard from './HoverCard';
+import IssueMentionChip from './IssueMentionChip';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 
 export default function MessageContent({ text, members, searchTerm }) {
@@ -98,9 +99,7 @@ export default function MessageContent({ text, members, searchTerm }) {
               if (part.startsWith('#')) {
                 const issueKey = part.slice(1).toLocaleUpperCase('uk-UA');
                 return (
-                  <HoverCard key={pIdx} type="issue" value={issueKey} members={members}>
-                    {issueKey}
-                  </HoverCard>
+                  <IssueMentionChip key={pIdx} issueKey={issueKey} />
                 );
               }
               if (part.startsWith('http://') || part.startsWith('https://')) {

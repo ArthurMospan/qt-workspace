@@ -711,24 +711,29 @@ export default function TaskTableView({
           column.pinned ? `z-[3] ${column.id === 'title' ? 'md:sticky' : 'sticky'}` : ''
         }`}
       >
-        <span className={`${HEADER_BOX} ${column.align === 'right' ? 'justify-end' : ''}`}>
-          {column.sortable && onSortChange ? (
-            <button
-              type="button"
-              onClick={() => onSortChange(nextTaskTableSort(column.id, { sort, dir }))}
-              title={active ? 'Змінити напрям сортування' : `Сортувати за: ${column.label}`}
-              aria-label={isIdentity ? 'Сортувати за номером' : undefined}
-              className={`flex min-w-0 items-center gap-[4px] transition-colors hover:text-ink ${
-                active ? 'text-ink' : 'text-muted'
-              } ${column.align === 'right' ? 'flex-row-reverse' : ''}`}
-            >
-              <span className={labelClass}>{column.label}</span>
-              {active && <Arrow size={11} strokeWidth={3} className="shrink-0" />}
-            </button>
-          ) : (
-            <span className={`${labelClass} text-muted`}>{column.label}</span>
-          )}
-        </span>
+        {column.sortable && onSortChange ? (
+          // The whole cell is the control, not the word inside it. A button
+          // sized to its label left most of a header column dead to the
+          // pointer, and Tailwind v4 does not give a button a hand cursor of
+          // its own — so a header that sorts looked like a header that does
+          // not.
+          <button
+            type="button"
+            onClick={() => onSortChange(nextTaskTableSort(column.id, { sort, dir }))}
+            title={active ? 'Змінити напрям сортування' : `Сортувати за: ${column.label}`}
+            aria-label={isIdentity ? 'Сортувати за номером' : undefined}
+            className={`${HEADER_BOX} w-full gap-[4px] transition-colors hover:bg-black/[0.04] ${
+              active ? 'text-ink' : 'text-muted hover:text-ink'
+            } ${column.align === 'right' ? 'flex-row-reverse justify-start' : ''}`}
+          >
+            <span className={labelClass}>{column.label}</span>
+            {active && <Arrow size={11} strokeWidth={3} className="shrink-0" />}
+          </button>
+        ) : (
+          <span className={`${HEADER_BOX} text-muted ${column.align === 'right' ? 'justify-end' : ''}`}>
+            <span className={labelClass}>{column.label}</span>
+          </span>
+        )}
       </th>
     );
   };

@@ -180,11 +180,11 @@ test('private attachment delivery uses the same channel membership boundary', ()
 });
 
 test('chat autocompletes and opens stable issue-key mentions', async () => {
-  const [page, menu, content, hoverCard] = await Promise.all([
+  const [page, menu, content, mentionChip] = await Promise.all([
     readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/ui/Chat/IssueMentionMenu.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/workspace/MessageContent.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../src/components/workspace/HoverCard.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/IssueMentionChip.jsx', import.meta.url), 'utf8'),
   ]);
 
   assert.match(page, /matchIssue = before\.match\(/);
@@ -195,22 +195,22 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   // colour of its own. The magenta pill was the one place in the product where
   // a hue meant «this is a task».
   assert.doesNotMatch(menu, /tone="accent"/);
-  assert.doesNotMatch(hoverCard, /#c026d3|#fdf4ff/);
-  assert.match(hoverCard, /bg-black\/\[0\.07\]/);
+  assert.doesNotMatch(mentionChip, /#c026d3|#fdf4ff/);
+  assert.match(mentionChip, /bg-black\/\[0\.07\]/);
   // `#` searches task numbers, not prose: typing 12 used to return every task
   // whose description happened to contain those characters.
   assert.match(page, /searchIssues\(queryText, activeOrgId, null, \{ mention: true \}\)/);
   assert.ok(content.includes('|#[\\\\p{L}\\\\p{N}-]+|'));
   // A mention is read where it was written: it opens the quick-view panel, not
   // a navigation out of the conversation you are having.
-  assert.match(hoverCard, /openIssueQuickView\(data\)/);
-  assert.doesNotMatch(hoverCard, /router\.push\(issuePath/);
-  // The hovercard asks the same place the picker asks. It used to run its own
-  // client query by `issueKey`, which had to re-solve display-key drift and
-  // per-project access in the browser — and a mention that could be written
-  // could then fail to be read.
-  assert.match(hoverCard, /mention: 'issue'/);
-  assert.doesNotMatch(hoverCard, /legacyStoredIssueKey|collection\(db, 'issues'\)/);
+  //
+  // A mentioned task says what it is called, so there is nothing to hover for:
+  // the chip resolves the title once per key through the same call the picker
+  // makes, and clicking it opens the quick-view panel.
+  assert.match(mentionChip, /mention: 'issue'/);
+  assert.match(mentionChip, /openIssueQuickView\(issue\)/);
+  assert.match(content, /<IssueMentionChip/);
+  assert.doesNotMatch(mentionChip, /legacyStoredIssueKey|collection\(db, 'issues'\)/);
 });
 
 test('chat user suggestions require an at sign and message actions are keyboard reachable', async () => {

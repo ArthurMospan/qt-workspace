@@ -230,7 +230,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:716",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:720",
       "attributes": [
         "title",
         "aria-label"
@@ -238,7 +238,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:878",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:883",
       "attributes": [
         "title"
       ]

@@ -129,6 +129,21 @@
     --qt-nav-space: 0px;
   }
 
+  /* A hand on anything that can be pressed.
+     Tailwind v4 dropped `cursor: pointer` from its button reset, so every
+     control in the product has been an arrow ever since unless somebody
+     remembered to write `cursor-pointer` — which forty-two call sites did and
+     the rest did not. A table header that sorts on click looked like a header
+     that does nothing. One rule, and the exception it needs: a disabled
+     control says so instead. */
+  :where(button, summary, [role='button'], label[for]):not(:disabled):not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+  :where(button, [role='button']):disabled,
+  :where(button, [role='button'])[aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
   /* A visible focus ring, everywhere, by default.
      Three components styled their own and everything else fell back to whatever
      the browser draws — which on a dark sidebar is frequently nothing at all,
