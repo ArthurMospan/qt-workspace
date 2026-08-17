@@ -14,8 +14,6 @@ import React from 'react';
 //     inside the scrollport, so the event's `sticky top-0` title parked itself
 //     underneath the fixed header rather than below it. That is the "зовсім
 //     інший ефект" you feel the moment you scroll either page;
-//   • the task ran edge to edge and the event centred on 1120px, so the same
-//     title started in two different places on the same monitor;
 //   • at ≥1024px the task stopped the page scrolling and scrolled its left
 //     column instead, which is a second scroll model for the same gesture.
 //
@@ -24,18 +22,21 @@ import React from 'react';
 // own height — so it holds still and scrolls itself, which is what the two
 // columns were trying to do all along.
 export const CONTEXTS = {
-  // A task: the reading column plus its conversation rail. The measure is the
-  // event's 1120px reading column plus the rail, so the *text* lands in the same
-  // place on both pages and the rail sits outside it.
+  // A task: the reading column plus its conversation rail. It fills the page
+  // gutter and nothing more — a task is two columns of live controls, not a
+  // measure of prose, and capping it at 1520px parked a second, much wider
+  // margin outside the standard 32px gutter on any monitor past that.
   task: {
-    measure: 'max-w-[1520px]',
+    measure: '',
     columns: 'lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]',
+    bottom: 'pb-[20px]',
     hasAside: true,
   },
-  // A calendar event: the reading column alone.
+  // A calendar event: one reading column, so it keeps a measure.
   event: {
     measure: 'max-w-[1120px]',
     columns: '',
+    bottom: 'pb-[40px]',
     hasAside: false,
   },
 };
@@ -71,7 +72,7 @@ export default function DetailLayout({
   children,
   className = '',
 }) {
-  const { measure, columns, hasAside } = CONTEXTS[context] || CONTEXTS.event;
+  const { measure, columns, bottom, hasAside } = CONTEXTS[context] || CONTEXTS.event;
   const showsAside = Boolean(hasAside && aside);
   const asideOnly = mobilePane === 'aside';
 
@@ -84,7 +85,7 @@ export default function DetailLayout({
       <div
         ref={scrollRef}
         onScroll={onScrolledChange ? event => onScrolledChange(event.currentTarget.scrollTop > 4) : undefined}
-        className="page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pb-[40px]"
+        className={`page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto ${bottom}`}
       >
         <div
           className={`mx-auto grid w-full grid-cols-1 gap-[20px] ${measure} ${showsAside ? columns : ''} ${

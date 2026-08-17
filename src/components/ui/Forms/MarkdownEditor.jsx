@@ -78,6 +78,7 @@ function cleanFileName(name = 'file') {
  * @param {string} props.placeholder Text shown while empty.
  * @param {string} props.minHeight CSS height the writing area starts at.
  * @param {'write'|'preview'} props.defaultTab Which tab opens first.
+ * @param {'card'|'flush'} props.frame `card` is a bordered, rounded box of its own. `flush` drops the border and inherits the radius, for when the editor fills a panel and *is* that panel rather than a second box inside it — the parent must clip (`overflow: hidden`).
  * @param {(files: File[]) => Promise<string[]>} props.onUploadFiles Uploads dropped or picked files and returns their URLs.
  * @param {boolean} props.uploading Busy: the toolbar's upload action is blocked while a file is in flight.
  */
@@ -87,6 +88,7 @@ export default function MarkdownEditor({
   placeholder = 'Напишіть опис завдання...',
   minHeight = '150px',
   defaultTab = 'write',
+  frame = 'card',
   onUploadFiles,
   uploading = false,
 }) {
@@ -303,9 +305,12 @@ export default function MarkdownEditor({
   }, [commit]);
 
   const { canUndo, canRedo } = historyState;
+  // Fullscreen is always its own box, whatever frame the inline editor wears.
   const editorClassName = fullscreen
     ? 'fixed inset-3 z-[200] flex flex-col overflow-hidden rounded-[16px] border border-line bg-white sm:inset-6'
-    : 'flex w-full flex-col overflow-hidden rounded-[16px] border border-line bg-white';
+    : frame === 'flush'
+      ? 'flex w-full flex-col overflow-hidden rounded-[inherit] bg-white'
+      : 'flex w-full flex-col overflow-hidden rounded-[16px] border border-line bg-white';
 
   return (
     <div className={editorClassName}>

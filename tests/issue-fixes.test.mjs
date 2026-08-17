@@ -26,11 +26,16 @@ test('QUI-77 keeps task detail additions compact and floating menus stationary',
   assert.ok(mainSections.length > 0, 'the description opens the task sections');
 
   assert.match(issueDetail, /<Popover[\s\S]{0,180}align="start"[\s\S]{0,180}hideArrow/);
-  // The two densities are unchanged; they are named now instead of being two
-  // raw CSS lengths written at the call site (see tests/kit-drift.test.mjs).
-  assert.match(issueDetail, /padding=\{isExternalReporter \? 'default' : 'tight'\}/);
+  // An external author has no profile and no chat, so their name still opens a
+  // popover that explains that. The density is named, not a raw CSS length
+  // written at the call site (see tests/kit-drift.test.mjs).
+  assert.match(issueDetail, /padding="default"/);
   assert.match(issueDetail, /triggerClassName="inline-flex"/);
-  assert.match(issueDetail, /Написати в чат[\s\S]{0,80}<\/Button>/);
+  // A member's name opens the product's own menu — the same panel the kebab
+  // drops — instead of a hand-built popover body full of ghost buttons.
+  assert.match(issueDetail, /<ContextMenu\s+align="start"/);
+  assert.match(issueDetail, /label: 'Написати в чат',\s*\n\s*icon: MessageCircle,/);
+  assert.doesNotMatch(issueDetail, /Написати в чат\s*\n\s*<\/Button>/);
   assert.doesNotMatch(popover, /animate-in|zoom-in|slide-in/);
   assert.doesNotMatch(mainSections, /border-t border-line/);
   assert.doesNotMatch(mainSections, /<FormGroup label="(?:Зв’язок|Завдання)"/);

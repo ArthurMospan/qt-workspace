@@ -294,7 +294,13 @@ test('every data-ui-* declaration survives the cascade', async ({ page }) => {
   // of this question. What is left is the handful that still declare concrete
   // geometry — and the guard is that the number does not quietly reach zero,
   // which would mean the check had stopped looking at anything.
-  expect(checked, 'the matrix must render the compositions this reads').toBeGreaterThan(20);
+  //
+  // Lowered 20 → 15 when `menu-item` was deleted. It was one of the few
+  // compositions declaring concrete geometry (`width: 100%`, `border-radius: 0`)
+  // across three owner tags, so it was carrying a good share of this count on
+  // its own. Removing the rule that dressed a Button as a menu row is the point,
+  // not a regression in coverage.
+  expect(checked, 'the matrix must render the compositions this reads').toBeGreaterThan(15);
   expect(
     dead,
     'a declaration that cannot reach the screen must be removed, or the utility that beats it must go',

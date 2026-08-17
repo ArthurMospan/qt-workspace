@@ -90,7 +90,18 @@ export default function TaskElementsSection() {
         component="MarkdownEditor"
         fullWidth
       >
-        <MarkdownEditor value={markdown} onChange={setMarkdown} minHeight="180px" />
+        <div className="flex flex-col gap-[16px]">
+          <div className="flex flex-col gap-[8px]">
+            <span className="font-mono text-[9px] font-bold text-[#1f1f1f]">frame=&quot;card&quot; — власна рамка</span>
+            <MarkdownEditor value={markdown} onChange={setMarkdown} minHeight="180px" />
+          </div>
+          <div className="flex flex-col gap-[8px]">
+            <span className="font-mono text-[9px] font-bold text-[#1f1f1f]">frame=&quot;flush&quot; — редактор і є панеллю (батько обрізає)</span>
+            <div data-ui-surface="panel" data-ui-padding="none" className="ui-surface flex w-full flex-col overflow-hidden">
+              <MarkdownEditor frame="flush" value={markdown} onChange={setMarkdown} minHeight="180px" />
+            </div>
+          </div>
+        </div>
       </PreviewBlock>
 
       <PreviewBlock

@@ -13,6 +13,7 @@ import {
   Link2,
   LockKeyhole,
   MapPin,
+  MessageCircle,
   MoreHorizontal,
   Pencil,
   Play,
@@ -21,6 +22,7 @@ import {
   Settings2,
   Square as StopIcon,
   Trash2,
+  User,
   Users,
   X,
 } from 'lucide-react';
@@ -801,15 +803,12 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                 )}
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] font-medium text-muted">
-                  <Popover
-                    position="bottom"
+                  {/* The product's menu, exactly as the task page's «Автор:»
+                      opens it — a person's name offers the same two things
+                      wherever it is printed. */}
+                  <ContextMenu
                     align="start"
-                    gap={4}
-                    hideCloseIcon
-                    hideArrow
-                    minWidth="200px"
-                    padding="tight"
-                    triggerClassName="inline-flex"
+                    dropdownClassName="w-[210px]"
                     trigger={(
                       <MetaTrigger
                         label="Організатор:"
@@ -817,36 +816,23 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         name={memberLabel(organizer)}
                       />
                     )}
-                  >
-                    {({ close }) => (
-                      <div className="w-[188px]">
-                        <Button
-                          style="ghost"
-                          size="md"
-                          composition="menu-item"
-                          onClick={() => {
-                            close();
-                            const params = new URLSearchParams(searchParams.toString());
-                            params.set('member', organizer?.id || organizer?.uid || event.organizerId);
-                            router.push(`${pathname}?${params.toString()}`);
-                          }}
-                        >
-                          Переглянути профіль
-                        </Button>
-                        <Button
-                          style="ghost"
-                          size="md"
-                          composition="menu-item"
-                          onClick={() => {
-                            close();
-                            router.push(`/chat?dm=${encodeURIComponent(organizer?.id || organizer?.uid || event.organizerId)}`);
-                          }}
-                        >
-                          Написати в чат
-                        </Button>
-                      </div>
-                    )}
-                  </Popover>
+                    items={[
+                      {
+                        label: 'Переглянути профіль',
+                        icon: User,
+                        onClick: () => {
+                          const params = new URLSearchParams(searchParams.toString());
+                          params.set('member', organizer?.id || organizer?.uid || event.organizerId);
+                          router.push(`${pathname}?${params.toString()}`);
+                        },
+                      },
+                      {
+                        label: 'Написати в чат',
+                        icon: MessageCircle,
+                        onClick: () => router.push(`/chat?dm=${encodeURIComponent(organizer?.id || organizer?.uid || event.organizerId)}`),
+                      },
+                    ]}
+                  />
                   <span className="h-[3px] w-[3px] rounded-full bg-faint" />
                   <span>створили <strong className="font-semibold text-ink">{relativeTime(event.createdAt)}</strong></span>
                   <span className="h-[3px] w-[3px] rounded-full bg-faint" />

@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 110,
-    "props": 800,
-    "documentedProps": 800,
+    "props": 802,
+    "documentedProps": 802,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -553,7 +553,6 @@
             "duration-minutes",
             "inline-add-action",
             "inline-edit",
-            "menu-item",
             "metric-editor",
             "metric-text",
             "project-name",
@@ -1808,6 +1807,13 @@
       "summary": "The dropdown menu behind a ⋮ or any other trigger. Rendered in a portal, so a row with `overflow: hidden` cannot cut it off.",
       "props": [
         {
+          "name": "align",
+          "default": "'end'",
+          "type": "'start'|'end'",
+          "values": [],
+          "description": "Which edge the panel lines up with. `end` suits a kebab at the right of a row; `start` suits a trigger that sits at the left of one."
+        },
+        {
           "name": "className",
           "default": "''",
           "type": "string",
@@ -2909,7 +2915,6 @@
             "duration-minutes",
             "inline-add-action",
             "inline-edit",
-            "menu-item",
             "metric-editor",
             "metric-text",
             "project-name",
@@ -3242,6 +3247,13 @@
           "type": "'write'|'preview'",
           "values": [],
           "description": "Which tab opens first."
+        },
+        {
+          "name": "frame",
+          "default": "'card'",
+          "type": "'card'|'flush'",
+          "values": [],
+          "description": "`card` is a bordered, rounded box of its own. `flush` drops the border and inherits the radius, for when the editor fills a panel and *is* that panel rather than a second box inside it — the parent must clip (`overflow: hidden`)."
         },
         {
           "name": "minHeight",

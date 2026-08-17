@@ -53,7 +53,7 @@ import {
   AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
   Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon,
-  Maximize2,
+  Maximize2, User,
 } from 'lucide-react';
 import { ParentTaskIcon, TaskIcon } from '@/lib/design/icons';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
@@ -82,6 +82,15 @@ import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 // Statuses are now loaded dynamically via useWorkflowConfig.
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
+
+// The same wording Settings uses when you walk away from an unsaved field.
+const UNSAVED_EDIT_PROMPT = {
+  title: 'Незбережені зміни',
+  message: 'У вас є незбережені зміни в завданні. Ви впевнені, що хочете піти без збереження?',
+  confirmText: 'Піти',
+  cancelText: 'Повернутись',
+  danger: true,
+};
 
 // Таб «QuickTeam+» у чаті завдання. Окремий компонент, щоб usePortalSession
 // (обмін токена з порталом) запускався лише коли таб реально відкрито.
@@ -485,13 +494,69 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     return () => useWorkspaceStore.setState({ breadcrumbs: [] });
   }, [canonicalIssuePath, project?.name, issue?.issueKey, projectId, isModal, showToast]);
 
+  // Whether the open draft says anything the task does not. Everything that can
+  // be edited in place (status, sprint, labels…) writes straight through, so the
+  // draft is exactly the six fields `enterEdit` copies.
+  const draftIsDirty = Boolean(isEditing && issue && (
+    (draft.title ?? '') !== (issue.title ?? '')
+    || (draft.type || '') !== (issue.type || '')
+    || (draft.priority || '') !== (issue.priority || '')
+    || (draft.estimateMinutes || 0) !== (issue.estimateMinutes || 0)
+    || (draft.description || '') !== (issue.description || '')
+    || (draft.dueDate || '') !== toLocalDateInput(parseDueDate(issue.dueDate, { timeZone }), { timeZone })
+  ));
+
+  // Walking off the page mid-edit used to take the draft with it silently. The
+  // same guard Settings uses: `beforeunload` for a reload or a closed tab, and
+  // in-app <Link> clicks caught in the capture phase so we run before Next's own
+  // handler and can still cancel the navigation.
+  useEffect(() => {
+    if (!draftIsDirty) return;
+
+    const onBeforeUnload = event => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    const onClickCapture = event => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target?.closest?.('a[href]');
+      if (!anchor) return;
+      if (anchor.target && anchor.target !== '_self') return;      // opens a new tab
+      const url = new URL(anchor.href, window.location.origin);
+      if (url.origin !== window.location.origin) return;           // external → beforeunload handles it
+      if (url.pathname === window.location.pathname) return;        // same page / in-page anchor
+      event.preventDefault();
+      event.stopPropagation();
+      confirmDialog(UNSAVED_EDIT_PROMPT).then(leave => {
+        if (!leave) return;
+        setIsEditing(false); // discarded → the guard stops prompting
+        router.push(url.pathname + url.search + url.hash);
+      });
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    document.addEventListener('click', onClickCapture, true);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      document.removeEventListener('click', onClickCapture, true);
+    };
+  }, [confirmDialog, draftIsDirty, router]);
+
   useEffect(() => {
     const fn = (e) => {
       if (e.key !== 'Escape') return;
       if (document.querySelector('[data-qt-floating-overlay]')) return;
       if (showLinkInput) { setShowLinkInput(false); return; }
       if (showSubInput) { setShowSubInput(false); return; }
-      if (isEditing) { setIsEditing(false); return; }
+      if (isEditing) {
+        // A stray Escape is the other accidental way out of edit mode.
+        if (!draftIsDirty) { setIsEditing(false); return; }
+        void confirmDialog(UNSAVED_EDIT_PROMPT).then(discard => {
+          if (discard) setIsEditing(false);
+        });
+        return;
+      }
 
       const tag = e.target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -499,7 +564,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     };
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
-  }, [router, projectId, isEditing, showLinkInput, showSubInput]);
+  }, [router, projectId, isEditing, showLinkInput, showSubInput, draftIsDirty, confirmDialog]);
 
   if (!issue) {
     return (
@@ -605,6 +670,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     candidate.id !== issueId
     && !existingParentIssueId(candidate)
   ));
+  // Only labels that still exist in the workflow. A label deleted in settings
+  // leaves its id behind on every task that wore it, and counting the *ids*
+  // meant the block kept announcing «Мітки 3» above an empty row forever.
+  const issueLabels = (issue.labelIds || [])
+    .map(id => availableLabels.find(label => label.id === id))
+    .filter(Boolean);
   const visibleAttachments = issue.attachments || [];
   const currentIssueLinks = links
     .map(link => ({ link, perspective: issueLinkPerspective(link, issueId) }))
@@ -614,6 +685,16 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     item.id !== issueId
     && !linkedIssueIds.has(item.id)
   ));
+
+  // Does the description panel have anything to say below the editor? While
+  // reading there is always the description or its placeholder; while writing
+  // the padded half of the panel is drawn only when something is actually in it,
+  // so an empty task edits as the editor alone with no grey strip under it.
+  const hasSecondaryBlocks = issueLabels.length > 0
+    || childIssues.length > 0 || showSubInput
+    || checklistAll > 0
+    || currentIssueLinks.length > 0 || showLinkInput;
+  const hasPanelBody = !isEditing || visibleAttachments.length > 0 || hasSecondaryBlocks;
 
   const spentMin  = loggedMinutes;
   const estimMin  = isEditing ? (draft.estimateMinutes ?? issue.estimateMinutes ?? 0) : (issue.estimateMinutes || 0);
@@ -1069,20 +1150,24 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             
             {/* Metadata strip for non-editable details */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted font-medium mt-1.5">
-              <Popover
-                position="bottom"
-                align="start"
-                gap={4}
-                hideCloseIcon
-                hideArrow
-                minWidth="200px"
-                padding={isExternalReporter ? 'default' : 'tight'}
-                triggerClassName="inline-flex"
-                trigger={(
-                  <MetaTrigger label="Автор:" user={reporter} name={reporter.name} />
-                )}
-              >
-                {({ close }) => isExternalReporter ? (
+              {/* A member's name opens the two things you can do with a person,
+                  so it opens the product's menu — the same panel, rows and icons
+                  the kebab beside the title drops. An external author has no
+                  profile and no chat, so that one stays an explanation. */}
+              {isExternalReporter ? (
+                <Popover
+                  position="bottom"
+                  align="start"
+                  gap={4}
+                  hideCloseIcon
+                  hideArrow
+                  minWidth="200px"
+                  padding="default"
+                  triggerClassName="inline-flex"
+                  trigger={(
+                    <MetaTrigger label="Автор:" user={reporter} name={reporter.name} />
+                  )}
+                >
                   <div className="w-[260px]">
                     <p className="text-[13px] font-bold text-ink">Зовнішній автор</p>
                     <p className="mt-1 text-[12px] leading-relaxed text-muted">{externalReporterSource}</p>
@@ -1100,35 +1185,32 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       </a>
                     )}
                   </div>
-                ) : (
-                  <div className="w-[188px]">
-                    <Button
-                      style="ghost"
-                      size="md"
-                      composition="menu-item"
-                      onClick={() => {
-                        close();
+                </Popover>
+              ) : (
+                <ContextMenu
+                  align="start"
+                  dropdownClassName="w-[210px]"
+                  trigger={(
+                    <MetaTrigger label="Автор:" user={reporter} name={reporter.name} />
+                  )}
+                  items={[
+                    {
+                      label: 'Переглянути профіль',
+                      icon: User,
+                      onClick: () => {
                         const params = new URLSearchParams(searchParams.toString());
                         params.set('member', reporterMember.id || reporterMember.uid);
                         router.push(`${pathname}?${params.toString()}`);
-                      }}
-                    >
-                      Переглянути профіль
-                    </Button>
-                    <Button
-                      style="ghost"
-                      size="md"
-                      composition="menu-item"
-                      onClick={() => {
-                        close();
-                        router.push(`/chat?dm=${encodeURIComponent(reporterMember.id || reporterMember.uid)}`);
-                      }}
-                    >
-                      Написати в чат
-                    </Button>
-                  </div>
-                )}
-              </Popover>
+                      },
+                    },
+                    {
+                      label: 'Написати в чат',
+                      icon: MessageCircle,
+                      onClick: () => router.push(`/chat?dm=${encodeURIComponent(reporterMember.id || reporterMember.uid)}`),
+                    },
+                  ]}
+                />
+              )}
               <span className="w-[3px] h-[3px] rounded-full bg-faint" />
               
               {/* Created relative time */}
@@ -1591,23 +1673,26 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
 
               {/* DESCRIPTION */}
               <DetailSection icon={AlignLeft} title="Опис">
-                <div data-ui-surface="panel" data-ui-padding="wide" className="ui-surface flex w-full flex-col gap-4">
+                {/* The panel carries no padding of its own: the editor *is* the
+                    panel while you write, filling it corner to corner instead of
+                    sitting inside it as a second bordered, rounded box. Everything
+                    that reads rather than writes gets the padding back below. */}
+                <div data-ui-surface="panel" data-ui-padding="none" className="ui-surface flex w-full min-w-0 flex-col overflow-hidden">
+                  {isEditing && (
+                    <MarkdownEditor
+                      frame="flush"
+                      value={draft.description}
+                      onChange={description => setDraft(d => ({ ...d, description }))}
+                      onUploadFiles={handleUploadAttachments}
+                      uploading={uploadingAttach}
+                      placeholder="Додай детальний опис завдання..."
+                      minHeight="320px"
+                    />
+                  )}
+                  {hasPanelBody && (
+                  <div className="flex w-full min-w-0 flex-col gap-4 px-4 py-3">
                   {isEditing ? (
-                    <>
-                      <MarkdownEditor
-                        value={draft.description}
-                        onChange={description => setDraft(d => ({ ...d, description }))}
-                        onUploadFiles={handleUploadAttachments}
-                        uploading={uploadingAttach}
-                        placeholder="Додай детальний опис завдання..."
-                        minHeight="320px"
-                      />
-                      {visibleAttachments.length > 0 && (
-                        <div className="mt-3">
-                          {attachmentRows}
-                        </div>
-                      )}
-                    </>
+                    visibleAttachments.length > 0 ? attachmentRows : null
                   ) : (issue.description || visibleAttachments.length > 0) ? (
                     <>
                       {issue.description && (
@@ -1627,14 +1712,17 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     </DescriptionPlaceholder>
                   )}
 
-                {(issue.labelIds || []).length > 0 && (
-                  <DetailSection density="group" icon={TagIcon} title="Мітки" count={issue.labelIds.length} className="pt-1">
+                {issueLabels.length > 0 && (
+                  <DetailSection density="group" icon={TagIcon} title="Мітки" count={issueLabels.length} className="pt-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      {(issue.labelIds || []).map(id => {
-                        const label = availableLabels.find(item => item.id === id);
-                        if (!label) return null;
-                        return <Tag key={id} label={label.label || label.name} color={label.color} onRemove={() => update({ labelIds: (issue.labelIds || []).filter(item => item !== id) })} />;
-                      })}
+                      {issueLabels.map(label => (
+                        <Tag
+                          key={label.id}
+                          label={label.label || label.name}
+                          color={label.color}
+                          onRemove={() => update({ labelIds: (issue.labelIds || []).filter(item => item !== label.id) })}
+                        />
+                      ))}
                     </div>
                   </DetailSection>
                 )}
@@ -1851,6 +1939,8 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               </div>
             </DetailSection>
             )}
+                  </div>
+                  )}
                 </div>
                 {!isArchived && (
                   <div className="relative flex flex-wrap items-center gap-1.5">

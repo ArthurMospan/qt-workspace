@@ -42,7 +42,9 @@ test('every composition the product passes is still declared', () => {
     Input: ['metric-editor', 'metric-text', 'inline-edit', 'duration-hours', 'duration-minutes', 'duration-compact-hours', 'duration-compact-minutes', 'status-entry', 'project-name'],
     Segmented: ['dialog-tabs', 'billing-selection'],
     Textarea: ['transcript', 'audio-transcript', 'project-description', 'long-form', 'settings-note'],
-    Button: ['menu-item', 'settings-row-action', 'status-submit', 'workspace-guard', 'inline-add-action'],
+    // `menu-item` is gone: it dressed a Button as a menu row for the two
+    // popovers that hand-built a menu, and both open ContextMenu now.
+    Button: ['settings-row-action', 'status-submit', 'workspace-guard', 'inline-add-action'],
   })) {
     for (const value of values) {
       assert.ok(

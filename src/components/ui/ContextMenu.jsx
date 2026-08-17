@@ -16,6 +16,7 @@ import { useFloatingOverlayEscape } from '@/lib/hooks/useFloatingOverlayEscape';
  * @param {{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean, disabled?: boolean, disabledReason?: string}[]} props.items The rows; `selected` gives one a trailing tick instead of a "✓ " in its label.
  * @param {(open: boolean) => void} props.onOpenChange Fires when the menu opens or closes.
  * @param {boolean} props.closeOnSelect Whether a click closes it; toggle menus keep it open while ticking.
+ * @param {'start'|'end'} props.align Which edge the panel lines up with. `end` suits a kebab at the right of a row; `start` suits a trigger that sits at the left of one.
  * @param {string} props.dropdownClassName Placement of the panel only.
  * @param {string} props.className Placement of the trigger wrapper only.
  */
@@ -27,6 +28,7 @@ export default function ContextMenu({
   items = [],
   className = '',
   dropdownClassName = '',
+  align = 'end',
   onOpenChange, // Callback when open state changes
   closeOnSelect = true, // Toggle menus keep the panel open while ticking items
 }) {
@@ -38,7 +40,7 @@ export default function ContextMenu({
     anchorRef: containerRef,
     overlayRef: menuRef,
     preferredPlacement: 'bottom',
-    align: 'end',
+    align,
     gap: 4,
   });
   useFloatingOverlayEscape({ open: isOpen, onClose: () => setIsOpen(false) });

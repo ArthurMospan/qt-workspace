@@ -15,7 +15,7 @@
   "totals": {
     "components": 110,
     "stateful": 98,
-    "hover": 68,
+    "hover": 66,
     "focus": 67,
     "disabled": 34,
     "loading": 6,
@@ -221,7 +221,6 @@
     "Input": {
       "error": "prop",
       "disabled": "native",
-      "hover": "css",
       "focus": "own",
       "long-text": "value"
     },
@@ -437,7 +436,6 @@
     "TimePicker": {
       "disabled": "prop",
       "error": "prop",
-      "hover": "css",
       "focus": "own",
       "long-text": "value"
     },

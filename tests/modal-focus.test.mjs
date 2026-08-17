@@ -46,8 +46,34 @@ test('Escape closes a floating control, then its form, then the task page', asyn
   assert.match(contextMenu, /useFloatingOverlayEscape\(\{ open: isOpen/);
   assert.match(escapeHook, /event\.stopPropagation\(\)/);
   assert.match(issueDetail, /if \(showLinkInput\) \{ setShowLinkInput\(false\); return; \}/);
-  assert.match(issueDetail, /if \(isEditing\) \{ setIsEditing\(false\); return; \}/);
+  // Escape still leaves edit mode — but a draft that says something the task
+  // does not is confirmed away rather than dropped on the floor.
+  assert.match(issueDetail, /if \(!draftIsDirty\) \{ setIsEditing\(false\); return; \}/);
+  assert.match(issueDetail, /confirmDialog\(UNSAVED_EDIT_PROMPT\)\.then\(discard => \{/);
   assert.match(issueDetail, /router\.push\(`\/\$\{projectId\}`\)/);
+});
+
+test('walking off a task mid-edit is confirmed, not silently discarded', async () => {
+  const [issueDetail, settings] = await Promise.all([
+    read('../src/components/workspace/IssueDetail.jsx'),
+    read('../src/app/(app)/settings/page.js'),
+  ]);
+
+  // One wording for the one situation, on both pages that can be dirty.
+  for (const source of [issueDetail, settings]) {
+    assert.match(source, /title: 'Незбережені зміни'/);
+  }
+
+  // The draft is dirty only when it differs from the stored task, so merely
+  // opening the editor never prompts.
+  assert.match(issueDetail, /const draftIsDirty = Boolean\(isEditing && issue && \(/);
+  assert.match(issueDetail, /\(draft\.description \|\| ''\) !== \(issue\.description \|\| ''\)/);
+
+  // A reload or a closed tab, and in-app <Link> clicks caught before Next's own
+  // handler so the navigation can still be cancelled.
+  assert.match(issueDetail, /window\.addEventListener\('beforeunload', onBeforeUnload\)/);
+  assert.match(issueDetail, /document\.addEventListener\('click', onClickCapture, true\)/);
+  assert.match(issueDetail, /event\.preventDefault\(\);\s*\n\s*event\.stopPropagation\(\);/);
 });
 
 test('every product dialog outside the shared shell opts into the modal-focus contract', async () => {

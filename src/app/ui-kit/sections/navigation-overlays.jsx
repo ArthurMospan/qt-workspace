@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import ContextMenu from '@/components/ui/ContextMenu';
 import { CommandPalette, KeyboardShortcutsDialog, Popover, Tooltip, MetaTrigger } from '@/components/ui';
-import { Plus, Edit2, Trash2, Settings, MoreVertical, Copy, Users, Tag as TagIcon, Command, Keyboard } from 'lucide-react';
+import { Plus, Edit2, Trash2, Settings, MessageCircle, MoreVertical, Copy, User, Users, Tag as TagIcon, Command, Keyboard } from 'lucide-react';
 import { PreviewBlock } from '../preview';
 import { buildCommands } from '@/lib/utils/commandPalette.mjs';
 
@@ -66,34 +66,6 @@ export default function NavigationOverlaysSection() {
             </div>
           </Popover>
 
-          <Popover
-            position="bottom"
-            align="start"
-            gap={4}
-            hideCloseIcon
-            hideArrow
-            minWidth="200px"
-            padding="6px"
-            triggerClassName="inline-flex"
-            trigger={(
-              <MetaTrigger
-                label="Автор:"
-                user={{ id: 'u1', name: 'Артур Моспан' }}
-                name="Артур Моспан"
-                className="text-[12px] font-medium text-muted"
-              />
-            )}
-          >
-            <div className="w-[188px]">
-              <Button style="ghost" size="md" composition="menu-item">
-                Переглянути профіль
-              </Button>
-              <Button style="ghost" size="md" composition="menu-item">
-                Написати в чат
-              </Button>
-            </div>
-          </Popover>
-
           <Tooltip content="Це підказка при наведенні" position="top">
             <Button style="secondary">Наведіть для підказки</Button>
           </Tooltip>
@@ -120,6 +92,25 @@ export default function NavigationOverlaysSection() {
               dropdownClassName="w-[220px]"
               closeOnSelect={false}
               items={toggleMenuItems}
+            />
+          </div>
+          <div className="flex flex-col gap-[8px]">
+            <span className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider">Меню людини (align=&quot;start&quot;)</span>
+            <ContextMenu
+              align="start"
+              dropdownClassName="w-[210px]"
+              trigger={(
+                <MetaTrigger
+                  label="Автор:"
+                  user={{ id: 'u1', name: 'Артур Моспан' }}
+                  name="Артур Моспан"
+                  className="text-[12px] font-medium text-muted"
+                />
+              )}
+              items={[
+                { icon: User, label: 'Переглянути профіль' },
+                { icon: MessageCircle, label: 'Написати в чат' },
+              ]}
             />
           </div>
         </div>

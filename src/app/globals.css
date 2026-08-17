@@ -331,15 +331,10 @@
   .ui-control[data-ui-composition='inline-edit'] {
     --ui-control-pr: 54px;
   }
-  .ui-control[data-ui-composition='menu-item'] {
-    --ui-control-height: 32px;
-    width: 100%;
-    border-radius: 0;
-    color: var(--color-ink);
-  }
-  .ui-control[data-ui-composition='menu-item']:hover {
-    background: var(--color-canvas);
-  }
+  /* `menu-item` lived here: it made a Button look like a row of a menu, for the
+     two popovers that were hand-building a menu out of ghost buttons. Both open
+     the real `ContextMenu` now, so the vocabulary for faking one is gone with
+     them — keeping it declared is an invitation to build the lookalike again. */
   /* QUI-132. `<input type="time">` draws its own clock button on the right,
      next to the Clock icon the component already draws on the left — two
      clocks on one field, and the browser's one opens a dropdown nobody asked
