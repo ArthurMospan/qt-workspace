@@ -2087,7 +2087,12 @@ export default function SettingsPage() {
   // the save came back «Для видалених або застарілих статусів потрібно вибрати
   // ціль міграції» and the section rolled back. For any organization with real
   // work on a custom status, the reset button simply did not work.
-  const handleStatusesReset = async () => {
+  //
+  // `everything` is the Danger-zone button, which resets the catalogues beside
+  // the statuses. It used to write them straight through the debounced
+  // autosave, which meant it took exactly the route described above and left
+  // tasks standing on statuses it had just removed.
+  const handleStatusesReset = async ({ everything = false } = {}) => {
     const mutationOrganizationId = activeOrgId;
     if (!mutationOrganizationId) return;
 
@@ -2097,15 +2102,18 @@ export default function SettingsPage() {
       .map(migration => persistedStatuses.find(status => status.id === migration.fromStatusId))
       .filter(Boolean)
       .map(status => `«${status.label}»`);
+    const scope = everything
+      ? 'Статуси, типи, пріоритети та мітки буде замінено стандартним набором QuickTeam.'
+      : 'Усі ваші статуси в цій секції буде замінено стандартним набором QuickTeam.';
 
     if (!(await confirmDialog({
-      title: 'Скинути статуси?',
+      title: everything ? 'Скинути налаштування процесів?' : 'Скинути статуси?',
       message: movedLabels.length > 0
         // Naming them is the whole point: this is the only reset in settings
         // that moves tasks, and the person pressing it should know which.
-        ? `Стандартний набір QuickTeam не містить ${movedLabels.join(', ')}. Завдання з цих статусів буде переміщено у стандартний статус тієї самої категорії. Цю дію не можна скасувати.`
-        : 'Усі ваші статуси в цій секції буде замінено стандартним набором QuickTeam. Цю дію не можна скасувати.',
-      confirmText: 'Скинути й перемістити',
+        ? `${scope} Стандартний набір не містить ${movedLabels.join(', ')} — завдання з цих статусів буде переміщено у стандартний статус тієї самої категорії. Цю дію не можна скасувати.`
+        : `${scope} Цю дію не можна скасувати.`,
+      confirmText: movedLabels.length > 0 ? 'Скинути й перемістити' : 'Скинути',
       cancelText: 'Залишити',
       danger: true,
     }))) return;
@@ -2113,9 +2121,9 @@ export default function SettingsPage() {
 
     const payload = {
       statuses: cleanWorkflowItems(DEFAULT_STATUSES),
-      types: cleanWorkflowItems(types),
-      priorities: cleanWorkflowItems(priorities),
-      labels: cleanWorkflowItems(labels),
+      types: cleanWorkflowItems(everything ? DEFAULT_TYPES : types),
+      priorities: cleanWorkflowItems(everything ? DEFAULT_PRIORITIES : priorities),
+      labels: cleanWorkflowItems(everything ? DEFAULT_LABELS : labels),
       positions: cleanWorkflowItems(positions),
     };
     wfLatestPayload.current = payload;
@@ -2155,14 +2163,20 @@ export default function SettingsPage() {
       }
       if (wfOrgId.current !== mutationOrganizationId) return;
       setStatuses(DEFAULT_STATUSES);
+      if (everything) {
+        setTypes(DEFAULT_TYPES);
+        setPriorities(DEFAULT_PRIORITIES);
+        setLabels(DEFAULT_LABELS);
+      }
+      const resetNoun = everything ? 'Налаштування процесів скинуто' : 'Статуси скинуто';
       showToast(
         result.migratedIssues > 0
-          ? `Статуси скинуто, переміщено завдань: ${result.migratedIssues}`
-          : 'Статуси скинуто',
+          ? `${resetNoun}, переміщено завдань: ${result.migratedIssues}`
+          : resetNoun,
       );
     } catch (error) {
       if (wfOrgId.current !== mutationOrganizationId) return;
-      showToast(error.message || 'Не вдалося скинути статуси', 'error');
+      showToast(error.message || 'Не вдалося скинути налаштування', 'error');
     } finally {
       if (wfOrgId.current === mutationOrganizationId) setWfLoading(false);
     }
@@ -2270,7 +2284,7 @@ export default function SettingsPage() {
     },
     priorities: {
       noun: 'пріоритети',
-      hint: 'Чотири системні рівні не видаляються. Власні рівні можна додавати між ними — вигляд індикатора визначається позицією.',
+      hint: 'Чотири системні рівні не видаляються. Власні рівні можна додавати між ними — індикатор бере колір, який ви задали самому рівню.',
       apply: () => setPriorities(DEFAULT_PRIORITIES),
     },
     labels: {
@@ -3613,25 +3627,12 @@ export default function SettingsPage() {
               </Button>
             </Row>
 
-            <Row label="Скинути налаштування процесів" desc="Повернути статуси, типи та пріоритети до стандартних значень">
+            <Row
+              label="Скинути налаштування процесів"
+              desc="Повернути статуси, типи, пріоритети та мітки до стандартних значень. Завдання зі статусів, яких немає у стандартному наборі, буде переміщено"
+            >
               <Button
-                onClick={async () => {
-                  const resetOrganizationId = activeOrgId;
-                  if (!(await confirmDialog({
-                    title: 'Скинути всі workflow налаштування?',
-                    message: 'Статуси, типи, пріоритети та мітки буде замінено стандартним набором QuickTeam. Цю дію не можна скасувати.',
-                    confirmText: 'Скинути', cancelText: 'Залишити', danger: true,
-                  }))) return;
-                  if (
-                    !resetOrganizationId
-                    || wfOrgId.current !== resetOrganizationId
-                  ) return;
-                  setStatuses(DEFAULT_STATUSES);
-                  setTypes(DEFAULT_TYPES);
-                  setPriorities(DEFAULT_PRIORITIES);
-                  setLabels(DEFAULT_LABELS);
-                  // Auto-save persists these changes; no manual save needed.
-                }}
+                onClick={() => handleStatusesReset({ everything: true })}
                 style="ghost" color="red" size="lg"
                 icon={RefreshCw}
               >

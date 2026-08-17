@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 217,
-    "parsedFiles": 217,
+    "productFiles": 218,
+    "parsedFiles": 218,
     "parseErrors": 0,
     "nativeControls": 18,
     "structures": {
@@ -255,7 +255,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHelpMenu.jsx:104",
+      "location": "src/components/WorkspaceHelpMenu.jsx:143",
       "className": "mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted hover:text-ink",
       "text": "QuickTeam",
       "childElements": [
@@ -270,7 +270,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:265",
+      "location": "src/components/WorkspaceSidebar.jsx:268",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -285,7 +285,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:288",
+      "location": "src/components/WorkspaceSidebar.jsx:291",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -300,7 +300,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:348",
+      "location": "src/components/WorkspaceSidebar.jsx:351",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -315,7 +315,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:426",
+      "location": "src/components/WorkspaceSidebar.jsx:429",
       "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
@@ -382,17 +382,17 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/WorkspaceSidebar.jsx:265",
+      "location": "src/components/WorkspaceSidebar.jsx:268",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:288",
+      "location": "src/components/WorkspaceSidebar.jsx:291",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:348",
+      "location": "src/components/WorkspaceSidebar.jsx:351",
       "tag": "button",
       "context": "branding-action"
     }
@@ -423,7 +423,7 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:204",
+      "location": "src/app/(app)/page.js:207",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -598,12 +598,12 @@
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:142",
+      "location": "src/components/workspace/TimesheetTab.jsx:147",
       "tag": "div",
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:604",
+      "location": "src/components/workspace/TimesheetTab.jsx:609",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },

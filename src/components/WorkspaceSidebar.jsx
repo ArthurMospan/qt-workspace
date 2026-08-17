@@ -180,7 +180,10 @@ export default function WorkspaceSidebar() {
                   <Link
                     href="/"
                     className="group/logo relative block w-[32px] h-[32px] shrink-0 [perspective:1000px]"
-                    title="На головну — наведіть, щоб побачити QuickTeam"
+                    // The tooltip only ever appears on hover, and by then the
+                    // logo has already flipped: telling the reader to hover was
+                    // an instruction for something they had just done.
+                    title="На головну"
                     aria-label="На головну"
                   >
                     <div className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] group-hover/logo:[transform:rotateY(180deg)]">

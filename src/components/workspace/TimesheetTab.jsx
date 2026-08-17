@@ -71,7 +71,12 @@ function fmtWork(min) {
 // fought the content instead of ranking it. Muted, warm equivalents below keep
 // text contrast above 4.5:1 on their own fill:
 //   норма виконана  #e6f2ea / #2f6b4b   частково  #fdf0e3 / #9a5b18
-//   сьогодні        #f4f8f5 / ring #dbe9e0 / #2f6b4b
+//   сьогодні        #f4f8f5 / header #eaf2ec / ring #dbe9e0 / #2f6b4b
+//
+// Today is that pale green everywhere it is a fill. It used to be `bg-canvas`
+// in the team table, which is the page background itself: on a white table the
+// column read as a hole punched through the card rather than as the day you
+// are standing on.
 
 // Colored capacity chip: "6г 20хв з 8г"
 function DayChip({ minutes, capacity = DAY_MIN, compact = false }) {
@@ -246,8 +251,8 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
           <tr className="border-b border-line bg-white">
             <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]">Учасник</th>
             {days.map((d, i) => (
-              <th key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-canvas' : 'bg-white'}`}>
-                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-ink' : 'text-muted'}`}>
+              <th key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-[#eaf2ec]' : 'bg-white'}`}>
+                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-[#2f6b4b]' : 'text-muted'}`}>
                   {DAY_LABELS[i]} {d.getDate()}
                 </span>
               </th>
@@ -268,7 +273,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               {days.map((d, i) => {
                 const min = byDay[dayKey(d)] || 0;
                 return (
-                  <td key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-canvas' : 'bg-white'}`}>
+                  <td key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-[#f4f8f5]' : 'bg-white'}`}>
                     {min > 0
                       ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
                       : <span className="text-[12px] text-faint">—</span>}

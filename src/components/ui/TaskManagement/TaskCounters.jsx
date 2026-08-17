@@ -65,7 +65,10 @@ export default function TaskCounters({
         </span>
       )}
       {mentions > 0 && (
-        <span className="flex items-center gap-[4px] text-ink" title={`Вас згадали: ${mentions}`}>
+        // It counts unread mentions, not every time you have ever been named
+        // here, and it clears when you read the chat. «Вас згадали: 3» said the
+        // second thing and then dropped to zero on its own.
+        <span className="flex items-center gap-[4px] text-ink" title={`Непрочитаних згадок про вас: ${mentions}`}>
           <AtSign size={scale.icon} strokeWidth={2.4} />
           <span>{mentions}</span>
         </span>
