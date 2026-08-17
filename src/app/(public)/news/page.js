@@ -19,6 +19,13 @@ export default function NewsPage() {
         <p className="ui-type-eyebrow text-muted">QuickTeam</p>
         <h1 className="ui-type-page-title mt-[8px] text-ink">Новини продукту</h1>
       </div>
+      {NEWS_ARTICLES.length === 0 && (
+        <Surface preset="bordered-card" padding="lg">
+          <p className="text-[13px] leading-[1.65] text-muted">
+            Продукт у беті. Щойно вийде реліз, тут з’являться описи нових можливостей.
+          </p>
+        </Surface>
+      )}
       <div className="flex flex-col gap-[10px]">
         {NEWS_ARTICLES.map(article => (
           <Surface key={article.id} preset="bordered-card" padding="lg">

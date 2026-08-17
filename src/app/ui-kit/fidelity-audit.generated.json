@@ -8,19 +8,18 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 225,
-    "parsedFiles": 225,
+    "productFiles": 224,
+    "parsedFiles": 224,
     "parseErrors": 0,
-    "nativeControls": 19,
+    "nativeControls": 18,
     "structures": {
       "analytics": 2,
       "qtplus": 1,
       "board": 1,
       "settings": 1,
-      "shell": 13,
-      "other": 1
+      "shell": 13
     },
-    "styledNativeControls": 14,
+    "styledNativeControls": 13,
     "reviewedNativeControls": 4,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -33,7 +32,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 18,
+    "button": 17,
     "input": 0,
     "textarea": 1,
     "select": 0
@@ -271,21 +270,6 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceHelpMenu.jsx:126",
-      "className": "mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted hover:text-ink",
-      "text": "QuickTeam",
-      "childElements": [
-        "History"
-      ],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "other",
-      "routes": []
-    },
-    {
-      "tag": "button",
       "location": "src/components/WorkspaceSidebar.jsx:268",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
@@ -388,10 +372,6 @@
     },
     {
       "file": "src/components/workspace/qtplus/cards/FileCard.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/WorkspaceHelpMenu.jsx",
       "count": 1
     }
   ],

@@ -66,7 +66,6 @@ export function useWorkspaceHelp() {
     { isDivider: true },
     { label: 'Довідка', icon: BookOpen, onClick: () => setInfoPane('help') },
     { label: 'Новини', icon: Newspaper, onClick: () => setInfoPane('news') },
-    { label: `Версія ${APP_VERSION}`, icon: Info, onClick: () => setInfoPane('versions') },
     { isDivider: true },
     // A contract needs an address that can be linked, printed and cited, so
     // these three stay full pages.
@@ -123,14 +122,13 @@ export function useWorkspaceHelp() {
               );
             })}
           </div>
-          <button
-            type="button"
-            onClick={() => { setSupportOpen(false); setInfoPane('versions'); }}
-            className="mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted hover:text-ink"
-          >
+          {/* The build, for a support conversation that needs it. It used to
+              be a link into a changelog written for whoever built the product;
+              the number is the only part of that anybody was ever asked for. */}
+          <p className="mt-[4px] flex items-center justify-center gap-[6px] text-[11px] font-medium text-muted">
             <History size={12} />
             QuickTeam {APP_VERSION}
-          </button>
+          </p>
         </div>
       </Dialog>
     </>

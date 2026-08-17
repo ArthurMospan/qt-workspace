@@ -98,7 +98,6 @@ test('help, news and versions are read in place; contracts keep their own addres
     read('src/app/(public)/_components/LegalDocumentPage.jsx'),
     read('src/app/(public)/help/HelpExplorer.jsx'),
     read('src/app/(public)/news/page.js'),
-    read('src/app/(public)/versions/page.js'),
   ]);
   // The public routes are a document shell, not a second site: no logo lockup,
   // no navigation across sections, no "Увійти" — only the way back.
@@ -110,7 +109,6 @@ test('help, news and versions are read in place; contracts keep their own addres
     ['legal document', legal],
     ['help explorer', helpExplorer],
     ['news index', newsIndex],
-    ['version history', versions],
   ]) {
     assert.doesNotMatch(
       withoutComments(source),
@@ -120,17 +118,21 @@ test('help, news and versions are read in place; contracts keep their own addres
   }
   // Three things you glance at and close. They used to navigate to a separate
   // public shell and throw away whatever was on screen.
-  for (const pane of ['help', 'news', 'versions']) {
+  for (const pane of ['help', 'news']) {
     assert.match(menu, new RegExp(`setInfoPane\\('${pane}'\\)`));
   }
-  assert.doesNotMatch(menu, /router\.push\('\/(help|news|versions)'\)/);
+  assert.doesNotMatch(menu, /router\.push\('\/(help|news)'\)/);
+  // The version history went out with its page: a changelog grouped by area is
+  // written for whoever built the thing, not for somebody asking what changed.
+  // The build number stays, because a support conversation asks for it.
+  assert.doesNotMatch(menu, /setInfoPane\('versions'\)/);
+  assert.match(menu, /QuickTeam \{APP_VERSION\}/);
   // A contract needs an address that can be linked, printed and cited.
   for (const legalRoute of ['/terms', '/privacy', '/offer']) {
     assert.match(menu, new RegExp(`router\\.push\\('${legalRoute}'\\)`));
   }
   assert.match(centre, /HELP_ARTICLES/);
   assert.match(centre, /NEWS_ARTICLES/);
-  assert.match(centre, /VERSION_HISTORY/);
 });
 
 test('the quiet greys stay light and stay three steps apart', async () => {

@@ -28,7 +28,6 @@ export default async function NewsArticlePage({ params }) {
       <div className="mt-[32px] flex flex-col gap-[28px]">
         {article.sections.map(section => <section key={section.title}><h2 className="ui-type-section-title text-ink">{section.title}</h2><div className="mt-[10px] flex flex-col gap-[10px] text-[13px] leading-[1.75] text-muted">{section.paragraphs.map(text => <p key={text}>{text}</p>)}</div></section>)}
       </div>
-      <Link href="/versions" className="mt-[32px] inline-block text-[12px] font-bold text-ink hover:underline">Історія версій →</Link>
     </Surface>
   );
 }

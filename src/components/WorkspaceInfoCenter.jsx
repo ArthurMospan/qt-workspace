@@ -27,15 +27,14 @@ import {
   HELP_CATEGORIES,
   articleSearchText,
 } from '@/lib/content/helpArticles.mjs';
-import { NEWS_ARTICLES, VERSION_HISTORY } from '@/lib/content/releaseContent.mjs';
+import { NEWS_ARTICLES } from '@/lib/content/releaseContent.mjs';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 
-export const INFO_CENTER_PANES = Object.freeze(['help', 'news', 'versions']);
+export const INFO_CENTER_PANES = Object.freeze(['help', 'news']);
 
 const PANE_OPTIONS = [
   { value: 'help', label: 'Довідка' },
   { value: 'news', label: 'Новини' },
-  { value: 'versions', label: 'Версії' },
 ];
 
 const CATEGORY_LABEL = new Map(HELP_CATEGORIES.map(category => [category.id, category.label]));
@@ -223,34 +222,6 @@ function NewsPane({ openArticle, onOpenArticle, onCloseArticle }) {
   );
 }
 
-function VersionsPane() {
-  const { formatDate } = useLocalization();
-  return (
-    <div className="flex flex-col gap-[16px]">
-      {/* Two releases can share a version — the version is what shipped, the
-          entry is one story about it — so the news slug is what makes a row
-          unique. */}
-      {VERSION_HISTORY.map(release => (
-        <Card key={release.newsSlug || release.version} preset="bordered-compact" padding="md">
-          <div className="flex flex-wrap items-baseline gap-[8px]">
-            <h4 className="ui-type-item-title text-ink">Версія {release.version}</h4>
-            <span className="text-[11px] text-muted">{formatDate(release.date)}</span>
-          </div>
-          <div className="mt-[12px] flex flex-col gap-[12px]">
-            {release.groups.map(group => (
-              <div key={group.title}>
-                <p className="text-[11px] font-bold uppercase tracking-wide text-faint">{group.title}</p>
-                <ul className="mt-[6px] flex list-disc flex-col gap-[4px] pl-[18px] text-[12px] leading-[1.6] text-muted">
-                  {group.changes.map(change => <li key={change}>{change}</li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
 
 /**
  * @param {'help'|'news'|'versions'|null} props.pane Which pane to show; `null` keeps the dialog closed.
@@ -307,7 +278,6 @@ export default function WorkspaceInfoCenter({ pane, onPaneChange, onClose }) {
           onCloseArticle={() => setOpenNewsArticle(null)}
         />
       )}
-      {pane === 'versions' && <VersionsPane />}
     </Dialog>
   );
 }

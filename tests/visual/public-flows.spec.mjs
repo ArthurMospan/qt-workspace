@@ -72,10 +72,8 @@ test('help, releases and legal pages are public, searchable and mobile-safe', as
   await page.setViewportSize({ width: 390, height: 844 });
   const routes = [
     ['/help', 'Відповіді про реальну роботу сервісу'],
-    ['/help/kanban-and-bulk-actions', 'Kanban, Shift-вибір і масові дії'],
+    ['/help/kanban-and-bulk-actions', 'Як змінити багато завдань одразу'],
     ['/news', 'Новини продукту'],
-    ['/news/ux-package-pr-3', 'QuickTeam став зручнішим'],
-    ['/versions', 'Історія версій'],
     ['/terms', 'Умови користування QuickTeam'],
     ['/privacy', 'Політика конфіденційності QuickTeam'],
     ['/offer', 'Публічна оферта QuickTeam'],

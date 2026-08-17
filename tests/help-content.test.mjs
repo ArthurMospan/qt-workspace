@@ -11,7 +11,7 @@ import {
 import { AVAILABLE_INTEGRATIONS, INTEGRATIONS, PLANNED_INTEGRATIONS } from '../src/lib/content/integrations.mjs';
 import { LEGAL_DOCUMENTS } from '../src/lib/content/legalDocuments.mjs';
 import { PRODUCT_VERSION } from '../src/lib/content/product.mjs';
-import { NEWS_ARTICLES, VERSION_HISTORY } from '../src/lib/content/releaseContent.mjs';
+import { NEWS_ARTICLES } from '../src/lib/content/releaseContent.mjs';
 import { ONEB_SUPPORT_CONTACTS, isAllowedSupportHref } from '../src/lib/content/supportContacts.mjs';
 
 const rootUrl = new URL('../', import.meta.url);
@@ -55,7 +55,6 @@ test('public content contains no placeholder promises and reports integrations h
   const publicText = [
     ...HELP_ARTICLES.map(flattenArticle),
     JSON.stringify(NEWS_ARTICLES).toLocaleLowerCase('uk-UA'),
-    JSON.stringify(VERSION_HISTORY).toLocaleLowerCase('uk-UA'),
     JSON.stringify(LEGAL_DOCUMENTS).toLocaleLowerCase('uk-UA'),
   ].join(' ');
   assert.doesNotMatch(publicText, /tbd|coming soon|lorem ipsum|скоро буде|заповнити пізніше/);
@@ -64,12 +63,36 @@ test('public content contains no placeholder promises and reports integrations h
   assert.ok(INTEGRATIONS.every(item => ['available', 'planned'].includes(item.state)));
 });
 
-test('news and versions describe the package version from one source', async () => {
+test('the version is one number, and the news is empty until there is a release', async () => {
   const packageJson = JSON.parse(await readFile(new URL('package.json', rootUrl), 'utf8'));
   assert.equal(PRODUCT_VERSION, packageJson.version);
-  assert.ok(NEWS_ARTICLES.some(article => article.version === PRODUCT_VERSION));
-  assert.ok(VERSION_HISTORY.some(entry => entry.version === PRODUCT_VERSION));
+  // The version history is gone: it was a changelog written for whoever built
+  // the product. «Що нового» is answered by the news, in the words of somebody
+  // using it — and while the product is in beta there is nothing to announce,
+  // because every entry described a build nobody outside the team had seen.
+  const releaseContent = await readFile(new URL('src/lib/content/releaseContent.mjs', rootUrl), 'utf8');
+  assert.doesNotMatch(releaseContent, /VERSION_HISTORY/);
+  assert.equal(NEWS_ARTICLES.length, 0);
+  // Whatever arrives after the release still has to be a whole article.
   assert.ok(NEWS_ARTICLES.every(article => article.slug && article.publishedAt && article.sections.length));
+});
+
+// The help centre is for somebody using QuickTeam, not for somebody who built
+// it. None of these words describe anything a person can see on a screen, and
+// every one of them was in an article a new user was expected to read.
+test('the help centre explains the product, not its plumbing', () => {
+  const forbidden = [
+    'firestore', 'firebase', 'cloudinary', 'api', 'endpoint', 'серверний маршрут',
+    'cascade', 'audit', 'aria-live', 'snapshot', 'оптимістичн', 'ascii',
+    'scope', 'sdk', 'token', 'sprintid', 'isdone', 'workflow організації',
+    'rules', 'outbox', 'materialise', 'cron', 'hierarchy', 'soft-delete',
+  ];
+  for (const article of HELP_ARTICLES) {
+    const text = flattenArticle(article);
+    for (const word of forbidden) {
+      assert.ok(!text.includes(word), `${article.id} still says "${word}"`);
+    }
+  }
 });
 
 test('support contacts are centralized, unique and safe to open', () => {
