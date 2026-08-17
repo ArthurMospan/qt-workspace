@@ -32,6 +32,8 @@ import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchR
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
+import { useViewState } from '@/lib/hooks/useViewState';
+import { BOARD_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
 
 const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
@@ -90,29 +92,22 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   const isArchived = project?.status === 'archived';
 
   const [activeTab, setActiveTab] = useState('board');
-  const [boardSprintFilter, setBoardSprintFilter] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_sprint_${projectId}`) || 'all';
-    return 'all';
+  // Board filters and the kanban/list choice live in the address, so this board
+  // can be bookmarked, sent to somebody, and stepped back out of.
+  const [boardViewState, setBoardViewState] = useViewState(BOARD_VIEW_SCHEMA, {
+    storageKey: `qt:view:board:${projectId}`,
+    ready: resourceContextReady,
   });
-  const [boardAssigneeFilter, setBoardAssigneeFilter] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_assignee_${projectId}`) || 'all';
-    return 'all';
-  });
-  const [boardPriorityFilter, setBoardPriorityFilter] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_priority_${projectId}`) || 'all';
-    return 'all';
-  });
-  const [boardTypeFilter, setBoardTypeFilter] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem(`qt_board_type_${projectId}`) || 'all';
-    return 'all';
-  });
+  const {
+    view: boardView,
+    sprint: boardSprintFilter,
+    assignee: boardAssigneeFilter,
+    priority: boardPriorityFilter,
+    type: boardTypeFilter,
+  } = boardViewState;
+  const setBoardView = useCallback(value => setBoardViewState({ view: value }), [setBoardViewState]);
   const [analyticsPriorityFilter, setAnalyticsPriorityFilter] = useState('all');
   const [analyticsTypeFilter, setAnalyticsTypeFilter] = useState('all');
-  const [boardView, setBoardView] = useState(() => {
-    if (typeof window === 'undefined') return 'kanban';
-    const stored = localStorage.getItem(`qt_project_view_${projectId}`);
-    return stored === 'list' ? 'list' : 'kanban';
-  });
 
   const canManageQtPlus = can(orgRole, 'edit:project_settings');
   const { enabled: qtEnabled } = useQtPlusEnabled(canManageQtPlus ? project?.organizationId : null);
@@ -137,15 +132,6 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
     }
   }, [activeTab, showQtPlusTab]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(`qt_board_sprint_${projectId}`, boardSprintFilter);
-      localStorage.setItem(`qt_board_assignee_${projectId}`, boardAssigneeFilter);
-      localStorage.setItem(`qt_board_priority_${projectId}`, boardPriorityFilter);
-      localStorage.setItem(`qt_board_type_${projectId}`, boardTypeFilter);
-      localStorage.setItem(`qt_project_view_${projectId}`, boardView);
-    }
-  }, [boardSprintFilter, boardAssigneeFilter, boardPriorityFilter, boardTypeFilter, boardView, projectId]);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
@@ -382,7 +368,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                   filterRole="sprint"
                   ariaLabel="Фільтр за спринтом"
                   value={boardSprintFilter}
-                  onChange={setBoardSprintFilter}
+                  onChange={value => setBoardViewState({ sprint: value })}
                   options={[
                     { value: 'all', label: 'Всі спринти' },
                     { value: 'active', label: 'Активний спринт' },
@@ -394,7 +380,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                   filterRole="member"
                   ariaLabel="Фільтр за виконавцем"
                   value={boardAssigneeFilter}
-                  onChange={setBoardAssigneeFilter}
+                  onChange={value => setBoardViewState({ assignee: value })}
                   options={[
                     { value: 'all', label: 'Всі виконавці' },
                     ...members.map(m => ({ value: m.id || m.uid, label: m.name || m.email, user: m }))
@@ -405,7 +391,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                   filterRole="priority"
                   ariaLabel="Фільтр за пріоритетом"
                   value={boardPriorityFilter}
-                  onChange={setBoardPriorityFilter}
+                  onChange={value => setBoardViewState({ priority: value })}
                   options={[
                     { value: 'all', label: 'Всі пріоритети' },
                     ...prioritySelectOptions(priorities),
@@ -416,7 +402,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                   filterRole="type"
                   ariaLabel="Фільтр за типом завдання"
                   value={boardTypeFilter}
-                  onChange={setBoardTypeFilter}
+                  onChange={value => setBoardViewState({ type: value })}
                   options={[
                     { value: 'all', label: 'Всі типи' },
                     ...types.map(taskTypeSelectOption),

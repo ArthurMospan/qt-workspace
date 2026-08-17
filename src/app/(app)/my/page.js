@@ -32,6 +32,8 @@ import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { can } from '@/lib/utils/can';
+import { useViewState } from '@/lib/hooks/useViewState';
+import { MY_TASKS_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
 
 
 
@@ -91,13 +93,13 @@ export default function MyTasksPage() {
   });
   const myTaskSearch = useWorkspaceStore(s => s.myTaskSearch);
   
-  const [viewMode, setViewMode] = useState('kanban'); // kanban | list
-  const [filters, setFilters] = useState({
-    projects: [],
-    priority: 'all',
-    type: 'all',
-    sprint: 'all'
+  // Filters and the kanban/list choice live in the address. `assignee` is not
+  // one of them: this screen already carries that parameter for the composer.
+  const [filters, setFilters] = useViewState(MY_TASKS_VIEW_SCHEMA, {
+    storageKey: 'qt:view:my-tasks',
   });
+  const viewMode = filters.view;
+  const setViewMode = useCallback(value => setFilters({ view: value }), [setFilters]);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   // ?new=1 is how anything outside this page asks for the composer — today the
   // command palette. Derived rather than copied into state on mount: the URL is
@@ -280,7 +282,7 @@ export default function MyTasksPage() {
                 <MultiSelect
                   variant="ghost"
                   value={filters.projects}
-                onChange={(val) => setFilters(f => ({ ...f, projects: val }))}
+                onChange={(val) => setFilters({ projects: val })}
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Всі проєкти"
                 searchPlaceholder="Пошук проєкту..."
@@ -290,7 +292,7 @@ export default function MyTasksPage() {
                 filterRole="priority"
                 variant="ghost"
                 value={filters.priority}
-                onChange={(val) => setFilters(f => ({ ...f, priority: val }))}
+                onChange={(val) => setFilters({ priority: val })}
                 options={[
                   { value: 'all', label: 'Всі пріоритети' },
                   ...prioritySelectOptions(priorities),
@@ -300,7 +302,7 @@ export default function MyTasksPage() {
                 filterRole="type"
                 variant="ghost"
                 value={filters.type}
-                onChange={(val) => setFilters(f => ({ ...f, type: val }))}
+                onChange={(val) => setFilters({ type: val })}
                 options={[
                   { value: 'all', label: 'Всі типи' },
                   ...types.map(taskTypeSelectOption),
@@ -310,7 +312,7 @@ export default function MyTasksPage() {
                 filterRole="sprint"
                 variant="ghost"
                 value={filters.sprint}
-                onChange={(val) => setFilters(f => ({ ...f, sprint: val }))}
+                onChange={(val) => setFilters({ sprint: val })}
                 options={[
                   { value: 'all', label: 'Всі спринти' },
                   { value: 'active', label: 'Тільки активні' },

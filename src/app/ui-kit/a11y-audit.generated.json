@@ -10,7 +10,7 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 326,
+    "files": 328,
     "elements": 4070,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
@@ -43,7 +43,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/sprints/page.js:668",
+      "location": "src/app/(app)/sprints/page.js:676",
       "attributes": [
         "title",
         "aria-label"

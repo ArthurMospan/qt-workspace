@@ -34,6 +34,8 @@ import { db } from '@/lib/firebase';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { useViewState } from '@/lib/hooks/useViewState';
+import { SPRINTS_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
 import {
   createUkrainianDndAnnouncements,
   UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
@@ -237,10 +239,16 @@ export default function GlobalSprintsPage() {
   const [editingSprint, setEditingSprint] = useState(null);
   const [activeIssue, setActiveIssue] = useState(null);
   const [sectionExpansion, setSectionExpansion] = useState({});
-  const [projectFilters, setProjectFilters] = useState([]);
-  const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
+  // Filters live in the address, so a sprint board can be bookmarked and sent.
+  const [sprintFilters, setSprintFilters] = useViewState(SPRINTS_VIEW_SCHEMA, {
+    storageKey: 'qt:view:sprints',
+  });
+  const {
+    projects: projectFilters,
+    assignee: assigneeFilter,
+    priority: priorityFilter,
+    type: typeFilter,
+  } = sprintFilters;
   const [sortKey, setSortKey]  = useState('order');
   const [sortDir, setSortDir]  = useState('asc');
   const [backlogCollapsed, setBacklogCollapsed] = useState(false);
@@ -571,7 +579,7 @@ export default function GlobalSprintsPage() {
           <FilterBar>
             <MultiSelect
               value={projectFilters}
-                onChange={setProjectFilters}
+                onChange={value => setSprintFilters({ projects: value })}
                 options={projects.map(p => ({ value: p.id, label: p.name }))}
                 placeholder="Всі проєкти"
                 searchPlaceholder="Пошук проєкту..."
@@ -581,7 +589,7 @@ export default function GlobalSprintsPage() {
               <Select
                 filterRole="member"
                 value={assigneeFilter}
-                onChange={setAssigneeFilter}
+                onChange={value => setSprintFilters({ assignee: value })}
                 options={[
                   { value: 'all', label: 'Всі виконавці' },
                   { value: 'unassigned', label: 'Без виконавця' },
@@ -592,7 +600,7 @@ export default function GlobalSprintsPage() {
               <Select
                 filterRole="priority"
                 value={priorityFilter}
-                onChange={setPriorityFilter}
+                onChange={value => setSprintFilters({ priority: value })}
                 options={[
                   { value: 'all', label: 'Всі пріоритети' },
                   ...prioritySelectOptions(priorities),
@@ -602,7 +610,7 @@ export default function GlobalSprintsPage() {
               <Select
                 filterRole="type"
                 value={typeFilter}
-                onChange={setTypeFilter}
+                onChange={value => setSprintFilters({ type: value })}
                 options={[
                   { value: 'all', label: 'Всі типи' },
                   ...types.map(taskTypeSelectOption),
