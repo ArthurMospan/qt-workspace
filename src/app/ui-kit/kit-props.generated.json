@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 111,
-    "props": 826,
-    "documentedProps": 826,
+    "props": 823,
+    "documentedProps": 823,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5947,7 +5947,7 @@
     },
     "TaskTableView": {
       "file": "src/components/ui/TaskManagement/TaskTableView.jsx",
-      "summary": "A board's tasks as an editable grid: chosen columns, sorted by any of them, grouped into bands, with every value changeable in its own cell.",
+      "summary": "A board's tasks as an editable grid: chosen columns, sorted by any of them, with every value changeable in its own cell.",
       "props": [
         {
           "name": "activeTimerIssueId",
@@ -6006,20 +6006,6 @@
           "description": "Headline of the empty state."
         },
         {
-          "name": "group",
-          "default": "'status'",
-          "type": "string",
-          "values": [],
-          "description": "What a band is: a status, an assignee, a priority, a type, a sprint — or nothing."
-        },
-        {
-          "name": "hiddenGroupIds",
-          "default": "[]",
-          "type": "string[]",
-          "values": [],
-          "description": "Statuses the project folds into «Приховані»."
-        },
-        {
           "name": "issueLinks",
           "default": "[]",
           "type": "object[]",
@@ -6060,13 +6046,6 @@
           "type": "(columnId: string) => void",
           "values": [],
           "description": "Toggles one column on or off. Omit to hide the columns control."
-        },
-        {
-          "name": "onGroupChange",
-          "default": "",
-          "type": "(group: string) => void",
-          "values": [],
-          "description": "Fires from a column's own menu. Omit to hide the grouping control."
         },
         {
           "name": "onOpenIssue",

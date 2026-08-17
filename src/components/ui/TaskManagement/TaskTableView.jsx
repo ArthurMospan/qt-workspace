@@ -8,30 +8,20 @@
 // stack of cards below the breakpoint, because six columns of numbers cannot be
 // read on a phone. A table of tasks wants the opposite of almost all of that: a
 // header that stays put, an identity column that stays put, horizontal scroll
-// rather than folding, a control inside every cell, row selection, sort per
-// column and bands between groups. The two share the `<table>` tag and nothing
-// else, and merging them would give one component two modes with no common
-// middle. See docs/UI_KIT_CONTRACT.md.
+// rather than folding, a control inside every cell, row selection and sort per
+// column. The two share the `<table>` tag and nothing else. See
+// docs/UI_KIT_CONTRACT.md.
 //
-// One editor exists at a time. A `Select` or a `DatePicker` left mounted in
-// every cell would register one document listener per cell — six hundred of
-// them on a busy backlog — so a cell draws its value as plain markup until it is
-// clicked, and only then mounts the real control.
+// A cell never changes shape when you use it. The first version swapped the
+// value for a mounted `Select`, which is taller than a row and carries its own
+// padding, so clicking anything shoved the grid around under the cursor. Now
+// the value *is* the trigger: the list opens over the table and the cell stays
+// exactly as it was. That only became affordable once `ContextMenu` stopped
+// listening to the document while closed.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import {
-  ArrowDown,
-  ArrowUp,
-  CheckSquare,
-  ChevronDown,
-  ChevronRight,
-  Columns3,
-  Lock,
-  Minus,
-  MoreVertical,
-  Rows3,
-} from 'lucide-react';
+import { ArrowDown, ArrowUp, Columns3, Lock } from 'lucide-react';
 import { CalendarIcon, TaskIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Forms/Checkbox';
@@ -46,50 +36,56 @@ import Tag from '@/components/ui/DataDisplay/Tag';
 import TypeBadge from '@/components/ui/DataDisplay/TypeBadge';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
-import { MultiSelect, Select } from '@/components/ui/Select';
 import BulkActionBar from './BulkActionBar';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import { taskTypeIcon, taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import { isDueDateOverdue, parseDueDate } from '@/lib/utils/date';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
+import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import { isIssueUnread, unreadActivityLabel } from '@/lib/utils/issueReadState.mjs';
-import { columnOf } from '@/lib/utils/optimistic.mjs';
+import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import {
   ensureSystemPriorities,
   NO_PRIORITY_ID,
   priorityPresentation,
-  prioritySelectOptions,
+  selectablePriorities,
 } from '@/lib/utils/priorities.mjs';
 import {
-  checklistProgress,
   commentCountOf,
   memberId,
   memberName,
   nextTaskTableSort,
   PINNED_TASK_TABLE_COLUMNS,
   TASK_TABLE_COLUMNS,
+  taskTableComparator,
   taskTableContext,
-  taskTableSections,
-  UNGROUPED_SECTION_ID,
   visibleTaskTableColumns,
 } from '@/lib/utils/taskTable.mjs';
 
-// The checkbox gutter. Pinned columns are laid out from its right edge, so the
-// number lives here rather than being written into three class strings.
+// The checkbox gutter on the left and the column-picker gutter on the right.
+// Pinned columns are laid out from the first, so the number lives here rather
+// than in three class strings.
 const SELECT_COLUMN_WIDTH = 40;
+const TOOLS_COLUMN_WIDTH = 40;
 const ALIGNMENT = { left: 'text-left', right: 'text-right', center: 'text-center' };
+
+// How many rows are drawn before the table asks. Every task the board loaded is
+// already in memory — this is about the DOM, not about reads: a thousand rows
+// times six columns is six thousand cells and a page that stutters when you
+// scroll it. Fifty fills any screen twice over.
+const ROWS_PER_PAGE = 50;
 
 // The header's rule is a shadow, not a border. `border-collapse` hands a
 // cell's border to the table, and a table does not scroll with a sticky cell —
 // so the line under a pinned header vanished the moment anybody scrolled. The
 // grey is the other half of it: a white header over white rows had nothing but
 // that missing line to separate them.
-const HEADER_CELL = 'sticky top-0 bg-canvas px-[10px] py-[7px] shadow-[inset_0_-1px_0_var(--color-line)]';
+const HEADER_CELL = 'sticky top-0 z-[2] bg-canvas px-[10px] py-[7px] shadow-[inset_0_-1px_0_var(--color-line)]';
 
 function formatDay(value, timeZone) {
   const date = parseDueDate(value, { timeZone });
@@ -113,28 +109,16 @@ function formatMinutes(minutes) {
   return rest ? `${hours}г ${rest}хв` : `${hours}г`;
 }
 
-// The cell that is being edited mounts the real control, and the click that
-// opened the cell has already been spent. Forwarding it into the freshly
-// mounted control is what makes «click a cell to change it» one click instead
-// of two; a text field takes focus and a selection instead, because there is
-// no overlay to open.
-function useOpenOnMount(hostRef) {
-  useEffect(() => {
-    const field = hostRef.current?.querySelector('input, button');
-    if (!field) return;
-    if (field.tagName === 'INPUT' && !field.readOnly) {
-      field.focus();
-      field.select?.();
-      return;
-    }
-    field.click();
-  }, [hostRef]);
-}
-
+// A field you type into is the one editor that cannot be a menu. It replaces
+// the value in place, at exactly the row's height, with no border and no fill —
+// so the only thing that changes when you click is that there is now a caret.
 function TextCellEditor({ value, type = 'text', suffix, ariaLabel, onCommit, onCancel }) {
-  const hostRef = useRef(null);
+  const inputRef = useRef(null);
   const [draft, setDraft] = useState(value ?? '');
-  useOpenOnMount(hostRef);
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select?.();
+  }, []);
 
   // Enter and Escape both take the field off the screen, and losing focus is
   // itself a save. Without this latch, Escape saved the very draft it was asked
@@ -149,92 +133,36 @@ function TextCellEditor({ value, type = 'text', suffix, ariaLabel, onCommit, onC
   const cancel = settle(() => onCancel());
 
   return (
-    <div ref={hostRef} className="w-full">
-      <Input
-        size="sm"
-        composition="table-cell"
-        type={type}
-        suffix={suffix}
-        value={draft}
-        aria-label={ariaLabel}
-        min={type === 'number' ? 0 : undefined}
-        onChange={event => setDraft(event.target.value)}
-        onBlur={commit}
-        onKeyDown={event => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            commit();
-          } else if (event.key === 'Escape') {
-            event.preventDefault();
-            event.stopPropagation();
-            cancel();
-          }
-        }}
-      />
-    </div>
-  );
-}
-
-function ChoiceCellEditor({ value, options, placeholder, ariaLabel, onCommit }) {
-  const hostRef = useRef(null);
-  useOpenOnMount(hostRef);
-  return (
-    <div ref={hostRef} className="w-full">
-      <Select
-        size="sm"
-        composition="table-cell"
-        value={value ?? ''}
-        options={options}
-        placeholder={placeholder}
-        ariaLabel={ariaLabel}
-        onChange={onCommit}
-      />
-    </div>
-  );
-}
-
-function MultiCellEditor({ value, options, placeholder, searchPlaceholder, ariaLabel, onCommit }) {
-  const hostRef = useRef(null);
-  useOpenOnMount(hostRef);
-  return (
-    <div ref={hostRef} className="w-full">
-      <MultiSelect
-        size="sm"
-        composition="table-cell"
-        value={value}
-        options={options}
-        placeholder={placeholder}
-        searchPlaceholder={searchPlaceholder}
-        ariaLabel={ariaLabel}
-        showSelectedAvatars
-        onChange={onCommit}
-      />
-    </div>
-  );
-}
-
-function DateCellEditor({ value, ariaLabel, onCommit }) {
-  const hostRef = useRef(null);
-  useOpenOnMount(hostRef);
-  return (
-    <div ref={hostRef} className="w-full">
-      <DatePicker
-        size="sm"
-        composition="table-cell"
-        compact
-        value={value || ''}
-        aria-label={ariaLabel}
-        onChange={onCommit}
-      />
-    </div>
+    <Input
+      ref={inputRef}
+      size="sm"
+      composition="table-cell"
+      type={type}
+      suffix={suffix}
+      value={draft}
+      aria-label={ariaLabel}
+      min={type === 'number' ? 0 : undefined}
+      onChange={event => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          commit();
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          cancel();
+        }
+      }}
+    />
   );
 }
 
 /**
  * A board's tasks as an editable grid: chosen columns, sorted by any of them,
- * grouped into bands, with every value changeable in its own cell. The
- * arrangement is not held here — it arrives as props and lives in the address,
- * so a configured table is a link somebody can send.
+ * with every value changeable in its own cell. The arrangement is not held
+ * here — it arrives as props and lives in the address, so a configured table is
+ * a link somebody can send.
  *
  * @param {object[]} props.issues The tasks to show, already filtered.
  * @param {object[]} props.allIssues Every task in scope, for resolving blockers.
@@ -246,12 +174,9 @@ function DateCellEditor({ value, ariaLabel, onCommit }) {
  * @param {string[]} props.columns Which columns are on; empty means the default set.
  * @param {string} props.sort Column the rows are ordered by, or `manual` for the board's own order.
  * @param {'asc'|'desc'} props.dir Direction of that sort.
- * @param {string} props.group What a band is: a status, an assignee, a priority, a type, a sprint — or nothing.
  * @param {(next: {sort: string, dir: string}) => void} props.onSortChange Fires when a column header is clicked.
- * @param {(group: string) => void} props.onGroupChange Fires from a column's own menu. Omit to hide the grouping control.
  * @param {(columnId: string) => void} props.onColumnsChange Toggles one column on or off. Omit to hide the columns control.
  * @param {(issue: object) => void} props.onOpenIssue Opens a task for reading — the quick modal. Falls back to a link to its page.
- * @param {string[]} props.hiddenGroupIds Statuses the project folds into «Приховані».
  * @param {string} props.activeTimerIssueId The task whose timer is running, if any.
  * @param {(issueId: string, patch: object) => Promise<unknown>} props.onUpdateIssue Saves one cell. Omit to make the table read-only.
  * @param {(action: string, value: unknown, issues: object[]) => Promise<unknown>} props.onBulkUpdate Applies one bulk action to the selected rows.
@@ -272,12 +197,9 @@ export default function TaskTableView({
   columns = [],
   sort = 'manual',
   dir = 'asc',
-  group = 'status',
   onSortChange,
-  onGroupChange,
   onColumnsChange,
   onOpenIssue,
-  hiddenGroupIds = [],
   activeTimerIssueId,
   onUpdateIssue,
   onBulkUpdate,
@@ -296,8 +218,8 @@ export default function TaskTableView({
   // object in the store, and six hundred selectors over the same object is six
   // hundred subscriptions for one fact.
   const issueReadState = useWorkspaceStore(state => state.issueReadState);
-  const [collapsedSections, setCollapsedSections] = useState([]);
-  const [editing, setEditing] = useState(null);
+  const [editingCell, setEditingCell] = useState(null);
+  const [visibleRows, setVisibleRows] = useState(ROWS_PER_PAGE);
   const editable = Boolean(onUpdateIssue);
 
   const visibleColumns = useMemo(() => visibleTaskTableColumns(columns), [columns]);
@@ -316,6 +238,23 @@ export default function TaskTableView({
     return blocked;
   }, [showsBlocked, issues, allIssues, issueLinks, closedStatusIds]);
 
+  // Subtasks are child tasks, resolved with one pass over the project rather
+  // than a scan per row — and only when a column or a sort asks for them.
+  const showsSubtasks = visibleColumns.some(column => column.id === 'subtasks') || sort === 'subtasks';
+  const childProgressById = useMemo(() => {
+    const progress = new Map();
+    if (!showsSubtasks) return progress;
+    for (const candidate of allIssues) {
+      const parentId = existingParentIssueId(candidate);
+      if (!parentId) continue;
+      const entry = progress.get(parentId) || { done: 0, total: 0 };
+      entry.total += 1;
+      if (closedStatusIds.includes(columnOf(candidate))) entry.done += 1;
+      progress.set(parentId, entry);
+    }
+    return progress;
+  }, [showsSubtasks, allIssues, closedStatusIds]);
+
   const orderedPriorities = useMemo(() => ensureSystemPriorities(priorities), [priorities]);
   const context = useMemo(() => taskTableContext({
     statuses,
@@ -324,19 +263,28 @@ export default function TaskTableView({
     sprints,
     members,
     labels,
-    hiddenStatusIds: hiddenGroupIds,
     blockedIssueIds,
-  }), [statuses, orderedPriorities, types, sprints, members, labels, hiddenGroupIds, blockedIssueIds]);
+    childProgressById,
+  }), [statuses, orderedPriorities, types, sprints, members, labels, blockedIssueIds, childProgressById]);
 
-  const sections = useMemo(
-    () => taskTableSections(issues, { group, sort, dir, context }),
-    [issues, group, sort, dir, context],
-  );
+  const rows = useMemo(() => {
+    const comparator = sort === 'manual' ? compareIssues : taskTableComparator(sort, dir, context);
+    return [...issues].sort(comparator);
+  }, [issues, sort, dir, context]);
 
-  const selectionOrder = useMemo(
-    () => sections.flatMap(section => section.issues.map(issue => issue.id)),
-    [sections],
-  );
+  // A different list starts from the top again: filtering down to ten tasks
+  // must not leave «показано 600 з 10» on screen. Derived during render rather
+  // than pushed from an effect, which would paint the stale page first.
+  const pageKey = `${issues.length}:${sort}:${dir}`;
+  const [pagedFor, setPagedFor] = useState(pageKey);
+  if (pagedFor !== pageKey) {
+    setPagedFor(pageKey);
+    setVisibleRows(ROWS_PER_PAGE);
+  }
+
+  const drawnRows = rows.slice(0, pagedFor === pageKey ? visibleRows : ROWS_PER_PAGE);
+  const hiddenRowCount = rows.length - drawnRows.length;
+
   const {
     active: selectionActive,
     activeSelectedIds,
@@ -346,33 +294,12 @@ export default function TaskTableView({
     clear: clearSelection,
   } = useIssueSelection({
     issues,
-    order: selectionOrder,
-    scopeKey: selectionScopeKey || `${projectId || 'table'}:${group}:${sort}:${dir}`,
+    order: useMemo(() => drawnRows.map(issue => issue.id), [drawnRows]),
+    scopeKey: selectionScopeKey || `${projectId || 'table'}:${sort}:${dir}`,
   });
 
-  // Leaving the cell: anywhere outside it, except inside a portal the cell's own
-  // control opened — a dropdown is part of the editor, not somewhere else.
-  const editingRef = useRef(null);
-  useEffect(() => {
-    if (!editing) return undefined;
-    const stopOnOutside = event => {
-      if (editingRef.current?.contains(event.target)) return;
-      if (event.target.closest?.('[data-qt-floating-overlay]')) return;
-      setEditing(null);
-    };
-    const stopOnEscape = event => {
-      if (event.key === 'Escape') setEditing(null);
-    };
-    document.addEventListener('mousedown', stopOnOutside);
-    document.addEventListener('keydown', stopOnEscape);
-    return () => {
-      document.removeEventListener('mousedown', stopOnOutside);
-      document.removeEventListener('keydown', stopOnEscape);
-    };
-  }, [editing]);
-
-  const commit = useCallback(async (issue, patch, { keepOpen = false } = {}) => {
-    if (!keepOpen) setEditing(null);
+  const commit = async (issue, patch) => {
+    setEditingCell(null);
     if (!patch || Object.keys(patch).length === 0) return;
     // The hook owns the optimistic overlay, the rollback and the toast; a
     // rejected promise here would only reach the browser console.
@@ -381,13 +308,7 @@ export default function TaskTableView({
     } catch {
       // Reported by the caller.
     }
-  }, [onUpdateIssue]);
-
-  const toggleSection = sectionId => setCollapsedSections(current => (
-    current.includes(sectionId)
-      ? current.filter(id => id !== sectionId)
-      : [...current, sectionId]
-  ));
+  };
 
   // A checkbox reports a boolean, not the event that produced it, so the modifier
   // is caught on the way down. Without a selection running, `toggle` refuses a
@@ -406,11 +327,13 @@ export default function TaskTableView({
   const statusOptions = useMemo(() => statuses.map(status => ({
     value: status.id,
     label: status.label,
-    dotColor: status.color,
   })), [statuses]);
-  const priorityOptions = useMemo(() => prioritySelectOptions(priorities), [priorities]);
+  const priorityOptions = useMemo(
+    () => selectablePriorities(priorities).map(item => ({ value: item.id, label: item.label })),
+    [priorities],
+  );
   const typeOptions = useMemo(
-    () => types.filter(type => type.id !== 'epic').map(taskTypeSelectOption),
+    () => types.filter(type => type.id !== 'epic').map(type => ({ value: type.id, label: type.label })),
     [types],
   );
   const sprintOptions = useMemo(() => [
@@ -443,7 +366,7 @@ export default function TaskTableView({
     }
     return offsets;
   }, [visibleColumns]);
-  const tableWidth = SELECT_COLUMN_WIDTH
+  const tableWidth = SELECT_COLUMN_WIDTH + TOOLS_COLUMN_WIDTH
     + visibleColumns.reduce((total, column) => total + column.width, 0);
 
   if (issues.length === 0) {
@@ -460,7 +383,7 @@ export default function TaskTableView({
     );
   }
 
-  // ── One cell's value, as it reads when nobody is editing it ───────────────
+  // ── What a cell shows ─────────────────────────────────────────────────────
   function renderValue(column, issue) {
     switch (column.id) {
       case 'key': {
@@ -483,11 +406,7 @@ export default function TaskTableView({
                 {identity}
               </button>
             ) : path ? (
-              <Link
-                href={path}
-                onClick={event => event.stopPropagation()}
-                className={identityClass}
-              >
+              <Link href={path} onClick={event => event.stopPropagation()} className={identityClass}>
                 {identity}
               </Link>
             ) : (
@@ -499,12 +418,16 @@ export default function TaskTableView({
                 className="h-[5px] w-[5px] shrink-0 animate-pulse rounded-full bg-ink"
               />
             )}
-            {/* «Є нове» beside the key, where the timer dot already lives. The
-                third reading of a board had no unread mark at all, so a table
-                showed a task as settled while the same task carried a dot two
-                clicks away on the kanban. */}
+            {/* `inline-flex`, not a bare span: the dot is an inline-block, and
+                an inline box sits on the text baseline — which is what left it
+                hanging below the middle of the row. */}
             {isIssueUnread(issue, issueReadState[issue.id] || 0, currentUserId) && (
-              <span role="status" aria-label={unreadActivityLabel(issue)} title={unreadActivityLabel(issue)}>
+              <span
+                role="status"
+                className="inline-flex shrink-0 items-center"
+                aria-label={unreadActivityLabel(issue)}
+                title={unreadActivityLabel(issue)}
+              >
                 <Counter variant="dot" size="sm" status="info" />
               </span>
             )}
@@ -574,14 +497,10 @@ export default function TaskTableView({
       case 'sprint': {
         const sprint = context.sprintById.get(issue.sprintId);
         if (!sprint) return <span className="text-faint">—</span>;
-        return (
-          <Pill tone="neutral" size="sm" shape="badge" weight="medium">{sprint.name}</Pill>
-        );
+        return <Pill tone="neutral" size="sm" shape="badge" weight="medium">{sprint.name}</Pill>;
       }
       case 'labels': {
-        const chips = (issue.labelIds || [])
-          .map(id => context.labelById.get(id))
-          .filter(Boolean);
+        const chips = (issue.labelIds || []).map(id => context.labelById.get(id)).filter(Boolean);
         if (chips.length === 0) return <span className="text-faint">—</span>;
         return (
           <span className="flex items-center gap-[4px] overflow-hidden">
@@ -597,10 +516,10 @@ export default function TaskTableView({
           ? <span className="text-[12px] font-medium tabular-nums text-ink">{text}</span>
           : <span className="text-faint">—</span>;
       }
-      case 'checklist': {
-        const { done, total } = checklistProgress(issue);
-        return total
-          ? <span className="text-[12px] font-medium tabular-nums text-ink">{done}/{total}</span>
+      case 'subtasks': {
+        const progress = context.childProgressById.get(issue.id);
+        return progress?.total
+          ? <span className="text-[12px] font-medium tabular-nums text-ink">{progress.done}/{progress.total}</span>
           : <span className="text-faint">—</span>;
       }
       case 'comments': {
@@ -625,184 +544,123 @@ export default function TaskTableView({
     }
   }
 
-  // ── The same cell, while it is being changed ──────────────────────────────
-  function renderEditor(column, issue) {
-    const label = `${column.label}: ${issue.issueKey || issue.title || 'завдання'}`;
+  // ── What a cell offers when you click it ──────────────────────────────────
+  //
+  // One list per choice column, and the list is the only thing that appears:
+  // the cell underneath keeps its own height, padding and content, so nothing
+  // moves. `single` closes on pick; `multi` stays open, because choosing three
+  // people is one errand.
+  function cellChoices(column, issue) {
+    const pick = patch => commit(issue, patch);
     switch (column.editor) {
-      case 'text':
-        return (
-          <TextCellEditor
-            value={issue.title || ''}
-            ariaLabel={label}
-            onCancel={() => setEditing(null)}
-            onCommit={value => {
-              const title = String(value).trim();
-              commit(issue, title && title !== issue.title ? { title } : null);
-            }}
-          />
-        );
-      case 'estimate':
-        return (
-          <TextCellEditor
-            type="number"
-            suffix="хв"
-            value={issue.estimateMinutes || ''}
-            ariaLabel={label}
-            onCancel={() => setEditing(null)}
-            onCommit={value => {
-              const minutes = Math.max(0, Math.round(Number(value) || 0));
-              commit(issue, minutes === (issue.estimateMinutes || 0)
-                ? null
-                : { estimateMinutes: minutes });
-            }}
-          />
-        );
-      case 'status':
-        return (
-          <ChoiceCellEditor
-            value={columnOf(issue) || ''}
-            options={statusOptions}
-            placeholder="Статус"
-            ariaLabel={label}
-            onCommit={value => commit(issue, value === columnOf(issue) ? null : { columnId: value })}
-          />
-        );
-      case 'priority':
-        return (
-          <ChoiceCellEditor
-            value={issue.priority || NO_PRIORITY_ID}
-            options={priorityOptions}
-            placeholder="Пріоритет"
-            ariaLabel={label}
+      case 'status': {
+        const current = columnOf(issue);
+        return {
+          mode: 'single',
+          items: statusOptions.map(option => ({
+            label: option.label,
+            selected: option.value === current,
+            onClick: () => pick(option.value === current ? null : { columnId: option.value }),
+          })),
+        };
+      }
+      case 'priority': {
+        const current = issue.priority || NO_PRIORITY_ID;
+        return {
+          mode: 'single',
+          items: priorityOptions.map(option => ({
+            label: option.label,
+            selected: option.value === current,
             // «Без пріоритету» is a stored value, not an absent one — the same
             // `none` the bulk bar writes when it clears a priority.
-            onCommit={value => commit(issue, value === (issue.priority || NO_PRIORITY_ID)
-              ? null
-              : { priority: value })}
-          />
-        );
+            onClick: () => pick(option.value === current ? null : { priority: option.value }),
+          })),
+        };
+      }
       case 'type':
-        return (
-          <ChoiceCellEditor
-            value={issue.type || ''}
-            options={typeOptions}
-            placeholder="Тип"
-            ariaLabel={label}
-            onCommit={value => commit(issue, value === issue.type ? null : { type: value })}
-          />
-        );
-      case 'sprint':
-        return (
-          <ChoiceCellEditor
-            value={issue.sprintId || ''}
-            options={sprintOptions}
-            placeholder="Спринт"
-            ariaLabel={label}
-            onCommit={value => commit(issue, { sprintId: value || null })}
-          />
-        );
-      case 'assignees':
-        return (
-          <MultiCellEditor
-            value={issue.assigneeIds || []}
-            options={memberOptions}
-            placeholder="Виконавці"
-            searchPlaceholder="Пошук людини..."
-            ariaLabel={label}
-            onCommit={value => commit(issue, { assigneeIds: value }, { keepOpen: true })}
-          />
-        );
-      case 'labels':
-        return (
-          <MultiCellEditor
-            value={issue.labelIds || []}
-            options={labelOptions}
-            placeholder="Мітки"
-            searchPlaceholder="Пошук мітки..."
-            ariaLabel={label}
-            onCommit={value => commit(issue, { labelIds: value }, { keepOpen: true })}
-          />
-        );
-      case 'due':
-        return (
-          <DateCellEditor
-            value={issue.dueDate || ''}
-            ariaLabel={label}
-            onCommit={value => commit(issue, { dueDate: value || null })}
-          />
-        );
+        return {
+          mode: 'single',
+          items: typeOptions.map(option => ({
+            label: option.label,
+            selected: option.value === issue.type,
+            onClick: () => pick(option.value === issue.type ? null : { type: option.value }),
+          })),
+        };
+      case 'sprint': {
+        const current = issue.sprintId || '';
+        return {
+          mode: 'single',
+          items: sprintOptions.map(option => ({
+            label: option.label,
+            selected: option.value === current,
+            onClick: () => pick(option.value === current ? null : { sprintId: option.value || null }),
+          })),
+        };
+      }
+      case 'assignees': {
+        const current = issue.assigneeIds || [];
+        return {
+          mode: 'multi',
+          items: memberOptions.map(option => ({
+            label: option.label,
+            selected: current.includes(option.value),
+            onClick: () => pick({
+              assigneeIds: current.includes(option.value)
+                ? current.filter(id => id !== option.value)
+                : [...current, option.value],
+            }),
+          })),
+        };
+      }
+      case 'labels': {
+        const current = issue.labelIds || [];
+        return {
+          mode: 'multi',
+          items: labelOptions.map(option => ({
+            label: option.label,
+            color: option.dotColor,
+            selected: current.includes(option.value),
+            onClick: () => pick({
+              labelIds: current.includes(option.value)
+                ? current.filter(id => id !== option.value)
+                : [...current, option.value],
+            }),
+          })),
+        };
+      }
       default:
-        return renderValue(column, issue);
+        return null;
     }
   }
 
   const headerCell = column => {
     const active = sort === column.id;
     const Arrow = dir === 'desc' ? ArrowDown : ArrowUp;
-    const pinned = column.pinned;
-    const grouped = column.group && column.group === group;
     return (
       <th
         key={column.id}
         scope="col"
         aria-sort={active ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'}
-        style={pinned ? { left: pinnedOffsets[column.id] } : undefined}
+        style={column.pinned ? { left: pinnedOffsets[column.id] } : undefined}
         className={`${HEADER_CELL} ${ALIGNMENT[column.align]} ${
-          pinned
-            ? `z-[3] ${column.id === 'title' ? 'md:sticky' : 'sticky'}`
-            : 'z-[2]'
+          column.pinned ? `z-[3] ${column.id === 'title' ? 'md:sticky' : 'sticky'}` : ''
         }`}
       >
-        <span className={`group/head flex min-w-0 items-center gap-[2px] ${column.align === 'right' ? 'justify-end' : ''}`}>
-          {column.sortable && onSortChange ? (
-            <button
-              type="button"
-              onClick={() => onSortChange(nextTaskTableSort(column.id, { sort, dir }))}
-              title={active ? 'Змінити напрям сортування' : `Сортувати за: ${column.label}`}
-              className={`ui-type-eyebrow inline-flex min-w-0 items-center gap-[4px] uppercase tracking-wide transition-colors hover:text-ink ${
-                active ? 'text-ink' : 'text-muted'
-              } ${column.align === 'right' ? 'flex-row-reverse' : ''}`}
-            >
-              <span className="truncate">{column.label}</span>
-              {active && <Arrow size={11} strokeWidth={3} className="shrink-0" />}
-            </button>
-          ) : (
-            <span className="ui-type-eyebrow truncate uppercase tracking-wide text-muted">{column.label}</span>
-          )}
-          {/* Grouping belongs to the column it groups by. It used to be a select
-              beside the filters, where a choice that hides nothing sat among the
-              controls that do. The chevron shows on hover, and stays put while
-              this column is the one banding the table. */}
-          {column.group && onGroupChange && (
-            <ContextMenu
-              align="start"
-              className={grouped ? '' : 'opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100'}
-              trigger={(
-                <Button
-                  style="ghost"
-                  size="icon-xs"
-                  icon={grouped ? Rows3 : ChevronDown}
-                  aria-label={`Групування за колонкою ${column.label}`}
-                  title={grouped ? 'Таблиця згрупована за цією колонкою' : 'Групувати за цією колонкою'}
-                />
-              )}
-              items={[
-                {
-                  label: 'Групувати за цією колонкою',
-                  icon: Rows3,
-                  selected: Boolean(grouped),
-                  onClick: () => onGroupChange(column.group),
-                },
-                {
-                  label: 'Без групування',
-                  icon: Minus,
-                  selected: group === 'none',
-                  onClick: () => onGroupChange('none'),
-                },
-              ]}
-            />
-          )}
-        </span>
+        {column.sortable && onSortChange ? (
+          <button
+            type="button"
+            onClick={() => onSortChange(nextTaskTableSort(column.id, { sort, dir }))}
+            title={active ? 'Змінити напрям сортування' : `Сортувати за: ${column.label}`}
+            className={`ui-type-eyebrow inline-flex max-w-full items-center gap-[4px] uppercase tracking-wide transition-colors hover:text-ink ${
+              active ? 'text-ink' : 'text-muted'
+            } ${column.align === 'right' ? 'flex-row-reverse' : ''}`}
+          >
+            <span className="truncate">{column.label}</span>
+            {active && <Arrow size={11} strokeWidth={3} className="shrink-0" />}
+          </button>
+        ) : (
+          <span className="ui-type-eyebrow truncate uppercase tracking-wide text-muted">{column.label}</span>
+        )}
       </th>
     );
   };
@@ -812,35 +670,34 @@ export default function TaskTableView({
       {/* The table owns its own scrolling in both directions. A sticky header
           and a pinned identity column stick to the nearest scroll container, so
           letting the page scroll instead would leave both of them behind. */}
-      {/* The tighter radius: a table is a grid of straight lines, and a 16px
-          corner on it reads as a card that happens to contain one. */}
       <Surface
         preset="compact-bordered-card"
         padding="none"
         className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
       >
-        <div className="min-h-0 w-full flex-1 overflow-auto custom-scrollbar">
-          <table
-            className="w-full table-fixed border-collapse"
-            style={{ minWidth: tableWidth }}
-          >
+        <div className="ui-table-scroll min-h-0 w-full flex-1 overflow-auto">
+          <table className="w-full table-fixed border-collapse" style={{ minWidth: tableWidth }}>
             <colgroup>
               <col style={{ width: SELECT_COLUMN_WIDTH }} />
               {visibleColumns.map(column => (
                 <col key={column.id} style={{ width: column.width }} />
               ))}
+              <col style={{ width: TOOLS_COLUMN_WIDTH }} />
             </colgroup>
             <thead>
               <tr>
-                {/* The corner cell. Which columns are on is a fact about this
-                    table, so it is reached from the table — not from the row of
-                    filters, where it sat looking like something that hides
-                    rows. Pinned left, so scrolling sideways never loses it. */}
-                <th scope="col" className={`${HEADER_CELL} left-0 z-[4] !px-[8px]`}>
+                <th scope="col" className={`${HEADER_CELL} sticky left-0 z-[4]`}>
+                  <span className="sr-only">Вибір</span>
+                </th>
+                {visibleColumns.map(headerCell)}
+                {/* Which columns are on is a fact about this table, so it is
+                    reached from the table — at the end of the header, pinned
+                    right, where a spreadsheet keeps the same control. */}
+                <th scope="col" className={`${HEADER_CELL} sticky right-0 z-[4] !px-[8px]`}>
                   {onColumnsChange ? (
                     <ContextMenu
                       closeOnSelect={false}
-                      align="start"
+                      align="end"
                       trigger={(
                         <Button
                           style="ghost"
@@ -858,137 +715,188 @@ export default function TaskTableView({
                           onClick: () => onColumnsChange(column.id),
                         }))}
                     />
-                  ) : <span className="sr-only">Вибір</span>}
+                  ) : <span className="sr-only">Колонки</span>}
                 </th>
-                {visibleColumns.map(headerCell)}
               </tr>
             </thead>
 
-            {sections.map(section => {
-              const banded = section.id !== UNGROUPED_SECTION_ID;
-              const collapsed = collapsedSections.includes(section.id);
-              const allSelected = section.issues.every(issue => activeSelectedIds.has(issue.id));
-              return (
-                <tbody key={section.id}>
-                  {banded && (
-                    <tr className="bg-canvas">
-                      <td colSpan={visibleColumns.length + 1} className="border-b border-line p-0">
-                        {/* The band spans the full scroll width, so its label is
-                            pinned to the left edge instead of scrolling away
-                            from the rows it names. */}
-                        <div className="sticky left-0 flex w-[max-content] max-w-[100vw] items-center gap-2 px-[10px] py-[6px]">
-                          <button
-                            type="button"
-                            onClick={() => toggleSection(section.id)}
-                            aria-expanded={!collapsed}
-                            className="flex min-w-0 items-center gap-2 text-left"
-                          >
-                            {collapsed
-                              ? <ChevronRight size={13} className="shrink-0 text-muted" />
-                              : <ChevronDown size={13} className="shrink-0 text-muted" />}
-                            {section.color && (
-                              <span
-                                className="h-2 w-2 shrink-0 rounded-full"
-                                style={{ background: section.color }}
+            <tbody>
+              {drawnRows.map(issue => {
+                const selected = activeSelectedIds.has(issue.id);
+                const rowTone = selected ? 'bg-[#f1f1f1]' : 'bg-white group-hover:bg-[#fafafa]';
+                return (
+                  <tr
+                    key={issue.id}
+                    className={`group border-b border-[#f4f4f5] transition-colors ${
+                      selected ? 'bg-[#f1f1f1]' : 'hover:bg-[#fafafa]'
+                    }`}
+                  >
+                    <td
+                      className={`sticky left-0 z-[1] h-9 px-[10px] align-middle ${rowTone}`}
+                      onMouseDown={event => { shiftHeldRef.current = event.shiftKey; }}
+                    >
+                      <Checkbox
+                        checked={selected}
+                        onChange={() => selectRow(issue)}
+                        size="sm"
+                        ariaLabel={`Вибрати завдання ${issue.issueKey || issue.title}`}
+                      />
+                    </td>
+
+                    {visibleColumns.map(column => {
+                      const choices = editable ? cellChoices(column, issue) : null;
+                      const typing = editable
+                        && editingCell?.issueId === issue.id
+                        && editingCell?.columnId === column.id;
+                      const cellClass = `h-9 px-[10px] py-0 align-middle ${ALIGNMENT[column.align]} ${
+                        column.pinned
+                          ? `z-[1] ${column.id === 'title' ? 'md:sticky' : 'sticky'} ${rowTone}`
+                          : ''
+                      }`;
+                      const style = column.pinned ? { left: pinnedOffsets[column.id] } : undefined;
+
+                      if (typing) {
+                        return (
+                          <td key={column.id} style={style} className={cellClass}>
+                            {column.editor === 'estimate' ? (
+                              <TextCellEditor
+                                type="number"
+                                suffix="хв"
+                                value={issue.estimateMinutes || ''}
+                                ariaLabel={`Оцінка: ${issue.issueKey || issue.title}`}
+                                onCancel={() => setEditingCell(null)}
+                                onCommit={value => {
+                                  const minutes = Math.max(0, Math.round(Number(value) || 0));
+                                  commit(issue, minutes === (issue.estimateMinutes || 0)
+                                    ? null
+                                    : { estimateMinutes: minutes });
+                                }}
+                              />
+                            ) : (
+                              <TextCellEditor
+                                value={issue.title || ''}
+                                ariaLabel={`Назва: ${issue.issueKey || issue.title}`}
+                                onCancel={() => setEditingCell(null)}
+                                onCommit={value => {
+                                  const title = String(value).trim();
+                                  commit(issue, title && title !== issue.title ? { title } : null);
+                                }}
                               />
                             )}
-                            <span className="ui-type-eyebrow truncate uppercase tracking-wide text-ink">
-                              {section.label}
-                            </span>
-                          </button>
-                          <Counter value={section.issues.length} size="sm" appearance="subtle" />
-                          {onBulkUpdate && (
-                            <ContextMenu
-                              trigger={(
-                                <Button
-                                  style="ghost"
-                                  size="icon-xs"
-                                  icon={MoreVertical}
-                                  composition="section-kebab"
-                                  aria-label={`Дії з групою ${section.label}`}
-                                  title="Дії з групою"
-                                />
-                              )}
-                              items={[{
-                                label: allSelected ? 'Зняти вибір у групі' : 'Вибрати всі у групі',
-                                icon: CheckSquare,
-                                onClick: () => toggleIssueScope(section.issues.map(issue => issue.id)),
-                              }]}
-                            />
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                          </td>
+                        );
+                      }
 
-                  {!collapsed && section.issues.map(issue => {
-                    const selected = activeSelectedIds.has(issue.id);
-                    const rowTone = selected ? 'bg-[#f1f1f1]' : 'bg-white group-hover:bg-[#fafafa]';
-                    return (
-                      <tr
-                        key={issue.id}
-                        className={`group border-b border-[#f4f4f5] transition-colors ${
-                          selected ? 'bg-[#f1f1f1]' : 'hover:bg-[#fafafa]'
-                        }`}
-                      >
-                        <td
-                          className={`sticky left-0 z-[1] h-9 px-[10px] align-middle ${rowTone}`}
-                          onMouseDown={event => { shiftHeldRef.current = event.shiftKey; }}
-                        >
-                          <Checkbox
-                            checked={selected}
-                            onChange={() => selectRow(issue)}
-                            size="sm"
-                            ariaLabel={`Вибрати завдання ${issue.issueKey || issue.title}`}
-                          />
-                        </td>
-                        {visibleColumns.map(column => {
-                          const isEditing = editable
-                            && editing?.issueId === issue.id
-                            && editing?.columnId === column.id;
-                          const canEdit = editable && Boolean(column.editor);
-                          return (
-                            <td
-                              key={column.id}
-                              ref={isEditing ? editingRef : undefined}
-                              style={column.pinned ? { left: pinnedOffsets[column.id] } : undefined}
-                              className={`h-9 align-middle ${ALIGNMENT[column.align]} ${
-                                column.pinned
-                                  ? `z-[1] ${column.id === 'title' ? 'md:sticky md:border-r md:border-line' : 'sticky'} ${rowTone}`
-                                  : ''
-                              } ${isEditing ? 'p-[3px]' : 'px-[10px] py-0'}`}
-                            >
-                              {isEditing ? renderEditor(column, issue) : (
-                                canEdit ? (
-                                  // A cell you can change is a control, and says
-                                  // so; the key inside the title cell keeps its
-                                  // own link because opening a task and renaming
-                                  // one are different intentions.
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditing({ issueId: issue.id, columnId: column.id })}
-                                    title={`Змінити: ${column.label}`}
-                                    className={`-mx-[6px] flex h-[26px] w-[calc(100%+12px)] min-w-0 items-center rounded-[6px] px-[6px] text-left transition-colors hover:bg-black/[0.05] ${
-                                      column.align === 'right' ? 'justify-end' : ''
-                                    }`}
-                                  >
-                                    {renderValue(column, issue)}
-                                  </button>
-                                ) : (
-                                  <span className={`flex min-w-0 items-center ${column.align === 'right' ? 'justify-end' : ''}`}>
-                                    {renderValue(column, issue)}
-                                  </span>
-                                )
+                      if (choices) {
+                        return (
+                          <td key={column.id} style={style} className={cellClass}>
+                            <ContextMenu
+                              align="start"
+                              closeOnSelect={choices.mode === 'single'}
+                              className="w-full"
+                              items={choices.items}
+                              trigger={(
+                                <button
+                                  type="button"
+                                  title={`Змінити: ${column.label}`}
+                                  className={`-mx-[6px] flex h-[26px] w-[calc(100%+12px)] min-w-0 items-center rounded-[6px] px-[6px] text-left transition-colors hover:bg-black/[0.05] ${
+                                    column.align === 'right' ? 'justify-end' : ''
+                                  }`}
+                                >
+                                  {renderValue(column, issue)}
+                                </button>
                               )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              );
-            })}
+                            />
+                          </td>
+                        );
+                      }
+
+                      if (editable && column.editor === 'due') {
+                        return (
+                          <td key={column.id} style={style} className={cellClass}>
+                            {/* The calendar is its own overlay and the trigger
+                                is the field, so this one control both shows the
+                                value and opens — at the row's height. */}
+                            <DatePicker
+                              size="sm"
+                              composition="table-cell"
+                              compact
+                              hideIcon
+                              value={issue.dueDate || ''}
+                              aria-label={`Дедлайн: ${issue.issueKey || issue.title}`}
+                              placeholder="—"
+                              onChange={value => commit(issue, { dueDate: value || null })}
+                            />
+                          </td>
+                        );
+                      }
+
+                      if (editable && column.editor === 'text') {
+                        return (
+                          <td key={column.id} style={style} className={cellClass}>
+                            <button
+                              type="button"
+                              onClick={() => setEditingCell({ issueId: issue.id, columnId: column.id })}
+                              title="Змінити назву"
+                              className="-mx-[6px] flex h-[26px] w-[calc(100%+12px)] min-w-0 items-center rounded-[6px] px-[6px] text-left transition-colors hover:bg-black/[0.05]"
+                            >
+                              {renderValue(column, issue)}
+                            </button>
+                          </td>
+                        );
+                      }
+
+                      if (editable && column.editor === 'estimate') {
+                        return (
+                          <td key={column.id} style={style} className={cellClass}>
+                            <button
+                              type="button"
+                              onClick={() => setEditingCell({ issueId: issue.id, columnId: column.id })}
+                              title="Змінити оцінку"
+                              className="-mx-[6px] flex h-[26px] w-[calc(100%+12px)] min-w-0 items-center justify-end rounded-[6px] px-[6px] text-left transition-colors hover:bg-black/[0.05]"
+                            >
+                              {renderValue(column, issue)}
+                            </button>
+                          </td>
+                        );
+                      }
+
+                      return (
+                        <td key={column.id} style={style} className={cellClass}>
+                          <span className={`flex min-w-0 items-center ${column.align === 'right' ? 'justify-end' : ''}`}>
+                            {renderValue(column, issue)}
+                          </span>
+                        </td>
+                      );
+                    })}
+
+                    <td className={`sticky right-0 z-[1] h-9 align-middle ${rowTone}`} />
+                  </tr>
+                );
+              })}
+
+              {hiddenRowCount > 0 && (
+                <tr>
+                  <td colSpan={visibleColumns.length + 2} className="p-0">
+                    <div className="sticky left-0 flex w-[max-content] max-w-[100vw] items-center gap-3 px-[10px] py-[10px]">
+                      <span className="text-[12px] text-muted">
+                        Показано {drawnRows.length} з {rows.length}
+                      </span>
+                      <Button
+                        style="secondary"
+                        size="sm"
+                        onClick={() => setVisibleRows(count => count + ROWS_PER_PAGE)}
+                      >
+                        Показати ще {Math.min(ROWS_PER_PAGE, hiddenRowCount)}
+                      </Button>
+                      <Button style="ghost" size="sm" onClick={() => setVisibleRows(rows.length)}>
+                        Показати всі
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
       </Surface>
@@ -996,7 +904,11 @@ export default function TaskTableView({
       <BulkActionBar
         count={onBulkUpdate ? activeSelectedIds.size : 0}
         progress={bulkProgress}
-        statusOptions={statusOptions}
+        statusOptions={statuses.map(status => ({
+          value: status.id,
+          label: status.label,
+          dotColor: status.color,
+        }))}
         memberOptions={memberOptions}
         priorityOptions={priorityOptions}
         labelOptions={labelOptions}

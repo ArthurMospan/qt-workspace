@@ -134,7 +134,7 @@ test('serializing ignores keys the schema does not declare', () => {
 test('the shipped schemas keep their agreed keys', () => {
   assert.deepEqual(
     Object.keys(BOARD_VIEW_SCHEMA),
-    ['view', 'sprint', 'assignee', 'priority', 'type', 'group', 'sort', 'dir', 'cols'],
+    ['view', 'sprint', 'assignee', 'priority', 'type', 'sort', 'dir', 'cols'],
   );
   assert.deepEqual(BOARD_VIEW_SCHEMA.view.values, ['kanban', 'list', 'table']);
   assert.deepEqual(Object.keys(MY_TASKS_VIEW_SCHEMA), ['view', 'projects', 'sprint', 'priority', 'type']);
@@ -147,7 +147,6 @@ test('a configured table is one address', () => {
   const state = {
     ...defaultViewState(BOARD_VIEW_SCHEMA),
     view: 'table',
-    group: 'assignee',
     sort: 'due',
     dir: 'desc',
     cols: ['key', 'title', 'due'],
@@ -168,21 +167,22 @@ test('an untouched table says only that it is a table', () => {
 // The columns you chose are not thrown away by looking at the kanban, because
 // the keys stay declared whichever view is showing.
 test('the table’s arrangement survives a trip through another view', () => {
-  const configured = 'view=table&group=priority&cols=key%2Ctitle%2Cestimate';
+  const configured = 'view=table&sort=due&cols=key%2Ctitle%2Cestimate';
   const asKanban = serializeViewState(
     BOARD_VIEW_SCHEMA,
     { ...parseViewState(BOARD_VIEW_SCHEMA, configured), view: 'kanban' },
     configured,
   );
   assert.equal(asKanban.get('view'), null);
-  assert.equal(asKanban.get('group'), 'priority');
+  assert.equal(asKanban.get('sort'), 'due');
   assert.equal(asKanban.get('cols'), 'key,title,estimate');
 });
 
-test('a sort or a grouping the build no longer has opens the table anyway', () => {
-  const state = parseViewState(BOARD_VIEW_SCHEMA, 'view=table&sort=moon-phase&group=weather&dir=sideways');
+// The table does not group, so the address has no key for it either.
+test('a sort the build no longer has opens the table anyway', () => {
+  const state = parseViewState(BOARD_VIEW_SCHEMA, 'view=table&sort=moon-phase&dir=sideways&group=weather');
   assert.equal(state.view, 'table');
   assert.equal(state.sort, 'manual');
-  assert.equal(state.group, 'status');
   assert.equal(state.dir, 'asc');
+  assert.equal(state.group, undefined);
 });

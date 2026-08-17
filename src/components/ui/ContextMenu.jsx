@@ -49,7 +49,13 @@ export default function ContextMenu({
     onOpenChange?.(isOpen);
   }, [isOpen, onOpenChange]);
 
+  // Only while open. A closed menu listening to the document is one wasted
+  // listener per instance, which is invisible on a kebab and is the reason this
+  // component could not be the control inside a table cell: a grid puts several
+  // hundred of them on screen, and every click in the page then walks all of
+  // them. `Popover` has always guarded it this way.
   useEffect(() => {
+    if (!isOpen) return undefined;
     const handleClickOutside = (event) => {
       if (
         containerRef.current
@@ -61,7 +67,7 @@ export default function ContextMenu({
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   const handleTriggerClick = (e) => {
     e.stopPropagation();

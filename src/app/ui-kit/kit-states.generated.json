@@ -20,7 +20,7 @@
     "disabled": 34,
     "loading": 6,
     "error": 6,
-    "long-text": 69
+    "long-text": 68
   },
   "components": {
     "Alert": {
@@ -418,8 +418,7 @@
     },
     "TaskTableView": {
       "hover": "own",
-      "focus": "own",
-      "long-text": "placeholder"
+      "focus": "global"
     },
     "TextAction": {
       "disabled": "native",

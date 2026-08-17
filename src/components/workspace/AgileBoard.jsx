@@ -6,7 +6,7 @@ import { Plus, ChevronLeft, ChevronRight, MoreVertical, CheckSquare } from 'luci
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import Button from '@/components/ui/Button';
-import { BulkActionBar, ContextMenu } from '@/components/ui';
+import { BulkActionBar, ContextMenu, Textarea } from '@/components/ui';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
@@ -190,7 +190,11 @@ function InlineAddForm({ onAdd, onCancel }) {
 
   return (
     <div className="px-[8px] pb-[8px]">
-      <textarea
+      {/* The kit's field, not a hand-written one. This textarea drew a border
+          *and* a focus ring in the same ink, one inside the other, and the
+          browser's own focus outline made a third — three concentric lines
+          around a box for typing a task name into. `Textarea` has one. */}
+      <Textarea
         ref={ref}
         autoFocus
         value={title}
@@ -201,14 +205,14 @@ function InlineAddForm({ onAdd, onCancel }) {
         }}
         placeholder="Назва завдання... (Enter — зберегти)"
         rows={2}
-        className="w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all"
       />
-      <div className="flex gap-2 mt-[6px]">
-        <Button style="primary" size="sm" onClick={submit}>
-          Додати
-        </Button>
+      {/* Confirm on the right, the way every dialog in the product ends. */}
+      <div className="mt-[6px] flex justify-end gap-2">
         <Button style="secondary" size="sm" onClick={() => { onCancel(); setTitle(''); }}>
           Скасувати
+        </Button>
+        <Button style="primary" size="sm" onClick={submit}>
+          Додати
         </Button>
       </div>
     </div>

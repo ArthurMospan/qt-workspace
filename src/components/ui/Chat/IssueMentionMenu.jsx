@@ -22,7 +22,7 @@ export default function IssueMentionMenu({
   if (!loading && issues.length === 0) return null;
 
   return (
-    <div className={`max-h-[240px] overflow-y-auto overflow-x-hidden rounded-2xl border border-line bg-white shadow-xl ${className}`}>
+    <div className={`max-h-[240px] overflow-y-auto overflow-x-hidden rounded-2xl border border-line bg-white shadow-xl [clip-path:inset(0_round_1rem)] ${className}`}>
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-white/95 px-4 py-2 backdrop-blur">
         <span className="flex items-center gap-1.5 text-[11px] font-bold text-muted">
           <Hash size={12} /> Згадати завдання

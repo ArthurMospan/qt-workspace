@@ -4,15 +4,12 @@ import {
   DEFAULT_TASK_TABLE_COLUMNS,
   PINNED_TASK_TABLE_COLUMNS,
   TASK_TABLE_COLUMNS,
-  TASK_TABLE_GROUP_VALUES,
   TASK_TABLE_SORT_VALUES,
-  UNGROUPED_SECTION_ID,
   nextTaskTableSort,
   serializeTaskTableColumns,
   taskSortValue,
   taskTableComparator,
   taskTableContext,
-  taskTableSections,
   visibleTaskTableColumns,
 } from '../src/lib/utils/taskTable.mjs';
 
@@ -166,85 +163,12 @@ test('a column that does not sort cannot be sorted by clicking it', () => {
   assert.deepEqual(nextTaskTableSort('labels', { sort: 'due', dir: 'asc' }), { sort: 'due', dir: 'asc' });
 });
 
-// ── Grouping ────────────────────────────────────────────────────────────────
-
-test('«без групування» is one band the table does not draw', () => {
-  const sections = taskTableSections([issue('1'), issue('2')], {
-    group: 'none',
-    context: context(),
-  });
-  assert.equal(sections.length, 1);
-  assert.equal(sections[0].id, UNGROUPED_SECTION_ID);
-  assert.equal(sections[0].issues.length, 2);
-});
-
-test('status bands follow the board order and drop the empty ones', () => {
-  const sections = taskTableSections([
-    issue('1', { columnId: 'done' }),
-    issue('2', { columnId: 'backlog' }),
-  ], { group: 'status', context: context() });
-  assert.deepEqual(sections.map(section => section.id), ['backlog', 'done']);
-});
-
-// The same fold the list view does: a status the project switched off still
-// holds tasks, and they have to be somewhere.
-test('a hidden status folds into «Приховані» at the end', () => {
-  const sections = taskTableSections([
-    issue('1', { columnId: 'done' }),
-    issue('2', { columnId: 'backlog' }),
-  ], { group: 'status', context: context({ hiddenStatusIds: ['done'] }) });
-  assert.deepEqual(sections.map(section => section.id), ['backlog', '__hidden__']);
-  assert.equal(sections.at(-1).label, 'Приховані');
-});
-
-test('a status the workflow no longer has still lands somewhere', () => {
-  const sections = taskTableSections([issue('1', { columnId: 'ancient' })], {
-    group: 'status',
-    context: context(),
-  });
-  assert.deepEqual(sections.map(section => section.label), ['Без статусу']);
-});
-
-// Putting a task in every assignee's band would count it twice, and a range
-// built by shift has no single place for a row that appears more than once.
-test('a task with several assignees belongs to the first of them', () => {
-  const sections = taskTableSections([issue('1', { assigneeIds: ['u2', 'u1'] })], {
-    group: 'assignee',
-    context: context(),
-  });
-  assert.deepEqual(sections.map(section => section.id), ['u2']);
-  assert.equal(sections[0].issues.length, 1);
-});
-
-test('every grouping puts a task without that value in its own band', () => {
-  const noValue = {
-    assignee: 'Без виконавця',
-    priority: 'Без пріоритету',
-    type: 'Без типу',
-    sprint: 'Без спринта',
-  };
-  for (const [group, label] of Object.entries(noValue)) {
-    const sections = taskTableSections([issue('1')], { group, context: context() });
-    assert.deepEqual(sections.map(section => section.label), [label], group);
+// The table has no banding, and that is a decision rather than an omission:
+// arranging tasks into groups is what the board and the list already are.
+test('the table exposes no grouping', async () => {
+  const taskTable = await import('../src/lib/utils/taskTable.mjs');
+  for (const name of ['taskTableSections', 'TASK_TABLE_GROUPS', 'TASK_TABLE_GROUP_VALUES']) {
+    assert.equal(taskTable[name], undefined, name);
   }
-});
-
-test('sorting happens inside a band, never across bands', () => {
-  const sections = taskTableSections([
-    issue('1', { columnId: 'backlog', title: 'Я' }),
-    issue('2', { columnId: 'done', title: 'А' }),
-    issue('3', { columnId: 'backlog', title: 'А' }),
-  ], { group: 'status', sort: 'title', dir: 'asc', context: context() });
-  assert.deepEqual(sections.map(section => section.id), ['backlog', 'done']);
-  assert.deepEqual(sections[0].issues.map(row => row.id), ['3', '1']);
-});
-
-test('every declared grouping produces sections without throwing', () => {
-  for (const group of TASK_TABLE_GROUP_VALUES) {
-    const sections = taskTableSections([
-      issue('1', { columnId: 'doing', priority: 'high', type: 'bug', sprintId: 's1', assigneeIds: ['u1'] }),
-    ], { group, context: context() });
-    assert.equal(sections.length, 1, group);
-    assert.equal(sections[0].issues.length, 1, group);
-  }
+  assert.ok(TASK_TABLE_COLUMNS.every(column => column.group === undefined));
 });

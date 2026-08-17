@@ -11,13 +11,13 @@
   },
   "totals": {
     "files": 333,
-    "elements": 4170,
+    "elements": 4162,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
     "fakeButtons": 0,
     "contrastFailures": 0,
-    "runtimeNameVerification": 38
+    "runtimeNameVerification": 37
   },
   "namelessControls": [],
   "imagesWithoutAlt": [],
@@ -121,7 +121,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/ContextMenu.jsx:108",
+      "location": "src/components/ui/ContextMenu.jsx:114",
       "attributes": [
         "title"
       ]
@@ -223,29 +223,21 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:477",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:400",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:758",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:650",
       "attributes": [
-        "title"
-      ]
-    },
-    {
-      "element": "Button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:781",
-      "attributes": [
-        "aria-label",
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:967",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:799",
       "attributes": [
         "title"
       ]
@@ -281,14 +273,14 @@
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:545",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:597",
       "attributes": [
         "label"
       ]
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:565",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:617",
       "attributes": [
         "label"
       ]

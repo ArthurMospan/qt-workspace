@@ -116,6 +116,7 @@
       "IconAction",
       "Input",
       "IssueLinkRow",
+      "IssueMentionMenu",
       "MarkdownEditor",
       "MarkdownViewer",
       "MentionMenu",
@@ -408,6 +409,7 @@
       "IconAction",
       "Input",
       "IssueLinkRow",
+      "IssueMentionMenu",
       "Label",
       "MarkdownEditor",
       "MarkdownViewer",
@@ -1416,14 +1418,17 @@
     },
     "IssueMentionMenu": {
       "file": "src/components/ui/Chat/IssueMentionMenu.jsx",
-      "count": 1,
+      "count": 2,
       "showcased": true,
       "usedByKit": [],
       "routes": [
-        "/chat"
+        "/[projectId]/issue/[issueId]",
+        "/chat",
+        "/sprints"
       ],
       "usedIn": [
-        "src/app/(app)/chat/page.js"
+        "src/app/(app)/chat/page.js",
+        "src/components/workspace/UnifiedTimeline.jsx"
       ]
     },
     "KeyboardShortcutsDialog": {
@@ -1658,8 +1663,7 @@
       "count": 9,
       "showcased": true,
       "usedByKit": [
-        "ProjectSettingsForm",
-        "TaskTableView"
+        "ProjectSettingsForm"
       ],
       "routes": [
         "/[projectId]/issue/[issueId]",
@@ -1939,8 +1943,7 @@
       "count": 16,
       "showcased": true,
       "usedByKit": [
-        "BulkActionBar",
-        "TaskTableView"
+        "BulkActionBar"
       ],
       "routes": [
         "/",
@@ -2314,7 +2317,7 @@
     },
     "Textarea": {
       "file": "src/components/ui/Forms/Textarea.jsx",
-      "count": 7,
+      "count": 8,
       "showcased": true,
       "usedByKit": [
         "ProjectSettingsForm"
@@ -2335,6 +2338,7 @@
         "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
         "src/components/AudioTaskPanel.jsx",
+        "src/components/workspace/AgileBoard.jsx",
         "src/components/workspace/BillingTab.jsx",
         "src/components/workspace/calendar/CalendarEventDialog.jsx",
         "src/components/workspace/calendar/CalendarEventPage.jsx"
@@ -2592,8 +2596,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:317",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:387",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
             "src/app/(app)/analytics/page.js:692",
             "src/app/(app)/layout.js:117",
             "src/app/(app)/my/page.js:252",
@@ -2631,7 +2635,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:377",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
             "src/app/(app)/analytics/page.js:639",
             "src/app/(app)/my/page.js:326",
             "src/components/workspace/IssueDetail.jsx:1173",
@@ -2709,8 +2713,8 @@
             "src/components/integrations/YouTrackImportCard.jsx:473",
             "src/components/integrations/YouTrackImportCard.jsx:498",
             "src/components/integrations/YouTrackImportCard.jsx:501",
-            "src/components/workspace/AgileBoard.jsx:207",
-            "src/components/workspace/AgileBoard.jsx:210",
+            "src/components/workspace/AgileBoard.jsx:211",
+            "src/components/workspace/AgileBoard.jsx:214",
             "src/components/workspace/BillingTab.jsx:1374",
             "src/components/workspace/BillingTab.jsx:1377",
             "src/components/workspace/IssueDetail.jsx:1789",
@@ -2722,7 +2726,7 @@
             "src/components/workspace/IssueDetail.jsx:2080",
             "src/components/workspace/IssueDetail.jsx:2108",
             "src/components/workspace/IssueDetail.jsx:2118",
-            "src/components/workspace/UnifiedTimeline.jsx:654",
+            "src/components/workspace/UnifiedTimeline.jsx:706",
             "src/components/workspace/WorkloadTab.jsx:486",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1105",
@@ -2761,7 +2765,7 @@
             "src/components/profile/ProfileView.jsx:136",
             "src/components/workspace/IssueDetail.jsx:1211",
             "src/components/workspace/IssueDetail.jsx:1222",
-            "src/components/workspace/UnifiedTimeline.jsx:735"
+            "src/components/workspace/UnifiedTimeline.jsx:812"
           ]
         },
         "(default)": {
@@ -2859,13 +2863,13 @@
             "src/app/(app)/sprints/page.js:902",
             "src/app/(app)/sprints/page.js:920",
             "src/app/(app)/team/page.js:109",
-            "src/components/workspace/AgileBoard.jsx:545",
-            "src/components/workspace/AgileBoard.jsx:626",
-            "src/components/workspace/AgileBoard.jsx:642",
-            "src/components/workspace/AgileBoard.jsx:657",
-            "src/components/workspace/AgileBoard.jsx:724",
-            "src/components/workspace/AgileBoard.jsx:750",
-            "src/components/workspace/AgileBoard.jsx:765",
+            "src/components/workspace/AgileBoard.jsx:549",
+            "src/components/workspace/AgileBoard.jsx:630",
+            "src/components/workspace/AgileBoard.jsx:646",
+            "src/components/workspace/AgileBoard.jsx:661",
+            "src/components/workspace/AgileBoard.jsx:728",
+            "src/components/workspace/AgileBoard.jsx:754",
+            "src/components/workspace/AgileBoard.jsx:769",
             "src/components/workspace/IssueDetail.jsx:1279"
           ]
         }
@@ -2882,7 +2886,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:317",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
             "src/app/(app)/calendar/page.js:567",
             "src/app/(app)/chat/page.js:1045",
             "src/app/(app)/layout.js:117",
@@ -2917,7 +2921,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:377",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
             "src/app/(app)/analytics/page.js:776",
             "src/app/(app)/analytics/page.js:783",
             "src/app/(app)/analytics/page.js:784",
@@ -2947,7 +2951,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:498",
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:210",
+            "src/components/workspace/AgileBoard.jsx:211",
             "src/components/workspace/BillingTab.jsx:1453",
             "src/components/workspace/BillingTab.jsx:451",
             "src/components/workspace/BillingTab.jsx:455",
@@ -2995,7 +2999,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:387",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
             "src/app/(app)/analytics/page.js:639",
             "src/app/(app)/analytics/page.js:692",
             "src/app/(app)/error.js:24",
@@ -3021,7 +3025,7 @@
             "src/components/CreateTaskModal.jsx:298",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:145",
-            "src/components/workspace/AgileBoard.jsx:207",
+            "src/components/workspace/AgileBoard.jsx:214",
             "src/components/workspace/BillingTab.jsx:1439",
             "src/components/workspace/BillingTab.jsx:452",
             "src/components/workspace/BoardConfigModal.jsx:209",
@@ -3031,7 +3035,7 @@
             "src/components/workspace/IssueDetail.jsx:2047",
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:475",
-            "src/components/workspace/UnifiedTimeline.jsx:654"
+            "src/components/workspace/UnifiedTimeline.jsx:706"
           ]
         },
         "ghost": {
@@ -3097,20 +3101,20 @@
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/YouTrackImportCard.jsx:501",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/workspace/AgileBoard.jsx:545",
-            "src/components/workspace/AgileBoard.jsx:626",
-            "src/components/workspace/AgileBoard.jsx:642",
-            "src/components/workspace/AgileBoard.jsx:657",
-            "src/components/workspace/AgileBoard.jsx:724",
-            "src/components/workspace/AgileBoard.jsx:750",
-            "src/components/workspace/AgileBoard.jsx:765",
+            "src/components/workspace/AgileBoard.jsx:549",
+            "src/components/workspace/AgileBoard.jsx:630",
+            "src/components/workspace/AgileBoard.jsx:646",
+            "src/components/workspace/AgileBoard.jsx:661",
+            "src/components/workspace/AgileBoard.jsx:728",
+            "src/components/workspace/AgileBoard.jsx:754",
+            "src/components/workspace/AgileBoard.jsx:769",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1377",
             "src/components/workspace/IssueDetail.jsx:1279",
             "src/components/workspace/IssueDetail.jsx:1943",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
-            "src/components/workspace/UnifiedTimeline.jsx:735",
+            "src/components/workspace/UnifiedTimeline.jsx:812",
             "src/components/workspace/WorkloadTab.jsx:256",
             "src/components/workspace/WorkloadTab.jsx:485",
             "src/components/workspace/WorkloadTab.jsx:486",
@@ -3146,9 +3150,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:317",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:377",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:387",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
             "src/app/(app)/analytics/page.js:639",
             "src/app/(app)/analytics/page.js:687",
             "src/app/(app)/analytics/page.js:688",
@@ -3256,15 +3260,15 @@
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:207",
-            "src/components/workspace/AgileBoard.jsx:210",
-            "src/components/workspace/AgileBoard.jsx:545",
-            "src/components/workspace/AgileBoard.jsx:626",
-            "src/components/workspace/AgileBoard.jsx:642",
-            "src/components/workspace/AgileBoard.jsx:657",
-            "src/components/workspace/AgileBoard.jsx:724",
-            "src/components/workspace/AgileBoard.jsx:750",
-            "src/components/workspace/AgileBoard.jsx:765",
+            "src/components/workspace/AgileBoard.jsx:211",
+            "src/components/workspace/AgileBoard.jsx:214",
+            "src/components/workspace/AgileBoard.jsx:549",
+            "src/components/workspace/AgileBoard.jsx:630",
+            "src/components/workspace/AgileBoard.jsx:646",
+            "src/components/workspace/AgileBoard.jsx:661",
+            "src/components/workspace/AgileBoard.jsx:728",
+            "src/components/workspace/AgileBoard.jsx:754",
+            "src/components/workspace/AgileBoard.jsx:769",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -3302,7 +3306,7 @@
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:474",
             "src/components/workspace/TimesheetTab.jsx:475",
-            "src/components/workspace/UnifiedTimeline.jsx:654",
+            "src/components/workspace/UnifiedTimeline.jsx:706",
             "src/components/workspace/WorkloadTab.jsx:256",
             "src/components/workspace/WorkloadTab.jsx:485",
             "src/components/workspace/WorkloadTab.jsx:486",
@@ -3342,7 +3346,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:138",
-            "src/components/workspace/UnifiedTimeline.jsx:735"
+            "src/components/workspace/UnifiedTimeline.jsx:812"
           ]
         }
       },
@@ -3364,9 +3368,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:317",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:377",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:387",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
             "src/app/(app)/analytics/page.js:639",
             "src/app/(app)/analytics/page.js:687",
             "src/app/(app)/analytics/page.js:688",
@@ -3475,15 +3479,15 @@
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:207",
-            "src/components/workspace/AgileBoard.jsx:210",
-            "src/components/workspace/AgileBoard.jsx:545",
-            "src/components/workspace/AgileBoard.jsx:626",
-            "src/components/workspace/AgileBoard.jsx:642",
-            "src/components/workspace/AgileBoard.jsx:657",
-            "src/components/workspace/AgileBoard.jsx:724",
-            "src/components/workspace/AgileBoard.jsx:750",
-            "src/components/workspace/AgileBoard.jsx:765",
+            "src/components/workspace/AgileBoard.jsx:211",
+            "src/components/workspace/AgileBoard.jsx:214",
+            "src/components/workspace/AgileBoard.jsx:549",
+            "src/components/workspace/AgileBoard.jsx:630",
+            "src/components/workspace/AgileBoard.jsx:646",
+            "src/components/workspace/AgileBoard.jsx:661",
+            "src/components/workspace/AgileBoard.jsx:728",
+            "src/components/workspace/AgileBoard.jsx:754",
+            "src/components/workspace/AgileBoard.jsx:769",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -3521,8 +3525,8 @@
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:474",
             "src/components/workspace/TimesheetTab.jsx:475",
-            "src/components/workspace/UnifiedTimeline.jsx:654",
-            "src/components/workspace/UnifiedTimeline.jsx:735",
+            "src/components/workspace/UnifiedTimeline.jsx:706",
+            "src/components/workspace/UnifiedTimeline.jsx:812",
             "src/components/workspace/WorkloadTab.jsx:256",
             "src/components/workspace/WorkloadTab.jsx:485",
             "src/components/workspace/WorkloadTab.jsx:486",
@@ -3573,9 +3577,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:317",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:377",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:387",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
             "src/app/(app)/analytics/page.js:639",
             "src/app/(app)/analytics/page.js:687",
             "src/app/(app)/analytics/page.js:688",
@@ -3672,15 +3676,15 @@
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:207",
-            "src/components/workspace/AgileBoard.jsx:210",
-            "src/components/workspace/AgileBoard.jsx:545",
-            "src/components/workspace/AgileBoard.jsx:626",
-            "src/components/workspace/AgileBoard.jsx:642",
-            "src/components/workspace/AgileBoard.jsx:657",
-            "src/components/workspace/AgileBoard.jsx:724",
-            "src/components/workspace/AgileBoard.jsx:750",
-            "src/components/workspace/AgileBoard.jsx:765",
+            "src/components/workspace/AgileBoard.jsx:211",
+            "src/components/workspace/AgileBoard.jsx:214",
+            "src/components/workspace/AgileBoard.jsx:549",
+            "src/components/workspace/AgileBoard.jsx:630",
+            "src/components/workspace/AgileBoard.jsx:646",
+            "src/components/workspace/AgileBoard.jsx:661",
+            "src/components/workspace/AgileBoard.jsx:728",
+            "src/components/workspace/AgileBoard.jsx:754",
+            "src/components/workspace/AgileBoard.jsx:769",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1374",
             "src/components/workspace/BillingTab.jsx:1377",
@@ -3716,8 +3720,8 @@
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:474",
             "src/components/workspace/TimesheetTab.jsx:475",
-            "src/components/workspace/UnifiedTimeline.jsx:654",
-            "src/components/workspace/UnifiedTimeline.jsx:735",
+            "src/components/workspace/UnifiedTimeline.jsx:706",
+            "src/components/workspace/UnifiedTimeline.jsx:812",
             "src/components/workspace/WorkloadTab.jsx:256",
             "src/components/workspace/WorkloadTab.jsx:485",
             "src/components/workspace/WorkloadTab.jsx:486",
@@ -3789,7 +3793,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:317",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
             "src/app/(app)/layout.js:117",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55"
           ]
@@ -3811,8 +3815,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:377",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:387",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
             "src/app/(app)/analytics/page.js:639",
             "src/app/(app)/analytics/page.js:687",
             "src/app/(app)/analytics/page.js:688",
@@ -3913,14 +3917,14 @@
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:207",
-            "src/components/workspace/AgileBoard.jsx:210",
-            "src/components/workspace/AgileBoard.jsx:626",
-            "src/components/workspace/AgileBoard.jsx:642",
-            "src/components/workspace/AgileBoard.jsx:657",
-            "src/components/workspace/AgileBoard.jsx:724",
-            "src/components/workspace/AgileBoard.jsx:750",
-            "src/components/workspace/AgileBoard.jsx:765",
+            "src/components/workspace/AgileBoard.jsx:211",
+            "src/components/workspace/AgileBoard.jsx:214",
+            "src/components/workspace/AgileBoard.jsx:630",
+            "src/components/workspace/AgileBoard.jsx:646",
+            "src/components/workspace/AgileBoard.jsx:661",
+            "src/components/workspace/AgileBoard.jsx:728",
+            "src/components/workspace/AgileBoard.jsx:754",
+            "src/components/workspace/AgileBoard.jsx:769",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -3955,7 +3959,7 @@
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:474",
             "src/components/workspace/TimesheetTab.jsx:475",
-            "src/components/workspace/UnifiedTimeline.jsx:654",
+            "src/components/workspace/UnifiedTimeline.jsx:706",
             "src/components/workspace/WorkloadTab.jsx:256",
             "src/components/workspace/WorkloadTab.jsx:485",
             "src/components/workspace/WorkloadTab.jsx:486",
@@ -4001,7 +4005,7 @@
           "files": [
             "src/app/(app)/sprints/page.js:723",
             "src/app/(app)/sprints/page.js:902",
-            "src/components/workspace/AgileBoard.jsx:545"
+            "src/components/workspace/AgileBoard.jsx:549"
           ]
         },
         "status-submit": {
@@ -4037,7 +4041,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:735"
+            "src/components/workspace/UnifiedTimeline.jsx:812"
           ]
         }
       }
@@ -4143,10 +4147,10 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:608",
-            "src/components/workspace/UnifiedTimeline.jsx:609",
-            "src/components/workspace/UnifiedTimeline.jsx:610",
-            "src/components/workspace/UnifiedTimeline.jsx:685"
+            "src/components/workspace/UnifiedTimeline.jsx:660",
+            "src/components/workspace/UnifiedTimeline.jsx:661",
+            "src/components/workspace/UnifiedTimeline.jsx:662",
+            "src/components/workspace/UnifiedTimeline.jsx:746"
           ]
         }
       },
@@ -4166,9 +4170,9 @@
             "src/app/(app)/page.js:237",
             "src/components/MobileNav.jsx:267",
             "src/components/MobileNav.jsx:296",
-            "src/components/workspace/UnifiedTimeline.jsx:608",
-            "src/components/workspace/UnifiedTimeline.jsx:609",
-            "src/components/workspace/UnifiedTimeline.jsx:685"
+            "src/components/workspace/UnifiedTimeline.jsx:660",
+            "src/components/workspace/UnifiedTimeline.jsx:661",
+            "src/components/workspace/UnifiedTimeline.jsx:746"
           ]
         },
         "(default)": {
@@ -4193,7 +4197,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:426",
-            "src/components/workspace/UnifiedTimeline.jsx:610"
+            "src/components/workspace/UnifiedTimeline.jsx:662"
           ]
         },
         "primary": {
@@ -4356,10 +4360,10 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:608",
-            "src/components/workspace/UnifiedTimeline.jsx:609",
-            "src/components/workspace/UnifiedTimeline.jsx:610",
-            "src/components/workspace/UnifiedTimeline.jsx:685"
+            "src/components/workspace/UnifiedTimeline.jsx:660",
+            "src/components/workspace/UnifiedTimeline.jsx:661",
+            "src/components/workspace/UnifiedTimeline.jsx:662",
+            "src/components/workspace/UnifiedTimeline.jsx:746"
           ]
         }
       },
@@ -4429,9 +4433,9 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:426",
-            "src/components/workspace/UnifiedTimeline.jsx:608",
-            "src/components/workspace/UnifiedTimeline.jsx:609",
-            "src/components/workspace/UnifiedTimeline.jsx:610"
+            "src/components/workspace/UnifiedTimeline.jsx:660",
+            "src/components/workspace/UnifiedTimeline.jsx:661",
+            "src/components/workspace/UnifiedTimeline.jsx:662"
           ]
         },
         "auth-close": {
@@ -4448,7 +4452,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:685"
+            "src/components/workspace/UnifiedTimeline.jsx:746"
           ]
         }
       }
@@ -4766,7 +4770,7 @@
     "Textarea": {
       "composition": {
         "(default)": {
-          "count": 9,
+          "count": 10,
           "routes": [
             "/",
             "/[projectId]",
@@ -4782,6 +4786,7 @@
             "src/app/(app)/sprints/page.js:155",
             "src/app/(app)/sprints/page.js:94",
             "src/components/AudioTaskPanel.jsx:293",
+            "src/components/workspace/AgileBoard.jsx:197",
             "src/components/workspace/BillingTab.jsx:1133",
             "src/components/workspace/BillingTab.jsx:1136",
             "src/components/workspace/BillingTab.jsx:1141",
@@ -4838,12 +4843,12 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:404",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:416",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:427",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:438",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:460",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:470",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:415",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:426",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
             "src/app/(app)/analytics/page.js:645",
             "src/app/(app)/analytics/page.js:657",
             "src/app/(app)/analytics/page.js:707",
@@ -4927,12 +4932,12 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:404",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:416",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:427",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:438",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:460",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:470",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:415",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:426",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
             "src/app/(app)/analytics/page.js:645",
             "src/app/(app)/analytics/page.js:657",
             "src/app/(app)/analytics/page.js:707",
@@ -5021,7 +5026,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:404",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
             "src/app/(app)/my/page.js:311"
           ]
         },
@@ -5035,7 +5040,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:416",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:415",
             "src/app/(app)/analytics/page.js:657",
             "src/app/(app)/analytics/page.js:707",
             "src/app/(app)/analytics/page.js:735",
@@ -5053,8 +5058,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:427",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:460",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:426",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
             "src/app/(app)/analytics/page.js:746",
             "src/app/(app)/my/page.js:291",
             "src/app/(app)/sprints/page.js:600"
@@ -5070,8 +5075,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:438",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:470",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
             "src/app/(app)/analytics/page.js:756",
             "src/app/(app)/calendar/page.js:571",
             "src/app/(app)/my/page.js:301",
@@ -5475,7 +5480,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:346",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
             "src/app/(app)/page.js:213",
             "src/components/SearchModal.jsx:118",
             "src/components/WorkspaceInfoCenter.jsx:111",
@@ -5540,11 +5545,11 @@
           "files": [
             "src/app/(app)/sprints/page.js:872",
             "src/app/(app)/sprints/page.js:897",
-            "src/components/workspace/AgileBoard.jsx:635",
-            "src/components/workspace/AgileBoard.jsx:652",
-            "src/components/workspace/AgileBoard.jsx:689",
-            "src/components/workspace/AgileBoard.jsx:733",
-            "src/components/workspace/AgileBoard.jsx:760"
+            "src/components/workspace/AgileBoard.jsx:639",
+            "src/components/workspace/AgileBoard.jsx:656",
+            "src/components/workspace/AgileBoard.jsx:693",
+            "src/components/workspace/AgileBoard.jsx:737",
+            "src/components/workspace/AgileBoard.jsx:764"
           ]
         },
         "surface": {
@@ -5559,7 +5564,7 @@
           ],
           "files": [
             "src/components/TeamMemberSettingsDialog.jsx:42",
-            "src/components/workspace/UnifiedTimeline.jsx:124",
+            "src/components/workspace/UnifiedTimeline.jsx:126",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:279",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:18"
@@ -5637,7 +5642,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:346",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
             "src/app/(app)/settings/page.js:3329",
             "src/app/(app)/settings/page.js:3330",
             "src/app/(app)/settings/page.js:477",
@@ -5680,11 +5685,11 @@
             "src/app/(app)/sprints/page.js:872",
             "src/app/(app)/sprints/page.js:897",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/AgileBoard.jsx:635",
-            "src/components/workspace/AgileBoard.jsx:652",
-            "src/components/workspace/AgileBoard.jsx:689",
-            "src/components/workspace/AgileBoard.jsx:733",
-            "src/components/workspace/AgileBoard.jsx:760",
+            "src/components/workspace/AgileBoard.jsx:639",
+            "src/components/workspace/AgileBoard.jsx:656",
+            "src/components/workspace/AgileBoard.jsx:693",
+            "src/components/workspace/AgileBoard.jsx:737",
+            "src/components/workspace/AgileBoard.jsx:764",
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/WorkloadTab.jsx:112",
@@ -5732,7 +5737,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:124"
+            "src/components/workspace/UnifiedTimeline.jsx:126"
           ]
         },
         "wide-sm": {
@@ -5779,7 +5784,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:346",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
             "src/app/(app)/settings/page.js:3246",
             "src/app/(app)/settings/page.js:3323",
             "src/app/(app)/settings/page.js:477",
@@ -5821,18 +5826,18 @@
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/AgileBoard.jsx:635",
-            "src/components/workspace/AgileBoard.jsx:652",
-            "src/components/workspace/AgileBoard.jsx:689",
-            "src/components/workspace/AgileBoard.jsx:733",
-            "src/components/workspace/AgileBoard.jsx:760",
+            "src/components/workspace/AgileBoard.jsx:639",
+            "src/components/workspace/AgileBoard.jsx:656",
+            "src/components/workspace/AgileBoard.jsx:693",
+            "src/components/workspace/AgileBoard.jsx:737",
+            "src/components/workspace/AgileBoard.jsx:764",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/BillingTab.jsx:485",
             "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/IssueDetail.jsx:1396",
-            "src/components/workspace/UnifiedTimeline.jsx:124",
+            "src/components/workspace/UnifiedTimeline.jsx:126",
             "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
             "src/components/workspace/WorkloadTab.jsx:118",
@@ -5865,7 +5870,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:346",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
             "src/app/(app)/page.js:213",
             "src/app/(app)/settings/page.js:3323",
             "src/app/(app)/settings/page.js:3329",
@@ -5879,11 +5884,11 @@
             "src/components/WorkspaceHeader.jsx:489",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:102",
-            "src/components/workspace/AgileBoard.jsx:635",
-            "src/components/workspace/AgileBoard.jsx:652",
-            "src/components/workspace/AgileBoard.jsx:689",
-            "src/components/workspace/AgileBoard.jsx:733",
-            "src/components/workspace/AgileBoard.jsx:760",
+            "src/components/workspace/AgileBoard.jsx:639",
+            "src/components/workspace/AgileBoard.jsx:656",
+            "src/components/workspace/AgileBoard.jsx:693",
+            "src/components/workspace/AgileBoard.jsx:737",
+            "src/components/workspace/AgileBoard.jsx:764",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -5895,7 +5900,7 @@
             "src/components/workspace/IssueCard.jsx:327",
             "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/IssueDetail.jsx:1396",
-            "src/components/workspace/UnifiedTimeline.jsx:124",
+            "src/components/workspace/UnifiedTimeline.jsx:126",
             "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
             "src/components/workspace/WorkloadTab.jsx:118",
@@ -5950,7 +5955,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:346",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
             "src/app/(app)/settings/page.js:3014",
             "src/app/(app)/settings/page.js:3246",
             "src/app/(app)/settings/page.js:3323",
@@ -5967,11 +5972,11 @@
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/AgileBoard.jsx:635",
-            "src/components/workspace/AgileBoard.jsx:652",
-            "src/components/workspace/AgileBoard.jsx:689",
-            "src/components/workspace/AgileBoard.jsx:733",
-            "src/components/workspace/AgileBoard.jsx:760",
+            "src/components/workspace/AgileBoard.jsx:639",
+            "src/components/workspace/AgileBoard.jsx:656",
+            "src/components/workspace/AgileBoard.jsx:693",
+            "src/components/workspace/AgileBoard.jsx:737",
+            "src/components/workspace/AgileBoard.jsx:764",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -5981,7 +5986,7 @@
             "src/components/workspace/IssueCard.jsx:313",
             "src/components/workspace/IssueCard.jsx:327",
             "src/components/workspace/IssueDetail.jsx:1396",
-            "src/components/workspace/UnifiedTimeline.jsx:124",
+            "src/components/workspace/UnifiedTimeline.jsx:126",
             "src/components/workspace/WorkloadTab.jsx:112",
             "src/components/workspace/WorkloadTab.jsx:115",
             "src/components/workspace/WorkloadTab.jsx:118",
@@ -6036,7 +6041,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:346",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
             "src/app/(app)/page.js:213",
             "src/app/(app)/settings/page.js:3014",
             "src/app/(app)/settings/page.js:3246",
@@ -6049,11 +6054,11 @@
             "src/components/WorkspaceHeader.jsx:489",
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/AgileBoard.jsx:635",
-            "src/components/workspace/AgileBoard.jsx:652",
-            "src/components/workspace/AgileBoard.jsx:689",
-            "src/components/workspace/AgileBoard.jsx:733",
-            "src/components/workspace/AgileBoard.jsx:760",
+            "src/components/workspace/AgileBoard.jsx:639",
+            "src/components/workspace/AgileBoard.jsx:656",
+            "src/components/workspace/AgileBoard.jsx:693",
+            "src/components/workspace/AgileBoard.jsx:737",
+            "src/components/workspace/AgileBoard.jsx:764",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -6098,7 +6103,7 @@
             "src/components/workspace/IssueCard.jsx:301",
             "src/components/workspace/IssueCard.jsx:313",
             "src/components/workspace/IssueCard.jsx:327",
-            "src/components/workspace/UnifiedTimeline.jsx:124",
+            "src/components/workspace/UnifiedTimeline.jsx:126",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:816",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1379"
           ]
@@ -6219,8 +6224,8 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:545",
-            "src/components/workspace/UnifiedTimeline.jsx:565"
+            "src/components/workspace/UnifiedTimeline.jsx:597",
+            "src/components/workspace/UnifiedTimeline.jsx:617"
           ]
         }
       }
@@ -6393,7 +6398,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:665"
+            "src/components/workspace/UnifiedTimeline.jsx:726"
           ]
         }
       }
@@ -6896,7 +6901,7 @@
           ],
           "files": [
             "src/components/workspace/QtPlusProjectTab.jsx:278",
-            "src/components/workspace/UnifiedTimeline.jsx:505"
+            "src/components/workspace/UnifiedTimeline.jsx:557"
           ]
         },
         "centered": {
@@ -6942,7 +6947,7 @@
             "src/components/workspace/QtPlusProjectTab.jsx:270",
             "src/components/workspace/QtPlusProjectTab.jsx:278",
             "src/components/workspace/TimesheetTab.jsx:626",
-            "src/components/workspace/UnifiedTimeline.jsx:505",
+            "src/components/workspace/UnifiedTimeline.jsx:557",
             "src/components/workspace/VelocityTab.jsx:189",
             "src/components/workspace/WorkloadTab.jsx:679",
             "src/components/workspace/WorkloadTab.jsx:691",
@@ -6985,7 +6990,7 @@
             "src/components/profile/ProfileView.jsx:358",
             "src/components/profile/ProfileView.jsx:394",
             "src/components/workspace/TimesheetTab.jsx:626",
-            "src/components/workspace/UnifiedTimeline.jsx:505",
+            "src/components/workspace/UnifiedTimeline.jsx:557",
             "src/components/workspace/VelocityTab.jsx:189",
             "src/components/workspace/WorkloadTab.jsx:679",
             "src/components/workspace/WorkloadTab.jsx:691",
@@ -7026,8 +7031,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:303",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:493",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:302",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:492",
             "src/app/(app)/analytics/page.js:240",
             "src/app/(app)/analytics/team/[memberId]/page.js:87",
             "src/app/(app)/calendar/page.js:612",
@@ -7624,8 +7629,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:352",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:451",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:351",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:450",
             "src/app/(app)/my/page.js:270",
             "src/app/(app)/my/page.js:334",
             "src/components/CreateTaskModal.jsx:312",
@@ -7770,7 +7775,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:690"
+            "src/components/workspace/UnifiedTimeline.jsx:751"
           ]
         },
         "qtplus": {
@@ -7806,7 +7811,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:651",
+            "src/components/workspace/UnifiedTimeline.jsx:703",
             "src/components/workspace/qtplus/chat/ChatComposer.jsx:63"
           ]
         }
@@ -7958,8 +7963,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:402",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:458",
             "src/app/(app)/analytics/page.js:644",
             "src/app/(app)/analytics/page.js:655",
             "src/app/(app)/analytics/page.js:697",
@@ -8002,7 +8007,7 @@
           "files": [
             "src/app/(app)/settings/page.js:2844",
             "src/components/workspace/IssueDetail.jsx:1517",
-            "src/components/workspace/UnifiedTimeline.jsx:540",
+            "src/components/workspace/UnifiedTimeline.jsx:592",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1026",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1124",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1193"
@@ -8031,7 +8036,7 @@
           "files": [
             "src/app/(app)/settings/page.js:2844",
             "src/components/workspace/IssueDetail.jsx:1517",
-            "src/components/workspace/UnifiedTimeline.jsx:540",
+            "src/components/workspace/UnifiedTimeline.jsx:592",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1026",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1124",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1193"
@@ -8150,8 +8155,8 @@
     "Task Row (List View)": "<div className=\"bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]\">\n  <p className=\"ui-type-eyebrow uppercase tracking-wider text-muted\">Project context — назва проєкту прихована</p>\n  <TaskRow\n    issue={task1}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n  />\n  <p className=\"ui-type-eyebrow mt-2 uppercase tracking-wider text-muted\">Cross-project context — назва проєкту видима</p>\n  <TaskRow\n    issue={task2}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task3}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task4}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n  <TaskRow\n    issue={task5}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectName=\"QuickTeam\"\n    showProjectName\n  />\n</div>",
     "Task List View — живий shared organism": "<TaskListView\n  issues={demoIssues}\n  allIssues={demoIssues}\n  members={demoMembers}\n  labels={demoLabels}\n  sprints={demoSprints}\n  projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n  showProjectName\n  hiddenGroupIds={[lastStatusId]}\n  onBulkUpdate={() => {}}\n  canArchive\n/>",
     "Task List View — групування за категоріями": "<TaskListView\n  issues={demoIssues}\n  allIssues={demoIssues}\n  members={demoMembers}\n  labels={demoLabels}\n  sprints={demoSprints}\n  projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n  showProjectName\n  groupBy=\"category\"\n  hiddenGroupIds={['cancelled']}\n  onBulkUpdate={() => {}}\n  canArchive\n/>",
-    "Task Table View — таблиця з редагуванням у клітинці": "<div className=\"h-[420px] min-w-0\">\n  <TaskTableView\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectId=\"ui-kit-project\"\n    columns={tableColumns}\n    sort={tableSort.sort}\n    dir={tableSort.dir}\n    group={tableGroup}\n    onSortChange={setTableSort}\n    onGroupChange={setTableGroup}\n    onColumnsChange={toggleTableColumn}\n    onOpenIssue={() => {}}\n    hiddenGroupIds={[lastStatusId]}\n    onUpdateIssue={async () => {}}\n    onBulkUpdate={() => {}}\n    canArchive\n  />\n</div>",
-    "Task Table View — без групування, свій набір колонок": "<div className=\"h-[340px] min-w-0\">\n  <TaskTableView\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectId=\"ui-kit-project\"\n    group=\"none\"\n    sort=\"priority\"\n    dir=\"asc\"\n    columns={['type', 'title', 'labels', 'estimate', 'checklist', 'due']}\n    onSortChange={() => {}}\n  />\n</div>",
+    "Task Table View — таблиця з редагуванням у клітинці": "<div className=\"h-[420px] min-w-0\">\n  <TaskTableView\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectId=\"ui-kit-project\"\n    columns={tableColumns}\n    sort={tableSort.sort}\n    dir={tableSort.dir}\n    onSortChange={setTableSort}\n    onColumnsChange={toggleTableColumn}\n    onOpenIssue={() => {}}\n    onUpdateIssue={async () => {}}\n    onBulkUpdate={() => {}}\n    canArchive\n  />\n</div>",
+    "Task Table View — без групування, свій набір колонок": "<div className=\"h-[340px] min-w-0\">\n  <TaskTableView\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectId=\"ui-kit-project\"\n    sort=\"priority\"\n    dir=\"asc\"\n    columns={['type', 'title', 'labels', 'estimate', 'subtasks', 'due']}\n    onSortChange={() => {}}\n  />\n</div>",
     "Task List Card — плоский список задач": "<div className=\"grid gap-4 lg:grid-cols-2\">\n  <TaskListCard\n    title=\"Прострочені\"\n    icon={AlertTriangle}\n    iconClassName=\"text-red-500\"\n    issues={demoIssues.slice(0, 3)}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n  />\n  <TaskListCard\n    title=\"Нещодавно закриті завдання\"\n    icon={CheckCircle2}\n    iconClassName=\"text-emerald-600\"\n    issues={[]}\n    members={demoMembers}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    emptyText=\"За вказаний період завдань не закрито\"\n  />\n</div>",
     "Agile Board — живий shared organism": "<div className=\"h-[520px] min-w-0 overflow-hidden rounded-[16px] bg-white p-4\">\n  <AgileBoard\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    projectId=\"ui-kit-project\"\n    project={{ id: 'ui-kit-project', name: 'QuickTeam', hiddenColumns: [] }}\n    sprints={demoSprints}\n    onAddIssue={() => {}}\n    onMoveIssue={() => {}}\n    onBulkUpdate={() => {}}\n    canArchive\n  />\n</div>",
     "Agile Board — колонки-категорії": "<div className=\"h-[520px] min-w-0 overflow-hidden rounded-[16px] bg-white p-4\">\n  <AgileBoard\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    projectId=\"ui-kit-my\"\n    sprints={demoSprints}\n    showProjectName\n    groupBy=\"category\"\n    hiddenColumns={['cancelled']}\n    showHiddenLane\n    onAddIssue={() => {}}\n    onMoveIssue={() => {}}\n    onBulkUpdate={() => {}}\n    canArchive\n  />\n</div>",

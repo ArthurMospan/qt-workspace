@@ -12,7 +12,6 @@ export default function TaskCRMSection() {
   // The catalogue holds the table's arrangement the same way the address does
   // in the product: the component never keeps a copy of it.
   const [tableSort, setTableSort] = useState({ sort: 'manual', dir: 'asc' });
-  const [tableGroup, setTableGroup] = useState('status');
   const [tableColumns, setTableColumns] = useState(['key', 'title', 'status', 'assignees', 'priority', 'due']);
   const toggleTableColumn = columnId => setTableColumns(current => (
     current.includes(columnId)
@@ -287,12 +286,9 @@ export default function TaskCRMSection() {
             columns={tableColumns}
             sort={tableSort.sort}
             dir={tableSort.dir}
-            group={tableGroup}
             onSortChange={setTableSort}
-            onGroupChange={setTableGroup}
             onColumnsChange={toggleTableColumn}
             onOpenIssue={() => {}}
-            hiddenGroupIds={[lastStatusId]}
             onUpdateIssue={async () => {}}
             onBulkUpdate={() => {}}
             canArchive
@@ -302,7 +298,7 @@ export default function TaskCRMSection() {
 
       <PreviewBlock
         title="Task Table View — без групування, свій набір колонок"
-        description="group=&quot;none&quot; знімає смуги й лишає одне полотно — вигляд для масової чистки беклогу. columns задає видимі колонки; «Ключ» і «Назву» вимкнути не можна, бо рядок, який неможливо впізнати, — не рядок. Порядок колонок канонічний, а не той, у якому їх перелічили: у посиланні їде набір, а не розкладка. Таблиця без права на запис (архівний проєкт) просто не відкриває клітинок."
+        description="group=&quot;none&quot; знімає смуги й лишає одне полотно — вигляд для масової чистки беклогу. columns задає видимі колонки; «ID» і «Назву» вимкнути не можна, бо рядок, який неможливо впізнати, — не рядок. Порядок колонок канонічний, а не той, у якому їх перелічили: у посиланні їде набір, а не розкладка. Таблиця без права на запис (архівний проєкт) просто не відкриває клітинок."
         filePath="src/components/ui/TaskManagement/TaskTableView.jsx"
         fullWidth
       >
@@ -314,10 +310,9 @@ export default function TaskCRMSection() {
             labels={demoLabels}
             sprints={demoSprints}
             projectId="ui-kit-project"
-            group="none"
             sort="priority"
             dir="asc"
-            columns={['type', 'title', 'labels', 'estimate', 'checklist', 'due']}
+            columns={['type', 'title', 'labels', 'estimate', 'subtasks', 'due']}
             onSortChange={() => {}}
           />
         </div>

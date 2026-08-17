@@ -3,9 +3,9 @@
 // The board already had two readings of one list: a kanban, and a list grouped
 // by status. Both decide the arrangement for you. A table is the third reading,
 // and the only one where the arrangement is the user's: which columns, sorted
-// by what, grouped how. That answer has to survive being pasted into a chat,
-// which is why every one of those choices is a key in `BOARD_VIEW_SCHEMA` and
-// why everything here is a pure function over data the screen already holds.
+// by what. That answer has to survive being pasted into a chat, which is why
+// both choices are keys in `BOARD_VIEW_SCHEMA` and why everything here is a
+// pure function over data the screen already holds.
 //
 // Nothing in this file reads Firestore. The table works on the tasks the board
 // has already loaded — a project on the free plan cannot afford a query per row.
@@ -22,26 +22,28 @@ import { NO_PRIORITY_ID } from './priorities.mjs';
 // `pinned` columns stay put while the rest scroll sideways, and cannot be
 // switched off — a row you cannot identify is not a row.
 // `editor` names the control a cell opens; `null` is a value you can only read.
-// `group` is the banding this column can produce, and it is what puts the
-// grouping choice on the column it is about rather than in a control beside the
-// filters, where it looked like a filter and was not one.
+//
+// There is no grouping. It was offered twice — as a select beside the filters
+// and as a menu on the column — and rejected both times, because a table of
+// tasks is the flat reading of a list: the board is the one that arranges them
+// into columns, and the list is the one that arranges them into sections.
 
 const COLUMNS = [
-  { id: 'key', label: 'ID', width: 96, align: 'left', pinned: true, sortable: true, editor: null, group: '' },
-  { id: 'title', label: 'Назва', width: 320, align: 'left', pinned: true, sortable: true, editor: 'text', group: '' },
-  { id: 'status', label: 'Статус', width: 150, align: 'left', pinned: false, sortable: true, editor: 'status', group: 'status' },
-  { id: 'assignees', label: 'Виконавці', width: 156, align: 'left', pinned: false, sortable: true, editor: 'assignees', group: 'assignee' },
-  { id: 'priority', label: 'Пріоритет', width: 148, align: 'left', pinned: false, sortable: true, editor: 'priority', group: 'priority' },
-  { id: 'due', label: 'Дедлайн', width: 132, align: 'left', pinned: false, sortable: true, editor: 'due', group: '' },
-  { id: 'type', label: 'Тип', width: 136, align: 'left', pinned: false, sortable: true, editor: 'type', group: 'type' },
-  { id: 'sprint', label: 'Спринт', width: 148, align: 'left', pinned: false, sortable: true, editor: 'sprint', group: 'sprint' },
-  { id: 'labels', label: 'Мітки', width: 180, align: 'left', pinned: false, sortable: false, editor: 'labels', group: '' },
-  { id: 'estimate', label: 'Оцінка', width: 104, align: 'right', pinned: false, sortable: true, editor: 'estimate', group: '' },
-  { id: 'checklist', label: 'Чекліст', width: 104, align: 'right', pinned: false, sortable: true, editor: null, group: '' },
-  { id: 'comments', label: 'Коментарі', width: 112, align: 'right', pinned: false, sortable: true, editor: null, group: '' },
-  { id: 'blocked', label: 'Блокування', width: 128, align: 'left', pinned: false, sortable: true, editor: null, group: '' },
-  { id: 'created', label: 'Створено', width: 116, align: 'left', pinned: false, sortable: true, editor: null, group: '' },
-  { id: 'updated', label: 'Оновлено', width: 116, align: 'left', pinned: false, sortable: true, editor: null, group: '' },
+  { id: 'key', label: 'ID', width: 96, align: 'left', pinned: true, sortable: true, editor: null },
+  { id: 'title', label: 'Назва', width: 320, align: 'left', pinned: true, sortable: true, editor: 'text' },
+  { id: 'status', label: 'Статус', width: 150, align: 'left', pinned: false, sortable: true, editor: 'status' },
+  { id: 'assignees', label: 'Виконавці', width: 156, align: 'left', pinned: false, sortable: true, editor: 'assignees' },
+  { id: 'priority', label: 'Пріоритет', width: 148, align: 'left', pinned: false, sortable: true, editor: 'priority' },
+  { id: 'due', label: 'Дедлайн', width: 132, align: 'left', pinned: false, sortable: true, editor: 'due' },
+  { id: 'type', label: 'Тип', width: 136, align: 'left', pinned: false, sortable: true, editor: 'type' },
+  { id: 'sprint', label: 'Спринт', width: 148, align: 'left', pinned: false, sortable: true, editor: 'sprint' },
+  { id: 'labels', label: 'Мітки', width: 180, align: 'left', pinned: false, sortable: false, editor: 'labels' },
+  { id: 'estimate', label: 'Оцінка', width: 104, align: 'right', pinned: false, sortable: true, editor: 'estimate' },
+  { id: 'subtasks', label: 'Підзавдання', width: 124, align: 'right', pinned: false, sortable: true, editor: null },
+  { id: 'comments', label: 'Коментарі', width: 112, align: 'right', pinned: false, sortable: true, editor: null },
+  { id: 'blocked', label: 'Блокування', width: 128, align: 'left', pinned: false, sortable: true, editor: null },
+  { id: 'created', label: 'Створено', width: 116, align: 'left', pinned: false, sortable: true, editor: null },
+  { id: 'updated', label: 'Оновлено', width: 116, align: 'left', pinned: false, sortable: true, editor: null },
 ];
 
 export const TASK_TABLE_COLUMNS = Object.freeze(COLUMNS.map(column => Object.freeze({ ...column })));
@@ -66,37 +68,10 @@ export const TASK_TABLE_SORT_VALUES = Object.freeze([
 
 export const TASK_TABLE_SORT_DIRECTIONS = Object.freeze(['asc', 'desc']);
 
-export const TASK_TABLE_GROUPS = Object.freeze([
-  Object.freeze({ id: 'none', label: 'Без групування' }),
-  Object.freeze({ id: 'status', label: 'За статусом' }),
-  Object.freeze({ id: 'assignee', label: 'За виконавцем' }),
-  Object.freeze({ id: 'priority', label: 'За пріоритетом' }),
-  Object.freeze({ id: 'type', label: 'За типом' }),
-  Object.freeze({ id: 'sprint', label: 'За спринтом' }),
-]);
-
-export const TASK_TABLE_GROUP_VALUES = Object.freeze(TASK_TABLE_GROUPS.map(group => group.id));
-
 const COLUMN_BY_ID = new Map(TASK_TABLE_COLUMNS.map(column => [column.id, column]));
 
 export function taskTableColumn(columnId) {
   return COLUMN_BY_ID.get(columnId) || null;
-}
-
-/**
- * The banding a column can produce, or `''` when it cannot band anything.
- *
- * Grouping used to be a select beside the filters, which put a choice about one
- * column somewhere that looked like it hid rows. It belongs on the column.
- */
-export function taskTableGroupForColumn(columnId) {
-  return COLUMN_BY_ID.get(columnId)?.group || '';
-}
-
-/** Which column, if any, is producing the current banding. */
-export function taskTableColumnForGroup(group) {
-  if (!group || group === 'none') return '';
-  return TASK_TABLE_COLUMNS.find(column => column.group === group)?.id || '';
 }
 
 /**
@@ -164,8 +139,8 @@ export function memberName(member) {
  * @param {object[]} source.sprints Sprints of the project.
  * @param {object[]} source.members People who can be assigned.
  * @param {object[]} source.labels Label definitions.
- * @param {string[]} source.hiddenStatusIds Statuses the project folds away.
  * @param {Set<string>|string[]} source.blockedIssueIds Tasks with an open blocker.
+ * @param {Map<string, {done: number, total: number}>} source.childProgressById How many child tasks each task has, and how many are closed.
  */
 export function taskTableContext({
   statuses = [],
@@ -174,8 +149,8 @@ export function taskTableContext({
   sprints = [],
   members = [],
   labels = [],
-  hiddenStatusIds = [],
   blockedIssueIds = [],
+  childProgressById = new Map(),
 } = {}) {
   return {
     statuses,
@@ -184,8 +159,8 @@ export function taskTableContext({
     sprints,
     members,
     labels,
-    hiddenStatusIds: [...hiddenStatusIds],
     blockedIssueIds: blockedIssueIds instanceof Set ? blockedIssueIds : new Set(blockedIssueIds),
+    childProgressById,
     statusById: indexById(statuses),
     priorityById: indexById(priorities),
     typeById: indexById(types),
@@ -224,11 +199,6 @@ function keySortValue(issue) {
 function assigneeIdsOf(issue) {
   const ids = issue?.assigneeIds || issue?.assignees || [];
   return Array.isArray(ids) ? ids.filter(Boolean) : [];
-}
-
-export function checklistProgress(issue) {
-  const items = Array.isArray(issue?.subtasks) ? issue.subtasks : [];
-  return { done: items.filter(item => item?.done).length, total: items.length };
 }
 
 export function commentCountOf(issue) {
@@ -272,8 +242,11 @@ export function taskSortValue(issue, columnId, context) {
     }
     case 'estimate':
       return Number(issue?.estimateMinutes) || null;
-    case 'checklist':
-      return checklistProgress(issue).total || null;
+    // Real child tasks, not the checklist field that used to live on the
+    // document — that one was removed from the product, and a column reading it
+    // reported nothing for every task in the workspace.
+    case 'subtasks':
+      return context.childProgressById.get(issue?.id)?.total || null;
     case 'comments':
       return commentCountOf(issue) || null;
     // Blocked first while ascending: «what is stuck» is the only reason to sort
@@ -317,132 +290,4 @@ export function nextTaskTableSort(columnId, current) {
   if (current?.sort !== columnId) return { sort: columnId, dir: 'asc' };
   if (current.dir === 'asc') return { sort: columnId, dir: 'desc' };
   return { sort: 'manual', dir: 'asc' };
-}
-
-// ── Grouping ────────────────────────────────────────────────────────────────
-
-const MUTED = 'var(--color-muted)';
-export const UNGROUPED_SECTION_ID = '__all__';
-const HIDDEN_SECTION_ID = '__hidden__';
-const NONE_SECTION_ID = '__none__';
-
-// A task with several assignees belongs to the first of them. Putting it in
-// every group would count it several times, and a selection built by shift is a
-// range over the rows on screen — a row that appears twice has no single place
-// in that range.
-function groupPlan(group, context) {
-  if (group === 'assignee') {
-    return {
-      buckets: [
-        ...context.members.map(member => ({
-          id: memberId(member),
-          label: memberName(member),
-          color: MUTED,
-          user: member,
-        })),
-        { id: NONE_SECTION_ID, label: 'Без виконавця', color: MUTED },
-      ],
-      keyOf: issue => {
-        const first = assigneeIdsOf(issue)[0];
-        return first && context.memberById.has(first) ? first : NONE_SECTION_ID;
-      },
-    };
-  }
-
-  if (group === 'priority') {
-    return {
-      buckets: [
-        ...context.priorities.map(priority => ({
-          id: priority.id,
-          label: priority.label,
-          color: priority.color || MUTED,
-        })),
-        { id: NONE_SECTION_ID, label: 'Без пріоритету', color: MUTED },
-      ],
-      keyOf: issue => (context.priorityById.has(issue?.priority)
-        ? issue.priority
-        : NONE_SECTION_ID),
-    };
-  }
-
-  if (group === 'type') {
-    return {
-      buckets: [
-        ...context.types.map(type => ({
-          id: type.id,
-          label: type.label,
-          color: type.color || MUTED,
-        })),
-        { id: NONE_SECTION_ID, label: 'Без типу', color: MUTED },
-      ],
-      keyOf: issue => (context.typeById.has(issue?.type) ? issue.type : NONE_SECTION_ID),
-    };
-  }
-
-  if (group === 'sprint') {
-    return {
-      buckets: [
-        ...context.sprints.map(sprint => ({
-          id: sprint.id,
-          label: sprint.name || 'Спринт',
-          color: MUTED,
-        })),
-        { id: NONE_SECTION_ID, label: 'Без спринта', color: MUTED },
-      ],
-      keyOf: issue => (context.sprintById.has(issue?.sprintId) ? issue.sprintId : NONE_SECTION_ID),
-    };
-  }
-
-  if (group === 'status') {
-    const hidden = new Set(context.hiddenStatusIds);
-    return {
-      buckets: [
-        ...context.statuses
-          .filter(status => !hidden.has(status.id))
-          .map(status => ({ id: status.id, label: status.label, color: status.color || MUTED })),
-        { id: NONE_SECTION_ID, label: 'Без статусу', color: MUTED },
-        // The same fold the list view does, for the same reason: a status the
-        // project has switched off still holds tasks, and they have to be
-        // somewhere.
-        { id: HIDDEN_SECTION_ID, label: 'Приховані', color: MUTED },
-      ],
-      keyOf: issue => {
-        const id = columnOf(issue);
-        if (hidden.has(id)) return HIDDEN_SECTION_ID;
-        return context.statusById.has(id) ? id : NONE_SECTION_ID;
-      },
-    };
-  }
-
-  return {
-    buckets: [{ id: UNGROUPED_SECTION_ID, label: '', color: '' }],
-    keyOf: () => UNGROUPED_SECTION_ID,
-  };
-}
-
-/**
- * The table's body: sections in workflow order, each holding its rows in the
- * chosen sort. Empty sections are dropped — a grouped table is a reading of the
- * tasks you have, not an inventory of the buckets that exist.
- *
- * @param {object[]} issues The tasks already on screen.
- * @param {object} options
- * @param {string} options.group One of `TASK_TABLE_GROUP_VALUES`.
- * @param {string} options.sort One of `TASK_TABLE_SORT_VALUES`.
- * @param {'asc'|'desc'} options.dir Direction of that sort.
- * @param {object} options.context From `taskTableContext`.
- */
-export function taskTableSections(issues = [], { group = 'status', sort = 'manual', dir = 'asc', context } = {}) {
-  const resolved = context || taskTableContext();
-  const { buckets, keyOf } = groupPlan(group, resolved);
-  const rows = new Map(buckets.map(bucket => [bucket.id, []]));
-  for (const issue of issues) {
-    const key = keyOf(issue);
-    if (!rows.has(key)) rows.set(key, []);
-    rows.get(key).push(issue);
-  }
-  const compare = taskTableComparator(sort, dir, resolved);
-  return buckets
-    .map(bucket => ({ ...bucket, issues: [...(rows.get(bucket.id) || [])].sort(compare) }))
-    .filter(section => section.issues.length > 0);
 }

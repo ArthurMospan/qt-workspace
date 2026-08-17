@@ -6,6 +6,7 @@ import { ChatIcon } from '@/lib/design/icons';
 import { useRouter } from 'next/navigation';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
+import IssueMentionMenu from '@/components/ui/Chat/IssueMentionMenu';
 import FileInput from '@/components/ui/Forms/FileInput';
 import AttachmentViewer from '@/components/ui/AttachmentViewer';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
@@ -17,6 +18,7 @@ import { IconAction, Pill, Popover, useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useComments } from '@/lib/hooks/useComments';
+import { useSearch } from '@/lib/hooks/useSearch';
 import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -140,7 +142,7 @@ export default function UnifiedTimeline({
   onUnreadCountChange,
 }) {
   const router = useRouter();
-  const { currentUser, projects = [] } = useAppContext();
+  const { currentUser, projects = [], activeOrgId } = useAppContext();
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirmDialog = useConfirm();
   const project = projects.find(item => item.id === projectId);
@@ -187,6 +189,21 @@ export default function UnifiedTimeline({
     selectedIndex: 0,
     ignoreIndex: -1,
   });
+  const [issueMention, setIssueMention] = useState({ active: false, query: '', startIndex: -1, cursorIndex: -1 });
+  const {
+    results: issueResults,
+    loading: issueSearchLoading,
+    search: searchIssues,
+    clear: clearIssueSearch,
+  } = useSearch();
+  useEffect(() => {
+    if (!issueMention.active || !activeOrgId) {
+      clearIssueSearch();
+      return;
+    }
+    searchIssues(issueMention.query, activeOrgId, null, { mention: true });
+  }, [activeOrgId, clearIssueSearch, issueMention.active, issueMention.query, searchIssues]);
+
   const myId = currentUser?.uid || currentUser?.id;
   const unreadCommentIds = useMemo(() => {
     if (!myId) return [];
@@ -324,6 +341,41 @@ export default function UnifiedTimeline({
         ignoreIndex: -1,
       };
     });
+  };
+
+  // The same rule the workspace composer uses: `#` at a word boundary, and the
+  // run of letters, digits and dashes after it.
+  const checkIssueMention = (text, cursorPosition) => {
+    const before = text.slice(0, cursorPosition);
+    const match = before.match(/(?:^|[\s([{])#([\p{L}\p{N}-]*)$/u);
+    if (!match) {
+      setIssueMention(previous => (previous.active
+        ? { active: false, query: '', startIndex: -1, cursorIndex: -1 }
+        : previous));
+      return;
+    }
+    setIssueMention({
+      active: true,
+      query: match[1].toLocaleLowerCase('uk-UA'),
+      startIndex: cursorPosition - match[1].length - 1,
+      cursorIndex: cursorPosition,
+    });
+  };
+
+  const selectIssueMention = mentioned => {
+    if (!mentioned?.issueKey) return;
+    const textBefore = input.slice(0, issueMention.startIndex);
+    const textAfter = input.slice(issueMention.cursorIndex);
+    const mentionText = `#${mentioned.issueKey} `;
+    setInput(textBefore + mentionText + textAfter);
+    setIssueMention({ active: false, query: '', startIndex: -1, cursorIndex: -1 });
+    clearIssueSearch();
+    setTimeout(() => {
+      if (!inputRef.current) return;
+      const cursorPosition = textBefore.length + mentionText.length;
+      inputRef.current.focus();
+      inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+    }, 0);
   };
 
   const selectMention = member => {
@@ -661,6 +713,15 @@ export default function UnifiedTimeline({
               </Button>
             </div>
           )}
+          {issueMention.active && (
+            <IssueMentionMenu
+              issues={issueResults}
+              projects={projects}
+              loading={issueSearchLoading}
+              onSelect={selectIssueMention}
+              className="absolute bottom-full left-3 right-3 z-[60] mb-2"
+            />
+          )}
           {mentionState.active && filteredMembers.length > 0 && (
             <MentionMenu
               density="timeline"
@@ -694,11 +755,27 @@ export default function UnifiedTimeline({
             onChange={event => {
               setInput(event.target.value);
               checkMentions(event.target.value, event.target.selectionStart);
+              checkIssueMention(event.target.value, event.target.selectionStart);
               event.target.style.height = 'auto';
               event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
             }}
-            onClick={event => checkMentions(event.target.value, event.target.selectionStart)}
+            onClick={event => {
+              checkMentions(event.target.value, event.target.selectionStart);
+              checkIssueMention(event.target.value, event.target.selectionStart);
+            }}
             onKeyDown={event => {
+              if (issueMention.active && issueResults.length > 0) {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  selectIssueMention(issueResults[0]);
+                  return;
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setIssueMention({ active: false, query: '', startIndex: -1, cursorIndex: -1 });
+                  return;
+                }
+              }
               if (mentionState.active && filteredMembers.length > 0) {
                 if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                   event.preventDefault();

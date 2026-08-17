@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 227,
+    "usedAndPreviewed": 226,
     "usedWithoutPreview": 0,
-    "declaredUnused": 107
+    "declaredUnused": 108
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -356,6 +356,12 @@
       "component": "MultiSelect",
       "prop": "size",
       "value": "md",
+      "namespace": null
+    },
+    {
+      "component": "MultiSelect",
+      "prop": "size",
+      "value": "sm",
       "namespace": null
     },
     {
@@ -1309,7 +1315,7 @@
     "Pill.size.lg": 9,
     "Pill.shape.badge": 20,
     "Button.size.icon-lg": 10,
-    "Button.style.secondary": 69,
+    "Button.style.secondary": 70,
     "Button.style.primary": 42,
     "Select.filterRole.sprint": 2,
     "Select.variant.ghost": 23,
@@ -1321,9 +1327,9 @@
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
-    "Button.style.ghost": 79,
+    "Button.style.ghost": 78,
     "Button.size.icon-sm": 21,
-    "Button.size.sm": 46,
+    "Button.size.sm": 48,
     "Button.size.icon": 22,
     "Surface.preset.panel": 10,
     "Surface.padding.lg": 5,
@@ -1341,8 +1347,8 @@
     "ChatComposerCore.variant.workspace": 1,
     "IconAction.appearance.soft": 8,
     "IconAction.composition.chat-composer-action": 2,
-    "Counter.size.sm": 14,
-    "Counter.appearance.subtle": 4,
+    "Counter.size.sm": 13,
+    "Counter.appearance.subtle": 3,
     "IconAction.composition.chat-panel-action": 3,
     "UserAvatar.size.md": 5,
     "IconAction.shape.compact": 2,
@@ -1351,7 +1357,7 @@
     "Dialog.size.md": 6,
     "Button.size.md": 54,
     "SidebarLayout.context.chat": 1,
-    "Button.size.icon-xs": 22,
+    "Button.size.icon-xs": 20,
     "Dialog.titleContext.dialog": 5,
     "Dialog.size.sm": 12,
     "Dialog.presentation.sheet": 1,
@@ -1393,7 +1399,7 @@
     "Button.composition.settings-row-action": 4,
     "SidebarLayout.context.settings": 1,
     "Dialog.presentation.dialog": 8,
-    "Button.composition.section-kebab": 5,
+    "Button.composition.section-kebab": 4,
     "Pill.tone.count": 8,
     "Surface.composition.scroll-pane": 1,
     "SidebarLayout.context.team": 1,
@@ -1524,11 +1530,10 @@
     "Counter.size.xs": 1,
     "FilterBar.context.stacked": 1,
     "UserAvatar.size.chat-mention": 1,
-    "Select.size.sm": 7,
+    "Select.size.sm": 6,
     "Input.composition.project-name": 1,
     "Textarea.composition.project-description": 1,
-    "Input.composition.table-cell": 1,
-    "MultiSelect.size.sm": 1
+    "Input.composition.table-cell": 1
   },
   "previewedValues": [
     "Alert.variant.danger",

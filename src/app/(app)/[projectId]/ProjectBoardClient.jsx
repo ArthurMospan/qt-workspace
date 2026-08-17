@@ -115,7 +115,6 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
     assignee: boardAssigneeFilter,
     priority: boardPriorityFilter,
     type: boardTypeFilter,
-    group: tableGroup,
     sort: tableSort,
     dir: tableSortDirection,
     cols: tableColumns,
@@ -525,12 +524,9 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               columns={tableColumns}
               sort={tableSort}
               dir={tableSortDirection}
-              group={tableGroup}
               onSortChange={setTableSort}
-              onGroupChange={value => setBoardViewState({ group: value })}
               onColumnsChange={toggleTableColumn}
               onOpenIssue={openIssueQuickView}
-              hiddenGroupIds={project?.hiddenColumns || []}
               activeTimerIssueId={activeTimer?.issueId}
               // An archived project is read-only: its cells open nothing.
               onUpdateIssue={isArchived ? undefined : handleUpdateIssue}

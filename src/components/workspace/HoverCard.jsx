@@ -18,6 +18,9 @@ import { useLocalization } from '@/lib/hooks/useLocalization';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
+// The one shape a mention has, whoever it names.
+const MENTION_CHIP = 'inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20';
+
 const ORGANIZATION_ROLE_LABELS = {
   owner: 'Власник',
   admin: 'Адміністратор',
@@ -63,8 +66,11 @@ export default function HoverCard({ type, value, children, members }) {
     return () => clearInterval(timer);
   }, []);
 
+  // A click starts the lookup and then the pointer leaves the chip, which used
+  // to unmount the request mid-flight: `show` went false, the effect cleaned up,
+  // and the answer was thrown away — so the click did nothing at all.
   useEffect(() => {
-    if (!show) return;
+    if (!show && !openWhenReadyRef.current) return;
     let cancelled = false;
     
     // For user, data is usually already in members array
@@ -94,8 +100,10 @@ export default function HoverCard({ type, value, children, members }) {
         const matchingDocument = expectedProject
           ? snap.docs.find(document => document.data().projectId === expectedProject.id)
           : snap.docs[0];
+        // The document id last: a stored `id` field would otherwise shadow it,
+        // and the panel opens by document id.
         return matchingDocument
-          ? { id: matchingDocument.id, ...matchingDocument.data() }
+          ? { ...matchingDocument.data(), id: matchingDocument.id }
           : null;
       };
       loadIssue(value).then(async exactMatch => {
@@ -175,29 +183,22 @@ export default function HoverCard({ type, value, children, members }) {
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >
-      {type === 'issue' ? (
-        // A mentioned task and a mentioned person are the same kind of thing
-        // in a sentence — a name that opens something — so they read the same.
-        // The magenta was the only colour in the product that meant nothing.
-        <button
-          type="button"
-          onClick={openIssue}
-          title={`Переглянути ${value}`}
-          className="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
-        >
-          <TaskIcon size={11} className="shrink-0 text-muted" />
-          <span className="truncate">{children}</span>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={openUser}
-          title={`Відкрити профіль ${data?.name || value}`}
-          className="cursor-pointer rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
-        >
-          {children}
-        </button>
-      )}
+      {/* One chip, drawn here and nowhere else. A mentioned task and a
+          mentioned person are the same kind of thing in a sentence — a name
+          that opens something — so they read the same. The caller passes the
+          contents (a face, or nothing) and never a second capsule around
+          them, which is what put two of them around every @name. */}
+      <button
+        type="button"
+        onClick={type === 'issue' ? openIssue : openUser}
+        title={type === 'issue'
+          ? `Переглянути ${value}`
+          : `Відкрити профіль ${data?.name || value}`}
+        className={MENTION_CHIP}
+      >
+        {type === 'issue' && <TaskIcon size={11} className="shrink-0 text-muted" />}
+        {children}
+      </button>
 
       {show && (
         <div data-ui-surface="local" className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white border border-line rounded-[12px] shadow-xl p-3 text-left">

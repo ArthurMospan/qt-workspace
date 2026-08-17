@@ -331,6 +331,32 @@
   .ui-control[data-ui-composition='inline-edit'] {
     --ui-control-pr: 54px;
   }
+  /* The table's own scrollport. `custom-scrollbar` reserves a track down the
+     whole pane, and the top of that track lands beside the sticky header — a
+     grey band in the one row with no room for one. This scrollbar is thin and
+     has no track at all, so the header keeps its full width and the bar only
+     appears over the rows it is scrolling. */
+  .ui-table-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(0 0 0 / 18%) transparent;
+  }
+  .ui-table-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .ui-table-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .ui-table-scroll::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+    background-color: rgb(0 0 0 / 18%);
+  }
+  .ui-table-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   /* A control living inside a table cell. The row is 36px, and the standard
      small control is 34 with its own padding — so opening a cell for editing
      shoved every row below it down the screen and the table jumped under the

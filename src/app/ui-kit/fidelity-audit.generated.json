@@ -11,15 +11,14 @@
     "productFiles": 224,
     "parsedFiles": 224,
     "parseErrors": 0,
-    "nativeControls": 18,
+    "nativeControls": 17,
     "structures": {
       "analytics": 2,
       "qtplus": 1,
-      "board": 1,
       "settings": 1,
       "shell": 13
     },
-    "styledNativeControls": 13,
+    "styledNativeControls": 12,
     "reviewedNativeControls": 4,
     "manualLabels": 0,
     "manualModalShells": 0,
@@ -34,7 +33,7 @@
   "nativeByTag": {
     "button": 17,
     "input": 0,
-    "textarea": 1,
+    "textarea": 0,
     "select": 0
   },
   "kit": {
@@ -201,22 +200,6 @@
       "routes": []
     },
     {
-      "tag": "textarea",
-      "location": "src/components/workspace/AgileBoard.jsx:193",
-      "className": "w-full px-3 py-2 bg-white rounded-[12px] border border-line text-[12px] text-ink placeholder-faint resize-none focus:border-ink focus:ring-1 focus:ring-ink transition-all",
-      "text": "",
-      "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "Textarea",
-      "structure": "board",
-      "routes": [
-        "/[projectId]",
-        "/my"
-      ]
-    },
-    {
       "tag": "button",
       "location": "src/components/workspace/qtplus/cards/FileCard.jsx:77",
       "className": "absolute inset-0 cursor-pointer",
@@ -367,10 +350,6 @@
       "count": 1
     },
     {
-      "file": "src/components/workspace/AgileBoard.jsx",
-      "count": 1
-    },
-    {
       "file": "src/components/workspace/qtplus/cards/FileCard.jsx",
       "count": 1
     }
@@ -404,7 +383,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:312",
+      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:311",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -529,7 +508,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:603",
+      "location": "src/components/workspace/AgileBoard.jsx:607",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
@@ -614,7 +593,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:680",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:741",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
