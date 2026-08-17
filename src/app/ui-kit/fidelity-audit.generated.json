@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 222,
-    "parsedFiles": 222,
+    "productFiles": 224,
+    "parsedFiles": 224,
     "parseErrors": 0,
     "nativeControls": 19,
     "structures": {
@@ -26,7 +26,7 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 45,
+    "localSurfaceExceptions": 46,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
@@ -424,7 +424,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
+      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:312",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -434,7 +434,7 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:100",
+      "location": "src/app/(app)/layout.js:101",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -534,7 +534,7 @@
       "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:147",
+      "location": "src/components/profile/ProfileView.jsx:146",
       "tag": "div",
       "className": "absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]"
     },
@@ -584,9 +584,14 @@
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:287",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:288",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
+    },
+    {
+      "location": "src/components/workspace/EventModal.jsx:16",
+      "tag": "div",
+      "className": "relative flex h-[94dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-full sm:max-h-none sm:w-[min(1040px,88vw)] sm:rounded-none sm:pb-0"
     },
     {
       "location": "src/components/workspace/IssueModal.jsx:11",

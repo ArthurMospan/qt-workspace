@@ -193,7 +193,10 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   assert.match(page, /<IssueMentionMenu/);
   assert.match(menu, /issue\.issueKey/);
   assert.ok(content.includes('|#[\\\\p{L}\\\\p{N}-]+|'));
-  assert.match(hoverCard, /router\.push\(issuePath\(data\)\)/);
+  // A mention is read where it was written: it opens the quick-view panel, not
+  // a navigation out of the conversation you are having.
+  assert.match(hoverCard, /openIssueQuickView\(data\)/);
+  assert.doesNotMatch(hoverCard, /router\.push\(issuePath/);
   assert.match(hoverCard, /legacyStoredIssueKey\(value, expectedProject\)/);
 });
 

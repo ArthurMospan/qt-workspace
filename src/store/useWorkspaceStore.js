@@ -78,6 +78,30 @@ const elapsedSeconds = startedAt => Math.max(0, Math.floor((Date.now() - started
 
 const useWorkspaceStore = create((set, get) => ({
 
+  // ── Quick view ────────────────────────────────────────────────────
+  // A task or an event, read without leaving the screen that named it.
+  //
+  // The panel itself already existed — `IssueModal` over `IssueDetail` — and
+  // exactly one screen opened it, while every other place that names a task
+  // navigated away and made you come back: a mention in chat, a row in
+  // analytics, the two lists on a profile, an event in the calendar. Holding
+  // the choice here rather than in each of those screens is what makes it one
+  // panel instead of six copies of the same state.
+  //
+  // Not in the address, unlike the profile overlay: this opens from an object
+  // the screen already has in hand, and reconstructing a task from an id in a
+  // query string would mean a fresh read on every screen that can open one.
+  // `Відкрити на повній сторінці` inside the panel is the shareable path.
+  quickView: null, // { kind: 'issue' | 'event', record }
+
+  openIssueQuickView: issue => {
+    if (issue?.id) set({ quickView: { kind: 'issue', record: issue } });
+  },
+  openEventQuickView: event => {
+    if (event?.id || event?.sourceEventId) set({ quickView: { kind: 'event', record: event } });
+  },
+  closeQuickView: () => set({ quickView: null }),
+
   // ── Timer ─────────────────────────────────────────────────────────
   activeTimer:    null,   // { issueId, projectId, startedAt, entityType?, ...context }
   timerElapsed:   0,      // seconds

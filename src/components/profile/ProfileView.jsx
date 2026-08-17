@@ -12,8 +12,6 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
-import { calendarEventHref } from '@/lib/utils/calendarEventNavigation.mjs';
-import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 
 const EVENT_TYPE_LABELS = {
@@ -48,6 +46,8 @@ export default function ProfileView({ user, onClose }) {
     return () => clearInterval(timer);
   }, []);
   const router = useRouter();
+  const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
+  const openEventQuickView = useWorkspaceStore(state => state.openEventQuickView);
   const { currentUser, projects, orgRole, activeOrgId } = useAppContext();
   const {
     tasks,
@@ -87,11 +87,10 @@ export default function ProfileView({ user, onClose }) {
     .sort((a, b) => new Date(a.startAt) - new Date(b.startAt))
     .slice(0, 30);
 
-  const handleTaskClick = (task) => {
-    if (onClose) onClose();
-    const project = projects.find(candidate => candidate.id === task.projectId);
-    router.push(issuePath(task, project || task.projectId));
-  };
+  // A profile is a place you look somebody up from. Opening one of their tasks
+  // used to close the profile and land you on a task page — two navigations to
+  // answer «what is this one».
+  const handleTaskClick = task => openIssueQuickView(task);
 
   const handleEmergencyCall = async () => {
     try {
@@ -415,7 +414,7 @@ export default function ProfileView({ user, onClose }) {
                       interactive
                       onClick={() => {
                         if (onClose) onClose();
-                        router.push(calendarEventHref(event));
+                        openEventQuickView(event);
                       }}
                     >
                       <span className="flex items-center gap-3">

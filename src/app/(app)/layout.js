@@ -11,6 +11,7 @@ import WorkspaceToastHost from '@/components/WorkspaceToastHost';
 import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import ProfileModal from '@/components/profile/ProfileModal';
+import WorkspaceQuickViewHost from '@/components/WorkspaceQuickViewHost';
 import { useState } from 'react';
 import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
 import IssueReadStateBridge from '@/components/IssueReadStateBridge';
@@ -225,6 +226,7 @@ export default function WorkspaceLayout({ children }) {
 
       <WorkspaceToastHost />
       <ProfileModal />
+      <WorkspaceQuickViewHost />
       <WorkspaceCommandPalette />
     </div>
     </WorkspaceOrganizationRouteGuard>

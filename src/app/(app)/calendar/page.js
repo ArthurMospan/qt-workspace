@@ -445,6 +445,7 @@ export default function CalendarPage() {
     createEvent,
   } = useCalendarEvents();
   const showToast = useWorkspaceStore(state => state.showToast);
+  const openEventQuickView = useWorkspaceStore(state => state.openEventQuickView);
   const calendarSearch = useWorkspaceStore(state => state.calendarSearch);
   const currentUserId = currentUser?.uid || currentUser?.id;
   const [view, setView] = useState('week');
@@ -522,9 +523,10 @@ export default function CalendarPage() {
     setDialogOpen(true);
   };
 
-  const openEvent = event => {
-    router.push(calendarEventHref(event));
-  };
+  // Reading an event should not cost you the month you were looking at. The
+  // panel opens over the grid, and carries «на повній сторінці» for the times
+  // the answer is «now edit the series».
+  const openEvent = event => openEventQuickView(event);
 
   const handleSave = async data => {
     await createEvent(data);

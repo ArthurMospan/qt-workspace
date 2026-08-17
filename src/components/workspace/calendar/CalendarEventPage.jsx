@@ -15,6 +15,7 @@ import {
   MapPin,
   MessageCircle,
   MoreHorizontal,
+  Maximize2,
   Pencil,
   Play,
   RefreshCw,
@@ -318,7 +319,7 @@ function CalendarEventTimeSheet({
   );
 }
 
-export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
+export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isModal = false, onClose }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -459,11 +460,12 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
       });
     }
 
+    if (isModal) return;
     const nextSearchParams = new URLSearchParams(searchParams.toString());
     nextSearchParams.delete('logTime');
     const nextQuery = nextSearchParams.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
-  }, [canTrackTime, event, logTimeParam, pathname, pendingMinutesForThisEvent, router, searchParams]);
+  }, [canTrackTime, event, isModal, logTimeParam, pathname, pendingMinutesForThisEvent, router, searchParams]);
 
   const projectOptions = useMemo(() => [
     { value: '', label: 'Без проєкту' },
@@ -568,7 +570,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
       showToast('Подію оновлено', 'success');
       setIsEditing(false);
       setDraft(null);
-      if (occurrenceMutation.scope === 'occurrence' && updated?.id) {
+      if (occurrenceMutation.scope === 'occurrence' && updated?.id && !isModal) {
         router.replace(calendarEventHref(updated));
       }
     } catch (saveError) {
@@ -590,7 +592,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
         calendarEventFormPayload(nextForm, currentUserId),
         occurrenceMutation,
       );
-      if (occurrenceMutation.scope === 'occurrence' && updated?.id) {
+      if (occurrenceMutation.scope === 'occurrence' && updated?.id && !isModal) {
         router.replace(calendarEventHref(updated));
       }
       return true;
@@ -646,7 +648,8 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     try {
       await removeEvent(sourceEventId, deletesOccurrence ? occurrenceMutation : {});
       showToast(deletesOccurrence ? 'Входження скасовано' : 'Серію скасовано', 'success');
-      router.push('/calendar');
+      if (isModal) onClose?.();
+      else router.push('/calendar');
     } catch (deleteError) {
       setActionError(deleteError.message || 'Не вдалося видалити подію');
     }
@@ -786,6 +789,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
     <>
       <DetailLayout
         context="event"
+        standalone={!isModal}
         scrolled={isHeaderScrolled}
         onScrolledChange={setIsHeaderScrolled}
         header={(
@@ -884,6 +888,26 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '' }) {
                         ] : []),
                       ]}
                     />
+                    {isModal && onClose && (
+                      <>
+                        <Button
+                          style="secondary"
+                          size="icon-lg"
+                          icon={Maximize2}
+                          onClick={() => { onClose(); router.push(calendarEventHref(event)); }}
+                          aria-label="Відкрити на повній сторінці"
+                          title="Відкрити на повній сторінці"
+                        />
+                        <Button
+                          style="secondary"
+                          size="icon-lg"
+                          icon={X}
+                          onClick={onClose}
+                          aria-label="Закрити"
+                          title="Закрити"
+                        />
+                      </>
+                    )}
                   </>
                 )}
               </div>

@@ -3,6 +3,7 @@
 import Card from '@/components/ui/Layout/Card';
 import DetailSection from '@/components/ui/Layout/DetailSection';
 import TaskRow from './TaskRow';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 /**
  * A titled card holding a flat list of tasks — "Прострочені", "Поточний фокус",
@@ -49,6 +50,7 @@ export default function TaskListCard({
   action,
   className = '',
 }) {
+  const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
   const total = typeof count === 'number' ? count : issues.length;
 
   return (
@@ -86,6 +88,10 @@ export default function TaskListCard({
                   projectId={issue.projectId}
                   projectName={project?.name}
                   showProjectName={showProjectName}
+                  // A report is a place you read from, not a place you leave.
+                  // Every list of tasks in analytics and on a profile is this
+                  // card, so one handler here covers all of them.
+                  onClick={() => openIssueQuickView(issue)}
                 />
               );
             })}

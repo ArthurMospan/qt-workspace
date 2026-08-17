@@ -9,7 +9,6 @@ import { useAppContext } from '@/lib/context/AppContext';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import {
   legacyStoredIssueKey,
-  issuePath,
   normalizeIssuePrefix,
   projectIssuePrefix,
 } from '@/lib/utils/issueKeys.mjs';
@@ -17,6 +16,7 @@ import { toLocalDateInput } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 const ORGANIZATION_ROLE_LABELS = {
   owner: 'Власник',
@@ -50,6 +50,7 @@ export default function HoverCard({ type, value, children, members }) {
   const timeZone = organizationTimeZone(activeOrg);
   const { formatDate } = useLocalization();
   const router = useRouter();
+  const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [show, setShow] = useState(false);
@@ -117,18 +118,20 @@ export default function HoverCard({ type, value, children, members }) {
     return () => { cancelled = true; };
   }, [show, type, value, members, activeOrgId, projects]);
 
+  // A mention is read where it was written. Following one out of a conversation
+  // used to cost the conversation: you came back to the chat scrolled somewhere
+  // else, if you came back. The panel carries «на повній сторінці» for the
+  // times the mention really was the start of a longer errand.
   useEffect(() => {
     if (!openWhenReadyRef.current || type !== 'issue' || !data) return;
-    if (!data.notFound && data.id && data.projectId) {
-      router.push(issuePath(data));
-    }
+    if (!data.notFound && data.id && data.projectId) openIssueQuickView(data);
     openWhenReadyRef.current = false;
-  }, [data, router, type]);
+  }, [data, openIssueQuickView, type]);
 
   const openIssue = () => {
     if (type !== 'issue') return;
     if (data && !data.notFound && data.id && data.projectId) {
-      router.push(issuePath(data));
+      openIssueQuickView(data);
       return;
     }
     setShow(true);

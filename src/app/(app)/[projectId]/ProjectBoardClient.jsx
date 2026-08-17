@@ -35,7 +35,6 @@ import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { useViewState } from '@/lib/hooks/useViewState';
 import { BOARD_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
 import { serializeTaskTableColumns, visibleTaskTableColumns } from '@/lib/utils/taskTable.mjs';
-import IssueModal from '@/components/workspace/IssueModal';
 
 const PROJECT_TABS = [
   { id: 'board',      label: 'Дошка',     icon: LayoutGrid },
@@ -81,6 +80,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   const router      = useRouter();
   const showToast   = useWorkspaceStore(s => s.showToast);
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
+  const openIssueQuickView = useWorkspaceStore(s => s.openIssueQuickView);
   const projectSearch = useWorkspaceStore(s => s.projectSearch);
   const resolveBulkStatusId = useCallback((issue, value) => (
     value?.mode === 'status' ? value.id : null
@@ -160,10 +160,6 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
 
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
-  // Reading a task while working down a table is not the same errand as leaving
-  // for its page. The modal is the reading; it carries its own «на повній
-  // сторінці» for when the errand changes.
-  const [quickViewIssue, setQuickViewIssue] = useState(null);
 
   const activeSprints = sprints.filter(s => s.status === 'active');
   const boardIssues = issues.filter(i => {
@@ -533,7 +529,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               onSortChange={setTableSort}
               onGroupChange={value => setBoardViewState({ group: value })}
               onColumnsChange={toggleTableColumn}
-              onOpenIssue={setQuickViewIssue}
+              onOpenIssue={openIssueQuickView}
               hiddenGroupIds={project?.hiddenColumns || []}
               activeTimerIssueId={activeTimer?.issueId}
               // An archived project is read-only: its cells open nothing.
@@ -581,10 +577,6 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
           onDelete={handleDeleteProject}
           onClose={() => setShowConfigModal(false)}
         />
-      )}
-
-      {quickViewIssue && (
-        <IssueModal issue={quickViewIssue} onClose={() => setQuickViewIssue(null)} />
       )}
 
       <CreateTaskModal
