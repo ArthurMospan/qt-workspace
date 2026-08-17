@@ -12,7 +12,7 @@ import {
 } from '@/lib/utils/projectScopedQueries.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, AtSign, ListTodo, CircleDotDashed, CalendarClock, MessageSquare, Settings2 } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, ListTodo, CircleDotDashed, CalendarClock, MessageSquare, Settings2 } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -42,7 +42,6 @@ import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
 import { isDueDateOverdue } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useSprints } from '@/lib/hooks/useSprints';
@@ -130,9 +129,11 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
     ...(canEditProject
       ? [{ icon: Settings2, label: 'Налаштування', onClick: () => setShowBoardConfig(true) }]
       : []),
+    // Three entries do not need to be sorted into three groups: the rules used
+    // to separate «Налаштування», «Архівувати» and «Видалити» drew more lines
+    // than the menu had items.
     ...(canEditProject
       ? [
-        { isDivider: true },
         !isArchived
           ? { icon: Archive, label: 'Архівувати', onClick: () => archive(project.id) }
           : { icon: ArchiveRestore, label: 'Розархівувати', onClick: () => unarchive(project.id), color: '#10b981' },
@@ -140,7 +141,6 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
       : []),
     ...(canDeleteProject
       ? [
-        { isDivider: true },
         {
           icon: Trash2,
           label: 'Видалити',
@@ -192,16 +192,19 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
         <div className={`flex items-center justify-between ${menuOpen ? 'z-20' : 'z-10'}`}>
           <div className={`flex ${stackOverlap}`} aria-label={`Учасників проєкту: ${teamCount}`}>
             {teamCount === 0 && (
-              <div data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+              <div title="У проєкті ще немає учасників" data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
                 <Users size={isLarge ? 13 : 11} className="text-muted" />
               </div>
             )}
             {(project.team || []).slice(0, 4).map(uid => {
               const member = members.find(candidate => (candidate.id || candidate.uid) === uid);
               return member ? (
-                <UserAvatar key={uid} user={member} size={stackAvatar} stacked />
+                // A face with no name under it is a riddle: the stack is the
+                // only place the project's people appear, so hovering one says
+                // who it is.
+                <UserAvatar key={uid} user={member} size={stackAvatar} stacked tooltip />
               ) : (
-                <div key={uid} data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
+                <div key={uid} title="Учасника не знайдено в організації" data-ui-surface="local" style={{ width: stackChip, height: stackChip }} className="rounded-full bg-white flex items-center justify-center border-2 border-canvas">
                   <User size={isLarge ? 13 : 11} className="text-muted" />
                 </div>
               );
@@ -248,7 +251,6 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
             >
               {project.name}
             </h2>
-            <TaskCounters mentions={mentionCount} unread={unreadCount > 0} />
           </div>
           {project.description && (
             <p className={`text-muted font-medium leading-[1.5] line-clamp-2 ${
@@ -309,24 +311,24 @@ const ISSUE_ACTIVITY_EVENTS = {
 };
 
 function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, unreadCount = 0, mentionCount = 0 }) {
-  const { statuses, closedStatusIds } = useWorkflowConfig();
+  const { closedStatusIds } = useWorkflowConfig();
   const { activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
-  // «в роботі» used to be `statuses.slice(1)` minus the terminal ones — a guess
-  // that counted «До виконання» as work in progress and depended on a status's
-  // position in the list. It is now the category that says so.
-  const inProgressIds = useMemo(() => inProgressStatusIds(statuses), [statuses]);
 
   const stats = useMemo(() => {
-    let inProgressCount = 0;
+    let activeCount = 0;
     let overdueCount = 0;
     let newestIssue = null;
     let newestActivity = null;
 
     for (const issue of issues) {
       const statusId = issue.columnId || issue.status;
-      if (inProgressIds.includes(statusId)) {
-        inProgressCount++;
+      // «в роботі» read as the status «В роботі» and counted only that
+      // category, so the card and the board disagreed about the same project:
+      // everything in «До виконання» was work the project still owed and the
+      // number did not mention it. What is open is what is left to do.
+      if (!closedStatusIds.includes(statusId)) {
+        activeCount++;
       }
       // «N моїх» said nothing a person could act on — the number they care
       // about is what is late and what is waiting for them, which is the same
@@ -404,11 +406,11 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
 
     return {
       total: issues.length,
-      inProgress: inProgressCount,
+      active: activeCount,
       overdue: overdueCount,
       lastAction: lastActionStr
     };
-  }, [closedStatusIds, currentUser, inProgressIds, issues, members, orgLoading, timeZone]);
+  }, [closedStatusIds, currentUser, issues, members, orgLoading, timeZone]);
 
   const timeAgoString = (ts) => {
     if (!ts) return '';
@@ -423,7 +425,16 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
   return (
     <div className="z-10 mt-auto flex flex-col gap-[14px] w-full">
       {isLarge && stats.lastAction && (
-        <div className="bg-[#fafafa]/80 rounded-[12px] p-3 text-[12px] text-[#2a2a2a] flex items-start gap-2.5">
+        // The whole block is the link, not the task title inside it. Only the
+        // title was clickable and nothing said so, so the block behaved like a
+        // caption you could accidentally hit. Hovering it now darkens the fill
+        // — the same "this is a target" language as a list row.
+        <Link
+          href={issuePath(stats.lastAction)}
+          onClick={(e) => e.stopPropagation()}
+          title="Відкрити завдання"
+          className="group/activity no-nav bg-[#fafafa]/80 hover:bg-[#f0f0f0] rounded-[12px] p-3 text-[12px] text-[#2a2a2a] flex items-start gap-2.5 transition-colors"
+        >
           {/* No avatar and no name line when nothing recorded who acted —
               an empty bold line above the sentence read as a person whose
               name had failed to load. */}
@@ -441,28 +452,26 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
             </div>
             <p className="text-muted leading-tight line-clamp-1">
               {stats.lastAction.action}{' '}
-              <Link
-                href={issuePath(stats.lastAction)}
-                onClick={(e) => e.stopPropagation()}
-                className="text-ink font-semibold cursor-pointer hover:text-ink-hover transition-colors no-nav"
-              >
+              <span className="text-ink font-semibold group-hover/activity:underline">
                 {stats.lastAction.issueKey}: {stats.lastAction.title}
-              </Link>
+              </span>
             </p>
           </div>
-        </div>
+        </Link>
       )}
       
-      <div className="flex w-full flex-wrap items-center gap-x-[18px] gap-y-[8px] border-t border-[#f3f3f3] pt-[14px] text-[11px]">
-        <span className="flex items-center gap-[6px] text-muted" title="Усі завдання проєкту">
+      {/* No rule above this row. The card is one object and the counts are the
+          last line of it, not a second panel. */}
+      <div className="flex w-full flex-wrap items-center gap-x-[18px] gap-y-[8px] text-[11px]">
+        <span className="flex items-center gap-[6px] text-muted" title="Усі завдання проєкту, разом із закритими">
           <ListTodo size={14} strokeWidth={1.9} aria-hidden />
           <strong className="text-ink">{stats.total}</strong>
           <span>завдань</span>
         </span>
-        <span className="flex items-center gap-[6px] text-muted" title="Завдання зі статусом категорії «В роботі»">
+        <span className="flex items-center gap-[6px] text-muted" title="Незакриті завдання — усе, крім «Готово» і «Скасовано»">
           <CircleDotDashed size={14} strokeWidth={1.9} aria-hidden />
-          <strong className="text-ink">{stats.inProgress}</strong>
-          <span>в роботі</span>
+          <strong className="text-ink">{stats.active}</strong>
+          <span>активних</span>
         </span>
         {stats.overdue > 0 && (
           // Same ink as the counts beside it. A card that lists three facts
@@ -473,13 +482,6 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
             <span>прострочено</span>
           </span>
         )}
-        {mentionCount > 0 && (
-          <span className="flex items-center gap-[6px] text-ink" title="Непрочитані повідомлення, у яких вас згадали">
-            <AtSign size={14} strokeWidth={2.2} aria-hidden />
-            <strong>{mentionCount}</strong>
-            <span>вам</span>
-          </span>
-        )}
         {unreadCount > 0 && (
           <span className="flex items-center gap-[6px] text-muted" title="Непрочитані повідомлення в чаті проєкту">
             <MessageSquare size={14} strokeWidth={1.9} aria-hidden />
@@ -487,6 +489,11 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
             <span>нових</span>
           </span>
         )}
+
+        {/* Being named is the one fact on this card addressed to you, so it
+            sits where the task card puts it: at the far right of the last row,
+            in the same mark. */}
+        <TaskCounters mentions={mentionCount} className="ml-auto" />
       </div>
     </div>
   );
