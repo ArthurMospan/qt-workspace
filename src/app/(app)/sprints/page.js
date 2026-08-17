@@ -14,7 +14,7 @@ import IssueCard from '@/components/workspace/IssueCard';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import { BulkActionBar, ContextMenu, Counter, DatePicker, FormGroup, PageHeader, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
+import { BulkActionBar, ContextMenu, DatePicker, FormGroup, PageHeader, Pill, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { useLocalization } from '@/lib/hooks/useLocalization';
@@ -41,6 +41,7 @@ import { plural } from '@/lib/utils/plural.mjs';
 import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
 import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
+import { nextSectionExpansion } from '@/lib/utils/sectionExpansion.mjs';
 
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
@@ -428,11 +429,8 @@ export default function GlobalSprintsPage() {
     return `${formatDate(start)} - ${formatDate(end)}`;
   };
 
-  const toggleSection = (id) => {
-    setSectionExpansion(prev => ({
-      ...prev,
-      [id]: prev[id] === undefined ? false : !prev[id]
-    }));
+  const toggleSection = (id, isExpanded) => {
+    setSectionExpansion(prev => nextSectionExpansion(prev, id, isExpanded));
   };
 
   const isSectionExpanded = (sprintId, def = true) => {
@@ -465,7 +463,11 @@ export default function GlobalSprintsPage() {
                     key={issue.id}
                     className="mb-[8px]"
                     issue={issue}
-                    issues={issueList}
+                    // Every task on the page, not this one column: the parent a
+                    // subtask hangs under is usually in another sprint, and a
+                    // card handed only its own list cannot find it — the key
+                    // slot then falls back to the words «Батьківське завдання».
+                    allIssues={issues}
                     sprints={sprints}
                     members={members}
                     labels={labels}
@@ -495,6 +497,10 @@ export default function GlobalSprintsPage() {
                     >
                       <TaskRow
                         issue={issue}
+                        // The same context the card beside it gets: the parent
+                        // key and the blocked mark are read from these two.
+                        allIssues={issues}
+                        issueLinks={issueLinks}
                         members={members}
                         labels={labels}
                         sprints={sprints}
@@ -634,7 +640,7 @@ export default function GlobalSprintsPage() {
                             two others that do exactly that. */}
                         <div
                           className="-my-2 -ml-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[10px] py-2 pl-2 pr-3 transition-colors hover:bg-[#ebebeb]"
-                          onClick={() => toggleSection(sprint.id)}
+                          onClick={() => toggleSection(sprint.id, isExpanded)}
                           role="button"
                           tabIndex={0}
                           aria-expanded={isExpanded}
@@ -642,7 +648,7 @@ export default function GlobalSprintsPage() {
                             if (event.target !== event.currentTarget) return;
                             if (event.key !== 'Enter' && event.key !== ' ') return;
                             event.preventDefault();
-                            toggleSection(sprint.id);
+                            toggleSection(sprint.id, isExpanded);
                           }}
                         >
                           <Button
@@ -788,7 +794,7 @@ export default function GlobalSprintsPage() {
                   >
                     Без спринта
                   </h3>
-                  <Counter value={backlogIssues.length} size="sm" appearance="subtle" className="mt-4" />
+                  <Pill tone="count" size="md" className="mt-4">{backlogIssues.length}</Pill>
                 </div>
               ) : (
                 <Surface
@@ -797,7 +803,11 @@ export default function GlobalSprintsPage() {
                   composition="scroll-pane"
                   className="flex w-[82vw] max-w-[320px] shrink-0 flex-col overflow-hidden md:w-[280px] md:max-w-none"
                 >
-                  <div className="flex shrink-0 items-center justify-between border-b border-line bg-canvas px-4 pb-3 pt-4">
+                  {/* A board column header, drawn exactly as the board draws
+                      one: no rule under it. The panel already separates the
+                      column from the page, so the line only announced that this
+                      one column came from somewhere else. */}
+                  <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-4">
                     <div className="flex items-center gap-[6px]">
                       <Button
                         onClick={() => setBacklogCollapsed(true)}
@@ -809,7 +819,7 @@ export default function GlobalSprintsPage() {
                       />
                       <span className="h-[8px] w-[8px] rounded-full bg-muted" />
                       <h3 className="ui-type-column-title text-ink">Без спринта</h3>
-                      <Counter value={backlogIssues.length} size="sm" appearance="subtle" className="ml-1" />
+                      <Pill tone="count" size="md" className="ml-1">{backlogIssues.length}</Pill>
                     </div>
                     <div className="flex items-center gap-1">
                       <ContextMenu

@@ -79,7 +79,7 @@ test('group 26 copy and layout contracts stay role-aware and concise', async () 
   assert.match(projects, /<FilterBar context="projects">/);
   assert.match(sprints, /Попросіть адміністратора створити спринт/);
   assert.match(sprints, /У цьому спринті ще немає задач — перетягніть їх зі списку нижче/);
-  assert.match(sprints, /border-b border-line bg-canvas/);
+  // The «Без спринта» header is a board column header — see ux-regressions.
   assert.match(filterBar, /projects:\s*\{[\s\S]*?w-max max-w-full/);
   assert.match(filtersStory, /<FilterBar context="projects">/);
 
