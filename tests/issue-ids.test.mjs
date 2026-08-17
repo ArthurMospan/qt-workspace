@@ -165,7 +165,12 @@ test('search shows only persisted task IDs and never invents one from a document
     read('../src/components/SearchModal.jsx'),
   ]);
 
-  assert.match(route, /scoreField\(issue\.issueKey, term, WEIGHTS\.key\)/);
+  // The ladders moved into a pure module so the two rankings — asking the
+  // workspace a question, and naming one row with `#` — can be argued with in
+  // tests/search-ranking.test.mjs.
+  const ranking = await read('../src/lib/utils/searchRanking.mjs');
+  assert.match(ranking, /scoreField\(issue\.issueKey, term, WEIGHTS\.key\)/);
+  assert.match(route, /scoreIssueMention\(issue, term\) : scoreIssue\(issue, term\)/);
   assert.match(route, /issueKey: taskDisplayKey\(storedIssue, projectsById\.get\(storedIssue\.projectId\)\)/);
   assert.match(modal, /issue\.issueKey \|\| 'Без ID'/);
   assert.doesNotMatch(modal, /issue\.id\.slice/);

@@ -101,7 +101,7 @@ export default function MessageContent({ text, members, searchTerm }) {
                 const issueKey = part.slice(1).toLocaleUpperCase('uk-UA');
                 return (
                   <HoverCard key={pIdx} type="issue" value={issueKey} members={members}>
-                    #{issueKey}
+                    {issueKey}
                   </HoverCard>
                 );
               }

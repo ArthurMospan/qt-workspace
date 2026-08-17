@@ -12,31 +12,17 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { taskDisplayKey } from '@/lib/utils/issueKeys.mjs';
-
 // One ladder for every kind, so a project called "Design" and a task called
-// "Design" rank against each other consistently. Fields are weighted by how
-// deliberately somebody types them: an exact key beats a title, a title beats
-// prose buried in a description.
+// "Design" rank against each other consistently. The ladders and both issue
+// scorers live in a pure module, next to the tests that argue with them.
+import {
+  scoreField,
+  scoreIssue,
+  scoreIssueMention,
+  searchMinimumLength,
+} from '@/lib/utils/searchRanking.mjs';
+
 const WEIGHTS = { key: [100, 80, 50], name: [90, 60, 40], body: [0, 0, 20] };
-
-function scoreField(value, term, ladder) {
-  const text = String(value || '').toLowerCase();
-  if (!text) return 0;
-  if (text === term) return ladder[0];
-  if (text.startsWith(term)) return ladder[1];
-  if (text.includes(term)) return ladder[2];
-  return 0;
-}
-
-function scoreIssue(issue, term) {
-  return Math.max(
-    scoreField(issue.issueKey, term, WEIGHTS.key),
-    scoreField(issue.storedIssueKey, term, WEIGHTS.key),
-    scoreField(issue.title, term, WEIGHTS.name),
-    scoreField(issue.description, term, WEIGHTS.body),
-    scoreField(issue.projectId, term, [0, 0, 30]),
-  );
-}
 
 export async function GET(request) {
   try {
@@ -44,9 +30,14 @@ export async function GET(request) {
     const organizationId = searchParams.get('organizationId') || '';
     const term = (searchParams.get('q') || '').trim().toLowerCase().slice(0, 100);
     const projectId = (searchParams.get('projectId') || '').trim().slice(0, 200);
+    // Picking a task to mention is not the same search as asking the workspace
+    // a question, and one ranking cannot serve both. See searchRanking.mjs.
+    const mention = searchParams.get('mention') === 'issue';
     const authorization = await authorizeOrgRequest(request, organizationId);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
-    if (term.length < 2) return NextResponse.json({ results: [], people: [], projects: [], events: [] });
+    if (term.length < searchMinimumLength(mention)) {
+      return NextResponse.json({ results: [], people: [], projects: [], events: [] });
+    }
     if (!(await enforceRateLimit('search', authorization.user.uid, 60, 60))) {
       return NextResponse.json({ error: 'Too many search requests' }, { status: 429 });
     }
@@ -109,7 +100,8 @@ export async function GET(request) {
           storedIssueKey: storedIssue.issueKey,
           issueKey: taskDisplayKey(storedIssue, projectsById.get(storedIssue.projectId)),
         };
-        return { id: item.id, ...issue, score: scoreIssue(issue, term) };
+        const score = mention ? scoreIssueMention(issue, term) : scoreIssue(issue, term);
+        return { id: item.id, ...issue, score };
       })
       .filter(issue => issue.score > 0)
       .filter(issue => !visibleProjectIds || visibleProjectIds.has(issue.projectId))

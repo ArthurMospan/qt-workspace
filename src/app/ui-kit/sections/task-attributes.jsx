@@ -108,8 +108,10 @@ export default function TaskAttributesSection() {
                   hideCloseIcon
                   className="flex h-full items-center"
                   // Same as the product: without it the wrapper shrinks to the
-                  // glyph and «Деталі» becomes a 14px target inside its column.
-                  triggerClassName="h-full w-full"
+                  // glyph and «Деталі» becomes a 14px target inside its column —
+                  // and without the centring the button it stretched around sits
+                  // at the top of it, ten pixels above the row it shares.
+                  triggerClassName="flex h-full w-full items-center justify-center"
                   trigger={(
                     <AttributeTrigger
                       className="max-sm:px-0"

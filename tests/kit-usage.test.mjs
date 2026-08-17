@@ -483,9 +483,11 @@ test('high-risk composed previews keep the product markup signatures', () => {
   assert.match(taskAttributes, /detailsButtonClass: `[^`]*max-sm:h-\[44px\]/);
   // …and the wrapper Popover puts around that trigger has to fill the column,
   // or the button inside is only as wide as its glyph however wide the column
-  // is. Both the product and its preview say so.
+  // is — and having filled it, it has to centre what it stretched around, or
+  // «Деталі» sits at the top of a box the rest of the strip centres in. Both
+  // the product and its preview say so.
   for (const source of [issueDetail, kit]) {
-    assert.match(source, /<Popover[\s\S]{0,600}triggerClassName="h-full w-full"/);
+    assert.match(source, /<Popover[\s\S]{0,900}triggerClassName="flex h-full w-full items-center justify-center"/);
   }
   assert.match(taskAttributes, /calendar: 'grid w-full grid-cols-2/);
   assert.match(taskAttributes, /compactSelectClass: 'h-\[22px\][^']*rounded-\[10px\]/);

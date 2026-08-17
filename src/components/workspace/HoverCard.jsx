@@ -176,20 +176,24 @@ export default function HoverCard({ type, value, children, members }) {
       onMouseLeave={() => setShow(false)}
     >
       {type === 'issue' ? (
+        // A mentioned task and a mentioned person are the same kind of thing
+        // in a sentence — a name that opens something — so they read the same.
+        // The magenta was the only colour in the product that meant nothing.
         <button
           type="button"
           onClick={openIssue}
-          title={`Відкрити ${value}`}
-          className="rounded-sm bg-[#fdf4ff] px-1 font-medium text-[#c026d3] transition-colors hover:bg-[#fae8ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c026d3]/30"
+          title={`Переглянути ${value}`}
+          className="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
         >
-          {children}
+          <TaskIcon size={11} className="shrink-0 text-muted" />
+          <span className="truncate">{children}</span>
         </button>
       ) : (
         <button
           type="button"
           onClick={openUser}
           title={`Відкрити профіль ${data?.name || value}`}
-          className="cursor-pointer rounded-sm bg-canvas px-1 font-medium text-ink transition-colors hover:bg-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
+          className="cursor-pointer rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
         >
           {children}
         </button>
@@ -219,12 +223,12 @@ export default function HoverCard({ type, value, children, members }) {
             // Issue
             loading ? (
               <div className="text-[12px] text-muted flex items-center justify-center py-2">
-                 <div className="w-4 h-4 border-2 border-line border-t-[#c026d3] rounded-full animate-spin" />
+                 <div className="w-4 h-4 border-2 border-line border-t-ink rounded-full animate-spin" />
               </div>
             ) : data && !data.notFound ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 mb-1">
-                  <Pill tone="accent" size="sm">{data.issueKey}</Pill>
+                  <span className="font-mono text-[11px] font-bold text-muted">{data.issueKey}</span>
                   <Pill tone="neutral" size="sm">{data.status || data.columnId}</Pill>
                 </div>
                 <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{data.title}</p>

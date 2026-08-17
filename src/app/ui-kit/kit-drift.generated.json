@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 228,
+    "usedAndPreviewed": 227,
     "usedWithoutPreview": 0,
-    "declaredUnused": 106
+    "declaredUnused": 107
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -375,6 +375,12 @@
       "prop": "shape",
       "value": "capsule",
       "namespace": "*[data-ui-pill-shape]"
+    },
+    {
+      "component": "Pill",
+      "prop": "tone",
+      "value": "accent",
+      "namespace": "*[data-ui-pill-tone]"
     },
     {
       "component": "Pill",
@@ -1365,7 +1371,7 @@
     "ColorSwatch.size.trigger": 1,
     "ColorSwatch.size.choice": 1,
     "Input.size.sm": 5,
-    "Pill.weight.medium": 16,
+    "Pill.weight.medium": 15,
     "Label.context.inline": 1,
     "Textarea.composition.settings-note": 1,
     "ToggleSwitch.size.sm": 6,
@@ -1382,7 +1388,7 @@
     "Surface.preset.card": 1,
     "Surface.padding.none": 3,
     "UserAvatar.size.lg": 2,
-    "Pill.size.sm": 23,
+    "Pill.size.sm": 22,
     "Pill.tone.ink-subtle": 3,
     "Button.composition.settings-row-action": 4,
     "SidebarLayout.context.settings": 1,
@@ -1508,7 +1514,6 @@
     "EmptyState.context.centered": 1,
     "EmptyState.density.compact": 2,
     "UserAvatar.size.chat-inline": 1,
-    "Pill.tone.accent": 1,
     "UserAvatar.size.chat-message": 2,
     "IconAction.composition.chat-message-action": 1,
     "Button.composition.chat-message-action": 2,

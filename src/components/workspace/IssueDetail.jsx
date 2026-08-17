@@ -1522,7 +1522,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     // a bare block in a flex row, so it shrinks to the glyph:
                     // «Деталі» was a 14px-wide hit area inside a 44px column,
                     // which is why it took three tries to hit with a thumb.
-                    triggerClassName="h-full w-full"
+                    // …and `h-full` alone left the button at the top of a
+                    // wrapper it had just been told to fill, so «Деталі» sat
+                    // ten pixels above the row it shares. The wrapper centres
+                    // what it stretched around.
+                    triggerClassName="flex h-full w-full items-center justify-center"
                     onOpenChange={setShowDetailsDropdown}
                     trigger={(
                       <AttributeTrigger

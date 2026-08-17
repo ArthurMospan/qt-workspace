@@ -95,11 +95,11 @@ function MessageInput({
 
   useEffect(() => {
     const queryText = mentionQuery.trim();
-    if (mentionType !== 'issue' || queryText.length < 2 || !activeOrgId) {
+    if (mentionType !== 'issue' || queryText.length < 1 || !activeOrgId) {
       clearIssueSearch();
       return;
     }
-    searchIssues(queryText, activeOrgId);
+    searchIssues(queryText, activeOrgId, null, { mention: true });
   }, [activeOrgId, clearIssueSearch, mentionQuery, mentionType, searchIssues]);
 
   const handleChange = (e) => {
@@ -240,7 +240,7 @@ function MessageInput({
           className="absolute bottom-full left-4 right-4 mb-2 z-30"
         />
       )}
-      {mentionType === 'issue' && mentionQuery.trim().length >= 2 && (
+      {mentionType === 'issue' && mentionQuery.trim().length >= 1 && (
         <IssueMentionMenu
           issues={issueResults}
           projects={projects}

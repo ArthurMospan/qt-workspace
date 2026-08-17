@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { auth } from '@/lib/firebase';
 import { searchScopeParams } from '@/lib/utils/searchScope.mjs';
+import { searchMinimumLength } from '@/lib/utils/searchRanking.mjs';
 
 // QUI-104. `results` is still the task list, so the header's search dropdown is
 // unchanged; people, projects and events arrive beside it for callers that show
@@ -23,9 +24,11 @@ export function useSearch() {
     }
   }, []);
 
-  const search = useCallback(async (queryText, orgId, scope = null) => {
+  // `mention` picks the ranking on the server and the shortest term the client
+  // will send: `#5` is a whole question, «5» typed into the header is not.
+  const search = useCallback(async (queryText, orgId, scope = null, { mention = false } = {}) => {
     const term = queryText.trim();
-    if (term.length < 2 || !orgId) {
+    if (term.length < searchMinimumLength(mention) || !orgId) {
       if (pendingDelay.current) {
         clearTimeout(pendingDelay.current.timer);
         pendingDelay.current.resolve(false);
@@ -60,6 +63,7 @@ export function useSearch() {
       const params = new URLSearchParams({
         organizationId: orgId,
         q: term,
+        ...(mention ? { mention: 'issue' } : {}),
         ...searchScopeParams(scope),
       });
       const response = await fetch(`/api/search?${params}`, {

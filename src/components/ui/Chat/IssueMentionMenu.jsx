@@ -2,7 +2,6 @@
 
 import { Hash } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
-import Pill from '@/components/ui/DataDisplay/Pill';
 
 /**
  * The #issue autocomplete sheet used by workspace-chat composers.
@@ -50,8 +49,11 @@ export default function IssueMentionMenu({
               <TaskIcon size={15} />
             </span>
             <span className="min-w-0 flex-1">
+              {/* The id in the kit's own monospace, the way it is set on a card
+                  and in a table. It used to be an accent pill — the one place in
+                  the product where magenta meant «this is a task». */}
               <span className="flex min-w-0 items-center gap-2">
-                <Pill tone="accent" size="sm" weight="medium">{issue.issueKey}</Pill>
+                <span className="shrink-0 font-mono text-[11px] font-bold text-muted">{issue.issueKey}</span>
                 {projectName ? <span className="truncate text-[10px] text-faint">{projectName}</span> : null}
               </span>
               <span className="mt-0.5 block truncate text-[12px] font-semibold text-ink">

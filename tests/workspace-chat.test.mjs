@@ -188,10 +188,18 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   ]);
 
   assert.match(page, /matchIssue = before\.match\(/);
-  assert.match(page, /searchIssues\(queryText, activeOrgId\)/);
   assert.match(page, /`\$\{before\}#\$\{issue\.issueKey\} \$\{after\}`/);
   assert.match(page, /<IssueMentionMenu/);
   assert.match(menu, /issue\.issueKey/);
+  // A mentioned task reads like a mentioned person: the same neutral chip, no
+  // colour of its own. The magenta pill was the one place in the product where
+  // a hue meant «this is a task».
+  assert.doesNotMatch(menu, /tone="accent"/);
+  assert.doesNotMatch(hoverCard, /#c026d3|#fdf4ff/);
+  assert.match(hoverCard, /bg-black\/\[0\.07\]/);
+  // `#` searches task numbers, not prose: typing 12 used to return every task
+  // whose description happened to contain those characters.
+  assert.match(page, /searchIssues\(queryText, activeOrgId, null, \{ mention: true \}\)/);
   assert.ok(content.includes('|#[\\\\p{L}\\\\p{N}-]+|'));
   // A mention is read where it was written: it opens the quick-view panel, not
   // a navigation out of the conversation you are having.
