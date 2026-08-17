@@ -1,47 +1,58 @@
 'use client';
 
-// A `#QT-12` in a message, showing what the task is called.
+// A `#QT-12` in a message: the same chip a mentioned person wears, with the
+// task's own name in it.
 //
-// This used to be a hovercard: the key alone, and you had to point at it and
-// wait to find out which task it was. A mention is a reference in a sentence —
-// «зробив у #QT-12» tells you nothing, «зробив у QT-12 · Виправити експорт» is
-// the sentence somebody meant to write. The title is shown outright and the
-// preview is gone with it.
-//
-// The name costs one request per distinct key, ever: the resolver below is a
-// module-level cache shared by every message on the page, so a conversation
-// that mentions three tasks twenty times asks three times. A key that cannot be
-// resolved simply stays a key — a mention never renders as an error.
+// It used to be a hovercard — the key alone, and you had to point at it and
+// wait to find out which task it was. «зробив у #QT-12» is not a sentence.
+// The name is shown outright, and the chip is `MENTION_CHIP`, the one shape
+// shared with `@name`: a mentioned task and a mentioned person are the same
+// kind of thing to read past, so they look the same.
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { TaskIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import { auth } from '@/lib/firebase';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { MENTION_CHIP } from './HoverCard';
 
+// One request per key for the lifetime of the page, shared by every message on
+// it: a conversation that mentions three tasks twenty times asks three times.
+//
+// Only an *answer* is kept. The first version cached the failure too, and the
+// most common failure is the one that happens on mount — Firebase has not
+// restored the session yet, so there is no token to send. Caching that meant a
+// chat opened before sign-in finished never resolved a single mention for the
+// rest of the visit.
 const resolved = new Map();
 
-// The same call the `#` picker makes, so a mention that could be written can be
-// read. Failures resolve to `null` and are cached too: a missing task does not
-// get asked about again on every re-render of the conversation.
+async function fetchIssueByKey(organizationId, issueKey) {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('Not signed in yet');
+  const params = new URLSearchParams({ organizationId, q: issueKey, mention: 'issue' });
+  const response = await fetch(`/api/search?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || 'Search failed');
+  return (payload.results || []).find(item => (
+    String(item.issueKey || '').toLocaleUpperCase('uk-UA') === issueKey
+  )) || null;
+}
+
 function resolveIssueMention(organizationId, issueKey) {
   const id = `${organizationId}:${issueKey}`;
-  if (resolved.has(id)) return resolved.get(id);
+  const cached = resolved.get(id);
+  if (cached) return cached;
 
-  const request = (async () => {
-    const token = await auth.currentUser?.getIdToken();
-    if (!token) return null;
-    const params = new URLSearchParams({ organizationId, q: issueKey, mention: 'issue' });
-    const response = await fetch(`/api/search?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || 'Search failed');
-    return (payload.results || []).find(item => (
-      String(item.issueKey || '').toLocaleUpperCase('uk-UA') === issueKey
-    )) || null;
-  })().catch(error => {
+  const request = fetchIssueByKey(organizationId, issueKey).then(issue => {
+    // A key that resolves to nothing is a real answer and worth keeping; a key
+    // that could not be asked about is not, so the next render tries again.
+    if (!issue) resolved.set(id, Promise.resolve(null));
+    return issue;
+  }).catch(error => {
+    resolved.delete(id);
     console.error('[IssueMentionChip] lookup failed', issueKey, error);
     return null;
   });
@@ -51,36 +62,57 @@ function resolveIssueMention(organizationId, issueKey) {
 }
 
 /**
- * One `#`-mention of a task inside a message: its key, its name, and a click
- * that opens it in the quick-view panel without leaving the conversation.
+ * One `#`-mention of a task inside a message: its name, and a click that opens
+ * it in the quick-view panel without leaving the conversation.
  *
  * @param {string} props.issueKey The key written in the message, already uppercased.
  */
 export default function IssueMentionChip({ issueKey }) {
-  const { activeOrgId } = useAppContext();
+  const { activeOrgId, currentUser } = useAppContext();
   const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
   const [issue, setIssue] = useState(null);
+  // Re-run once the session arrives: the first attempt on a cold page has no
+  // token, and the chip has to try again rather than stay a bare key forever.
+  const signedInAs = currentUser?.uid || currentUser?.id || '';
 
   useEffect(() => {
-    if (!activeOrgId || !issueKey) return undefined;
+    if (!activeOrgId || !issueKey || !signedInAs) return undefined;
     let cancelled = false;
     resolveIssueMention(activeOrgId, issueKey).then(found => {
-      if (!cancelled) setIssue(found);
+      if (!cancelled && found) setIssue(found);
     });
     return () => { cancelled = true; };
-  }, [activeOrgId, issueKey]);
+  }, [activeOrgId, issueKey, signedInAs]);
+
+  // Clicking is never refused. If the name has not arrived — a slow request, a
+  // page opened and clicked in the same second — the click resolves it and then
+  // opens, instead of the chip sitting there inert.
+  const open = useCallback(async () => {
+    if (issue) {
+      openIssueQuickView(issue);
+      return;
+    }
+    if (!activeOrgId) return;
+    const found = await resolveIssueMention(activeOrgId, issueKey);
+    if (found) {
+      setIssue(found);
+      openIssueQuickView(found);
+    }
+  }, [activeOrgId, issue, issueKey, openIssueQuickView]);
 
   return (
     <button
       type="button"
-      disabled={!issue}
-      onClick={() => issue && openIssueQuickView(issue)}
-      title={issue ? `Переглянути ${issueKey}: ${issue.title}` : `Завдання ${issueKey}`}
-      className="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 disabled:cursor-default disabled:hover:bg-black/[0.07]"
+      onClick={open}
+      title={issue ? `${issueKey}: ${issue.title}` : `Завдання ${issueKey}`}
+      className={MENTION_CHIP}
     >
-      <TaskIcon size={11} className="shrink-0 text-muted" />
-      <span className="shrink-0 font-mono text-[11px] font-bold text-muted">{issueKey}</span>
-      {issue?.title && <span className="truncate">{issue.title}</span>}
+      {/* Where the avatar sits on a person's mention, at the avatar's own
+          18px, so the two chips are the same height and the same rhythm. */}
+      <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center text-muted">
+        <TaskIcon size={13} />
+      </span>
+      <span className="truncate">{issue?.title || issueKey}</span>
     </button>
   );
 }

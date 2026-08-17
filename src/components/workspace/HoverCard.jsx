@@ -16,7 +16,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 
 // The one shape a mention has, whoever it names. `IssueMentionChip` wears the
 // same one, so a mentioned task and a mentioned person read alike in a sentence.
-const MENTION_CHIP = 'inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20';
+export const MENTION_CHIP = 'inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20';
 
 const ORGANIZATION_ROLE_LABELS = {
   owner: 'Власник',

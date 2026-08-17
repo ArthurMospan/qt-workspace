@@ -180,11 +180,12 @@ test('private attachment delivery uses the same channel membership boundary', ()
 });
 
 test('chat autocompletes and opens stable issue-key mentions', async () => {
-  const [page, menu, content, mentionChip] = await Promise.all([
+  const [page, menu, content, mentionChip, hoverCardChip] = await Promise.all([
     readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/ui/Chat/IssueMentionMenu.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/workspace/MessageContent.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/workspace/IssueMentionChip.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/HoverCard.jsx', import.meta.url), 'utf8'),
   ]);
 
   assert.match(page, /matchIssue = before\.match\(/);
@@ -196,7 +197,13 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   // a hue meant «this is a task».
   assert.doesNotMatch(menu, /tone="accent"/);
   assert.doesNotMatch(mentionChip, /#c026d3|#fdf4ff/);
-  assert.match(mentionChip, /bg-black\/\[0\.07\]/);
+  // One shape, defined once: a mentioned task and a mentioned person are the
+  // same kind of thing to read past, so the chip is literally the same string
+  // rather than two that happen to agree today.
+  assert.match(mentionChip, /import \{ MENTION_CHIP \} from '\.\/HoverCard'/);
+  assert.match(mentionChip, /className=\{MENTION_CHIP\}/);
+  assert.match(hoverCardChip, /export const MENTION_CHIP/);
+  assert.match(hoverCardChip, /bg-black\/\[0\.07\]/);
   // `#` searches task numbers, not prose: typing 12 used to return every task
   // whose description happened to contain those characters.
   assert.match(page, /searchIssues\(queryText, activeOrgId, null, \{ mention: true \}\)/);
@@ -211,6 +218,9 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   assert.match(mentionChip, /openIssueQuickView\(issue\)/);
   assert.match(content, /<IssueMentionChip/);
   assert.doesNotMatch(mentionChip, /legacyStoredIssueKey|collection\(db, 'issues'\)/);
+  // A lookup that could not be made is not an answer. Caching it meant a chat
+  // opened before Firebase restored the session never resolved a mention again.
+  assert.match(mentionChip, /resolved\.delete\(id\)/);
 });
 
 test('chat user suggestions require an at sign and message actions are keyboard reachable', async () => {
