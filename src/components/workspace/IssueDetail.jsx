@@ -1676,8 +1676,17 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 {/* The panel carries no padding of its own: the editor *is* the
                     panel while you write, filling it corner to corner instead of
                     sitting inside it as a second bordered, rounded box. Everything
-                    that reads rather than writes gets the padding back below. */}
-                <div data-ui-surface="panel" data-ui-padding="none" className="ui-surface flex w-full min-w-0 flex-col overflow-hidden">
+                    that reads rather than writes gets the padding back below.
+
+                    Reading, the panel's own grey *is* its edge. Writing, the
+                    editor paints that grey over in white and the block loses its
+                    sides into the white page — so the edge gets drawn instead of
+                    filled, and only then. */}
+                <div
+                  data-ui-surface={isEditing ? 'bordered-panel' : 'panel'}
+                  data-ui-padding="none"
+                  className="ui-surface flex w-full min-w-0 flex-col overflow-hidden"
+                >
                   {isEditing && (
                     <MarkdownEditor
                       frame="flush"
