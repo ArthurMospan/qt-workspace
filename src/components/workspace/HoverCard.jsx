@@ -1,18 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { User, Clock, Hash } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useAppContext } from '@/lib/context/AppContext';
 import Pill from '@/components/ui/DataDisplay/Pill';
-import {
-  legacyStoredIssueKey,
-  normalizeIssuePrefix,
-  projectIssuePrefix,
-  taskDisplayKey,
-} from '@/lib/utils/issueKeys.mjs';
 import { toLocalDateInput } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useLocalization } from '@/lib/hooks/useLocalization';
@@ -50,7 +43,7 @@ function findMember(members, value) {
 }
 
 export default function HoverCard({ type, value, children, members }) {
-  const { activeOrgId, activeOrg, currentUser, projects = [] } = useAppContext();
+  const { activeOrgId, activeOrg, currentUser } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
   const { formatDate } = useLocalization();
   const router = useRouter();
@@ -83,75 +76,52 @@ export default function HoverCard({ type, value, children, members }) {
       return;
     }
 
-    // For issue, fetch from firestore if not loaded
+    // For an issue, ask the same place the `#` picker asks.
+    //
+    // This used to be a client query against `issues` by `issueKey`, which had
+    // to solve two problems the server had already solved: a message carries
+    // the *display* key and a project whose prefix changed does not store that
+    // string, and a browser query is bounded by per-project access rules.
+    // `/api/search` resolves display keys with the Admin SDK and is the exact
+    // call that found this task when it was picked from the menu — so if the
+    // mention could be written, it can be read.
     if (type === 'issue' && activeOrgId) {
       queueMicrotask(() => { if (!cancelled) setLoading(true); });
-      const keyPrefix = String(value || '').match(/^([\p{L}\p{N}]+)-\d+$/u)?.[1] || '';
-      const expectedProject = projects.find(project => (
-        projectIssuePrefix(project) === normalizeIssuePrefix(keyPrefix)
-      ));
-      const loadIssue = async issueKey => {
-        if (!issueKey) return null;
-        const snap = await getDocs(query(
-          collection(db, 'issues'),
-          where('organizationId', '==', activeOrgId),
-          where('issueKey', '==', issueKey),
-          limit(10),
-        ));
-        const matchingDocument = expectedProject
-          ? snap.docs.find(document => document.data().projectId === expectedProject.id)
-          : snap.docs[0];
-        // The document id last: a stored `id` field would otherwise shadow it,
-        // and the panel opens by document id.
-        return matchingDocument
-          ? { ...matchingDocument.data(), id: matchingDocument.id }
-          : null;
-      };
-
-      // What is written in a message is the *display* key, and a project whose
-      // prefix has ever changed does not store that string: `QT-12` sits in
-      // Firestore as `WS-12`. `legacyStoredIssueKey` covers the one rename the
-      // migration knows about; this covers the rest by asking the project the
-      // prefix points at for the task whose displayed key is the one written.
-      // It only runs when the direct hit misses, and it is one project's worth
-      // of documents — the same set its own board loads.
-      const loadByDisplayKey = async () => {
-        if (!expectedProject) return null;
-        const snap = await getDocs(query(
-          collection(db, 'issues'),
-          where('organizationId', '==', activeOrgId),
-          where('projectId', '==', expectedProject.id),
-        ));
-        const wanted = String(value || '').trim().toLocaleUpperCase('uk-UA');
-        const matchingDocument = snap.docs.find(document => {
-          const stored = { id: document.id, ...document.data() };
-          return taskDisplayKey(stored, expectedProject).toLocaleUpperCase('uk-UA') === wanted;
+      const wanted = String(value || '').trim().toLocaleUpperCase('uk-UA');
+      (async () => {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error('Authentication required');
+        const params = new URLSearchParams({
+          organizationId: activeOrgId,
+          q: wanted,
+          mention: 'issue',
         });
-        return matchingDocument
-          ? { ...matchingDocument.data(), id: matchingDocument.id }
-          : null;
-      };
-
-      loadIssue(value).then(async exactMatch => {
-        const issue = exactMatch
-          || await loadIssue(legacyStoredIssueKey(value, expectedProject))
-          || await loadByDisplayKey();
+        const response = await fetch(`/api/search?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Search failed');
+        const results = payload.results || [];
+        return results.find(item => (
+          String(item.issueKey || '').toLocaleUpperCase('uk-UA') === wanted
+        )) || null;
+      })().then(issue => {
         if (cancelled) return;
         setData(issue || { notFound: true });
         setLoading(false);
       }).catch(error => {
         if (cancelled) return;
         // «Not found» and «could not look» are different answers, and saying
-        // the first when the second happened is what makes a lookup failure
-        // impossible to report. The console keeps the cause; the card says
-        // which of the two it was.
-        console.error('[HoverCard] issue lookup failed', value, error);
+        // the first when the second happened is what makes a failure
+        // impossible to report.
+        console.error('[HoverCard] issue lookup failed', wanted, error);
         setData({ lookupFailed: true });
         setLoading(false);
       });
     }
     return () => { cancelled = true; };
-  }, [show, type, value, members, activeOrgId, projects]);
+  }, [show, type, value, members, activeOrgId]);
 
   // A mention is read where it was written. Following one out of a conversation
   // used to cost the conversation: you came back to the chat scrolled somewhere
@@ -253,11 +223,13 @@ export default function HoverCard({ type, value, children, members }) {
               <div className="text-[12px] text-muted flex items-center justify-center py-2">
                  <div className="w-4 h-4 border-2 border-line border-t-ink rounded-full animate-spin" />
               </div>
-            ) : data && !data.notFound ? (
+            ) : data?.id ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-mono text-[11px] font-bold text-muted">{data.issueKey}</span>
-                  <Pill tone="neutral" size="sm">{data.status || data.columnId}</Pill>
+                  {(data.status || data.columnId) && (
+                    <Pill tone="neutral" size="sm">{data.status || data.columnId}</Pill>
+                  )}
                 </div>
                 <p className="text-[14px] font-bold text-ink leading-tight line-clamp-2">{data.title}</p>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#f0f0f0]">
@@ -274,7 +246,9 @@ export default function HoverCard({ type, value, children, members }) {
                 </div>
               </div>
             ) : (
-              <div className="text-[12px] text-muted">Задачу не знайдено</div>
+              <div className="text-[12px] text-muted">
+                {data?.lookupFailed ? 'Не вдалося завантажити завдання' : 'Задачу не знайдено'}
+              </div>
             )
           )}
         </div>

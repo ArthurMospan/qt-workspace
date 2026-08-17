@@ -205,7 +205,12 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   // a navigation out of the conversation you are having.
   assert.match(hoverCard, /openIssueQuickView\(data\)/);
   assert.doesNotMatch(hoverCard, /router\.push\(issuePath/);
-  assert.match(hoverCard, /legacyStoredIssueKey\(value, expectedProject\)/);
+  // The hovercard asks the same place the picker asks. It used to run its own
+  // client query by `issueKey`, which had to re-solve display-key drift and
+  // per-project access in the browser — and a mention that could be written
+  // could then fail to be read.
+  assert.match(hoverCard, /mention: 'issue'/);
+  assert.doesNotMatch(hoverCard, /legacyStoredIssueKey|collection\(db, 'issues'\)/);
 });
 
 test('chat user suggestions require an at sign and message actions are keyboard reachable', async () => {

@@ -69,7 +69,7 @@ export async function GET(request) {
     }
     const [issuesSnapshot, projectsSnapshot, membershipsSnapshot, eventsSnapshot] = await Promise.all([
       issuesQuery
-        .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt')
+        .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt', 'columnId', 'status', 'dueDate')
         .get(),
       scopedProjectSnapshot
         ? Promise.resolve({ docs: [scopedProjectSnapshot] })
@@ -115,6 +115,12 @@ export async function GET(request) {
         projectId: issue.projectId || '',
         type: issue.type || 'task',
         assigneeIds: Array.isArray(issue.assigneeIds) ? issue.assigneeIds : [],
+        // Enough for a hovercard to draw the task without a second lookup of
+        // its own — which is what the `#` mention used to do, with a client
+        // query that had to solve display-key drift and project access all over
+        // again. `select` already reads these fields; nothing extra is fetched.
+        columnId: issue.columnId || issue.status || '',
+        dueDate: issue.dueDate ? issue.dueDate.toDate?.()?.toISOString?.() || null : null,
       }));
 
     // An archived project is not somewhere to be sent, so it is not an answer.

@@ -85,7 +85,8 @@ const ROWS_PER_PAGE = 50;
 // so the line under a pinned header vanished the moment anybody scrolled. The
 // grey is the other half of it: a white header over white rows had nothing but
 // that missing line to separate them.
-const HEADER_CELL = 'h-9 bg-canvas px-[10px] align-middle shadow-[inset_0_-1px_0_var(--color-line)]';
+const HEADER_CELL = 'h-9 bg-canvas p-0 shadow-[inset_0_-1px_0_var(--color-line)]';
+const HEADER_BOX = 'flex h-9 min-w-0 items-center px-[10px]';
 
 // The one mark a status or a label has, in a menu row and nowhere else drawn
 // by hand.
@@ -693,31 +694,41 @@ export default function TaskTableView({
   const headerCell = column => {
     const active = sort === column.id;
     const Arrow = dir === 'desc' ? ArrowDown : ArrowUp;
+    // `#` alone at 11px caps reads as a speck beside «ВИКОНАВЦІ». It is one
+    // narrow glyph doing the work of a word, so it is set at the size a word
+    // would occupy rather than the size a word's letters are.
+    const isIdentity = column.id === 'key';
+    const labelClass = isIdentity
+      ? 'text-[14px] font-bold leading-none'
+      : 'ui-type-eyebrow truncate uppercase tracking-wide';
     return (
       <th
         key={column.id}
         scope="col"
         aria-sort={active ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'}
         style={column.pinned ? { left: pinnedOffsets[column.id] } : undefined}
-        className={`${HEADER_CELL} ${ALIGNMENT[column.align]} ${
+        className={`${HEADER_CELL} ${
           column.pinned ? `z-[3] ${column.id === 'title' ? 'md:sticky' : 'sticky'}` : ''
         }`}
       >
-        {column.sortable && onSortChange ? (
-          <button
-            type="button"
-            onClick={() => onSortChange(nextTaskTableSort(column.id, { sort, dir }))}
-            title={active ? 'Змінити напрям сортування' : `Сортувати за: ${column.label}`}
-            className={`ui-type-eyebrow inline-flex max-w-full items-center gap-[4px] uppercase tracking-wide transition-colors hover:text-ink ${
-              active ? 'text-ink' : 'text-muted'
-            } ${column.align === 'right' ? 'flex-row-reverse' : ''}`}
-          >
-            <span className="truncate">{column.label}</span>
-            {active && <Arrow size={11} strokeWidth={3} className="shrink-0" />}
-          </button>
-        ) : (
-          <span className="ui-type-eyebrow truncate uppercase tracking-wide text-muted">{column.label}</span>
-        )}
+        <span className={`${HEADER_BOX} ${column.align === 'right' ? 'justify-end' : ''}`}>
+          {column.sortable && onSortChange ? (
+            <button
+              type="button"
+              onClick={() => onSortChange(nextTaskTableSort(column.id, { sort, dir }))}
+              title={active ? 'Змінити напрям сортування' : `Сортувати за: ${column.label}`}
+              aria-label={isIdentity ? 'Сортувати за номером' : undefined}
+              className={`flex min-w-0 items-center gap-[4px] transition-colors hover:text-ink ${
+                active ? 'text-ink' : 'text-muted'
+              } ${column.align === 'right' ? 'flex-row-reverse' : ''}`}
+            >
+              <span className={labelClass}>{column.label}</span>
+              {active && <Arrow size={11} strokeWidth={3} className="shrink-0" />}
+            </button>
+          ) : (
+            <span className={`${labelClass} text-muted`}>{column.label}</span>
+          )}
+        </span>
       </th>
     );
   };
@@ -744,13 +755,14 @@ export default function TaskTableView({
             <thead>
               <tr>
                 <th scope="col" className={`${HEADER_CELL} sticky left-0 z-[4]`}>
-                  <span className="sr-only">Вибір</span>
+                  <span className={HEADER_BOX}><span className="sr-only">Вибір</span></span>
                 </th>
                 {visibleColumns.map(headerCell)}
                 {/* Which columns are on is a fact about this table, so it is
                     reached from the table — at the end of the header, pinned
                     right, where a spreadsheet keeps the same control. */}
-                <th scope="col" className={`${HEADER_CELL} sticky right-0 z-[4] !px-[8px]`}>
+                <th scope="col" className={`${HEADER_CELL} sticky right-0 z-[4]`}>
+                  <span className={`${HEADER_BOX} !px-[8px] justify-center`}>
                   {onColumnsChange ? (
                     <ContextMenu
                       closeOnSelect={false}
@@ -773,6 +785,7 @@ export default function TaskTableView({
                         }))}
                     />
                   ) : <span className="sr-only">Колонки</span>}
+                  </span>
                 </th>
               </tr>
             </thead>
