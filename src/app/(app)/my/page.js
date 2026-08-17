@@ -260,6 +260,20 @@ export default function MyTasksPage() {
               </Button>
             </div>
           }
+          // Дошка/список — це не фільтр. На вузькому екрані рядок фільтрів
+          // їде в модалку цілком, і перемикач вигляду разом із ним: щоб
+          // побачити список, доводилось відкривати «Фільтри». Тут він лишається
+          // на екрані, а в рядку фільтрів ховається нижче md.
+          mobileActions={(
+            <Tabs
+              tabs={[
+                { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
+                { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
+              ]}
+              activeTab={viewMode}
+              onTabChange={setViewMode}
+            />
+          )}
           filters={
             <div className="flex items-center justify-between w-full">
               <FilterBar>
@@ -314,14 +328,16 @@ export default function MyTasksPage() {
                 style="secondary"
                 title="Налаштування видимості колонок"
               />
-              <Tabs
-                tabs={[
-                  { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
-                  { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
-                ]}
-                activeTab={viewMode}
-                onTabChange={setViewMode}
-              />
+              <div className="max-md:hidden">
+                <Tabs
+                  tabs={[
+                    { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
+                    { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
+                  ]}
+                  activeTab={viewMode}
+                  onTabChange={setViewMode}
+                />
+              </div>
             </div>
           </div>
           }

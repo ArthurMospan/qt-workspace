@@ -315,11 +315,23 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
       {/* ── PageHeader ── */}
       <PageHeader
         title={
-          <div className="flex items-center gap-2">
-            {project?.name}
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="min-w-0 truncate">{project?.name}</span>
             {isArchived && <Pill tone="neutral" size="lg" shape="badge" uppercase>В архіві</Pill>}
           </div>
         }
+        // Дошка/список — не фільтр, і на телефоні рядок фільтрів цілком їде в
+        // модалку. Перемикач лишається на екрані.
+        mobileActions={activeTab === 'board' ? (
+          <Tabs
+            tabs={[
+              { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
+              { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
+            ]}
+            activeTab={boardView}
+            onTabChange={setBoardView}
+          />
+        ) : null}
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -412,7 +424,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                   variant="ghost"
                 />
               </FilterBar>
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto flex items-center gap-2 max-md:hidden">
                 <Tabs
                   tabs={[
                     { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },

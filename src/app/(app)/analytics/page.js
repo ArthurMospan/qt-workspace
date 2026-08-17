@@ -674,16 +674,20 @@ export default function WorkspaceAnalyticsPage() {
                     filterRole="project"
                     variant="ghost"
                   />
-                  <FilterDivider />
-                  <Segmented
-                    value={tsMode}
-                    onChange={setTsMode}
-                    options={[{ value: 'week', label: 'Тиждень' }, { value: 'month', label: 'Місяць' }]}
-                  />
-                  <FilterDivider />
-                  <Button style="ghost" size="icon-sm" icon={ChevronLeft} onClick={() => shiftAnchor(-1)} aria-label="Попередній період" />
-                  <Button style="ghost" size="sm" onClick={() => setTsAnchor(new Date())}>Сьогодні</Button>
-                  <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => shiftAnchor(1)} aria-label="Наступний період" />
+                  {/* Період — не фільтр, а нижче md рядок фільтрів цілком їде
+                      в модалку. Тиждень гортається власним рядком під шапкою. */}
+                  <span className="contents max-md:hidden">
+                    <FilterDivider />
+                    <Segmented
+                      value={tsMode}
+                      onChange={setTsMode}
+                      options={[{ value: 'week', label: 'Тиждень' }, { value: 'month', label: 'Місяць' }]}
+                    />
+                    <FilterDivider />
+                    <Button style="ghost" size="icon-sm" icon={ChevronLeft} onClick={() => shiftAnchor(-1)} aria-label="Попередній період" />
+                    <Button style="ghost" size="sm" onClick={() => setTsAnchor(new Date())}>Сьогодні</Button>
+                    <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => shiftAnchor(1)} aria-label="Наступний період" />
+                  </span>
                 </FilterBar>
                 <Button style="primary" size="lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="ml-auto max-md:hidden">
                   Списати час
@@ -765,6 +769,21 @@ export default function WorkspaceAnalyticsPage() {
             )
           }
         />
+
+        {/* Тиждень/місяць і сам період, на телефоні. */}
+        {activeTab === 'timesheet' && (
+          <div className="mb-[12px] flex items-center gap-[8px] md:hidden">
+            <Button style="secondary" size="icon" icon={ChevronLeft} onClick={() => shiftAnchor(-1)} aria-label="Попередній період" />
+            <Segmented
+              className="min-w-0 flex-1"
+              value={tsMode}
+              onChange={setTsMode}
+              options={[{ value: 'week', label: 'Тиждень' }, { value: 'month', label: 'Місяць' }]}
+            />
+            <Button style="secondary" size="sm" onClick={() => setTsAnchor(new Date())}>Сьогодні</Button>
+            <Button style="secondary" size="icon" icon={ChevronRight} onClick={() => shiftAnchor(1)} aria-label="Наступний період" />
+          </div>
+        )}
 
         {/* Content — сіра панель з відступами і скругленнями, як на сторінці
             проєктів; на ній білі картки без обводок */}
