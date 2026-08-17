@@ -548,15 +548,24 @@
      `--ui-detail-viewport-inset` is what the scrollport is shorter than the
      window: the header allowance plus the 12px the workspace shell insets the
      main pane by, top and bottom. The conversation rail is sized from it so it
-     fills its column exactly and scrolls itself instead of the page. */
+     fills its column exactly and scrolls itself instead of the page.
+
+     `--ui-detail-bottom` is the room the page leaves under itself. It is one
+     number because two things measure from it and must not disagree: the
+     scroller's bottom padding, and the rail's height. */
   .ui-detail-shell {
     --ui-detail-header: 56px;
     --ui-detail-viewport-inset: calc(var(--ui-detail-header) + 24px);
+    --ui-detail-bottom: 20px;
     display: flex;
     flex: 1 1 0%;
     flex-direction: column;
     overflow: hidden;
     padding-top: var(--ui-detail-header);
+  }
+  /* An event is one column of prose and gives its end more air. */
+  .ui-detail-shell[data-ui-context='event'] {
+    --ui-detail-bottom: 40px;
   }
   /* Inside a dialog there is no fixed header above and no window height to
      borrow: the dialog owns both, and paints white behind the shell. */
@@ -565,15 +574,29 @@
 
     background: var(--color-surface);
   }
+  .ui-detail-scroll {
+    padding-bottom: var(--ui-detail-bottom);
+  }
   .ui-detail-aside {
     min-height: 0;
   }
   @media (min-width: 1024px) {
+    /* The rail holds still, and the number that makes it hold still is the
+       scroller's own bottom padding.
+
+       A sticky box cannot leave its containing block, which here is the grid
+       area — and the grid ends where the content ends, while the scroll goes on
+       for `--ui-detail-bottom` more pixels of padding after it. A rail as tall
+       as the whole scrollport therefore ran out of room in exactly that last
+       stretch and got shoved up by it: 20px of drift at the end of every task,
+       and on a task only a little taller than the window that "end" is the last
+       quarter of the scroll. So the rail is the scrollport minus the padding it
+       is not allowed into, and the padding it would otherwise carry itself is
+       that same gap, counted once. */
     .ui-detail-aside {
       position: sticky;
       top: 0;
-      height: calc(100dvh - var(--ui-detail-viewport-inset));
-      padding-bottom: 20px;
+      height: calc(100dvh - var(--ui-detail-viewport-inset) - var(--ui-detail-bottom));
     }
   }
 

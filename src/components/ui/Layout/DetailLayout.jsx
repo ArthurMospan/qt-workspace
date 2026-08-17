@@ -18,25 +18,26 @@ import React from 'react';
 //     column instead, which is a second scroll model for the same gesture.
 //
 // One model now, the event page's: the page scrolls, the title sticks under the
-// header, and the conversation rail is `position: sticky` at the scrollport's
-// own height — so it holds still and scrolls itself, which is what the two
-// columns were trying to do all along.
+// header, and the conversation rail is `position: sticky` at the height the
+// scrollport leaves it — so it holds still and scrolls itself, which is what
+// the two columns were trying to do all along.
 export const CONTEXTS = {
   // A task: the reading column plus its conversation rail. It fills the page
   // gutter and nothing more — a task is two columns of live controls, not a
   // measure of prose, and capping it at 1520px parked a second, much wider
   // margin outside the standard 32px gutter on any monitor past that.
+  // The room under the page is `--ui-detail-bottom` in `.ui-detail-shell`, not
+  // a class here: the rail's height is measured from it too, and the two cannot
+  // be allowed to disagree.
   task: {
     measure: '',
     columns: 'lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]',
-    bottom: 'pb-[20px]',
     hasAside: true,
   },
   // A calendar event: one reading column, so it keeps a measure.
   event: {
     measure: 'max-w-[1120px]',
     columns: '',
-    bottom: 'pb-[40px]',
     hasAside: false,
   },
 };
@@ -72,20 +73,21 @@ export default function DetailLayout({
   children,
   className = '',
 }) {
-  const { measure, columns, bottom, hasAside } = CONTEXTS[context] || CONTEXTS.event;
+  const { measure, columns, hasAside } = CONTEXTS[context] || CONTEXTS.event;
   const showsAside = Boolean(hasAside && aside);
   const asideOnly = mobilePane === 'aside';
 
   return (
     <div
       className={`ui-detail-shell bg-transparent ${className}`}
+      data-ui-context={context}
       data-ui-density={standalone ? 'standalone' : 'embedded'}
     >
       {lead}
       <div
         ref={scrollRef}
         onScroll={onScrolledChange ? event => onScrolledChange(event.currentTarget.scrollTop > 4) : undefined}
-        className={`page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto ${bottom}`}
+        className="ui-detail-scroll page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
         <div
           className={`mx-auto grid w-full grid-cols-1 gap-[20px] ${measure} ${showsAside ? columns : ''} ${

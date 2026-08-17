@@ -400,6 +400,26 @@ test('high-risk composed previews keep the product markup signatures', () => {
   for (const source of [issueDetail, calendarEvent]) {
     assert.doesNotMatch(source, /pt-\[56px\]/, 'the fixed-header allowance belongs to the shell');
   }
+  // The conversation rail holds still, and one number is why. A sticky box
+  // cannot leave its containing block — here the grid area, which ends where
+  // the content ends while the scroll runs on for the scroller's bottom
+  // padding. A rail as tall as the whole scrollport had no room left in exactly
+  // that stretch and got shoved up by it at the end of every scroll. So the
+  // rail's height subtracts the same `--ui-detail-bottom` the scroller pads
+  // with, and neither may be written as a length at the call site again.
+  const detailCss = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8');
+  assert.match(detailCss, /\.ui-detail-scroll\s*\{\s*padding-bottom:\s*var\(--ui-detail-bottom\);/);
+  assert.match(
+    detailCss,
+    /\.ui-detail-aside\s*\{[^}]*height:\s*calc\(100dvh - var\(--ui-detail-viewport-inset\) - var\(--ui-detail-bottom\)\)/,
+    'the rail is the scrollport minus the padding it is not allowed into',
+  );
+  assert.doesNotMatch(
+    detailCss,
+    /\.ui-detail-aside\s*\{[^}]*padding-bottom/,
+    'the gap under the rail is its shortened height, not a second padding',
+  );
+  assert.doesNotMatch(detailLayout, /pb-\[\d+px\]/, 'the room under the page is a variable, not a class');
   // Both records render the same timer. The calendar used to carry a
   // byte-identical copy of it, down to the 1px nudge that centres the play
   // triangle, so the two could drift without anything noticing.
