@@ -4,7 +4,7 @@
 // so admins/owners can see the whole team, not just their own logs.
 // All controls (member, week/month, navigation) live in the page FilterBar;
 // this component only renders the grid for the state it receives via props.
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Clock } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
@@ -18,6 +18,7 @@ import {
   calendarEventOccurrenceKey,
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import { effectiveTimeLogDate } from '@/lib/utils/timeLogDates.mjs';
+import { buildTimesheetExport, fileNameDate } from '@/lib/utils/analyticsExport.mjs';
 import { createTaskTimeLogViaApi } from '@/lib/services/timeLogs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
@@ -541,6 +542,11 @@ export default function TimesheetTab({
   onSelectDay,
   logModalOpen = false,
   onCloseLogModal,
+  // Only the workspace screen passes these: the same grid is rendered again
+  // inside a member's own page, and the tab that owns the header is the one
+  // that owns the export.
+  onExportReady,
+  formatDate,
 }) {
   const todayKey = dayKey(new Date());
   const isTeam = member === 'all';
@@ -597,6 +603,34 @@ export default function TimesheetTab({
   const totalMin = rangeLogs.reduce((s, l) => s + (l.spentMinutes || 0), 0);
   const selectedMember = !isTeam ? members.find(m => (m.id || m.uid) === member) : null;
   const teamCapacity = isTeam ? capacity * Math.max(members.length, 1) : capacity;
+
+  // The grid is a reading; the file is the same records laid out one per row,
+  // because a matrix has to be taken apart before it can be summed, pivoted or
+  // attached to an invoice. The totals are identical either way.
+  const buildExport = useCallback(() => buildTimesheetExport({
+    logs: rangeLogs,
+    members,
+    issues,
+    events,
+    projects,
+    rangeLabel,
+    memberLabel: isTeam
+      ? 'Вся команда'
+      : (selectedMember?.name || selectedMember?.email || 'Учасник'),
+    formatDate,
+    dateOf: logDate,
+    eventKeyOf: (source, isLog) => (isLog
+      ? calendarEventOccurrenceKey(source.eventId, source.occurrenceStartAt)
+      : calendarEventOccurrenceKey(source.sourceEventId || source.id, source.startAt)),
+    fileDates: [fileNameDate(rangeStart), fileNameDate(addDays(rangeEnd, -1))],
+  }), [
+    events, formatDate, isTeam, issues, members, projects,
+    rangeEnd, rangeLabel, rangeLogs, rangeStart, selectedMember,
+  ]);
+  useEffect(() => {
+    onExportReady?.(buildExport);
+    return () => onExportReady?.(null);
+  }, [buildExport, onExportReady]);
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">

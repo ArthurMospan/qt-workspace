@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 111,
-    "props": 824,
-    "documentedProps": 824,
+    "components": 112,
+    "props": 831,
+    "documentedProps": 831,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2467,6 +2467,61 @@
           "type": "string",
           "values": [],
           "description": "One line saying what is missing."
+        }
+      ]
+    },
+    "ExportMenu": {
+      "file": "src/components/ui/ExportMenu.jsx",
+      "summary": "click, never on render: a timesheet of several thousand rows should not be assembled by a screen nobody is exporting.",
+      "props": [
+        {
+          "name": "build",
+          "default": "",
+          "type": "() => object",
+          "values": [],
+          "description": "Makes the export document. Called on the"
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Greys out the trigger and every format in the menu."
+        },
+        {
+          "name": "disabledReason",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Why, shown on the disabled trigger."
+        },
+        {
+          "name": "formats",
+          "default": "['xlsx', 'csv', 'pdf']",
+          "type": "('xlsx'|'csv'|'pdf')[]",
+          "values": [],
+          "description": "Which of the three to offer. A"
+        },
+        {
+          "name": "label",
+          "default": "'Експорт'",
+          "type": "string",
+          "values": [],
+          "description": "Trigger text."
+        },
+        {
+          "name": "size",
+          "default": "'lg'",
+          "type": "'sm'|'md'|'lg'",
+          "values": [],
+          "description": "Passed straight to the Button."
         }
       ]
     },

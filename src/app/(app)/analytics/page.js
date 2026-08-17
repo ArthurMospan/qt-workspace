@@ -3,7 +3,7 @@
 // Огляд = швидкий стан воркспейсу; Продуктивність = тренди; Табель = час;
 // Команда = навантаження; Рахунок = клієнтські рахунки. Всі контроли табу (період,
 // тиждень/місяць, учасник, навігація) живуть в ОДНОМУ FilterBar під табами.
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import {
@@ -18,9 +18,11 @@ import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
 import {
-  BarList, Button, Card, DataTable, DetailSection, EmptyState, KpiCard, LoadingSpinner,
+  BarList, Button, Card, DataTable, DetailSection, EmptyState, ExportMenu, KpiCard, LoadingSpinner,
   Meter, PageHeader, Segmented, SignalList, Surface, TaskListCard,
 } from '@/components/ui';
+import { useLocalization } from '@/lib/hooks/useLocalization';
+import { buildOverviewExport } from '@/lib/utils/analyticsExport.mjs';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import { isDueDateOverdue } from '@/lib/utils/date';
@@ -91,6 +93,8 @@ function AnalyticsContent({
   loading,
   period,
   onTabChange,
+  onExportReady,
+  selectedProjectIds = [],
 }) {
   const { activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
@@ -235,6 +239,32 @@ function AnalyticsContent({
     timeLogs,
   ]);
 
+  // Where the period's time actually went. Four calendar tiles used to sit here
+  // as a second KPI row — a dashboard of counts that answered nothing anybody
+  // asks about a calendar. This is one question with one answer.
+  //
+  // Read above the early returns because the export is built from it, and the
+  // export has to be registered by every render, not only the ones that draw a
+  // chart.
+  const timeSplit = useMemo(() => [
+    { id: 'tasks', label: 'Завдання', value: Math.max(0, Math.round(stats.periodMin - calendarStats.meetingMinutes - calendarStats.focusMinutes)) },
+    { id: 'meetings', label: 'Мітинги', value: Math.round(calendarStats.meetingMinutes), color: 'var(--color-chart-2)', meta: `${calendarStats.meetings} ${plural(calendarStats.meetings, ['подія', 'події', 'подій'])}` },
+    { id: 'focus', label: 'Фокус-час', value: Math.round(calendarStats.focusMinutes), color: 'var(--color-chart-3)' },
+  ].filter(row => row.value > 0), [calendarStats, stats.periodMin]);
+
+  // The file is this screen, so it is offered only once the screen has one.
+  const buildExport = useCallback(() => buildOverviewExport({
+    stats,
+    timeSplit,
+    period,
+    projects,
+    selectedProjectIds,
+  }), [period, projects, selectedProjectIds, stats, timeSplit]);
+  useEffect(() => {
+    onExportReady?.(loading ? null : buildExport);
+    return () => onExportReady?.(null);
+  }, [buildExport, loading, onExportReady]);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -296,15 +326,6 @@ function AnalyticsContent({
       description: 'Поза беклогом, але без плану за часом',
     },
   ].filter(Boolean);
-
-  // Where the period's time actually went. Four calendar tiles used to sit here
-  // as a second KPI row — a dashboard of counts that answered nothing anybody
-  // asks about a calendar. This is one question with one answer.
-  const timeSplit = [
-    { id: 'tasks', label: 'Завдання', value: Math.max(0, Math.round(stats.periodMin - calendarStats.meetingMinutes - calendarStats.focusMinutes)) },
-    { id: 'meetings', label: 'Мітинги', value: Math.round(calendarStats.meetingMinutes), color: 'var(--color-chart-2)', meta: `${calendarStats.meetings} ${plural(calendarStats.meetings, ['подія', 'події', 'подій'])}` },
-    { id: 'focus', label: 'Фокус-час', value: Math.round(calendarStats.focusMinutes), color: 'var(--color-chart-3)' },
-  ].filter(row => row.value > 0);
 
   return (
     <div className="flex-1 overflow-y-auto bg-transparent">
@@ -423,7 +444,7 @@ function AnalyticsContent({
 // ── PAGE ─────────────────────────────────────────────────────────────
 export default function WorkspaceAnalyticsPage() {
   const router = useRouter();
-  const { projects = [], orgRole, currentUser } = useAppContext();
+  const { activeOrg, projects = [], orgRole, currentUser } = useAppContext();
   const activeProjects = useMemo(
     () => projects.filter(project => project.status !== 'archived'),
     [projects],
@@ -438,6 +459,27 @@ export default function WorkspaceAnalyticsPage() {
 
   const { members } = useOrganization();
   const { priorities, types } = useWorkflowConfig();
+
+  // A date in the file follows the organization's timezone and the reader's own
+  // date format. The two settings are separate on purpose: which day a record
+  // belongs to is a fact about the workspace — it is how this screen already
+  // buckets everything — while how that day is written is a preference of
+  // whoever opens the file. Reading the day in the browser's zone instead would
+  // move records across midnight and make the file disagree with the screen
+  // above it.
+  const { formatDate } = useLocalization();
+  const exportTimeZone = organizationTimeZone(activeOrg);
+  const formatExportDate = value => formatDate(value, { timeZone: exportTimeZone });
+
+  // The active tab registers what it is currently showing, and the one button
+  // in the header writes it out. A ref rather than state: the tab republishes
+  // on every render, and a re-render of the page for that would be a loop.
+  const exportBuilderRef = useRef(null);
+  const registerExport = useCallback(builder => {
+    exportBuilderRef.current = builder;
+  }, []);
+  const buildActiveExport = useCallback(() => exportBuilderRef.current?.() || null, []);
+  const exportMenu = <ExportMenu build={buildActiveExport} className="ml-auto max-md:hidden" />;
 
   const {
     issues,
@@ -691,11 +733,13 @@ export default function WorkspaceAnalyticsPage() {
                     <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => shiftAnchor(1)} aria-label="Наступний період" />
                   </span>
                 </FilterBar>
-                <Button style="primary" size="lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="ml-auto max-md:hidden">
+                {exportMenu}
+                <Button style="primary" size="lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="max-md:hidden">
                   Списати час
                 </Button>
               </>
             ) : activeTab === 'workload' ? (
+              <>
               <FilterBar>
                 <MultiSelect
                   value={projectFilters}
@@ -723,7 +767,10 @@ export default function WorkspaceAnalyticsPage() {
                 <FilterDivider />
                 <Segmented value={period} onChange={setPeriod} options={periodOptions} />
               </FilterBar>
+              {exportMenu}
+              </>
             ) : (
+              <>
               <FilterBar>
                 <MultiSelect
                   value={projectFilters}
@@ -768,6 +815,8 @@ export default function WorkspaceAnalyticsPage() {
                 <FilterDivider />
                 <Segmented value={period} onChange={setPeriod} options={periodOptions} />
               </FilterBar>
+              {exportMenu}
+              </>
             )
           }
         />
@@ -802,6 +851,8 @@ export default function WorkspaceAnalyticsPage() {
             loading={loading || calendarLoading}
             period={period}
             onTabChange={setActiveTab}
+            onExportReady={registerExport}
+            selectedProjectIds={projectFilters}
           />
         )}
 
@@ -819,11 +870,21 @@ export default function WorkspaceAnalyticsPage() {
             onSelectDay={d => { setTsAnchor(d); setTsMode('week'); }}
             logModalOpen={tsLogOpen}
             onCloseLogModal={() => setTsLogOpen(false)}
+            onExportReady={registerExport}
+            formatDate={formatExportDate}
           />
         )}
 
         {activeTab === 'velocity' && (
-          <VelocityTab issues={analyticsIssues} projects={visibleProjects} members={members} period={period} />
+          <VelocityTab
+            issues={analyticsIssues}
+            projects={visibleProjects}
+            members={members}
+            period={period}
+            onExportReady={registerExport}
+            selectedProjectIds={projectFilters}
+            formatDate={formatExportDate}
+          />
         )}
 
         {activeTab === 'workload' && (
@@ -837,6 +898,9 @@ export default function WorkspaceAnalyticsPage() {
             period={period}
             selectedMemberId={teamMemberFilter}
             onSelectMember={selectTeamMember}
+            onExportReady={registerExport}
+            selectedProjectIds={projectFilters}
+            formatDate={formatExportDate}
           />
         )}
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import {
@@ -57,6 +57,7 @@ import {
 } from '@/lib/utils/issueAccounting.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
+import { buildMemberExport, buildWorkloadExport } from '@/lib/utils/analyticsExport.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 
 function fmtH(minutes) {
@@ -107,17 +108,26 @@ function relativeActivity(value, now) {
 // How this person's week is going, in one chip. It was four hand-mixed colour
 // pairs that had been the kit's four semantic pill tones all along — the same
 // greens, ambers and reds, half a shade off each.
+// The reading is words plus a tone, and only the tone is a pill. Splitting them
+// is what lets the exported file carry the same sentence the chip shows instead
+// of a second opinion about the same person.
+function riskReading(stat) {
+  if (stat.overdue > 0) return { tone: 'danger', label: `${stat.overdue} прострочено` };
+  if (stat.open >= 8) return { tone: 'warning', label: 'Високе навантаження' };
+  if (stat.open > 0 && stat.minutes === 0) return { tone: 'neutral', label: 'Час не списано' };
+  return { tone: 'success', label: 'Стабільно' };
+}
+
+// The tone is written out four times rather than passed through as
+// `tone={reading.tone}`: a variant chosen at runtime is invisible to
+// `kit:scan`, and a value the catalogue cannot see a call site for is reported
+// as declared-but-unused. The thresholds still live in one place above.
 function RiskPill({ stat }) {
-  if (stat.overdue > 0) {
-    return <Pill tone="danger" size="md">{stat.overdue} прострочено</Pill>;
-  }
-  if (stat.open >= 8) {
-    return <Pill tone="warning" size="md">Високе навантаження</Pill>;
-  }
-  if (stat.open > 0 && stat.minutes === 0) {
-    return <Pill tone="neutral" size="md">Час не списано</Pill>;
-  }
-  return <Pill tone="success" size="md">Стабільно</Pill>;
+  const { tone, label } = riskReading(stat);
+  if (tone === 'danger') return <Pill tone="danger" size="md">{label}</Pill>;
+  if (tone === 'warning') return <Pill tone="warning" size="md">{label}</Pill>;
+  if (tone === 'neutral') return <Pill tone="neutral" size="md">{label}</Pill>;
+  return <Pill tone="success" size="md">{label}</Pill>;
 }
 
 // The same card and heading every other analytics block uses. The workload bar
@@ -585,6 +595,9 @@ export default function WorkloadTab({
   // Rendered in the member header. The standalone member page owns the filter
   // controls but has no header row of its own to put them in.
   detailFilters,
+  onExportReady,
+  selectedProjectIds = [],
+  formatDate,
 }) {
   const { activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
@@ -672,6 +685,34 @@ export default function WorkloadTab({
       )).length,
     };
   }, [actionableIssues, closedSet, deliveredSet, now, period, timeLogs, timeZone]);
+
+  // What the file is depends on what the screen is showing: the team table, or
+  // the one person it has been opened on. Exporting the whole team from a
+  // member's page would hand somebody a file that does not match the screen
+  // they asked for it from.
+  const buildExport = useCallback(() => (selectedStat
+    ? buildMemberExport({
+      stat: selectedStat,
+      projects,
+      period,
+      formatDate,
+      dateOf: effectiveTimeLogDate,
+    })
+    : buildWorkloadExport({
+      stats,
+      positions,
+      period,
+      projects,
+      selectedProjectIds,
+      activityLabel: row => relativeActivity(row.lastActivity, now),
+      stateLabel: row => riskReading(row).label,
+    })), [
+    formatDate, now, period, positions, projects, selectedProjectIds, selectedStat, stats,
+  ]);
+  useEffect(() => {
+    onExportReady?.(stats.length > 0 ? buildExport : null);
+    return () => onExportReady?.(null);
+  }, [buildExport, onExportReady, stats.length]);
 
   if (members.length === 0) {
     return (

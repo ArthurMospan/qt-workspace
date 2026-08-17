@@ -33,10 +33,16 @@ test('an unsaved invoice preview never exposes a provisional number or export ac
     2,
     'both print and copy handlers must fail closed for an unsaved preview',
   );
+  // Every way an invoice can leave the screen sits in the same branch: copy,
+  // the spreadsheet menu and print are offered together or not at all, and an
+  // unsaved draft is offered a Закрити instead of any of them.
   assert.match(
     preview,
-    /footer=\{[\s\S]{0,80}canExport \? \([\s\S]{0,500}Копіювати[\s\S]{0,250}Друкувати[\s\S]{0,250}Закрити/,
+    /footer=\{[\s\S]{0,80}canExport \? \([\s\S]{0,500}Копіювати[\s\S]{0,400}ExportMenu[\s\S]{0,250}Друкувати[\s\S]{0,250}Закрити/,
   );
+  // The menu offers no PDF of its own: «Друкувати» already produces one from
+  // the designed invoice rather than from a bare table.
+  assert.match(preview, /formats=\{\['xlsx', 'csv'\]\}/);
 });
 
 test('saved history opens the persisted snapshot and exports its server number', async () => {
@@ -55,9 +61,10 @@ test('saved history opens the persisted snapshot and exports its server number',
   assert.match(billing, /invoice=\{invoicePreview\.invoice\}/);
   assert.match(billing, /isSaved=\{invoicePreview\.kind === 'saved'\}/);
   assert.doesNotMatch(billing, /invoice=\{buildInvoice\(\)\}/);
+  // The window spans the footer, which now carries a third control.
   assert.match(
     billing,
-    /title=\{dialogTitle\}[\s\S]{0,1500}\{canExport \? \([\s\S]{0,200}\{officialNumber\}/,
+    /title=\{dialogTitle\}[\s\S]{0,2000}\{canExport \? \([\s\S]{0,200}\{officialNumber\}/,
   );
   assert.match(billing, /`РАХУНОК \$\{officialNumber\}`/);
   assert.match(billing, /<title>\$\{officialNumber\}<\/title>/);

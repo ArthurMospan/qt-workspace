@@ -1,7 +1,7 @@
 'use client';
 // src/components/workspace/VelocityTab.jsx — Продуктивність: тренди, burndown, cycle time
 // Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Zap, TrendingUp, CheckCircle2, Calendar, Activity, Folders, Shapes, TrendingDown } from 'lucide-react';
 import {
   Alert, BarList, Card, ColumnChart, DetailSection, EmptyState, KpiCard, TaskListCard, TrendChart,
@@ -10,6 +10,7 @@ import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflow
 import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 import { summarizeCycleTimes } from '@/lib/utils/velocityMetrics.mjs';
+import { buildVelocityExport } from '@/lib/utils/analyticsExport.mjs';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtShortDate(date) {
@@ -78,7 +79,18 @@ function useWeeklyVelocity(issues, weeksBack, deliveredSet, now) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function VelocityTab({ issues = [], projects = [], members = [], period = 30 }) {
+export default function VelocityTab({
+  issues = [],
+  projects = [],
+  members = [],
+  period = 30,
+  // Passed only by the screen that owns the header button. This component is
+  // also drawn inside a member's page, where the member's own export is the
+  // one the button must write.
+  onExportReady,
+  selectedProjectIds = [],
+  formatDate,
+}) {
   const { closedStatusIds, deliveredStatusIds, types = [] } = useWorkflowConfig();
   // The burndown draws work *remaining*, so a cancelled task leaves the line the
   // same way a finished one does — that is the closed set. Everything else here
@@ -182,6 +194,23 @@ export default function VelocityTab({ issues = [], projects = [], members = [], 
 
   const burndown = useBurndown(actionableIssues, period, closedSet, now);
   const weeklyVelocity = useWeeklyVelocity(actionableIssues, 8, deliveredSet, now);
+
+  // Every chart here is a count, so the file is those counts: the same days,
+  // the same weeks, the same rows behind the bars.
+  const buildExport = useCallback(() => buildVelocityExport({
+    stats,
+    weeklyVelocity,
+    recentlyClosed,
+    period,
+    projects,
+    selectedProjectIds,
+    formatDate,
+    completedAtOf: getCompletedAtMillis,
+  }), [formatDate, period, projects, recentlyClosed, selectedProjectIds, stats, weeklyVelocity]);
+  useEffect(() => {
+    onExportReady?.(actionableIssues.length > 0 ? buildExport : null);
+    return () => onExportReady?.(null);
+  }, [actionableIssues.length, buildExport, onExportReady]);
 
   if (actionableIssues.length === 0) {
     return (

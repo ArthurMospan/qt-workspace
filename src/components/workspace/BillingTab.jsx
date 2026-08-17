@@ -15,9 +15,11 @@ import { CalendarIcon } from '@/lib/design/icons';
 import { Select } from '@/components/ui/Select';
 import {
   Button, Surface, LoadingSpinner, Input, Textarea, Tabs, Checkbox,
-  Dialog, Card, Alert, Label, Pill, PriorityBadge, Segmented, TypeBadge,
+  Dialog, Card, Alert, ExportMenu, Label, Pill, PriorityBadge, Segmented, TypeBadge,
   useConfirm,
 } from '@/components/ui';
+import { buildInvoiceExport } from '@/lib/utils/analyticsExport.mjs';
+import { printHtmlDocument } from '@/lib/utils/exportFile';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { buildCalendarBillingItems } from '@/lib/utils/calendarBillingItems.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -364,14 +366,11 @@ function InvoicePreview({
     if (!canExport) return;
     const content = printRef.current?.innerHTML;
     if (!content) return;
-    // window.open returns null when a popup blocker is active; the old code
-    // dereferenced it straight away and the button just appeared to do nothing.
-    const win = window.open('', '_blank');
-    if (!win) {
-      onPrintBlocked?.();
-      return;
-    }
-    win.document.write(`
+    // One print mechanism for the whole product: opening the window, waiting
+    // for it to load and closing it after the dialog lives in `exportFile`, and
+    // an analytics table prints through the same function. What is different
+    // here is only the document — an invoice is a designed page, not a table.
+    const printed = printHtmlDocument(`
       <!DOCTYPE html>
       <html>
       <head>
@@ -396,17 +395,9 @@ function InvoicePreview({
       <body>${content}</body>
       </html>
     `);
-    win.document.close();
-    win.focus();
-    // Printing immediately can fire before fonts and styles are applied, and
-    // closing synchronously afterwards cancels the dialog in some browsers.
-    // Wait for load, then let the browser close the window once printing ends.
-    const startPrinting = () => {
-      win.print();
-      win.addEventListener('afterprint', () => win.close());
-    };
-    if (win.document.readyState === 'complete') startPrinting();
-    else win.addEventListener('load', startPrinting);
+    // A popup blocker returns no window at all, and the old code dereferenced
+    // it straight away — the button simply appeared to do nothing.
+    if (!printed) onPrintBlocked?.();
   };
 
   const handleCopy = () => {
@@ -449,6 +440,13 @@ function InvoicePreview({
         canExport ? (
           <>
             <Button onClick={handleCopy} style="secondary" size="md" icon={Copy}>Копіювати</Button>
+            {/* PDF is not in this menu: «Друкувати» already produces one, from
+                the designed invoice on screen rather than from a bare table. */}
+            <ExportMenu
+              size="md"
+              formats={['xlsx', 'csv']}
+              build={() => buildInvoiceExport({ invoice, project })}
+            />
             <Button onClick={handlePrint} style="primary" size="md" icon={Printer}>Друкувати</Button>
           </>
         ) : (

@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 111,
-    "stateful": 99,
+    "components": 112,
+    "stateful": 100,
     "hover": 67,
     "focus": 68,
-    "disabled": 34,
+    "disabled": 35,
     "loading": 6,
     "error": 6,
-    "long-text": 68
+    "long-text": 69
   },
   "components": {
     "Alert": {
@@ -186,6 +186,10 @@
     },
     "EmptyState": {
       "long-text": "children, description, title"
+    },
+    "ExportMenu": {
+      "disabled": "prop",
+      "long-text": "label"
     },
     "FileInput": {
       "disabled": "native",
@@ -637,6 +641,9 @@
       "chat-composer",
       "variant-matrix",
       "states"
+    ],
+    "ExportMenu": [
+      "navigation-overlays"
     ],
     "FileInput": [
       "chat-elements"
