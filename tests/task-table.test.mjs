@@ -172,3 +172,14 @@ test('the table exposes no grouping', async () => {
   }
   assert.ok(TASK_TABLE_COLUMNS.every(column => column.group === undefined));
 });
+
+// The permission matrix is documentation only if nothing reads it. `manage:finance`
+// said `owner` while the rules, the invoice route and the analytics tab all
+// agreed on owner *and* admin — and nothing called it, so the drift was
+// invisible. Rules are authoritative; this keeps the matrix pointed at them.
+test('the finance permission matches what the server and the rules enforce', async () => {
+  const { PERMISSIONS, can } = await import('../src/lib/utils/can.js');
+  assert.deepEqual(PERMISSIONS['manage:finance'], ['owner', 'admin']);
+  assert.equal(can('admin', 'manage:finance'), true);
+  assert.equal(can('member', 'manage:finance'), false);
+});

@@ -25,6 +25,7 @@ import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import { isDueDateOverdue } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
+import { can } from '@/lib/utils/can';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { calendarEventOccurrenceKey } from '@/lib/utils/calendarEventNavigation.mjs';
@@ -430,8 +431,9 @@ export default function WorkspaceAnalyticsPage() {
   const analyticsSearch = useWorkspaceStore(state => state.analyticsSearch);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Only admin/owner can see billing and other members' timesheets
-  const canSeeBilling = orgRole === 'owner' || orgRole === 'admin';
+  // Through the matrix, not beside it: a hand-rolled role comparison is how the
+  // documented permission and the shipped one drift apart.
+  const canSeeBilling = can(orgRole, 'manage:finance');
   const canSeeTeamTimesheet = canSeeBilling;
 
   const { members } = useOrganization();

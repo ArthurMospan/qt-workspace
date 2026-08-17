@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 333,
-    "elements": 4162,
+    "elements": 4170,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -223,21 +223,21 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:400",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:448",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:650",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:707",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:799",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:865",
       "attributes": [
         "title"
       ]

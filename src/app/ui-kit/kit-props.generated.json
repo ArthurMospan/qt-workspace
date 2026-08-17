@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 111,
-    "props": 823,
-    "documentedProps": 823,
+    "props": 824,
+    "documentedProps": 824,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1838,9 +1838,9 @@
         {
           "name": "items",
           "default": "[]",
-          "type": "{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean, disabled?: boolean, disabledReason?: string}[]",
+          "type": "{label: string, icon?, leading?: React.ReactNode, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean, disabled?: boolean, disabledReason?: string}[]",
           "values": [],
-          "description": "The rows; `selected` gives one a trailing tick instead of a \"✓ \" in its label."
+          "description": "The rows; `selected` gives one a trailing tick instead of a \"✓ \" in its label, and `leading` carries what an icon cannot — a face, a status dot."
         },
         {
           "name": "onOpenChange",
@@ -6207,6 +6207,16 @@
           "type": "number",
           "values": [],
           "description": "Initial visible rows."
+        },
+        {
+          "name": "surface",
+          "default": "'canvas'",
+          "type": "'canvas'|'white'",
+          "values": [
+            "canvas",
+            "white"
+          ],
+          "description": "Which ground it sits on; `white` is for a field placed on the canvas itself."
         }
       ]
     },

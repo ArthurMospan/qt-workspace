@@ -29,7 +29,7 @@ import { NO_PRIORITY_ID } from './priorities.mjs';
 // into columns, and the list is the one that arranges them into sections.
 
 const COLUMNS = [
-  { id: 'key', label: 'ID', width: 96, align: 'left', pinned: true, sortable: true, editor: null },
+  { id: 'key', label: '#', width: 96, align: 'left', pinned: true, sortable: true, editor: null },
   { id: 'title', label: 'Назва', width: 320, align: 'left', pinned: true, sortable: true, editor: 'text' },
   { id: 'status', label: 'Статус', width: 150, align: 'left', pinned: false, sortable: true, editor: 'status' },
   { id: 'assignees', label: 'Виконавці', width: 156, align: 'left', pinned: false, sortable: true, editor: 'assignees' },

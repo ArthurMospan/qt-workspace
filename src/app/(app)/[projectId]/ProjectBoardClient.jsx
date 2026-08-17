@@ -528,8 +528,11 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               onColumnsChange={toggleTableColumn}
               onOpenIssue={openIssueQuickView}
               activeTimerIssueId={activeTimer?.issueId}
-              // An archived project is read-only: its cells open nothing.
-              onUpdateIssue={isArchived ? undefined : handleUpdateIssue}
+              // An archived project is read-only, and so is a role without
+              // `edit:issue`. Hidden UI is not the guard — the server route and
+              // the rules are — but a cell that opens and then refuses is worse
+              // than one that does not open.
+              onUpdateIssue={isArchived || !can(orgRole, 'edit:issue') ? undefined : handleUpdateIssue}
               onBulkUpdate={handleBulkUpdate}
               bulkProgress={bulkProgress}
               canArchive={can(orgRole, 'delete:issue')}

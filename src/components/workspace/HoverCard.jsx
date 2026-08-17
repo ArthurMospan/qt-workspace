@@ -11,6 +11,7 @@ import {
   legacyStoredIssueKey,
   normalizeIssuePrefix,
   projectIssuePrefix,
+  taskDisplayKey,
 } from '@/lib/utils/issueKeys.mjs';
 import { toLocalDateInput } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
@@ -106,20 +107,46 @@ export default function HoverCard({ type, value, children, members }) {
           ? { ...matchingDocument.data(), id: matchingDocument.id }
           : null;
       };
+
+      // What is written in a message is the *display* key, and a project whose
+      // prefix has ever changed does not store that string: `QT-12` sits in
+      // Firestore as `WS-12`. `legacyStoredIssueKey` covers the one rename the
+      // migration knows about; this covers the rest by asking the project the
+      // prefix points at for the task whose displayed key is the one written.
+      // It only runs when the direct hit misses, and it is one project's worth
+      // of documents — the same set its own board loads.
+      const loadByDisplayKey = async () => {
+        if (!expectedProject) return null;
+        const snap = await getDocs(query(
+          collection(db, 'issues'),
+          where('organizationId', '==', activeOrgId),
+          where('projectId', '==', expectedProject.id),
+        ));
+        const wanted = String(value || '').trim().toLocaleUpperCase('uk-UA');
+        const matchingDocument = snap.docs.find(document => {
+          const stored = { id: document.id, ...document.data() };
+          return taskDisplayKey(stored, expectedProject).toLocaleUpperCase('uk-UA') === wanted;
+        });
+        return matchingDocument
+          ? { ...matchingDocument.data(), id: matchingDocument.id }
+          : null;
+      };
+
       loadIssue(value).then(async exactMatch => {
-        const issue = exactMatch || await loadIssue(
-          legacyStoredIssueKey(value, expectedProject),
-        );
+        const issue = exactMatch
+          || await loadIssue(legacyStoredIssueKey(value, expectedProject))
+          || await loadByDisplayKey();
         if (cancelled) return;
-        if (issue) {
-          setData(issue);
-        } else {
-          setData({ notFound: true });
-        }
+        setData(issue || { notFound: true });
         setLoading(false);
-      }).catch(() => {
+      }).catch(error => {
         if (cancelled) return;
-        setData({ notFound: true });
+        // «Not found» and «could not look» are different answers, and saying
+        // the first when the second happened is what makes a lookup failure
+        // impossible to report. The console keeps the cause; the card says
+        // which of the two it was.
+        console.error('[HoverCard] issue lookup failed', value, error);
+        setData({ lookupFailed: true });
         setLoading(false);
       });
     }
@@ -132,13 +159,13 @@ export default function HoverCard({ type, value, children, members }) {
   // times the mention really was the start of a longer errand.
   useEffect(() => {
     if (!openWhenReadyRef.current || type !== 'issue' || !data) return;
-    if (!data.notFound && data.id && data.projectId) openIssueQuickView(data);
+    if (data.id && data.projectId) openIssueQuickView(data);
     openWhenReadyRef.current = false;
   }, [data, openIssueQuickView, type]);
 
   const openIssue = () => {
     if (type !== 'issue') return;
-    if (data && !data.notFound && data.id && data.projectId) {
+    if (data?.id && data?.projectId) {
       openIssueQuickView(data);
       return;
     }

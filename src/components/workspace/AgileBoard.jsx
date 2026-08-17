@@ -205,10 +205,14 @@ function InlineAddForm({ onAdd, onCancel }) {
         }}
         placeholder="Назва завдання... (Enter — зберегти)"
         rows={2}
+        surface="white"
       />
       {/* Confirm on the right, the way every dialog in the product ends. */}
       <div className="mt-[6px] flex justify-end gap-2">
-        <Button style="secondary" size="sm" onClick={() => { onCancel(); setTitle(''); }}>
+        {/* Not a second solid button: «Скасувати» is the way out, not a
+            choice of equal weight, and a grey slab on a grey column read as
+            one. */}
+        <Button style="ghost" size="sm" onClick={() => { onCancel(); setTitle(''); }}>
           Скасувати
         </Button>
         <Button style="primary" size="sm" onClick={submit}>

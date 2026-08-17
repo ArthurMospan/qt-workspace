@@ -13,7 +13,7 @@ import { useFloatingOverlayEscape } from '@/lib/hooks/useFloatingOverlayEscape';
  * row with `overflow: hidden` cannot cut it off.
  *
  * @param {React.ReactElement} props.trigger The element that opens the menu.
- * @param {{label: string, icon?, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean, disabled?: boolean, disabledReason?: string}[]} props.items The rows; `selected` gives one a trailing tick instead of a "✓ " in its label.
+ * @param {{label: string, icon?, leading?: React.ReactNode, onClick?, isDivider?: boolean, isDanger?: boolean, color?: string, selected?: boolean, disabled?: boolean, disabledReason?: string}[]} props.items The rows; `selected` gives one a trailing tick instead of a "✓ " in its label, and `leading` carries what an icon cannot — a face, a status dot.
  * @param {(open: boolean) => void} props.onOpenChange Fires when the menu opens or closes.
  * @param {boolean} props.closeOnSelect Whether a click closes it; toggle menus keep it open while ticking.
  * @param {'start'|'end'} props.align Which edge the panel lines up with. `end` suits a kebab at the right of a row; `start` suits a trigger that sits at the left of one.
@@ -133,6 +133,11 @@ export default function ContextMenu({
                   }`}
                   style={item.color && !isDanger ? { color: item.color } : {}}
                 >
+                  {/* A status is a colour, a person is a face, a priority is
+                      its own mark. None of them is a lucide component, and a
+                      menu that dropped them turned six distinguishable choices
+                      into six lines of grey text. */}
+                  {item.leading}
                   {Icon && (
                     <Icon
                       size={14}

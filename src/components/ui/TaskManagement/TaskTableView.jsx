@@ -85,7 +85,19 @@ const ROWS_PER_PAGE = 50;
 // so the line under a pinned header vanished the moment anybody scrolled. The
 // grey is the other half of it: a white header over white rows had nothing but
 // that missing line to separate them.
-const HEADER_CELL = 'sticky top-0 z-[2] bg-canvas px-[10px] py-[7px] shadow-[inset_0_-1px_0_var(--color-line)]';
+const HEADER_CELL = 'h-9 bg-canvas px-[10px] align-middle shadow-[inset_0_-1px_0_var(--color-line)]';
+
+// The one mark a status or a label has, in a menu row and nowhere else drawn
+// by hand.
+function ColourDot({ color }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="h-2 w-2 shrink-0 rounded-full"
+      style={{ background: color || 'var(--color-muted)' }}
+    />
+  );
+}
 
 function formatDay(value, timeZone) {
   const date = parseDueDate(value, { timeZone });
@@ -314,6 +326,13 @@ export default function TaskTableView({
   // is caught on the way down. Without a selection running, `toggle` refuses a
   // plain click — that guard protects a list where clicking a row opens a task,
   // and a table's checkbox has no such ambiguity to protect against.
+  // The header has no scrollbar of its own; it is dragged sideways by the body.
+  const headerScrollRef = useRef(null);
+  const bodyScrollRef = useRef(null);
+  const syncHeaderScroll = event => {
+    if (headerScrollRef.current) headerScrollRef.current.scrollLeft = event.currentTarget.scrollLeft;
+  };
+
   const shiftHeldRef = useRef(false);
   const selectRow = issue => {
     const shiftKey = shiftHeldRef.current;
@@ -324,16 +343,31 @@ export default function TaskTableView({
     toggleIssueSelection(issue.id, { shiftKey });
   };
 
+  // A menu row carries the same mark the cell does: a status is its colour, a
+  // priority its own glyph, a type its icon, a person their face.
   const statusOptions = useMemo(() => statuses.map(status => ({
     value: status.id,
     label: status.label,
+    leading: <ColourDot color={status.color} />,
   })), [statuses]);
   const priorityOptions = useMemo(
-    () => selectablePriorities(priorities).map(item => ({ value: item.id, label: item.label })),
+    () => selectablePriorities(priorities).map(item => {
+      const presentation = priorityPresentation(item, priorities);
+      return {
+        value: item.id,
+        label: item.label,
+        priorityMark: presentation,
+        leading: <PriorityIcon priority={presentation} size="md" />,
+      };
+    }),
     [priorities],
   );
   const typeOptions = useMemo(
-    () => types.filter(type => type.id !== 'epic').map(type => ({ value: type.id, label: type.label })),
+    () => types.filter(type => type.id !== 'epic').map(type => ({
+      value: type.id,
+      label: type.label,
+      icon: taskTypeIcon(type),
+    })),
     [types],
   );
   const sprintOptions = useMemo(() => [
@@ -347,11 +381,13 @@ export default function TaskTableView({
     value: memberId(member),
     label: memberName(member),
     user: member,
+    leading: <UserAvatar user={member} size="xs" />,
   })), [members]);
   const labelOptions = useMemo(() => labels.map(label => ({
     value: label.id,
     label: label.label,
     dotColor: label.color,
+    leading: <ColourDot color={label.color} />,
   })), [labels]);
 
   // Where each pinned column starts. They are the leading run of the visible
@@ -368,6 +404,18 @@ export default function TaskTableView({
   }, [visibleColumns]);
   const tableWidth = SELECT_COLUMN_WIDTH + TOOLS_COLUMN_WIDTH
     + visibleColumns.reduce((total, column) => total + column.width, 0);
+
+  // The two tables must agree on every track, or the header stops standing over
+  // its own column. One list, rendered twice.
+  const columnTracks = (
+    <>
+      <col style={{ width: SELECT_COLUMN_WIDTH }} />
+      {visibleColumns.map(column => (
+        <col key={column.id} style={{ width: column.width }} />
+      ))}
+      <col style={{ width: TOOLS_COLUMN_WIDTH }} />
+    </>
+  );
 
   if (issues.length === 0) {
     return (
@@ -559,6 +607,8 @@ export default function TaskTableView({
           mode: 'single',
           items: statusOptions.map(option => ({
             label: option.label,
+            leading: option.leading,
+            icon: option.icon,
             selected: option.value === current,
             onClick: () => pick(option.value === current ? null : { columnId: option.value }),
           })),
@@ -570,6 +620,8 @@ export default function TaskTableView({
           mode: 'single',
           items: priorityOptions.map(option => ({
             label: option.label,
+            leading: option.leading,
+            icon: option.icon,
             selected: option.value === current,
             // «Без пріоритету» is a stored value, not an absent one — the same
             // `none` the bulk bar writes when it clears a priority.
@@ -582,6 +634,8 @@ export default function TaskTableView({
           mode: 'single',
           items: typeOptions.map(option => ({
             label: option.label,
+            leading: option.leading,
+            icon: option.icon,
             selected: option.value === issue.type,
             onClick: () => pick(option.value === issue.type ? null : { type: option.value }),
           })),
@@ -592,6 +646,8 @@ export default function TaskTableView({
           mode: 'single',
           items: sprintOptions.map(option => ({
             label: option.label,
+            leading: option.leading,
+            icon: option.icon,
             selected: option.value === current,
             onClick: () => pick(option.value === current ? null : { sprintId: option.value || null }),
           })),
@@ -603,6 +659,7 @@ export default function TaskTableView({
           mode: 'multi',
           items: memberOptions.map(option => ({
             label: option.label,
+            leading: option.leading,
             selected: current.includes(option.value),
             onClick: () => pick({
               assigneeIds: current.includes(option.value)
@@ -618,7 +675,7 @@ export default function TaskTableView({
           mode: 'multi',
           items: labelOptions.map(option => ({
             label: option.label,
-            color: option.dotColor,
+            leading: option.leading,
             selected: current.includes(option.value),
             onClick: () => pick({
               labelIds: current.includes(option.value)
@@ -675,15 +732,15 @@ export default function TaskTableView({
         padding="none"
         className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
       >
-        <div className="ui-table-scroll min-h-0 w-full flex-1 overflow-auto">
+        {/* Two tables, one set of column widths. The header is not inside the
+            scrollport: a scroll container's bar runs its whole height, and the
+            top of that bar landed beside the header as a grey band in the one
+            row that has no room for one. The header scrolls sideways with the
+            body because the body tells it to, and never vertically because
+            there is nothing under it to scroll. */}
+        <div ref={headerScrollRef} className="w-full shrink-0 overflow-hidden">
           <table className="w-full table-fixed border-collapse" style={{ minWidth: tableWidth }}>
-            <colgroup>
-              <col style={{ width: SELECT_COLUMN_WIDTH }} />
-              {visibleColumns.map(column => (
-                <col key={column.id} style={{ width: column.width }} />
-              ))}
-              <col style={{ width: TOOLS_COLUMN_WIDTH }} />
-            </colgroup>
+            <colgroup>{columnTracks}</colgroup>
             <thead>
               <tr>
                 <th scope="col" className={`${HEADER_CELL} sticky left-0 z-[4]`}>
@@ -719,7 +776,16 @@ export default function TaskTableView({
                 </th>
               </tr>
             </thead>
+          </table>
+        </div>
 
+        <div
+          ref={bodyScrollRef}
+          onScroll={syncHeaderScroll}
+          className="ui-table-scroll min-h-0 w-full flex-1 overflow-auto"
+        >
+          <table className="w-full table-fixed border-collapse" style={{ minWidth: tableWidth }}>
+            <colgroup>{columnTracks}</colgroup>
             <tbody>
               {drawnRows.map(issue => {
                 const selected = activeSelectedIds.has(issue.id);

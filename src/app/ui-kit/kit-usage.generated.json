@@ -2598,7 +2598,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
-            "src/app/(app)/analytics/page.js:692",
+            "src/app/(app)/analytics/page.js:694",
             "src/app/(app)/layout.js:117",
             "src/app/(app)/my/page.js:252",
             "src/app/(app)/page.js:927",
@@ -2636,7 +2636,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
-            "src/app/(app)/analytics/page.js:639",
+            "src/app/(app)/analytics/page.js:641",
             "src/app/(app)/my/page.js:326",
             "src/components/workspace/IssueDetail.jsx:1173",
             "src/components/workspace/IssueDetail.jsx:1176",
@@ -2655,8 +2655,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:687",
             "src/app/(app)/analytics/page.js:689",
+            "src/app/(app)/analytics/page.js:691",
             "src/app/(app)/calendar/page.js:589",
             "src/app/(app)/calendar/page.js:591",
             "src/app/(app)/settings/page.js:3153",
@@ -2686,8 +2686,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:688",
-            "src/app/(app)/analytics/page.js:783",
+            "src/app/(app)/analytics/page.js:690",
+            "src/app/(app)/analytics/page.js:785",
             "src/app/(app)/calendar/page.js:590",
             "src/app/(app)/calendar/page.js:604",
             "src/app/(app)/page.js:614",
@@ -2713,8 +2713,8 @@
             "src/components/integrations/YouTrackImportCard.jsx:473",
             "src/components/integrations/YouTrackImportCard.jsx:498",
             "src/components/integrations/YouTrackImportCard.jsx:501",
-            "src/components/workspace/AgileBoard.jsx:211",
-            "src/components/workspace/AgileBoard.jsx:214",
+            "src/components/workspace/AgileBoard.jsx:215",
+            "src/components/workspace/AgileBoard.jsx:218",
             "src/components/workspace/BillingTab.jsx:1374",
             "src/components/workspace/BillingTab.jsx:1377",
             "src/components/workspace/IssueDetail.jsx:1789",
@@ -2744,8 +2744,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:776",
-            "src/app/(app)/analytics/page.js:784",
+            "src/app/(app)/analytics/page.js:778",
+            "src/app/(app)/analytics/page.js:786",
             "src/app/(app)/calendar/page.js:602",
             "src/app/(app)/calendar/page.js:605",
             "src/app/(app)/settings/page.js:3332",
@@ -2863,13 +2863,13 @@
             "src/app/(app)/sprints/page.js:902",
             "src/app/(app)/sprints/page.js:920",
             "src/app/(app)/team/page.js:109",
-            "src/components/workspace/AgileBoard.jsx:549",
-            "src/components/workspace/AgileBoard.jsx:630",
-            "src/components/workspace/AgileBoard.jsx:646",
-            "src/components/workspace/AgileBoard.jsx:661",
-            "src/components/workspace/AgileBoard.jsx:728",
-            "src/components/workspace/AgileBoard.jsx:754",
-            "src/components/workspace/AgileBoard.jsx:769",
+            "src/components/workspace/AgileBoard.jsx:553",
+            "src/components/workspace/AgileBoard.jsx:634",
+            "src/components/workspace/AgileBoard.jsx:650",
+            "src/components/workspace/AgileBoard.jsx:665",
+            "src/components/workspace/AgileBoard.jsx:732",
+            "src/components/workspace/AgileBoard.jsx:758",
+            "src/components/workspace/AgileBoard.jsx:773",
             "src/components/workspace/IssueDetail.jsx:1279"
           ]
         }
@@ -2905,7 +2905,7 @@
           ]
         },
         "secondary": {
-          "count": 62,
+          "count": 61,
           "routes": [
             "/",
             "/[projectId]",
@@ -2922,9 +2922,9 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
-            "src/app/(app)/analytics/page.js:776",
-            "src/app/(app)/analytics/page.js:783",
-            "src/app/(app)/analytics/page.js:784",
+            "src/app/(app)/analytics/page.js:778",
+            "src/app/(app)/analytics/page.js:785",
+            "src/app/(app)/analytics/page.js:786",
             "src/app/(app)/calendar/page.js:602",
             "src/app/(app)/calendar/page.js:604",
             "src/app/(app)/calendar/page.js:605",
@@ -2951,7 +2951,6 @@
             "src/components/integrations/YouTrackImportCard.jsx:498",
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:211",
             "src/components/workspace/BillingTab.jsx:1453",
             "src/components/workspace/BillingTab.jsx:451",
             "src/components/workspace/BillingTab.jsx:455",
@@ -3000,8 +2999,8 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
-            "src/app/(app)/analytics/page.js:639",
-            "src/app/(app)/analytics/page.js:692",
+            "src/app/(app)/analytics/page.js:641",
+            "src/app/(app)/analytics/page.js:694",
             "src/app/(app)/error.js:24",
             "src/app/(app)/my/page.js:252",
             "src/app/(app)/my/page.js:457",
@@ -3025,7 +3024,7 @@
             "src/components/CreateTaskModal.jsx:298",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:145",
-            "src/components/workspace/AgileBoard.jsx:214",
+            "src/components/workspace/AgileBoard.jsx:218",
             "src/components/workspace/BillingTab.jsx:1439",
             "src/components/workspace/BillingTab.jsx:452",
             "src/components/workspace/BoardConfigModal.jsx:209",
@@ -3039,7 +3038,7 @@
           ]
         },
         "ghost": {
-          "count": 66,
+          "count": 67,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
@@ -3054,9 +3053,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:687",
-            "src/app/(app)/analytics/page.js:688",
             "src/app/(app)/analytics/page.js:689",
+            "src/app/(app)/analytics/page.js:690",
+            "src/app/(app)/analytics/page.js:691",
             "src/app/(app)/calendar/page.js:589",
             "src/app/(app)/calendar/page.js:590",
             "src/app/(app)/calendar/page.js:591",
@@ -3101,13 +3100,14 @@
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/YouTrackImportCard.jsx:501",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/workspace/AgileBoard.jsx:549",
-            "src/components/workspace/AgileBoard.jsx:630",
-            "src/components/workspace/AgileBoard.jsx:646",
-            "src/components/workspace/AgileBoard.jsx:661",
-            "src/components/workspace/AgileBoard.jsx:728",
-            "src/components/workspace/AgileBoard.jsx:754",
-            "src/components/workspace/AgileBoard.jsx:769",
+            "src/components/workspace/AgileBoard.jsx:215",
+            "src/components/workspace/AgileBoard.jsx:553",
+            "src/components/workspace/AgileBoard.jsx:634",
+            "src/components/workspace/AgileBoard.jsx:650",
+            "src/components/workspace/AgileBoard.jsx:665",
+            "src/components/workspace/AgileBoard.jsx:732",
+            "src/components/workspace/AgileBoard.jsx:758",
+            "src/components/workspace/AgileBoard.jsx:773",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1377",
@@ -3153,14 +3153,14 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
-            "src/app/(app)/analytics/page.js:639",
-            "src/app/(app)/analytics/page.js:687",
-            "src/app/(app)/analytics/page.js:688",
+            "src/app/(app)/analytics/page.js:641",
             "src/app/(app)/analytics/page.js:689",
-            "src/app/(app)/analytics/page.js:692",
-            "src/app/(app)/analytics/page.js:776",
-            "src/app/(app)/analytics/page.js:783",
-            "src/app/(app)/analytics/page.js:784",
+            "src/app/(app)/analytics/page.js:690",
+            "src/app/(app)/analytics/page.js:691",
+            "src/app/(app)/analytics/page.js:694",
+            "src/app/(app)/analytics/page.js:778",
+            "src/app/(app)/analytics/page.js:785",
+            "src/app/(app)/analytics/page.js:786",
             "src/app/(app)/calendar/page.js:567",
             "src/app/(app)/calendar/page.js:589",
             "src/app/(app)/calendar/page.js:590",
@@ -3260,15 +3260,15 @@
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:211",
-            "src/components/workspace/AgileBoard.jsx:214",
-            "src/components/workspace/AgileBoard.jsx:549",
-            "src/components/workspace/AgileBoard.jsx:630",
-            "src/components/workspace/AgileBoard.jsx:646",
-            "src/components/workspace/AgileBoard.jsx:661",
-            "src/components/workspace/AgileBoard.jsx:728",
-            "src/components/workspace/AgileBoard.jsx:754",
-            "src/components/workspace/AgileBoard.jsx:769",
+            "src/components/workspace/AgileBoard.jsx:215",
+            "src/components/workspace/AgileBoard.jsx:218",
+            "src/components/workspace/AgileBoard.jsx:553",
+            "src/components/workspace/AgileBoard.jsx:634",
+            "src/components/workspace/AgileBoard.jsx:650",
+            "src/components/workspace/AgileBoard.jsx:665",
+            "src/components/workspace/AgileBoard.jsx:732",
+            "src/components/workspace/AgileBoard.jsx:758",
+            "src/components/workspace/AgileBoard.jsx:773",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -3371,14 +3371,14 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
-            "src/app/(app)/analytics/page.js:639",
-            "src/app/(app)/analytics/page.js:687",
-            "src/app/(app)/analytics/page.js:688",
+            "src/app/(app)/analytics/page.js:641",
             "src/app/(app)/analytics/page.js:689",
-            "src/app/(app)/analytics/page.js:692",
-            "src/app/(app)/analytics/page.js:776",
-            "src/app/(app)/analytics/page.js:783",
-            "src/app/(app)/analytics/page.js:784",
+            "src/app/(app)/analytics/page.js:690",
+            "src/app/(app)/analytics/page.js:691",
+            "src/app/(app)/analytics/page.js:694",
+            "src/app/(app)/analytics/page.js:778",
+            "src/app/(app)/analytics/page.js:785",
+            "src/app/(app)/analytics/page.js:786",
             "src/app/(app)/calendar/page.js:567",
             "src/app/(app)/calendar/page.js:589",
             "src/app/(app)/calendar/page.js:590",
@@ -3479,15 +3479,15 @@
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:211",
-            "src/components/workspace/AgileBoard.jsx:214",
-            "src/components/workspace/AgileBoard.jsx:549",
-            "src/components/workspace/AgileBoard.jsx:630",
-            "src/components/workspace/AgileBoard.jsx:646",
-            "src/components/workspace/AgileBoard.jsx:661",
-            "src/components/workspace/AgileBoard.jsx:728",
-            "src/components/workspace/AgileBoard.jsx:754",
-            "src/components/workspace/AgileBoard.jsx:769",
+            "src/components/workspace/AgileBoard.jsx:215",
+            "src/components/workspace/AgileBoard.jsx:218",
+            "src/components/workspace/AgileBoard.jsx:553",
+            "src/components/workspace/AgileBoard.jsx:634",
+            "src/components/workspace/AgileBoard.jsx:650",
+            "src/components/workspace/AgileBoard.jsx:665",
+            "src/components/workspace/AgileBoard.jsx:732",
+            "src/components/workspace/AgileBoard.jsx:758",
+            "src/components/workspace/AgileBoard.jsx:773",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -3580,14 +3580,14 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
-            "src/app/(app)/analytics/page.js:639",
-            "src/app/(app)/analytics/page.js:687",
-            "src/app/(app)/analytics/page.js:688",
+            "src/app/(app)/analytics/page.js:641",
             "src/app/(app)/analytics/page.js:689",
-            "src/app/(app)/analytics/page.js:692",
-            "src/app/(app)/analytics/page.js:776",
-            "src/app/(app)/analytics/page.js:783",
-            "src/app/(app)/analytics/page.js:784",
+            "src/app/(app)/analytics/page.js:690",
+            "src/app/(app)/analytics/page.js:691",
+            "src/app/(app)/analytics/page.js:694",
+            "src/app/(app)/analytics/page.js:778",
+            "src/app/(app)/analytics/page.js:785",
+            "src/app/(app)/analytics/page.js:786",
             "src/app/(app)/calendar/page.js:567",
             "src/app/(app)/calendar/page.js:589",
             "src/app/(app)/calendar/page.js:590",
@@ -3676,15 +3676,15 @@
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:211",
-            "src/components/workspace/AgileBoard.jsx:214",
-            "src/components/workspace/AgileBoard.jsx:549",
-            "src/components/workspace/AgileBoard.jsx:630",
-            "src/components/workspace/AgileBoard.jsx:646",
-            "src/components/workspace/AgileBoard.jsx:661",
-            "src/components/workspace/AgileBoard.jsx:728",
-            "src/components/workspace/AgileBoard.jsx:754",
-            "src/components/workspace/AgileBoard.jsx:769",
+            "src/components/workspace/AgileBoard.jsx:215",
+            "src/components/workspace/AgileBoard.jsx:218",
+            "src/components/workspace/AgileBoard.jsx:553",
+            "src/components/workspace/AgileBoard.jsx:634",
+            "src/components/workspace/AgileBoard.jsx:650",
+            "src/components/workspace/AgileBoard.jsx:665",
+            "src/components/workspace/AgileBoard.jsx:732",
+            "src/components/workspace/AgileBoard.jsx:758",
+            "src/components/workspace/AgileBoard.jsx:773",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1374",
             "src/components/workspace/BillingTab.jsx:1377",
@@ -3817,14 +3817,14 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
-            "src/app/(app)/analytics/page.js:639",
-            "src/app/(app)/analytics/page.js:687",
-            "src/app/(app)/analytics/page.js:688",
+            "src/app/(app)/analytics/page.js:641",
             "src/app/(app)/analytics/page.js:689",
-            "src/app/(app)/analytics/page.js:692",
-            "src/app/(app)/analytics/page.js:776",
-            "src/app/(app)/analytics/page.js:783",
-            "src/app/(app)/analytics/page.js:784",
+            "src/app/(app)/analytics/page.js:690",
+            "src/app/(app)/analytics/page.js:691",
+            "src/app/(app)/analytics/page.js:694",
+            "src/app/(app)/analytics/page.js:778",
+            "src/app/(app)/analytics/page.js:785",
+            "src/app/(app)/analytics/page.js:786",
             "src/app/(app)/calendar/page.js:567",
             "src/app/(app)/calendar/page.js:589",
             "src/app/(app)/calendar/page.js:590",
@@ -3917,14 +3917,14 @@
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
             "src/components/profile/ProfileView.jsx:136",
-            "src/components/workspace/AgileBoard.jsx:211",
-            "src/components/workspace/AgileBoard.jsx:214",
-            "src/components/workspace/AgileBoard.jsx:630",
-            "src/components/workspace/AgileBoard.jsx:646",
-            "src/components/workspace/AgileBoard.jsx:661",
-            "src/components/workspace/AgileBoard.jsx:728",
-            "src/components/workspace/AgileBoard.jsx:754",
-            "src/components/workspace/AgileBoard.jsx:769",
+            "src/components/workspace/AgileBoard.jsx:215",
+            "src/components/workspace/AgileBoard.jsx:218",
+            "src/components/workspace/AgileBoard.jsx:634",
+            "src/components/workspace/AgileBoard.jsx:650",
+            "src/components/workspace/AgileBoard.jsx:665",
+            "src/components/workspace/AgileBoard.jsx:732",
+            "src/components/workspace/AgileBoard.jsx:758",
+            "src/components/workspace/AgileBoard.jsx:773",
             "src/components/workspace/BillingTab.jsx:1297",
             "src/components/workspace/BillingTab.jsx:1308",
             "src/components/workspace/BillingTab.jsx:1374",
@@ -4005,7 +4005,7 @@
           "files": [
             "src/app/(app)/sprints/page.js:723",
             "src/app/(app)/sprints/page.js:902",
-            "src/components/workspace/AgileBoard.jsx:549"
+            "src/components/workspace/AgileBoard.jsx:553"
           ]
         },
         "status-submit": {
@@ -4824,6 +4824,46 @@
             "src/components/workspace/calendar/CalendarEventPage.jsx:1304"
           ]
         }
+      },
+      "surface": {
+        "(default)": {
+          "count": 12,
+          "routes": [
+            "/",
+            "/[projectId]",
+            "/analytics",
+            "/calendar",
+            "/calendar/event/[eventId]",
+            "/chat",
+            "/my",
+            "/settings",
+            "/sprints"
+          ],
+          "files": [
+            "src/app/(app)/chat/page.js:1074",
+            "src/app/(app)/settings/page.js:2402",
+            "src/app/(app)/sprints/page.js:155",
+            "src/app/(app)/sprints/page.js:94",
+            "src/components/AudioTaskPanel.jsx:226",
+            "src/components/AudioTaskPanel.jsx:293",
+            "src/components/workspace/BillingTab.jsx:1133",
+            "src/components/workspace/BillingTab.jsx:1136",
+            "src/components/workspace/BillingTab.jsx:1141",
+            "src/components/workspace/calendar/CalendarEventDialog.jsx:843",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1304",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:250"
+          ]
+        },
+        "white": {
+          "count": 1,
+          "routes": [
+            "/[projectId]",
+            "/my"
+          ],
+          "files": [
+            "src/components/workspace/AgileBoard.jsx:197"
+          ]
+        }
       }
     },
     "Select": {
@@ -4849,12 +4889,12 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
-            "src/app/(app)/analytics/page.js:645",
-            "src/app/(app)/analytics/page.js:657",
-            "src/app/(app)/analytics/page.js:707",
-            "src/app/(app)/analytics/page.js:735",
-            "src/app/(app)/analytics/page.js:746",
-            "src/app/(app)/analytics/page.js:756",
+            "src/app/(app)/analytics/page.js:647",
+            "src/app/(app)/analytics/page.js:659",
+            "src/app/(app)/analytics/page.js:709",
+            "src/app/(app)/analytics/page.js:737",
+            "src/app/(app)/analytics/page.js:748",
+            "src/app/(app)/analytics/page.js:758",
             "src/app/(app)/calendar/page.js:571",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/my/page.js:291",
@@ -4938,12 +4978,12 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
-            "src/app/(app)/analytics/page.js:645",
-            "src/app/(app)/analytics/page.js:657",
-            "src/app/(app)/analytics/page.js:707",
-            "src/app/(app)/analytics/page.js:735",
-            "src/app/(app)/analytics/page.js:746",
-            "src/app/(app)/analytics/page.js:756",
+            "src/app/(app)/analytics/page.js:647",
+            "src/app/(app)/analytics/page.js:659",
+            "src/app/(app)/analytics/page.js:709",
+            "src/app/(app)/analytics/page.js:737",
+            "src/app/(app)/analytics/page.js:748",
+            "src/app/(app)/analytics/page.js:758",
             "src/app/(app)/calendar/page.js:571",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/my/page.js:291",
@@ -5041,9 +5081,9 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:415",
-            "src/app/(app)/analytics/page.js:657",
-            "src/app/(app)/analytics/page.js:707",
-            "src/app/(app)/analytics/page.js:735",
+            "src/app/(app)/analytics/page.js:659",
+            "src/app/(app)/analytics/page.js:709",
+            "src/app/(app)/analytics/page.js:737",
             "src/app/(app)/calendar/page.js:581",
             "src/app/(app)/page.js:942",
             "src/app/(app)/sprints/page.js:589"
@@ -5060,7 +5100,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:426",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
-            "src/app/(app)/analytics/page.js:746",
+            "src/app/(app)/analytics/page.js:748",
             "src/app/(app)/my/page.js:291",
             "src/app/(app)/sprints/page.js:600"
           ]
@@ -5077,7 +5117,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
-            "src/app/(app)/analytics/page.js:756",
+            "src/app/(app)/analytics/page.js:758",
             "src/app/(app)/calendar/page.js:571",
             "src/app/(app)/my/page.js:301",
             "src/app/(app)/sprints/page.js:610",
@@ -5090,7 +5130,7 @@
             "/analytics"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:645"
+            "src/app/(app)/analytics/page.js:647"
           ]
         },
         "date": {
@@ -5195,9 +5235,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:668",
-            "src/app/(app)/analytics/page.js:698",
-            "src/app/(app)/analytics/page.js:726",
+            "src/app/(app)/analytics/page.js:670",
+            "src/app/(app)/analytics/page.js:700",
+            "src/app/(app)/analytics/page.js:728",
             "src/app/(app)/analytics/team/[memberId]/page.js:126",
             "src/app/(app)/calendar/page.js:572",
             "src/app/(app)/chat/page.js:1086",
@@ -5222,9 +5262,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:668",
-            "src/app/(app)/analytics/page.js:698",
-            "src/app/(app)/analytics/page.js:726",
+            "src/app/(app)/analytics/page.js:670",
+            "src/app/(app)/analytics/page.js:700",
+            "src/app/(app)/analytics/page.js:728",
             "src/app/(app)/analytics/team/[memberId]/page.js:126",
             "src/app/(app)/calendar/page.js:572",
             "src/app/(app)/my/page.js:282",
@@ -5261,9 +5301,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:668",
-            "src/app/(app)/analytics/page.js:698",
-            "src/app/(app)/analytics/page.js:726",
+            "src/app/(app)/analytics/page.js:670",
+            "src/app/(app)/analytics/page.js:700",
+            "src/app/(app)/analytics/page.js:728",
             "src/app/(app)/analytics/team/[memberId]/page.js:126",
             "src/app/(app)/calendar/page.js:572",
             "src/app/(app)/my/page.js:282",
@@ -5302,7 +5342,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:790",
+            "src/app/(app)/analytics/page.js:792",
             "src/app/(app)/analytics/team/[memberId]/page.js:109",
             "src/app/(app)/calendar/page.js:609",
             "src/app/(app)/page.js:976",
@@ -5358,7 +5398,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:790",
+            "src/app/(app)/analytics/page.js:792",
             "src/app/(app)/analytics/team/[memberId]/page.js:109",
             "src/app/(app)/page.js:976",
             "src/app/(app)/page.js:998"
@@ -5416,7 +5456,7 @@
             "/analytics"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:790",
+            "src/app/(app)/analytics/page.js:792",
             "src/app/(app)/page.js:976"
           ]
         },
@@ -5545,11 +5585,11 @@
           "files": [
             "src/app/(app)/sprints/page.js:872",
             "src/app/(app)/sprints/page.js:897",
-            "src/components/workspace/AgileBoard.jsx:639",
-            "src/components/workspace/AgileBoard.jsx:656",
-            "src/components/workspace/AgileBoard.jsx:693",
-            "src/components/workspace/AgileBoard.jsx:737",
-            "src/components/workspace/AgileBoard.jsx:764"
+            "src/components/workspace/AgileBoard.jsx:643",
+            "src/components/workspace/AgileBoard.jsx:660",
+            "src/components/workspace/AgileBoard.jsx:697",
+            "src/components/workspace/AgileBoard.jsx:741",
+            "src/components/workspace/AgileBoard.jsx:768"
           ]
         },
         "surface": {
@@ -5685,11 +5725,11 @@
             "src/app/(app)/sprints/page.js:872",
             "src/app/(app)/sprints/page.js:897",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/AgileBoard.jsx:639",
-            "src/components/workspace/AgileBoard.jsx:656",
-            "src/components/workspace/AgileBoard.jsx:693",
-            "src/components/workspace/AgileBoard.jsx:737",
-            "src/components/workspace/AgileBoard.jsx:764",
+            "src/components/workspace/AgileBoard.jsx:643",
+            "src/components/workspace/AgileBoard.jsx:660",
+            "src/components/workspace/AgileBoard.jsx:697",
+            "src/components/workspace/AgileBoard.jsx:741",
+            "src/components/workspace/AgileBoard.jsx:768",
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/IssueCard.jsx:383",
             "src/components/workspace/WorkloadTab.jsx:112",
@@ -5826,11 +5866,11 @@
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/AgileBoard.jsx:639",
-            "src/components/workspace/AgileBoard.jsx:656",
-            "src/components/workspace/AgileBoard.jsx:693",
-            "src/components/workspace/AgileBoard.jsx:737",
-            "src/components/workspace/AgileBoard.jsx:764",
+            "src/components/workspace/AgileBoard.jsx:643",
+            "src/components/workspace/AgileBoard.jsx:660",
+            "src/components/workspace/AgileBoard.jsx:697",
+            "src/components/workspace/AgileBoard.jsx:741",
+            "src/components/workspace/AgileBoard.jsx:768",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:276",
             "src/components/workspace/BillingTab.jsx:483",
@@ -5884,11 +5924,11 @@
             "src/components/WorkspaceHeader.jsx:489",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:102",
-            "src/components/workspace/AgileBoard.jsx:639",
-            "src/components/workspace/AgileBoard.jsx:656",
-            "src/components/workspace/AgileBoard.jsx:693",
-            "src/components/workspace/AgileBoard.jsx:737",
-            "src/components/workspace/AgileBoard.jsx:764",
+            "src/components/workspace/AgileBoard.jsx:643",
+            "src/components/workspace/AgileBoard.jsx:660",
+            "src/components/workspace/AgileBoard.jsx:697",
+            "src/components/workspace/AgileBoard.jsx:741",
+            "src/components/workspace/AgileBoard.jsx:768",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -5972,11 +6012,11 @@
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/AgileBoard.jsx:639",
-            "src/components/workspace/AgileBoard.jsx:656",
-            "src/components/workspace/AgileBoard.jsx:693",
-            "src/components/workspace/AgileBoard.jsx:737",
-            "src/components/workspace/AgileBoard.jsx:764",
+            "src/components/workspace/AgileBoard.jsx:643",
+            "src/components/workspace/AgileBoard.jsx:660",
+            "src/components/workspace/AgileBoard.jsx:697",
+            "src/components/workspace/AgileBoard.jsx:741",
+            "src/components/workspace/AgileBoard.jsx:768",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -6054,11 +6094,11 @@
             "src/components/WorkspaceHeader.jsx:489",
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/AgileBoard.jsx:639",
-            "src/components/workspace/AgileBoard.jsx:656",
-            "src/components/workspace/AgileBoard.jsx:693",
-            "src/components/workspace/AgileBoard.jsx:737",
-            "src/components/workspace/AgileBoard.jsx:764",
+            "src/components/workspace/AgileBoard.jsx:643",
+            "src/components/workspace/AgileBoard.jsx:660",
+            "src/components/workspace/AgileBoard.jsx:697",
+            "src/components/workspace/AgileBoard.jsx:741",
+            "src/components/workspace/AgileBoard.jsx:768",
             "src/components/workspace/BillingTab.jsx:1289",
             "src/components/workspace/BillingTab.jsx:246",
             "src/components/workspace/BillingTab.jsx:249",
@@ -6854,7 +6894,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:248",
+            "src/app/(app)/analytics/page.js:249",
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:614",
@@ -6931,7 +6971,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:248",
+            "src/app/(app)/analytics/page.js:249",
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:614",
@@ -6981,7 +7021,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:248",
+            "src/app/(app)/analytics/page.js:249",
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:614",
@@ -7033,7 +7073,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:302",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:492",
-            "src/app/(app)/analytics/page.js:240",
+            "src/app/(app)/analytics/page.js:241",
             "src/app/(app)/analytics/team/[memberId]/page.js:87",
             "src/app/(app)/calendar/page.js:612",
             "src/app/(app)/loading.js:28",
@@ -7167,10 +7207,10 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:681",
-            "src/app/(app)/analytics/page.js:722",
-            "src/app/(app)/analytics/page.js:767",
-            "src/app/(app)/analytics/page.js:777",
+            "src/app/(app)/analytics/page.js:683",
+            "src/app/(app)/analytics/page.js:724",
+            "src/app/(app)/analytics/page.js:769",
+            "src/app/(app)/analytics/page.js:779",
             "src/app/(app)/analytics/team/[memberId]/page.js:136",
             "src/components/workspace/WorkloadTab.jsx:437",
             "src/components/workspace/WorkloadTab.jsx:476"
@@ -7200,10 +7240,10 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:681",
-            "src/app/(app)/analytics/page.js:722",
-            "src/app/(app)/analytics/page.js:767",
-            "src/app/(app)/analytics/page.js:777",
+            "src/app/(app)/analytics/page.js:683",
+            "src/app/(app)/analytics/page.js:724",
+            "src/app/(app)/analytics/page.js:769",
+            "src/app/(app)/analytics/page.js:779",
             "src/app/(app)/analytics/team/[memberId]/page.js:136",
             "src/components/WorkspaceHeader.jsx:335",
             "src/components/workspace/BillingTab.jsx:301",
@@ -7244,7 +7284,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:71",
+            "src/app/(app)/analytics/page.js:72",
             "src/app/(app)/settings/page.js:2361",
             "src/app/(app)/settings/page.js:2421",
             "src/app/(app)/settings/page.js:2495",
@@ -7323,7 +7363,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:71",
+            "src/app/(app)/analytics/page.js:72",
             "src/app/(app)/settings/page.js:2361",
             "src/app/(app)/settings/page.js:2421",
             "src/app/(app)/settings/page.js:2495",
@@ -7907,7 +7947,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:72",
+            "src/app/(app)/analytics/page.js:73",
             "src/components/workspace/AnalyticsTab.jsx:41",
             "src/components/workspace/IssueDetail.jsx:1797",
             "src/components/workspace/VelocityTab.jsx:32",
@@ -7944,7 +7984,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/analytics/page.js:390",
+            "src/app/(app)/analytics/page.js:391",
             "src/components/workspace/AnalyticsTab.jsx:260",
             "src/components/workspace/WorkloadTab.jsx:223"
           ]
@@ -7965,10 +8005,10 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:402",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:458",
-            "src/app/(app)/analytics/page.js:644",
-            "src/app/(app)/analytics/page.js:655",
-            "src/app/(app)/analytics/page.js:697",
-            "src/app/(app)/analytics/page.js:725",
+            "src/app/(app)/analytics/page.js:646",
+            "src/app/(app)/analytics/page.js:657",
+            "src/app/(app)/analytics/page.js:699",
+            "src/app/(app)/analytics/page.js:727",
             "src/app/(app)/calendar/page.js:570",
             "src/app/(app)/my/page.js:281",
             "src/app/(app)/sprints/page.js:579"

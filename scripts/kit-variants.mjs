@@ -45,6 +45,7 @@ const SOURCES = {
   },
   Textarea: {
     composition: { css: ['.ui-textarea', 'data-ui-composition'] },
+    surface: { map: ['Forms/Textarea.jsx', 'SURFACES'] },
   },
   Select: {
     size: { literal: ['sm', 'md', 'lg'] },

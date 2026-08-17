@@ -1,6 +1,15 @@
 'use client';
 import React, { forwardRef } from 'react';
 
+// Which ground the field sits on. Canvas is the default because most fields
+// sit on white; a field placed *on* the canvas — the inline «додати завдання»
+// on a board column — disappeared into it, and the caller could not fix that
+// with a class because the component writes its own background as a utility.
+const SURFACES = {
+  canvas: 'bg-canvas border-transparent',
+  white: 'bg-white border-line',
+};
+
 /**
  * Multi-line text field. Like `Input`, anything not named here — `value`,
  * `disabled`, `onChange` — reaches the native textarea through the rest spread.
@@ -9,6 +18,7 @@ import React, { forwardRef } from 'react';
  * @param {string} props.placeholder Placeholder text.
  * @param {number} props.rows Initial visible rows.
  * @param {number} props.maxRows Ceiling for auto-growth, where the caller grows it.
+ * @param {'canvas'|'white'} props.surface Which ground it sits on; `white` is for a field placed on the canvas itself.
  * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
  * @param {string} props.className Placement in the parent only.
  */
@@ -18,6 +28,7 @@ export const Textarea = forwardRef(({
   error,
   rows = 4,
   maxRows,
+  surface = 'canvas',
   composition,
   ...props
 }, ref) => {
@@ -29,7 +40,7 @@ export const Textarea = forwardRef(({
         placeholder={placeholder}
         data-ui-composition={composition}
         className={`
-          ui-textarea w-full bg-canvas border border-transparent rounded-[10px]
+          ui-textarea w-full border rounded-[10px] ${SURFACES[surface] ?? SURFACES.canvas}
           text-[13px] text-ink focus:border-ink outline-none
           transition-colors placeholder:text-[#a3a3a3] resize-none
           disabled:opacity-50 disabled:cursor-not-allowed

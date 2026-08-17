@@ -9,13 +9,13 @@
   },
   "totals": {
     "componentsWithVariants": 44,
-    "declaredValues": 368,
+    "declaredValues": 370,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 226,
+    "usedAndPreviewed": 227,
     "usedWithoutPreview": 0,
-    "declaredUnused": 108
+    "declaredUnused": 109
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -659,6 +659,12 @@
       "namespace": ".ui-textarea[data-ui-composition]"
     },
     {
+      "component": "Textarea",
+      "prop": "surface",
+      "value": "canvas",
+      "namespace": null
+    },
+    {
       "component": "ToggleSwitch",
       "prop": "size",
       "value": "lg",
@@ -824,6 +830,10 @@
         "project-description",
         "settings-note",
         "transcript"
+      ],
+      "surface": [
+        "canvas",
+        "white"
       ]
     },
     "Select": {
@@ -1315,7 +1325,7 @@
     "Pill.size.lg": 9,
     "Pill.shape.badge": 20,
     "Button.size.icon-lg": 10,
-    "Button.style.secondary": 70,
+    "Button.style.secondary": 69,
     "Button.style.primary": 42,
     "Select.filterRole.sprint": 2,
     "Select.variant.ghost": 23,
@@ -1327,7 +1337,7 @@
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
-    "Button.style.ghost": 78,
+    "Button.style.ghost": 79,
     "Button.size.icon-sm": 21,
     "Button.size.sm": 48,
     "Button.size.icon": 22,
@@ -1413,7 +1423,7 @@
     "Dialog.size.lg": 7,
     "Dialog.bodyPadding.flush": 5,
     "SelectableChip.shape.person": 1,
-    "UserAvatar.size.xs": 8,
+    "UserAvatar.size.xs": 9,
     "SelectableChip.shape.label": 1,
     "TextAction.size.sm": 4,
     "Dialog.bodyPadding.invite": 1,
@@ -1461,6 +1471,7 @@
     "IconAction.size.xl": 4,
     "IconAction.appearance.contrast": 4,
     "Tabs.variant.raised": 1,
+    "Textarea.surface.white": 1,
     "Meter.tone.danger": 1,
     "Meter.tone.warning": 1,
     "Meter.tone.neutral": 1,
@@ -1891,6 +1902,8 @@
     "Textarea.composition.project-description",
     "Textarea.composition.settings-note",
     "Textarea.composition.transcript",
+    "Textarea.surface.canvas",
+    "Textarea.surface.white",
     "ToggleSwitch.size.lg",
     "ToggleSwitch.size.md",
     "ToggleSwitch.size.sm",

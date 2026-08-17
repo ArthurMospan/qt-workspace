@@ -17,7 +17,15 @@ export const PERMISSIONS = {
   'manage:team': ['owner', 'admin'],    // Запрошення/видалення учасників
 
   // Finance
-  'manage:finance': ['owner'],          // Доступ до рейт-карток та інвойсів
+  //
+  // Owner *and* admin, because that is what the product actually enforces:
+  // `firestore.rules` lets an org admin read an invoice, `/api/invoices`
+  // authorises `['owner', 'admin']`, and the analytics tab has always shown the
+  // «Рахунок» section to both. This entry said `owner` alone and was never
+  // called by anything — the screen rolled its own check — so the matrix
+  // documented a restriction the product did not have. Rules are authoritative;
+  // the matrix follows them.
+  'manage:finance': ['owner', 'admin'], // Рахунки, ставки, чужі табелі
 
   // Issues
   'create:issue': ['owner', 'admin', 'member'],
