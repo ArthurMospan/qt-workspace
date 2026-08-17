@@ -574,25 +574,40 @@
 
     background: var(--color-surface);
   }
-  .ui-detail-scroll {
-    padding-bottom: var(--ui-detail-bottom);
+  /* The room at the end of a detail page belongs to the document, not to the
+     scrollport. As the scroller's own bottom padding it sat *below* the floor —
+     a sticky `bottom: 0` lands on the scroller's content edge — so the last
+     `--ui-detail-bottom` pixels of the reading area kept showing content under
+     a line that claimed to be the bottom. It is the floor's own height now:
+     blank at the end of the scroll, and the gradient's ground for as long as
+     there is still something coming. */
+  .ui-detail-scroll .scroll-shadow--bottom {
+    height: var(--ui-detail-bottom);
   }
   .ui-detail-aside {
     min-height: 0;
   }
+  @media (max-width: 1023px) {
+    /* One pane at a time down here, and when it is the rail the reading column
+       is not rendered — so its floor is not there to leave room at the end
+       either, and the rail asks for that room itself. */
+    .ui-detail-aside {
+      padding-bottom: var(--ui-detail-bottom);
+    }
+  }
   @media (min-width: 1024px) {
-    /* The rail holds still, and the number that makes it hold still is the
-       scroller's own bottom padding.
+    /* The rail holds still, and the number that makes it hold still is the room
+       at the end of the page.
 
        A sticky box cannot leave its containing block, which here is the grid
        area — and the grid ends where the content ends, while the scroll goes on
-       for `--ui-detail-bottom` more pixels of padding after it. A rail as tall
-       as the whole scrollport therefore ran out of room in exactly that last
-       stretch and got shoved up by it: 20px of drift at the end of every task,
-       and on a task only a little taller than the window that "end" is the last
-       quarter of the scroll. So the rail is the scrollport minus the padding it
-       is not allowed into, and the padding it would otherwise carry itself is
-       that same gap, counted once. */
+       for `--ui-detail-bottom` more pixels after it. A rail as tall as the whole
+       scrollport therefore ran out of room in exactly that last stretch and got
+       shoved up by it: 20px of drift at the end of every task, and on a task
+       only a little taller than the window that "end" is the last quarter of the
+       scroll. So the rail is the scrollport minus the room it is not allowed
+       into, and the gap it would otherwise pad itself with is that same room,
+       counted once. */
     .ui-detail-aside {
       position: sticky;
       top: 0;
@@ -1213,14 +1228,18 @@
   }
   /* The floor is sticky rather than absolute because it belongs to one column
      of a scrolling grid, not to the scrollport: it has to end where its column
-     ends and leave the neighbouring rail alone. `bottom: 0` lands it on the
-     scroller's content edge — above the page's bottom padding, level with the
-     bottom of the conversation rail — and it holds there for the whole scroll,
-     so nothing about it moves while it fades. */
+     ends and leave the neighbouring rail alone.
+
+     It is also the room at the end of the document rather than a zero-height
+     line above it. That is what puts it on the true bottom edge with nothing
+     showing underneath, and what makes it stand perfectly still: pinned it
+     covers the last stretch of the scrollport, and at the end of the scroll it
+     arrives at exactly the blank it was holding. */
   .scroll-shadow--bottom {
     position: sticky;
     bottom: 0;
-    height: 0;
+    flex: none;
+    height: var(--scroll-shadow-depth);
   }
   .scroll-shadow--bottom::before {
     content: '';

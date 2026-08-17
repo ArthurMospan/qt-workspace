@@ -160,9 +160,12 @@ export default function DetailLayout({
 
             <div className="mt-[20px] flex min-w-0 flex-col gap-6">{children}</div>
 
-            {/* The floor the column goes under. It belongs to the column, not
-                to the scrollport, so it stops short of the conversation rail
-                instead of laying a gradient over the chat. */}
+            {/* The floor the column goes under, and the room at its end — one
+                element, because the room used to be the scroller's padding and
+                that put it below the floor, leaving content visible under the
+                bottom edge. It belongs to the column, not to the scrollport, so
+                it stops short of the rail instead of laying a gradient over the
+                chat. */}
             <span aria-hidden className="scroll-shadow scroll-shadow--bottom" />
           </div>
 

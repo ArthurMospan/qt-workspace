@@ -402,24 +402,41 @@ test('high-risk composed previews keep the product markup signatures', () => {
   }
   // The conversation rail holds still, and one number is why. A sticky box
   // cannot leave its containing block — here the grid area, which ends where
-  // the content ends while the scroll runs on for the scroller's bottom
-  // padding. A rail as tall as the whole scrollport had no room left in exactly
-  // that stretch and got shoved up by it at the end of every scroll. So the
-  // rail's height subtracts the same `--ui-detail-bottom` the scroller pads
-  // with, and neither may be written as a length at the call site again.
+  // the content ends while the scroll runs on for the room under the page. A
+  // rail as tall as the whole scrollport had no room left in exactly that
+  // stretch and got shoved up by it at the end of every scroll. So the rail's
+  // height subtracts the same `--ui-detail-bottom` everything else measures
+  // from, and it may not be written as a length at a call site again.
   const detailCss = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8');
-  assert.match(detailCss, /\.ui-detail-scroll\s*\{\s*padding-bottom:\s*var\(--ui-detail-bottom\);/);
   assert.match(
     detailCss,
     /\.ui-detail-aside\s*\{[^}]*height:\s*calc\(100dvh - var\(--ui-detail-viewport-inset\) - var\(--ui-detail-bottom\)\)/,
-    'the rail is the scrollport minus the padding it is not allowed into',
-  );
-  assert.doesNotMatch(
-    detailCss,
-    /\.ui-detail-aside\s*\{[^}]*padding-bottom/,
-    'the gap under the rail is its shortened height, not a second padding',
+    'the rail is the scrollport minus the room it is not allowed into',
   );
   assert.doesNotMatch(detailLayout, /pb-\[\d+px\]/, 'the room under the page is a variable, not a class');
+  // And that room belongs to the document, not to the scrollport. As the
+  // scroller's own padding it sat *below* the floor — sticky `bottom: 0` lands
+  // on the scroller's content edge — so the last stretch of the reading area
+  // kept showing content under a line claiming to be the bottom.
+  assert.doesNotMatch(
+    detailCss,
+    /\.ui-detail-scroll\s*\{[^}]*padding-bottom/,
+    'the room at the end of the page is the floor’s height, not the scroller’s padding',
+  );
+  assert.match(detailCss, /\.ui-detail-scroll \.scroll-shadow--bottom \{\s*height: var\(--ui-detail-bottom\);/);
+  // Below the grid the rail is the whole pane, and the reading column that
+  // carries the floor is not rendered — so the rail asks for the room itself,
+  // and only there. Above the grid its shortened height already is the gap.
+  assert.match(
+    detailCss,
+    /@media \(max-width: 1023px\) \{[\s\S]{0,400}?\.ui-detail-aside \{\s*padding-bottom: var\(--ui-detail-bottom\);/,
+  );
+  const railAtDesktop = detailCss.slice(detailCss.indexOf('@media (min-width: 1024px)'));
+  assert.doesNotMatch(
+    railAtDesktop.slice(0, railAtDesktop.indexOf('}\n  }') + 5),
+    /padding-bottom/,
+    'the gap under the rail is its shortened height, not a second padding',
+  );
   // The board's two walls and the detail page's floor are one edge with one
   // depth and one duration. The board's came first and was named after it; a
   // second screen wanting the same gesture is what makes the name wrong.
@@ -431,8 +448,10 @@ test('high-risk composed previews keep the product markup signatures', () => {
   assert.doesNotMatch(detailCss, /kanban-scroll-shadow/, 'the edge is not the board’s alone any more');
   assert.match(detailCss, /\.scroll-shadow \{[^}]*--scroll-shadow-depth: 20px/);
   // The floor is sticky, not absolute: it belongs to the reading column, so it
-  // stops at the gap and never lays a gradient over the conversation rail.
-  assert.match(detailCss, /\.scroll-shadow--bottom \{\s*position: sticky;/);
+  // stops at the gap and never lays a gradient over the conversation rail. And
+  // it has a height — it *is* the room at the end of the document, which is
+  // what puts it on the true bottom edge with nothing showing underneath.
+  assert.match(detailCss, /\.scroll-shadow--bottom \{\s*position: sticky;\s*bottom: 0;\s*flex: none;\s*height: var\(--scroll-shadow-depth\);/);
   assert.match(detailLayout, /data-scrolled-below=\{moreBelow \? 'true' : 'false'\}/);
   assert.match(detailLayout, /scroll-shadow--bottom[\s\S]{0,40}<\/div>/, 'the floor closes the reading column, not the grid');
   // Both records render the same timer. The calendar used to carry a
