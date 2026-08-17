@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 110,
-    "props": 802,
-    "documentedProps": 802,
+    "props": 801,
+    "documentedProps": 801,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2191,13 +2191,6 @@
           "type": "boolean",
           "values": [],
           "description": "The content has left the top — the same flag the strip condenses on, so the fade and the strip cannot disagree."
-        },
-        {
-          "name": "scrollRef",
-          "default": "",
-          "type": "React.Ref",
-          "values": [],
-          "description": "The scroll container, for callers that reset the position."
         },
         {
           "name": "standalone",

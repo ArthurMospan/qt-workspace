@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 // The frame a task and a calendar event are both drawn in.
 //
@@ -56,7 +56,6 @@ export const CONTEXTS = {
  * @param {React.ReactNode} props.lead A full-width row above the scroller, outside the measure: the mobile pane switch.
  * @param {'content'|'aside'} props.mobilePane Which column is on screen below 1024px. Ignored above it, where both are.
  * @param {(scrolled: boolean) => void} props.onScrolledChange Fires when the content leaves the top.
- * @param {React.Ref} props.scrollRef The scroll container, for callers that reset the position.
  * @param {string} props.className Placement in the parent only.
  */
 export default function DetailLayout({
@@ -69,13 +68,48 @@ export default function DetailLayout({
   lead,
   mobilePane = 'content',
   onScrolledChange,
-  scrollRef,
   children,
   className = '',
 }) {
   const { measure, columns, hasAside } = CONTEXTS[context] || CONTEXTS.event;
   const showsAside = Boolean(hasAside && aside);
   const asideOnly = mobilePane === 'aside';
+
+  // Is there anything left below? The reading column ends against the same
+  // white it is drawn on, so a section sliding out of view simply stopped
+  // existing. The same edge the board draws on its two walls answers it here,
+  // and like the board's it is lit only while something is genuinely hidden.
+  const scrollerRef = useRef(null);
+  const [moreBelow, setMoreBelow] = useState(false);
+
+  const measureBelow = useCallback(() => {
+    const node = scrollerRef.current;
+    if (!node) return;
+    const maxScroll = node.scrollHeight - node.clientHeight;
+    // One pixel of slack: fractional layout heights leave a sub-pixel of scroll
+    // at the far end, which would keep the edge lit for ever.
+    const next = maxScroll > 1 && node.scrollTop < maxScroll - 1;
+    setMoreBelow(current => (current === next ? current : next));
+  }, []);
+
+  // Opening a section, switching the description to the editor or loading an
+  // attachment all change the answer without the window moving, and only the
+  // column itself knows. Both boxes are watched: the scrollport, which changes
+  // with the window, and its content, which changes with the record.
+  useLayoutEffect(() => {
+    const node = scrollerRef.current;
+    if (!node) return undefined;
+    measureBelow();
+    const observer = new ResizeObserver(measureBelow);
+    observer.observe(node);
+    if (node.firstElementChild) observer.observe(node.firstElementChild);
+    return () => observer.disconnect();
+  }, [measureBelow]);
+
+  const handleScroll = useCallback((event) => {
+    measureBelow();
+    onScrolledChange?.(event.currentTarget.scrollTop > 4);
+  }, [measureBelow, onScrolledChange]);
 
   return (
     <div
@@ -85,8 +119,9 @@ export default function DetailLayout({
     >
       {lead}
       <div
-        ref={scrollRef}
-        onScroll={onScrolledChange ? event => onScrolledChange(event.currentTarget.scrollTop > 4) : undefined}
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        data-scrolled-below={moreBelow ? 'true' : 'false'}
         className="ui-detail-scroll page-gutter custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
         <div
@@ -124,6 +159,11 @@ export default function DetailLayout({
             </div>
 
             <div className="mt-[20px] flex min-w-0 flex-col gap-6">{children}</div>
+
+            {/* The floor the column goes under. It belongs to the column, not
+                to the scrollport, so it stops short of the conversation rail
+                instead of laying a gradient over the chat. */}
+            <span aria-hidden className="scroll-shadow scroll-shadow--bottom" />
           </div>
 
           {showsAside && (

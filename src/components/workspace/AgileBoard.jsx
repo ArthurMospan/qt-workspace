@@ -588,8 +588,8 @@ export default function AgileBoard({
             the same colour it was drawn on. These two hairline gradients give
             it something to go under, and each only appears once there is
             actually something hidden on that side. */}
-        <span aria-hidden className="kanban-scroll-shadow kanban-scroll-shadow--start" />
-        <span aria-hidden className="kanban-scroll-shadow kanban-scroll-shadow--end" />
+        <span aria-hidden className="scroll-shadow scroll-shadow--start" />
+        <span aria-hidden className="scroll-shadow scroll-shadow--end" />
 
         {/* Column Headers (fixed at top only for swimlanes) */}
         {swimlanes.length > 1 && (

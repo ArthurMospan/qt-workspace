@@ -420,6 +420,21 @@ test('high-risk composed previews keep the product markup signatures', () => {
     'the gap under the rail is its shortened height, not a second padding',
   );
   assert.doesNotMatch(detailLayout, /pb-\[\d+px\]/, 'the room under the page is a variable, not a class');
+  // The board's two walls and the detail page's floor are one edge with one
+  // depth and one duration. The board's came first and was named after it; a
+  // second screen wanting the same gesture is what makes the name wrong.
+  const agileBoardSource = readFileSync(new URL('../src/components/workspace/AgileBoard.jsx', import.meta.url), 'utf8');
+  for (const [name, source] of Object.entries({ AgileBoard: agileBoardSource, DetailLayout: detailLayout })) {
+    assert.match(source, /className="scroll-shadow scroll-shadow--/, `${name} draws the shared edge`);
+    assert.doesNotMatch(source, /kanban-scroll-shadow/, `${name} must not keep a screen-specific copy`);
+  }
+  assert.doesNotMatch(detailCss, /kanban-scroll-shadow/, 'the edge is not the board’s alone any more');
+  assert.match(detailCss, /\.scroll-shadow \{[^}]*--scroll-shadow-depth: 20px/);
+  // The floor is sticky, not absolute: it belongs to the reading column, so it
+  // stops at the gap and never lays a gradient over the conversation rail.
+  assert.match(detailCss, /\.scroll-shadow--bottom \{\s*position: sticky;/);
+  assert.match(detailLayout, /data-scrolled-below=\{moreBelow \? 'true' : 'false'\}/);
+  assert.match(detailLayout, /scroll-shadow--bottom[\s\S]{0,40}<\/div>/, 'the floor closes the reading column, not the grid');
   // Both records render the same timer. The calendar used to carry a
   // byte-identical copy of it, down to the 1px nudge that centres the play
   // triangle, so the two could drift without anything noticing.

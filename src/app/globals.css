@@ -1180,31 +1180,58 @@
     scroll-padding-right: var(--page-px, 16px);
   }
 
-  /* The edge a scrolling column disappears under. Without it a card simply
+  /* The edge scrolling content disappears under. Without it a card simply
      stopped existing against the same colour it was drawn on; this is the
-     lightest possible hint that the board continues past the panel. Each side
-     is lit only while something is actually hidden on that side — the board
-     sets the two data attributes from its own scroll position. */
-  .kanban-scroll-shadow {
-    position: absolute;
-    top: 0;
-    bottom: 0;
+     lightest possible hint that there is more past the panel. An edge is lit
+     only while something is actually hidden behind it — the screen that owns
+     the scroller sets the data attribute from its own scroll position.
+
+     One depth and one duration for every edge in the product: the board's two
+     walls and the detail page's floor are the same gesture, and the board's
+     were here first. */
+  .scroll-shadow {
+    --scroll-shadow-depth: 20px;
     z-index: 5;
-    width: 20px;
     pointer-events: none;
     opacity: 0;
     transition: opacity 180ms ease;
   }
-  .kanban-scroll-shadow--start {
+  .scroll-shadow--start,
+  .scroll-shadow--end {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--scroll-shadow-depth);
+  }
+  .scroll-shadow--start {
     left: 0;
     background: linear-gradient(to right, rgb(0 0 0 / 7%), rgb(0 0 0 / 0%));
   }
-  .kanban-scroll-shadow--end {
+  .scroll-shadow--end {
     right: 0;
     background: linear-gradient(to left, rgb(0 0 0 / 7%), rgb(0 0 0 / 0%));
   }
-  [data-scrolled-start='true'] > .kanban-scroll-shadow--start,
-  [data-scrolled-end='true'] > .kanban-scroll-shadow--end {
+  /* The floor is sticky rather than absolute because it belongs to one column
+     of a scrolling grid, not to the scrollport: it has to end where its column
+     ends and leave the neighbouring rail alone. `bottom: 0` lands it on the
+     scroller's content edge — above the page's bottom padding, level with the
+     bottom of the conversation rail — and it holds there for the whole scroll,
+     so nothing about it moves while it fades. */
+  .scroll-shadow--bottom {
+    position: sticky;
+    bottom: 0;
+    height: 0;
+  }
+  .scroll-shadow--bottom::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: var(--scroll-shadow-depth);
+    background: linear-gradient(to top, rgb(0 0 0 / 7%), rgb(0 0 0 / 0%));
+  }
+  [data-scrolled-start='true'] > .scroll-shadow--start,
+  [data-scrolled-end='true'] > .scroll-shadow--end,
+  [data-scrolled-below='true'] .scroll-shadow--bottom {
     opacity: 1;
   }
   /* Same bleed, but only below md (e.g. timesheet grids that fit on desktop) */
