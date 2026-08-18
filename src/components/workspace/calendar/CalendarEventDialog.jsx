@@ -54,6 +54,7 @@ import {
   normalizeCalendarEventVisibility,
 } from '@/lib/utils/calendarEventTypes.mjs';
 import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 
 // Only the presentation lives here — what each type *is* (and therefore which
@@ -446,7 +447,9 @@ export default function CalendarEventDialog({
     event?.projectId || '',
   );
 
-  const memberOptions = useMemo(() => members.map(member => ({
+  // Participants you can still invite. Someone who no longer has access keeps
+  // appearing on the events they were already part of — see `members` above.
+  const memberOptions = useMemo(() => activeMembers(members).map(member => ({
     value: member.id || member.uid,
     label: memberLabel(member),
     user: member,

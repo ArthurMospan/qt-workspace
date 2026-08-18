@@ -11,6 +11,7 @@ import {
   useConfirm,
 } from '@/components/ui';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { updateProjectSettings } from '@/lib/services/projects';
 import { sendProjectInvitations } from '@/lib/services/projectInvitations';
@@ -228,7 +229,7 @@ export default function BoardConfigModal({
           hiddenStatusIds={statusesToHide}
           onHiddenStatusIdsChange={setHiddenColumns}
           backlogStatusId={backlogStatusId}
-          teamMembers={canManageTeam ? organizationMembers : []}
+          teamMembers={canManageTeam ? activeMembers(organizationMembers) : []}
           teamMemberIds={teamMemberIds}
           onTeamMemberIdsChange={canManageTeam ? setTeamMemberIds : undefined}
           ownerId={project?.createdBy}

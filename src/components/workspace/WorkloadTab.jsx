@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -622,7 +623,7 @@ export default function WorkloadTab({
 
   const stats = useMemo(() => {
     const periodAgo = now - period * 86_400_000;
-    return members.map(member => {
+    return activeMembers(members).map(member => {
       const uid = memberId(member);
       const memberIssues = actionableIssues.filter(issue => issue.assigneeIds?.includes(uid));
       const timesheetIssues = hierarchyIssues.filter(issue => issue.assigneeIds?.includes(uid));

@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 113,
-    "props": 837,
-    "documentedProps": 837,
+    "props": 839,
+    "documentedProps": 839,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1357,6 +1357,13 @@
       "file": "src/components/ui/Chat/ChatMessageList.jsx",
       "summary": "The scrolling conversation: day separators, avatar grouping, the unread divider, the jump-to-latest button and paging into history.",
       "props": [
+        {
+          "name": "canModerate",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The reader may remove someone else's message in this room."
+        },
         {
           "name": "contentRef",
           "default": "",
@@ -3564,6 +3571,13 @@
       "file": "src/components/ui/Chat/MessageBubble.jsx",
       "summary": "One message: the author header when it starts a run, the text, its attachments, its reactions, and the actions that appear on hover.",
       "props": [
+        {
+          "name": "canModerate",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The reader is an owner/admin of a group channel and may remove someone else's message. Never true in a direct room."
+        },
         {
           "name": "isThread",
           "default": "false",

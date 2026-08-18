@@ -6,6 +6,7 @@ import { TaskIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { entryStatusId } from '@/lib/utils/statusCategories.mjs';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import Counter from '@/components/ui/DataDisplay/Counter';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import Surface from '@/components/ui/Surface';
@@ -253,7 +254,7 @@ export default function TaskListView({
           label: group.label,
           dotColor: group.color,
         }))}
-        memberOptions={members.map(member => ({
+        memberOptions={activeMembers(members).map(member => ({
           value: member.id || member.uid,
           label: member.name || member.email || 'Учасник',
           user: member,

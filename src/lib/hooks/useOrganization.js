@@ -9,7 +9,8 @@ import { useAppContext } from '@/lib/context/AppContext';
 import {
   fetchMemberRemovalImpact,
   fetchOrganizationMembers,
-  removeOrganizationMember,
+  deactivateOrganizationMember,
+  reactivateOrganizationMember,
   updateOrganizationMember,
 } from '@/lib/services/members';
 import { reportLoadError } from '@/lib/utils/errors';
@@ -223,10 +224,18 @@ export function useOrganization() {
     return fetchMemberRemovalImpact(activeOrgId, uid);
   }, [activeOrgId]);
 
-  // Remove member
-  const removeMember = useCallback(async uid => {
+  // Close someone's access. Their tasks, comments and logged time stay exactly
+  // where they are — see `src/lib/utils/orgMembership.mjs`.
+  const deactivateMember = useCallback(async uid => {
     if (!activeOrgId) return;
-    const result = await removeOrganizationMember(activeOrgId, uid);
+    const result = await deactivateOrganizationMember(activeOrgId, uid);
+    await getOrganizationStore(activeOrgId).refresh();
+    return result;
+  }, [activeOrgId]);
+
+  const reactivateMember = useCallback(async uid => {
+    if (!activeOrgId) return;
+    const result = await reactivateOrganizationMember(activeOrgId, uid);
     await getOrganizationStore(activeOrgId).refresh();
     return result;
   }, [activeOrgId]);
@@ -241,7 +250,8 @@ export function useOrganization() {
     setMemberRate,
     setMemberPosition,
     getMemberRemovalImpact,
-    removeMember
+    deactivateMember,
+    reactivateMember,
   };
 }
 

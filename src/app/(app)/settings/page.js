@@ -13,6 +13,7 @@ import { fetchWorkflowViaApi, updateWorkflowViaApi } from '@/lib/services/workfl
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { deleteAccount, fetchAccountDeletionImpact } from '@/lib/services/account';
 import { plural } from '@/lib/utils/plural.mjs';
+import { isActiveMember } from '@/lib/utils/orgMembership.mjs';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
@@ -24,7 +25,8 @@ import {
   Copy, ExternalLink, ChevronRight, ArrowLeft, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
-  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock
+  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock,
+  UserCog, UserRoundX
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -137,6 +139,10 @@ const NAV = [
   // QuickTeam+ tab; the org-level switch stays under "Інтеграції".
   { id: 'notifications', label: 'Сповіщення',       icon: Bell,          group: 'Особисте' },
   { id: 'localization',  label: 'Локалізація',      icon: Globe,         group: 'Особисте' },
+  // Signing out, leaving an organization and deleting your account are things a
+  // person does about themselves. They used to live inside «Видалення даних»,
+  // which is `adminOnly` — so a plain member had no way to reach any of them.
+  { id: 'account',       label: 'Акаунт і доступ',  icon: UserCog,       group: 'Особисте' },
   { id: 'workspace',     label: 'Загальні',         icon: Building,      group: 'Організація', adminOnly: true },
   { id: 'team',          label: 'Учасники команди', icon: Users,         group: 'Організація' },
   { id: 'billing',       label: 'Тарифний план',    icon: CreditCard,    group: 'Організація', adminOnly: true },
@@ -646,7 +652,8 @@ export default function SettingsPage() {
     members,
     inviteMember,
     changeMemberRole,
-    removeMember,
+    deactivateMember,
+    reactivateMember,
     setMemberPosition,
     getMemberRemovalImpact,
   } = useOrganization();
@@ -673,6 +680,7 @@ export default function SettingsPage() {
     projectCount: 0,
     assignedIssueCount: 0,
   });
+  const [leavingOrganization, setLeavingOrganization] = useState(false);
 
   // Mobile single-pane mode: 'sidebar' (список розділів) або 'content' (розділ)
   const [mobilePane, setMobilePane] = useState('sidebar');
@@ -1892,7 +1900,11 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRemoveMember = async (uid) => {
+  // The confirmation says what happens *and* what does not: the numbers below
+  // are the work that stays exactly where it is. A dialog that only counts what
+  // it is about to take away is how «видалити учасника» came to read as
+  // «стерти все, що він зробив».
+  const handleDeactivateMember = async (uid) => {
     let impact;
     try {
       impact = await getMemberRemovalImpact(uid);
@@ -1900,13 +1912,63 @@ export default function SettingsPage() {
       showToast(userFacingErrorMessage(error, 'Не вдалося перевірити доступ учасника'), 'error');
       return;
     }
+    const staying = [
+      impact.assignedIssueCount > 0
+        && `${impact.assignedIssueCount} ${plural(impact.assignedIssueCount, ['завдання', 'завдання', 'завдань'])} лишиться за ним`,
+      impact.watchedIssueCount > 0
+        && `${impact.watchedIssueCount} ${plural(impact.watchedIssueCount, ['підписка', 'підписки', 'підписок'])} збережеться`,
+    ].filter(Boolean);
     if (!(await confirmDialog({
-      title: 'Видалити учасника з команди?',
-      message: `Кількість проєктів, з яких його буде прибрано: ${impact.projectCount}. Призначення та підписки на завдання також буде очищено.`,
-      confirmText: 'Видалити', danger: true,
+      title: 'Забрати доступ до організації?',
+      message: [
+        `Людина втратить доступ до організації та до ${impact.projectCount} ${plural(impact.projectCount, ['проєкту', 'проєктів', 'проєктів'])}.`,
+        staying.length > 0
+          ? `Робота залишиться недоторканою: ${staying.join(', ')}. Коментарі, записаний час і авторство теж.`
+          : 'Усе, що вона зробила, лишиться недоторканим: коментарі, записаний час і авторство.',
+        'Доступ можна повернути будь-коли — з тією ж роллю, посадою і проєктами.',
+      ].join('\n\n'),
+      confirmText: 'Забрати доступ', danger: true,
     }))) return;
-    try { await removeMember(uid); showToast('Учасника видалено'); }
-    catch (error) { showToast(userFacingErrorMessage(error, 'Не вдалося видалити учасника'), 'error'); }
+    try { await deactivateMember(uid); showToast('Доступ забрано'); }
+    catch (error) { showToast(userFacingErrorMessage(error, 'Не вдалося забрати доступ'), 'error'); }
+  };
+
+  // Leaving is the same server call as being deactivated — the route tells the
+  // two apart by the id — so the person keeps everything they did here and an
+  // administrator can hand the seat back if they return.
+  const handleLeaveOrganization = async () => {
+    const uid = currentUser?.uid || currentUser?.id;
+    if (!uid || leavingOrganization) return;
+    const typed = await confirmDialog({
+      title: `Вийти з «${org?.name || 'організації'}»?`,
+      message: 'Ви втратите доступ до організації та її проєктів. Задачі, коментарі й записаний час залишаться за вами. Щоб повернутися, потрібне буде запрошення або відновлення доступу адміністратором.\n\nВведіть ВИЙТИ, щоб підтвердити.',
+      confirmText: 'Вийти з організації',
+      cancelText: 'Скасувати',
+      danger: true,
+      input: { placeholder: 'ВИЙТИ' },
+    });
+    if (String(typed || '').trim().toLocaleUpperCase('uk-UA') !== 'ВИЙТИ') return;
+    setLeavingOrganization(true);
+    try {
+      await deactivateMember(uid);
+      showToast('Ви вийшли з організації');
+      router.replace('/');
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося вийти з організації'), 'error');
+    } finally {
+      setLeavingOrganization(false);
+    }
+  };
+
+  const handleReactivateMember = async (uid) => {
+    try {
+      const result = await reactivateMember(uid);
+      showToast(result?.projectCount > 0
+        ? `Доступ повернено, разом із проєктами (${result.projectCount})`
+        : 'Доступ повернено');
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося повернути доступ'), 'error');
+    }
   };
 
   const handleUpgradePlan = async (newPlan = 'pro') => {
@@ -2198,10 +2260,10 @@ export default function SettingsPage() {
     }
   };
 
-  // The danger section asks the server what deleting this account would touch,
+  // The account section asks the server what deleting this account would touch,
   // so the confirmation can state it instead of saying "everything".
   useEffect(() => {
-    if (activeSection !== 'danger') return undefined;
+    if (activeSection !== 'account') return undefined;
     let cancelled = false;
     setAccountDeletion(current => ({ ...current, loading: true }));
     fetchAccountDeletionImpact()
@@ -3304,23 +3366,32 @@ export default function SettingsPage() {
       // both lead to a wall: the invitations route requires owner/admin, and
       // the member dialog disables every field it contains. A control that
       // cannot do anything is not a disabled control, it is the wrong control.
-      case 'team': return (
+      case 'team': {
+        // Deactivated people stay listed, below the active ones: their tasks,
+        // comments and hours are still in the workspace under their name, and a
+        // directory that hides them turns all of that into an unknown id.
+        const directoryMembers = [...members].sort((left, right) => (
+          Number(!isActiveMember(left)) - Number(!isActiveMember(right))
+        ));
+        return (
         <Section title="Учасники команди" rightAction={isAdmin ? (
           <Button onClick={() => setShowInviteModal(true)} style="primary" size="md" icon={Plus}>Запросити</Button>
         ) : null}>
           <Surface preset="card" padding="none" className="overflow-hidden relative z-10">
             <div className="flex flex-col divide-y divide-[#f0f0f0] rounded-[16px]">
-              {members.map((member, i) => {
+              {directoryMembers.map((member, i) => {
                 const isMe = member.id === (currentUser?.uid || currentUser?.id);
                 const positionLabel = positions.find(position => position.id === member.positionId)?.label || 'Без посади';
+                const deactivated = !isActiveMember(member);
                 return (
-                  <div key={member.id} className={`flex items-center justify-between gap-4 px-5 py-4 hover:bg-[#fcfcfc] transition-colors ${i === 0 ? 'rounded-t-[16px]' : ''} ${i === members.length - 1 ? 'rounded-b-[16px]' : ''}`}>
+                  <div key={member.id} className={`flex items-center justify-between gap-4 px-5 py-4 hover:bg-[#fcfcfc] transition-colors ${i === 0 ? 'rounded-t-[16px]' : ''} ${i === directoryMembers.length - 1 ? 'rounded-b-[16px]' : ''} ${deactivated ? 'opacity-60' : ''}`}>
                     <div className="flex min-w-0 items-center gap-3">
                       <UserAvatar user={member} size="lg" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-[14px] font-bold text-ink">{member.name || member.email}</p>
                           {isMe && <Pill shape="badge" size="sm" uppercase>Ти</Pill>}
+                          {deactivated && <Pill shape="badge" size="sm" uppercase>Без доступу</Pill>}
                         </div>
                         <p className="truncate text-[12px] text-muted">{member.email}</p>
                       </div>
@@ -3344,7 +3415,8 @@ export default function SettingsPage() {
             </div>
           </Surface>
         </Section>
-      );
+        );
+      }
 
       // ──────────────────────────────────────────────────────────────
       case 'statuses': {
@@ -3629,20 +3701,8 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'danger': return (
-        <Section title="Видалення даних" desc="Незворотні дії. Виконуйте обережно.">
+        <Section title="Видалення даних" desc="Незворотні дії з даними організації. Виконуйте обережно.">
           <Card preset="borderless" padding="lg">
-            <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
-              <Button
-                onClick={async () => {
-                  if (await confirmDialog({ title: 'Вийти з акаунта?', confirmText: 'Вийти', danger: true })) signOut();
-                }}
-                style="ghost" color="red" size="lg"
-                icon={LogOut}
-              >
-                Вийти
-              </Button>
-            </Row>
-
             <Row
               label="Скинути налаштування процесів"
               desc="Повернути статуси, типи, пріоритети та мітки до стандартних значень. Завдання зі статусів, яких немає у стандартному наборі, буде переміщено"
@@ -3665,6 +3725,46 @@ export default function SettingsPage() {
                 </Button>
               </Row>
             )}
+
+          </Card>
+        </Section>
+      );
+
+      // ──────────────────────────────────────────────────────────────
+      case 'account': return (
+        <Section title="Акаунт і доступ" desc="Ваша сесія, ваше членство і ваші дані. Нікого іншого ці дії не стосуються.">
+          <Card preset="borderless" padding="lg">
+            <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
+              <Button
+                onClick={async () => {
+                  if (await confirmDialog({ title: 'Вийти з акаунта?', confirmText: 'Вийти', danger: true })) signOut();
+                }}
+                style="ghost" color="red" size="lg"
+                icon={LogOut}
+              >
+                Вийти
+              </Button>
+            </Row>
+
+            {/* Leaving is the counterpart of being deactivated, and it works the
+                same way: access closes, the work stays. The owner cannot leave
+                a workspace that would then have nobody to answer for it. */}
+            <Row
+              label="Вийти з організації"
+              desc={isOwner
+                ? 'Ви власник. Спершу передайте права власника комусь із команди'
+                : 'Ви втратите доступ до організації та її проєктів. Задачі, коментарі й записаний час залишаться за вами, а адміністратор зможе повернути доступ'}
+            >
+              <Button
+                onClick={handleLeaveOrganization}
+                style="ghost" color="red" size="lg"
+                icon={UserRoundX}
+                loading={leavingOrganization}
+                disabled={isOwner}
+              >
+                Вийти з організації
+              </Button>
+            </Row>
 
             {/* The one action a person is unconditionally entitled to take
                 about their own data. The product used to answer this with
@@ -3799,8 +3899,12 @@ export default function SettingsPage() {
           await handleTransferOwnership(uid);
           setMemberSettingsId(null);
         }}
-        onRemove={async uid => {
-          await handleRemoveMember(uid);
+        onDeactivate={async uid => {
+          await handleDeactivateMember(uid);
+          setMemberSettingsId(null);
+        }}
+        onReactivate={async uid => {
+          await handleReactivateMember(uid);
           setMemberSettingsId(null);
         }}
       />

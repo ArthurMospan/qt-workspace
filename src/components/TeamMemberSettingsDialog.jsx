@@ -1,11 +1,12 @@
 'use client';
 
-import { Briefcase, Crown, Shield, Trash2, UserRound } from 'lucide-react';
+import { Briefcase, Crown, Shield, UserRound, UserRoundCheck, UserRoundX } from 'lucide-react';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import OptionCard from '@/components/ui/Forms/OptionCard';
+import { isActiveMember } from '@/lib/utils/orgMembership.mjs';
 
 const ROLES = [
   { value: 'member', label: 'Учасник', description: 'Працює із завданнями та проєктами.', icon: UserRound },
@@ -22,7 +23,8 @@ export default function TeamMemberSettingsDialog({
   onRoleChange,
   onPositionChange,
   onTransferOwnership,
-  onRemove,
+  onDeactivate,
+  onReactivate,
 }) {
   if (!member) return null;
   const uid = member.id || member.uid;
@@ -31,6 +33,7 @@ export default function TeamMemberSettingsDialog({
   // and nobody edits their own role — that last one is what stops the last
   // administrator from locking the organization out of its own settings.
   const canChangeRole = isAdmin && !isMe && member.role !== 'owner';
+  const isDeactivated = !isActiveMember(member);
   const roleHint = member.role === 'owner'
     ? 'Роль власника фіксована'
     : isMe ? 'Свою роль змінити не можна' : 'Потрібні права адміністратора';
@@ -109,16 +112,40 @@ export default function TeamMemberSettingsDialog({
 
         {isAdmin && !isMe && member.role !== 'owner' && (
           <div className="border-t border-line pt-5">
-            <Button
-              style="outline"
-              color="red"
-              size="md"
-              icon={Trash2}
-              onClick={() => onRemove(uid)}
-              className="w-full"
-            >
-              Видалити з команди
-            </Button>
+            {isDeactivated ? (
+              <>
+                <p className="mb-3 text-[12px] leading-relaxed text-muted">
+                  Доступ забрано. Задачі, коментарі й записаний час лишились за цією людиною —
+                  повернення віддає ту саму роль, посаду і проєкти.
+                </p>
+                <Button
+                  style="outline"
+                  size="md"
+                  icon={UserRoundCheck}
+                  onClick={() => onReactivate(uid)}
+                  className="w-full"
+                >
+                  Повернути доступ
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="mb-3 text-[12px] leading-relaxed text-muted">
+                  Людина втратить доступ до організації та її проєктів. Усе, що вона зробила,
+                  лишиться на місці — доступ можна повернути будь-коли.
+                </p>
+                <Button
+                  style="outline"
+                  color="red"
+                  size="md"
+                  icon={UserRoundX}
+                  onClick={() => onDeactivate(uid)}
+                  className="w-full"
+                >
+                  Забрати доступ
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>

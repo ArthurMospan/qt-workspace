@@ -6,6 +6,7 @@ import IconAction from '../IconAction';
 import TextAction from '../TextAction';
 import UserAvatar from '../DataDisplay/UserAvatar';
 import { ChatAttachmentList } from './ChatAttachmentList';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import {
   chatAttachmentNames,
   collectChatAttachments,
@@ -100,7 +101,9 @@ export default function ChannelInfoPanel({
     return channelMembers.includes(id);
   });
 
-  const membersOutChannel = members.filter(m => {
+  // Only someone who still has access can be added to a channel; a colleague
+  // who was deactivated stays visible in the list above if they were in it.
+  const membersOutChannel = activeMembers(members).filter(m => {
     const id = m.id || m.uid;
     if (!channelMembers || channelMembers.length === 0) return false;
     return !channelMembers.includes(id);

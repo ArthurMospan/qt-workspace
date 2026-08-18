@@ -15,6 +15,7 @@ import { MultiSelect } from '@/components/ui/Select';
 import { useConfirm, ChannelRail, Counter, FileInput, FormGroup, IconAction, IssueMentionMenu, Label, MentionMenu, SidebarLayout, Textarea } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useOrganization } from '@/lib/hooks/useOrganization';
@@ -241,8 +242,11 @@ function MessageInput({
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
 
+  // You can only summon someone who can still read the channel. Their name
+  // keeps rendering on every message they already wrote — `members` holds the
+  // whole directory for exactly that reason.
   const filteredMembers = mentionType === 'user'
-    ? members.filter(m => `${m.name || m.displayName || ''} ${m.email || ''}`.toLowerCase().includes(mentionQuery.trim()))
+    ? activeMembers(members).filter(m => `${m.name || m.displayName || ''} ${m.email || ''}`.toLowerCase().includes(mentionQuery.trim()))
     : [];
 
   const canSend = (text.trim() || attachments.length > 0) && !uploading;
@@ -1091,7 +1095,7 @@ export default function ChatPage() {
 
   const channelMemberIds = () => {
     const current = activeChannelData?.members || channels.find(c => c.id === activeChannel.id)?.members || [];
-    return current.length > 0 ? [...current] : members.map(m => m.id || m.uid);
+    return current.length > 0 ? [...current] : activeMembers(members).map(m => m.id || m.uid);
   };
 
   const handleSaveChannelDescription = description =>

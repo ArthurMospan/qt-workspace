@@ -35,7 +35,8 @@ test('deactivating a member closes their access and leaves their work alone', as
 
   assert.doesNotMatch(hook, /updateDoc\(membershipRef/);
   assert.doesNotMatch(hook, /deleteDoc\(membershipRef/);
-  assert.match(hook, /removeOrganizationMember\(activeOrgId, uid\)/);
+  assert.match(hook, /deactivateOrganizationMember\(activeOrgId, uid\)/);
+  assert.match(hook, /reactivateOrganizationMember\(activeOrgId, uid\)/);
 });
 
 test('an administrator may change a role, and only the owner seat is off limits', async () => {
@@ -50,11 +51,20 @@ test('an administrator may change a role, and only the owner seat is off limits'
   assert.match(dialog, /canChangeRole = isAdmin && !isMe && member\.role !== 'owner'/);
 });
 
-test('removal confirmation reports the current project impact before deleting', async () => {
+test('the confirmation says what is taken away and what stays', async () => {
   const settings = await read('../src/app/(app)/settings/page.js');
   assert.match(settings, /await getMemberRemovalImpact\(uid\)/);
-  assert.match(settings, /Кількість проєктів[^`]*\$\{impact\.projectCount\}/);
-  assert.match(settings, /await removeMember\(uid\)/);
+  assert.match(settings, /Забрати доступ до організації\?/);
+  // The numbers a person is most afraid of losing are quoted as staying.
+  assert.match(settings, /лишиться за ним/);
+  assert.match(settings, /Доступ можна повернути будь-коли/);
+  assert.match(settings, /await deactivateMember\(uid\)/);
+
+  // Signing out, leaving and deleting the account are personal actions and
+  // must not sit inside an `adminOnly` section, where a member cannot see them.
+  assert.match(settings, /\{ id: 'account',[^}]*group: 'Особисте' \}/);
+  assert.doesNotMatch(settings, /\{ id: 'account',[^}]*adminOnly/);
+  assert.match(settings, /handleLeaveOrganization/);
 });
 
 test('rates are served from protected paths and never persisted in public browser cache', async () => {

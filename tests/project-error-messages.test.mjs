@@ -49,7 +49,9 @@ test('settings API actions no longer replace server errors with generic toasts',
     'Не вдалося змінити роль',
     'Не вдалося змінити посаду',
     'Не вдалося передати права власника',
-    'Не вдалося видалити учасника',
+    'Не вдалося забрати доступ',
+    'Не вдалося повернути доступ',
+    'Не вдалося вийти з організації',
   ]) {
     assert.match(settings, new RegExp(`userFacingErrorMessage\\([^)]*'${fallback}'`));
   }

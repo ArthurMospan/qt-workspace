@@ -159,7 +159,12 @@ export default function NavMenuSection() {
                   pinnedCount={1}
                   infoLabel="Про канал"
                 />
+                {/* `canModerate` is what an owner or admin sees in a group
+                    channel: a delete action on someone else's message, and no
+                    edit action — an edited message would still carry its
+                    author's name. Never set in a direct room. */}
                 <ChatMessageList
+                  canModerate
                   messages={CHAT_DEMO_MESSAGES}
                   myUid="kit-arthur"
                   members={CHAT_DEMO_MEMBERS}

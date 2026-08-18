@@ -49,6 +49,7 @@ import { isIssueUnread, unreadActivityLabel } from '@/lib/utils/issueReadState.m
 import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import {
   ensureSystemPriorities,
   NO_PRIORITY_ID,
@@ -389,7 +390,7 @@ export default function TaskTableView({
       label: sprint.name,
     })),
   ], [sprints]);
-  const memberOptions = useMemo(() => members.map(member => ({
+  const memberOptions = useMemo(() => activeMembers(members).map(member => ({
     value: memberId(member),
     label: memberName(member),
     user: member,

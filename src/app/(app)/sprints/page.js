@@ -16,6 +16,7 @@ import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
 import { BulkActionBar, ContextMenu, DatePicker, FormGroup, PageHeader, Pill, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
 import { can } from '@/lib/utils/can';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
@@ -946,7 +947,7 @@ export default function GlobalSprintsPage() {
           label: category.label,
           dotColor: category.color,
         }))}
-        memberOptions={members.map(member => ({
+        memberOptions={activeMembers(members).map(member => ({
           value: member.id || member.uid,
           label: member.name || member.email || 'Учасник',
           user: member,

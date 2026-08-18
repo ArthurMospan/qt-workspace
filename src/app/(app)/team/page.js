@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -53,7 +54,7 @@ export default function TeamPage() {
 
   const isAdmin = orgRole === 'owner' || orgRole === 'admin';
 
-  const membersWithPresence = useMemo(() => members.map(member => {
+  const membersWithPresence = useMemo(() => activeMembers(members).map(member => {
     const memberId = member.id || member.uid;
     const currentUserId = currentUser?.id || currentUser?.uid;
     const lastActive = memberId === currentUserId

@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import { BulkActionBar, ContextMenu, Textarea } from '@/components/ui';
 import Pill from '@/components/ui/DataDisplay/Pill';
 import { columnOf, compareIssues } from '@/lib/utils/optimistic.mjs';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { NO_PRIORITY, ensureSystemPriorities, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { COLUMN_VIRTUALIZATION_THRESHOLD } from '@/lib/utils/boardRendering.mjs';
@@ -873,7 +874,7 @@ export default function AgileBoard({
             label: column.label,
             dotColor: column.color,
           }))}
-          memberOptions={members.map(member => ({
+          memberOptions={activeMembers(members).map(member => ({
             value: member.id || member.uid,
             label: member.name || member.email || 'Учасник',
             user: member,

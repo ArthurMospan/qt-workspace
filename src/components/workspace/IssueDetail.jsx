@@ -42,6 +42,7 @@ import { plural } from '@/lib/utils/plural.mjs';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { MultiSelect, Select } from '@/components/ui/Select';
 import { AttributeTrigger, ContextMenu, DetailLayout, DetailSection, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
@@ -381,11 +382,14 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // task is worse still. Anyone already assigned stays on the list even if they
   // have since left the team; otherwise they could never be un-assigned.
   const assignableIds = new Set([...teamUids, ...(issue?.assigneeIds || [])]);
+  // Deactivated colleagues stay in `members` so their name and face still
+  // render on everything they did; they are simply not people you can hand new
+  // work to, here or in any other picker.
   const assignableMembers = assignableIds.size === 0
     // A project with no team recorded at all is legacy data, not a project
     // nobody may be assigned to.
-    ? members
-    : members.filter(member => assignableIds.has(member.id || member.uid));
+    ? activeMembers(members)
+    : activeMembers(members).filter(member => assignableIds.has(member.id || member.uid));
 
   // Leaving a task consumes it, not opening it.
   //

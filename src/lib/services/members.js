@@ -100,11 +100,27 @@ export async function updateOrganizationMember(organizationId, memberId, update)
   return result;
 }
 
-export async function removeOrganizationMember(organizationId, memberId) {
+/**
+ * Closes someone's access without touching their work. The same call serves
+ * «Забрати доступ» and «Вийти з організації» — the server tells the two apart
+ * by whether the id is the caller's own.
+ */
+export async function deactivateOrganizationMember(organizationId, memberId) {
   const result = await authenticatedRequest(
     memberUrl(organizationId, memberId),
     { method: 'DELETE' },
-    'Не вдалося видалити учасника',
+    'Не вдалося забрати доступ',
+  );
+  invalidateOrganizationMembers(organizationId);
+  return result;
+}
+
+/** Gives an archived seat back: same role, same position, same projects. */
+export async function reactivateOrganizationMember(organizationId, memberId) {
+  const result = await authenticatedRequest(
+    memberUrl(organizationId, memberId),
+    { method: 'PATCH', body: JSON.stringify({ action: 'reactivate' }) },
+    'Не вдалося повернути доступ',
   );
   invalidateOrganizationMembers(organizationId);
   return result;

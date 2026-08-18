@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { Check, Mail, Phone, Search, UserPlus, Users } from 'lucide-react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
+import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { updateProjectTeam } from '@/lib/services/projects';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -50,7 +51,7 @@ export default function ProjectTeamTab({
     return allMembers.filter(member => [member.name, member.email]
       .some(value => String(value || '').toLowerCase().includes(query)));
   }, [allMembers, memberSearch]);
-  const visibleMembers = useMemo(() => members.filter(member => {
+  const visibleMembers = useMemo(() => activeMembers(members).filter(member => {
     const uid = member.id || member.uid;
     const completedStatuses = new Set(closedStatusIds);
     const assigned = issues.some(issue =>
