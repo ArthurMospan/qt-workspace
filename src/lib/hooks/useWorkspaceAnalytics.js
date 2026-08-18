@@ -1,7 +1,7 @@
 'use client';
 
 // Loads issues and time logs only for the already-authorized project list.
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -12,15 +12,25 @@ import {
   flattenDocumentBuckets,
 } from '@/lib/utils/projectScopedQueries.mjs';
 
+/**
+ * One subscription, two readings of it.
+ *
+ * `issues` is the working set — what is being worked on now. Archived tasks are
+ * not in it, so boards, counts, workload and progress do not carry work nobody
+ * is doing.
+ *
+ * `allIssues` includes them, because a task leaving the present does not leave
+ * the past: hours recorded against it are still hours somebody worked, and an
+ * invoice built without them would quietly bill less than was done. Anything
+ * reasoning about what *happened* reads this one; anything reasoning about what
+ * is *open* reads the other.
+ */
 export function useWorkspaceAnalytics(projectIds = [], {
   includeLinks = true,
   includeTimeLogs = true,
-  // «Архів» is the one screen that wants them; every other reader — the home
-  // page, sprints, analytics — is looking at work in progress.
-  includeArchived = false,
 } = {}) {
   const { activeOrgId, authLoading, orgLoading } = useAppContext();
-  const [issues, setIssues] = useState([]);
+  const [allIssues, setAllIssues] = useState([]);
   const [timeLogs, setTimeLogs] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +42,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
     if (!activeOrgId) {
       targetRef.current = '';
       queueMicrotask(() => {
-        setIssues([]);
+        setAllIssues([]);
         setTimeLogs([]);
         setIssueLinks([]);
         // Still resolving the organization is not the same as having read it
@@ -48,7 +58,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
     if (targetChanged) {
       queueMicrotask(() => {
         setLoading(true);
-        setIssues([]);
+        setAllIssues([]);
         setTimeLogs([]);
         setIssueLinks([]);
       });
@@ -122,9 +132,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
       subscribe({
         key: `issues:${chunkIndex}`,
         buckets: issueBuckets,
-        publish: documents => setIssues(
-          includeArchived ? documents : withoutArchivedIssues(documents),
-        ),
+        publish: setAllIssues,
         sourceQuery: query(
           collection(db, 'issues'),
           where('organizationId', '==', activeOrgId),
@@ -178,7 +186,9 @@ export function useWorkspaceAnalytics(projectIds = [], {
     });
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [activeOrgId, authLoading, orgLoading, projectScope, queryTarget, includeLinks, includeTimeLogs, includeArchived]);
+  }, [activeOrgId, authLoading, orgLoading, projectScope, queryTarget, includeLinks, includeTimeLogs]);
 
-  return { issues, timeLogs, issueLinks, loading };
+  const issues = useMemo(() => withoutArchivedIssues(allIssues), [allIssues]);
+
+  return { issues, allIssues, timeLogs, issueLinks, loading };
 }

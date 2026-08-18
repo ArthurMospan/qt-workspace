@@ -488,6 +488,7 @@ export default function WorkspaceAnalyticsPage() {
 
   const {
     issues,
+    allIssues,
     timeLogs,
     issueLinks,
     loading,
@@ -555,8 +556,10 @@ export default function WorkspaceAnalyticsPage() {
       .map(project => project.id)
   ), [activeProjects, searchQuery]);
 
-  const filteredIssues = useMemo(() => {
-    return issues.filter(i => {
+  // Two readings of the same filter. The screens that count open work use the
+  // working set; the timesheet and the invoice describe work already done, and
+  // an archived task still has to say which task those hours were.
+  const filterIssue = useCallback(i => {
       if (searchQuery) {
         const issueText = `${i.issueKey || ''} ${i.title || ''} ${i.description || ''}`.toLocaleLowerCase('uk-UA');
         if (!issueText.includes(searchQuery) && !searchMatchedProjectIds.has(i.projectId)) return false;
@@ -572,8 +575,12 @@ export default function WorkspaceAnalyticsPage() {
       if (priorityFilter !== 'all' && (i.priority || NO_PRIORITY_ID) !== priorityFilter) return false;
       if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
-    });
-  }, [issues, searchQuery, searchMatchedProjectIds, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
+  }, [searchQuery, searchMatchedProjectIds, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
+  const filteredIssues = useMemo(() => issues.filter(filterIssue), [issues, filterIssue]);
+  const filteredIssuesWithArchived = useMemo(
+    () => allIssues.filter(filterIssue),
+    [allIssues, filterIssue],
+  );
   usePublishLocalSearchResults(analyticsSearch, filteredIssues.length);
   const actionableIssueIds = useMemo(
     () => new Set(selectActionableIssues(issues).map(issue => issue.id)),
@@ -670,7 +677,10 @@ export default function WorkspaceAnalyticsPage() {
   // Рахунок — один конкретний проєкт
   const [billingProjectId, setBillingProjectId] = useState('');
   const billingProject = activeProjects.find(project => project.id === billingProjectId) || activeProjects[0];
-  const billingIssues = issues.filter(i => i.projectId === billingProject?.id);
+  // Archived included on purpose: an hour recorded against a task somebody
+  // later put aside is still an hour that was worked, and leaving it out would
+  // quietly bill the client for less than was done.
+  const billingIssues = allIssues.filter(i => i.projectId === billingProject?.id);
 
   const periodOptions = [7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }));
 
@@ -863,7 +873,7 @@ export default function WorkspaceAnalyticsPage() {
 
         {activeTab === 'timesheet' && (
           <TimesheetTab
-            issues={filteredIssues}
+            issues={filteredIssuesWithArchived}
             events={calendarEvents}
             timeLogs={projectScopedTimeLogs}
             members={members}
@@ -897,6 +907,7 @@ export default function WorkspaceAnalyticsPage() {
             members={members}
             issues={teamIssues}
             hierarchyIssues={teamHierarchyIssues}
+            logIssues={filteredIssuesWithArchived}
             timeLogs={teamTimeLogs}
             events={calendarEvents}
             projects={activeProjects}

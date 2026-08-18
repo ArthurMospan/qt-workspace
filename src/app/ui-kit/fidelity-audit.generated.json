@@ -471,12 +471,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:184",
+      "location": "src/app/(app)/page.js:185",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:196",
+      "location": "src/app/(app)/page.js:197",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -656,12 +656,12 @@
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:148",
+      "location": "src/components/workspace/TimesheetTab.jsx:149",
       "tag": "div",
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:643",
+      "location": "src/components/workspace/TimesheetTab.jsx:648",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },

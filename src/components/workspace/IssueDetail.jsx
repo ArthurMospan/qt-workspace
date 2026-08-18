@@ -42,7 +42,7 @@ import { plural } from '@/lib/utils/plural.mjs';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
-import { isArchivedIssue } from '@/lib/utils/issueArchive.mjs';
+import { isArchivedIssue, withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import { setIssueArchived } from '@/lib/services/issues';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { MultiSelect, Select } from '@/components/ui/Select';
@@ -747,7 +747,10 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const childIssuesDone = childIssues.filter(child => closedStatusIds.includes(child.columnId || child.status)).length;
   const openChildCount = childIssues.length - childIssuesDone;
-  const parentCandidates = issues.filter(candidate => (
+  // This screen subscribes with `includeArchived`, so its own link keeps
+  // working. The pickers below must not inherit that: you do not hang new work
+  // under a task that has been put aside, or link one to it.
+  const parentCandidates = withoutArchivedIssues(issues).filter(candidate => (
     candidate.id !== issueId
     && !existingParentIssueId(candidate)
   ));
@@ -762,7 +765,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     .map(link => ({ link, perspective: issueLinkPerspective(link, issueId) }))
     .filter(item => item.perspective);
   const linkedIssueIds = new Set(currentIssueLinks.map(item => item.perspective.otherIssueId));
-  const availableLinkIssues = issues.filter(item => (
+  const availableLinkIssues = withoutArchivedIssues(issues).filter(item => (
     item.id !== issueId
     && !linkedIssueIds.has(item.id)
   ));

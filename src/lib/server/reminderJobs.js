@@ -320,6 +320,9 @@ export async function collectDeadlineCandidates({ nowMs = Date.now(), lookAheadM
       'assigneeIds',
       'columnId',
       'status',
+      // Read so the candidate filter can drop archived tasks. A projection that
+      // omits it would silently make every archived task look active here.
+      'archivedAt',
     )
     .get();
   const issues = snapshot.docs.map(document => ({ id: document.id, ...document.data() }));

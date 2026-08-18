@@ -47,7 +47,15 @@ export async function GET(request, context) {
     const archivedMemberships = archivedSnap.docs
       .map(item => item.data())
       .map(membership => ({ ...membership, status: MEMBER_STATUS.deactivated }));
-    const memberships = [...activeMemberships, ...archivedMemberships];
+    // An active membership always wins over an archived one. The two flows are
+    // transactional and should never both exist for one person, but a directory
+    // that listed somebody twice would break every list keyed by user id — and
+    // it would do so quietly, long after whatever caused it.
+    const activeUserIds = new Set(activeMemberships.map(membership => membership.userId));
+    const memberships = [
+      ...activeMemberships,
+      ...archivedMemberships.filter(membership => !activeUserIds.has(membership.userId)),
+    ];
     const profileSnaps = memberships.length
       ? await db.getAll(...memberships.map(item => db.collection('users').doc(item.userId)))
       : [];

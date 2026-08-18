@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { taskDisplayKey } from '@/lib/utils/issueKeys.mjs';
+import { isArchivedIssue } from '@/lib/utils/issueArchive.mjs';
 // One ladder for every kind, so a project called "Design" and a task called
 // "Design" rank against each other consistently. The ladders and both issue
 // scorers live in a pure module, next to the tests that argue with them.
@@ -121,7 +122,7 @@ export async function GET(request) {
     } = await readCorpus(corpusKey(organizationId, projectId, mention), async () => {
     const [issues, projects, memberships, events] = await Promise.all([
       issuesQuery
-        .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt', 'columnId', 'status', 'dueDate')
+        .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt', 'columnId', 'status', 'dueDate', 'archivedAt')
         .get(),
       scopedProjectSnapshot
         ? Promise.resolve({ docs: [scopedProjectSnapshot] })
@@ -166,6 +167,10 @@ export async function GET(request) {
           .map(project => project.id),
       );
     const results = issuesSnapshot.docs
+      // Archived tasks are out of the working set everywhere else, and search
+      // is where an exception would be least expected: you would find a task,
+      // click it, and land on a read-only page explaining it is not in use.
+      .filter(item => !isArchivedIssue(item.data()))
       .map(item => {
         const storedIssue = item.data();
         const issue = {

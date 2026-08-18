@@ -730,12 +730,11 @@ export default function SettingsPage() {
       : []
   ), [archiveSectionOpen, archiveTab, projects]);
   const {
-    issues: archiveScopedIssues,
+    allIssues: archiveScopedIssues,
     loading: archivedIssuesLoading,
   } = useWorkspaceAnalytics(archiveProjectIds, {
     includeLinks: false,
     includeTimeLogs: false,
-    includeArchived: true,
   });
   const archivedIssueList = useMemo(
     () => archivedIssuesOf(archiveScopedIssues),

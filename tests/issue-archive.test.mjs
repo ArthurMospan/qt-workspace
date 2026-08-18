@@ -50,18 +50,62 @@ test('the archive state is written by the server, never by the browser', async (
 });
 
 test('archived tasks leave the working lists but keep their own link', async () => {
-  const [issues, analytics, myTasks, detail] = await Promise.all([
+  const [issues, analytics, myTasks, detail, home] = await Promise.all([
     read('../src/lib/hooks/useIssues.js'),
     read('../src/lib/hooks/useWorkspaceAnalytics.js'),
     read('../src/lib/hooks/useAllMyTasks.js'),
     read('../src/components/workspace/IssueDetail.jsx'),
+    read('../src/app/(app)/page.js'),
   ]);
   assert.match(issues, /includeArchived \? docs : withoutArchivedIssues\(docs\)/);
-  assert.match(analytics, /includeArchived \? documents : withoutArchivedIssues\(documents\)/);
   assert.match(myTasks, /withoutArchivedIssues\(flattenDocumentBuckets\(issueBuckets\)\)/);
+  // The home screen rolls its own subscription, so it needs the rule by hand or
+  // a project's progress bar counts work nobody is doing.
+  assert.match(home, /setAllIssues\(withoutArchivedIssues\(flattenDocumentBuckets\(buckets\)\)\)/);
   // The detail is the one reader that asks for them, so «Архів» can open a
   // task and put it back instead of showing "not found".
   assert.match(detail, /useIssues\(projectId, \{ includeLinks: false, includeArchived: true \}\)/);
+  // …but its own pickers must not offer one as a parent or a link target.
+  assert.match(detail, /const parentCandidates = withoutArchivedIssues\(issues\)/);
+  assert.match(detail, /const availableLinkIssues = withoutArchivedIssues\(issues\)/);
+
+  // One subscription, two readings: the working set for what is open, the whole
+  // record for what was done.
+  assert.match(analytics, /const issues = useMemo\(\(\) => withoutArchivedIssues\(allIssues\)/);
+  assert.match(analytics, /return \{ issues, allIssues, timeLogs, issueLinks, loading \};/);
+});
+
+test('an archived task keeps its hours in the timesheet and on the invoice', async () => {
+  const [page, timesheet, workload] = await Promise.all([
+    read('../src/app/(app)/analytics/page.js'),
+    read('../src/components/workspace/TimesheetTab.jsx'),
+    read('../src/components/workspace/WorkloadTab.jsx'),
+  ]);
+  // Money first: an hour recorded against a task somebody later archived is
+  // still an hour that was worked, and dropping it would bill less than was done.
+  assert.match(page, /const billingIssues = allIssues\.filter/);
+  // The timesheet has to be able to name the task an old entry belongs to.
+  assert.match(page, /<TimesheetTab\s+issues=\{filteredIssuesWithArchived\}/);
+  assert.match(page, /logIssues=\{filteredIssuesWithArchived\}/);
+  // …while new time is still booked only against tasks that are in use.
+  assert.match(timesheet, /const projectIssues = useMemo\(\s*[\s\S]{0,80}withoutArchivedIssues\(issues\)/);
+  // Hierarchy maths stays on the working set: an archived child must not turn
+  // its parent into a summary row and hide the parent's own work.
+  assert.match(workload, /logIssues = hierarchyIssues,/);
+  assert.match(workload, /referenceIssues: logIssues,/);
+});
+
+test('nothing chases people about a task that was put aside', async () => {
+  const [candidates, jobs, search] = await Promise.all([
+    read('../src/lib/utils/reminderCandidates.mjs'),
+    read('../src/lib/server/reminderJobs.js'),
+    read('../src/app/api/search/route.js'),
+  ]);
+  assert.match(candidates, /if \(isArchivedIssue\(issue\)\) continue;/);
+  // The projection has to carry the field, or every archived task reads as active.
+  assert.match(jobs, /'archivedAt',/);
+  assert.match(search, /\.filter\(item => !isArchivedIssue\(item\.data\(\)\)\)/);
+  assert.match(search, /'dueDate', 'archivedAt'/);
 });
 
 test('the trash list never hands a tombstone snapshot to the browser', async () => {

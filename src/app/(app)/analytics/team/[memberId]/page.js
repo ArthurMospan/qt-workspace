@@ -40,6 +40,7 @@ export default function MemberAnalyticsPage() {
   const { members = [], loading: membersLoading } = useOrganization();
   const {
     issues,
+    allIssues,
     timeLogs,
     loading,
   } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
@@ -111,6 +112,7 @@ export default function MemberAnalyticsPage() {
             members={members}
             issues={memberIssues}
             hierarchyIssues={hierarchyIssues}
+            logIssues={allIssues}
             timeLogs={memberTimeLogs}
             events={events}
             projects={visibleProjects}

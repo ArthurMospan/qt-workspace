@@ -11,6 +11,7 @@ import {
   chunkProjectIds,
   flattenDocumentBuckets,
 } from '@/lib/utils/projectScopedQueries.mjs';
+import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, ListTodo, CircleDotDashed, CalendarClock, MessageSquare, Settings2 } from 'lucide-react';
@@ -708,7 +709,11 @@ export default function WorkspacePage() {
           id: doc.id,
           ...doc.data({ serverTimestamps: 'estimate' }),
         })));
-        setAllIssues(flattenDocumentBuckets(buckets));
+        // This screen has its own subscription rather than going through
+        // `useWorkspaceAnalytics`, so the rule has to be applied by hand here
+        // too: an archived task is out of the working set, and counting it
+        // would hold a project's progress down with work nobody is doing.
+        setAllIssues(withoutArchivedIssues(flattenDocumentBuckets(buckets)));
         setIssuesError(null);
       },
       (err) => {

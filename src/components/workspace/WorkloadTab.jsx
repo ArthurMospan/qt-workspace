@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-import { activeMembers } from '@/lib/utils/orgMembership.mjs';
+import { isActiveMember } from '@/lib/utils/orgMembership.mjs';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -586,6 +586,11 @@ export default function WorkloadTab({
   members = [],
   issues = [],
   hierarchyIssues = issues,
+  // Only «Останні записи часу» reads this. It must include archived tasks so an
+  // entry keeps naming the task it belongs to — but the hierarchy above must
+  // not, or a parent whose children were archived would be counted as a summary
+  // and its own work would vanish from the numbers.
+  logIssues = hierarchyIssues,
   timeLogs = [],
   events = [],
   projects = [],
@@ -621,9 +626,25 @@ export default function WorkloadTab({
     return () => clearInterval(timer);
   }, []);
 
+  // Whose workload is worth a row: everyone with access, plus anyone who has
+  // lost it but still has open tasks in their name. Deactivation deliberately
+  // leaves those assignments alone, and this is the screen where somebody
+  // notices they need a new owner — dropping the person here would turn their
+  // leftover work into work nobody can see.
+  const chartedMembers = useMemo(() => {
+    const assignedIds = new Set(
+      actionableIssues
+        .filter(issue => !closedSet.has(issue.columnId || issue.status))
+        .flatMap(issue => (Array.isArray(issue.assigneeIds) ? issue.assigneeIds : [])),
+    );
+    return members.filter(member => (
+      isActiveMember(member) || assignedIds.has(memberId(member))
+    ));
+  }, [actionableIssues, closedSet, members]);
+
   const stats = useMemo(() => {
     const periodAgo = now - period * 86_400_000;
-    return activeMembers(members).map(member => {
+    return chartedMembers.map(member => {
       const uid = memberId(member);
       const memberIssues = actionableIssues.filter(issue => issue.assigneeIds?.includes(uid));
       const timesheetIssues = hierarchyIssues.filter(issue => issue.assigneeIds?.includes(uid));
@@ -644,7 +665,7 @@ export default function WorkloadTab({
         member,
         uid,
         issues: memberIssues,
-        referenceIssues: hierarchyIssues,
+        referenceIssues: logIssues,
         timesheetIssues,
         openItems,
         doneItems,
@@ -664,7 +685,7 @@ export default function WorkloadTab({
       if (b.inProgress !== a.inProgress) return b.inProgress - a.inProgress;
       return b.lastActivity - a.lastActivity;
     });
-  }, [actionableIssues, closedSet, deliveredSet, hierarchyIssues, inProgressSet, members, now, period, timeLogs, timeZone]);
+  }, [actionableIssues, chartedMembers, closedSet, deliveredSet, hierarchyIssues, inProgressSet, logIssues, now, period, timeLogs, timeZone]);
 
   const selectedStat = selectedMemberId !== 'all'
     ? stats.find(stat => stat.uid === selectedMemberId)

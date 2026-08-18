@@ -21,6 +21,7 @@ import { effectiveTimeLogDate } from '@/lib/utils/timeLogDates.mjs';
 import { buildTimesheetExport, fileNameDate } from '@/lib/utils/analyticsExport.mjs';
 import { createTaskTimeLogViaApi } from '@/lib/services/timeLogs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { isArchivedIssue, withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 
 // ── Working-time constants (like YouTrack: 1д = 8г, 1т = 5д) ────────────────
 const DAY_MIN = 8 * 60;
@@ -149,7 +150,8 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
                   <div className="flex items-center justify-between gap-2">
                     {issue ? (
                       <Link href={issuePath(issue)}
-                        className="text-[12px] font-bold text-ink hover:underline truncate uppercase">
+                        className={`text-[12px] font-bold hover:underline truncate uppercase ${isArchivedIssue(issue) ? 'text-muted' : 'text-ink'}`}
+                        title={isArchivedIssue(issue) ? 'Завдання в архіві' : undefined}>
                         {issue.issueKey || targetKey.slice(0, 6)}
                       </Link>
                     ) : event ? (
@@ -394,8 +396,11 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
   const [saving, setSaving] = useState(false);
 
   const effectiveProjectId = projectId || projects[0]?.id || '';
+  // `issues` is the whole record, archived included, so that a card can name
+  // the task an old entry belongs to. New time is a different matter: you do
+  // not book hours against something that has been put aside.
   const projectIssues = useMemo(
-    () => issues
+    () => withoutArchivedIssues(issues)
       .filter(i => i.projectId === effectiveProjectId)
       .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0)),
     [issues, effectiveProjectId]
