@@ -6,7 +6,11 @@ import IconAction from '../IconAction';
 import TextAction from '../TextAction';
 import UserAvatar from '../DataDisplay/UserAvatar';
 import { ChatAttachmentList } from './ChatAttachmentList';
-import { collectChatAttachments, isChatMediaAttachment } from '@/lib/utils/chatAttachments.mjs';
+import {
+  chatAttachmentNames,
+  collectChatAttachments,
+  isChatMediaAttachment,
+} from '@/lib/utils/chatAttachments.mjs';
 
 // ─── UI Kit: Channel Info Panel ──────────────────────────────────────────────
 // The right-hand pane of a chat channel: description, members, pinned messages
@@ -263,22 +267,34 @@ export default function ChannelInfoPanel({
                 <Pin size={28} className="mb-3 text-faint" />
                 <p className="text-[13px] font-semibold text-muted">Немає закріплених повідомлень</p>
               </div>
-            ) : pinnedMessages.map(message => (
-              <button
-                key={message.id}
-                type="button"
-                onClick={() => onJumpToMessage(message.id)}
-                className="rounded-xl border border-line/70 bg-white p-3 text-left transition-colors hover:border-[#cfcfcf]"
-              >
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="truncate text-[11px] font-semibold text-muted">{message.user}</span>
-                  <span className="shrink-0 text-[10px] text-faint">{message.time}</span>
-                </div>
-                <p className="line-clamp-3 text-[12px] leading-5 text-ink">
-                  {message.text || (message.attachments?.length ? 'Вкладення' : 'Повідомлення')}
-                </p>
-              </button>
-            ))}
+            ) : pinnedMessages.map(message => {
+              const text = String(message.text || '').trim();
+              const fileNames = chatAttachmentNames(message.attachments);
+              return (
+                <button
+                  key={message.id}
+                  type="button"
+                  onClick={() => onJumpToMessage(message.id)}
+                  className="rounded-xl border border-line/70 bg-white p-3 text-left transition-colors hover:border-[#cfcfcf]"
+                >
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <span className="truncate text-[11px] font-semibold text-muted">{message.user}</span>
+                    <span className="shrink-0 text-[10px] text-faint">{message.time}</span>
+                  </div>
+                  {(text || !fileNames) && (
+                    <p className="line-clamp-3 text-[12px] leading-5 text-ink">{text || 'Повідомлення'}</p>
+                  )}
+                  {/* The files by name. A pinned file is pinned *because* of
+                      which file it is, and this line used to say «Вкладення». */}
+                  {fileNames && (
+                    <span className={`flex items-center gap-1 text-[11px] text-muted ${text ? 'mt-1' : ''}`}>
+                      <Paperclip size={11} className="shrink-0" />
+                      <span className="truncate">{fileNames}</span>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
 

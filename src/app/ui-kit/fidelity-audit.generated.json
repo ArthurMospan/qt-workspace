@@ -8,15 +8,17 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 226,
-    "parsedFiles": 226,
+    "productFiles": 228,
+    "parsedFiles": 228,
     "parseErrors": 0,
-    "nativeControls": 17,
+    "nativeControls": 19,
     "structures": {
+      "chat": 1,
       "analytics": 2,
       "qtplus": 1,
       "settings": 1,
-      "shell": 13
+      "shell": 13,
+      "other": 1
     },
     "styledNativeControls": 12,
     "reviewedNativeControls": 4,
@@ -24,14 +26,14 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 46,
+    "localSurfaceExceptions": 47,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 17,
+    "button": 19,
     "input": 0,
     "textarea": 0,
     "select": 0
@@ -201,6 +203,60 @@
     },
     {
       "tag": "button",
+      "location": "src/components/workspace/HoverCard.jsx:140",
+      "className": "",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Відкрити профіль …",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "",
+      "structure": "chat",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/[projectId]/issue/[issueId]",
+        "/analytics",
+        "/analytics/team/[memberId]",
+        "/calendar",
+        "/calendar/event/[eventId]",
+        "/chat",
+        "/my",
+        "/settings",
+        "/sprints",
+        "/team"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/workspace/IssueMentionChip.jsx:105",
+      "className": "",
+      "text": "",
+      "childElements": [
+        "span"
+      ],
+      "ariaLabel": "… : … Завдання …",
+      "styled": false,
+      "reviewed": "",
+      "resembles": "IconAction",
+      "structure": "other",
+      "routes": [
+        "/",
+        "/[projectId]",
+        "/[projectId]/issue/[issueId]",
+        "/analytics",
+        "/analytics/team/[memberId]",
+        "/calendar",
+        "/calendar/event/[eventId]",
+        "/chat",
+        "/my",
+        "/settings",
+        "/sprints",
+        "/team"
+      ]
+    },
+    {
+      "tag": "button",
       "location": "src/components/workspace/qtplus/cards/FileCard.jsx:77",
       "className": "absolute inset-0 cursor-pointer",
       "text": "",
@@ -350,6 +406,14 @@
       "count": 1
     },
     {
+      "file": "src/components/workspace/HoverCard.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/IssueMentionChip.jsx",
+      "count": 1
+    },
+    {
       "file": "src/components/workspace/qtplus/cards/FileCard.jsx",
       "count": 1
     }
@@ -386,6 +450,11 @@
       "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:311",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
+    },
+    {
+      "location": "src/app/(app)/chat/page.js:353",
+      "tag": "div",
+      "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },
     {
       "location": "src/app/(app)/error.js:16",

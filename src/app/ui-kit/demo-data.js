@@ -35,7 +35,11 @@ export const CHAT_DEMO_MESSAGES = [
     senderId: 'kit-arthur',
     user: 'Артур Моспан',
     time: '10:51',
-    text: 'Подивився. Другий екран ок, тільки заголовок довший за колонку — зріжеться на мобілці.',
+    // A mention mid-sentence, deliberately: the chip is the most-repeated thing
+    // inside a message and the kit could not show one, so nothing here could
+    // ever have caught it standing a line taller than the words around it or
+    // hanging off its own avatar's baseline instead of theirs.
+    text: 'Подивився, @Олена Коваль — другий екран ок, тільки заголовок довший за колонку і зріжеться на мобілці.',
     createdAt: stamp(25),
   },
   {
@@ -43,7 +47,11 @@ export const CHAT_DEMO_MESSAGES = [
     senderId: 'kit-arthur',
     user: 'Артур Моспан',
     time: '10:52',
-    text: 'І ще: кнопку «Далі» варто зробити на всю ширину.',
+    // A mentioned task beside a mentioned person, because the two chips are one
+    // shape and the only way to see that they still are is to see them on the
+    // same line. Outside a workspace there is no task to resolve, so the chip
+    // shows the key it was written with — the geometry is the point here.
+    text: 'І ще: кнопку «Далі» варто зробити на всю ширину, як у #QT-14.',
     createdAt: stamp(24),
     isPinned: true,
   },

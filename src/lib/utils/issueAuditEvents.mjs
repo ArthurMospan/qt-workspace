@@ -1,5 +1,6 @@
 import { statusLabel } from './workflowDefaults.mjs';
 import { NO_PRIORITY_ID } from './priorities.mjs';
+import { ISSUE_BULK_ACTION_BY_ID } from '../bulk/issueBulkActions.mjs';
 
 /**
  * Which field changes are worth a line in a task's history.
@@ -45,6 +46,31 @@ const FIELD_LABELS = Object.freeze({
 const FACT_ONLY_TEXT = Object.freeze({
   description: 'Опис змінено',
 });
+
+/**
+ * Changes to a field, logged under a name of their own.
+ *
+ * Only the client edit path writes `changed_<field>`. Everything the server
+ * does writes what it *did* — the board writes `moved`, the workflow editor
+ * writes `workflow-status-migrated` — and every one of them is «статус
+ * змінено» to whoever reads a task's history. Nothing here knew that, so the
+ * feed printed the raw action id: a column of `moved` under a person's name.
+ */
+const ACTION_FIELDS = Object.freeze({
+  moved: 'status',
+  'workflow-status-migrated': 'status',
+  'hidden-column-migrated': 'status',
+});
+
+/** Actions that are a fact rather than a change, in the words the feed says. */
+const ACTION_TEXT = Object.freeze({
+  created: 'Створено завдання',
+  imported: 'Завдання імпортовано',
+  restored: 'Завдання відновлено з кошика',
+  'legacy-subtasks-migrated': 'Підзавдання перенесено в опис',
+});
+
+const BULK_ACTION_PREFIX = 'bulk_';
 
 /**
  * Stable string form of an audited field, so array values compare by content
@@ -140,6 +166,59 @@ function formatAuditValue(field, value, context) {
   return String(value);
 }
 
+function changeSentence(field, rawFrom, rawTo, context) {
+  const label = FIELD_LABELS[field];
+  const fieldLabel = `${label[0].toUpperCase()}${label.slice(1)}`;
+  const from = formatAuditValue(field, rawFrom, context);
+  const to = formatAuditValue(field, rawTo, context);
+  if (from === to || from === 'не вказано' || from === 'ніхто' || from === 'без міток') {
+    return `${fieldLabel} змінено на «${to}»`;
+  }
+  return `${fieldLabel} змінено: «${from}» → «${to}»`;
+}
+
+// A bulk operation logs the patch it wrote, as JSON keyed by the very fields
+// this module already reads out. `bulk_priority` is a priority change that
+// happened to be made from a selection — so it should read as one, in the same
+// words a single edit produces, rather than as its own id.
+function bulkPatch(raw) {
+  if (raw && typeof raw === 'object') return raw;
+  if (typeof raw !== 'string' || !raw.startsWith('{')) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+// A Firestore Timestamp survives `JSON.stringify` as its two parts, which is
+// the one shape `formatAuditValue` cannot read — a bulk deadline arrives this
+// way and no other.
+function plainAuditValue(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const seconds = value._seconds ?? value.seconds;
+  if (typeof seconds !== 'number') return value;
+  const nanoseconds = value._nanoseconds ?? value.nanoseconds ?? 0;
+  return String(seconds * 1000 + Math.round(nanoseconds / 1e6));
+}
+
+function describeBulkEvent(entry, actionId, context) {
+  const before = bulkPatch(entry?.from);
+  const after = bulkPatch(entry?.to);
+  const sentences = Object.keys(after)
+    .filter(field => FIELD_LABELS[field])
+    .map(field => changeSentence(
+      field,
+      plainAuditValue(before[field]),
+      plainAuditValue(after[field]),
+      context,
+    ));
+  if (sentences.length > 0) return sentences.join('; ');
+  const label = ISSUE_BULK_ACTION_BY_ID.get(actionId)?.label;
+  return label ? `Масова дія: ${label.toLocaleLowerCase('uk-UA')}` : 'Оновлено завдання';
+}
+
 /**
  * One line of a task's history, in words.
  *
@@ -154,23 +233,31 @@ function formatAuditValue(field, value, context) {
  * @returns {string} A sentence for the timeline.
  */
 export function describeAuditEvent(entry, context = {}) {
-  const field = entry?.field || entry?.action?.replace(/^changed_/, '');
-  if (entry?.action === 'created') return 'Створено завдання';
+  const action = typeof entry?.action === 'string' ? entry.action : '';
+  if (ACTION_TEXT[action]) return ACTION_TEXT[action];
+  if (action === 'parent-changed') {
+    return entry?.to ? 'Основну задачу змінено' : 'Завдання відкріплено від основної задачі';
+  }
+  if (action.startsWith(BULK_ACTION_PREFIX)) {
+    return describeBulkEvent(entry, action.slice(BULK_ACTION_PREFIX.length), context);
+  }
+
+  const field = entry?.field || ACTION_FIELDS[action] || action.replace(/^changed_/, '');
   if (field && FACT_ONLY_TEXT[field]) return FACT_ONLY_TEXT[field];
   if (!field || !FIELD_LABELS[field]) {
     // An action this build has no phrase for still names itself rather than
     // pretending the task was merely "updated".
-    return typeof entry?.action === 'string' && entry.action && !entry.action.startsWith('changed_')
-      ? entry.action
-      : 'Оновлено завдання';
+    return action && !action.startsWith('changed_') ? action : 'Оновлено завдання';
   }
 
-  const label = FIELD_LABELS[field];
-  const fieldLabel = `${label[0].toUpperCase()}${label.slice(1)}`;
-  const from = formatAuditValue(field, entry.from ?? entry.oldValue, context);
-  const to = formatAuditValue(field, entry.to ?? entry.newValue, context);
-  if (from === to || from === 'не вказано' || from === 'ніхто' || from === 'без міток') {
-    return `${fieldLabel} змінено на «${to}»`;
+  const from = entry.from ?? entry.oldValue;
+  const to = entry.to ?? entry.newValue;
+  // A board write happens for a reorder inside one column as well as for a
+  // crossing between two, and the entry looks identical either way. Reading a
+  // reorder out as «Статус змінено на «В роботі»» claims a move that did not
+  // happen — the card was already there.
+  if (action === 'moved' && auditValue(from) === auditValue(to)) {
+    return 'Позицію на дошці змінено';
   }
-  return `${fieldLabel} змінено: «${from}» → «${to}»`;
+  return changeSentence(field, from, to, context);
 }

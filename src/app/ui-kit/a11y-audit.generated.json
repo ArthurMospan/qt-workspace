@@ -10,14 +10,14 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 336,
-    "elements": 4177,
+    "files": 338,
+    "elements": 4197,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
     "fakeButtons": 0,
     "contrastFailures": 0,
-    "runtimeNameVerification": 38
+    "runtimeNameVerification": 40
   },
   "namelessControls": [],
   "imagesWithoutAlt": [],
@@ -255,6 +255,20 @@
       "location": "src/components/ui/TaskManagement/TimeTrackingControl.jsx:41",
       "attributes": [
         "aria-label",
+        "title"
+      ]
+    },
+    {
+      "element": "button",
+      "location": "src/components/workspace/HoverCard.jsx:140",
+      "attributes": [
+        "title"
+      ]
+    },
+    {
+      "element": "button",
+      "location": "src/components/workspace/IssueMentionChip.jsx:105",
+      "attributes": [
         "title"
       ]
     },

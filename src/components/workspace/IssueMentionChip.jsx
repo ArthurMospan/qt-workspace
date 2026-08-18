@@ -14,7 +14,7 @@ import { TaskIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import { auth } from '@/lib/firebase';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { MENTION_CHIP } from './HoverCard';
+import { mentionChipClass } from './HoverCard';
 
 // One request per key for the lifetime of the page, shared by every message on
 // it: a conversation that mentions three tasks twenty times asks three times.
@@ -66,8 +66,9 @@ function resolveIssueMention(organizationId, issueKey) {
  * it in the quick-view panel without leaving the conversation.
  *
  * @param {string} props.issueKey The key written in the message, already uppercased.
+ * @param {boolean} props.dark On a dark bubble — a task chat message of your own.
  */
-export default function IssueMentionChip({ issueKey }) {
+export default function IssueMentionChip({ issueKey, dark = false }) {
   const { activeOrgId, currentUser } = useAppContext();
   const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
   const [issue, setIssue] = useState(null);
@@ -105,11 +106,11 @@ export default function IssueMentionChip({ issueKey }) {
       type="button"
       onClick={open}
       title={issue ? `${issueKey}: ${issue.title}` : `Завдання ${issueKey}`}
-      className={MENTION_CHIP}
+      className={mentionChipClass({ dark })}
     >
       {/* Where the avatar sits on a person's mention, at the avatar's own
           18px, so the two chips are the same height and the same rhythm. */}
-      <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center text-muted">
+      <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center ${dark ? 'text-white/70' : 'text-muted'}`}>
         <TaskIcon size={13} />
       </span>
       <span className="truncate">{issue?.title || issueKey}</span>

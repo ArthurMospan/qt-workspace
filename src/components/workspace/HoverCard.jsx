@@ -14,9 +14,44 @@ import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 import { useAppContext } from '@/lib/context/AppContext';
 
-// The one shape a mention has, whoever it names. `IssueMentionChip` wears the
-// same one, so a mentioned task and a mentioned person read alike in a sentence.
-export const MENTION_CHIP = 'inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-black/[0.07] px-1.5 py-0.5 align-middle font-semibold text-ink transition-colors hover:bg-black/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20';
+/**
+ * The one shape a mention has, whoever it names. `IssueMentionChip` and the
+ * task chat's `MentionText` wear the same one, so a mentioned task and a
+ * mentioned person read alike in a sentence.
+ *
+ * Two of these declarations are load-bearing rather than decorative, and both
+ * are why a sentence used to step where a chip appeared in it:
+ *
+ *   • `leading-none` with a fixed height. The chip inherits the message body's
+ *     `leading-relaxed`, so its own words carried a 23px line box inside a 23px
+ *     one and the padding went on top — a 27px chip on a 23px line. Every line
+ *     that mentioned anybody stood taller than the lines around it.
+ *   • `align-middle`, on the chip *and* on whatever wraps it. An inline-flex box
+ *     whose first item is an avatar has no text baseline to offer, so a
+ *     baseline-aligned wrapper hangs the chip from the bottom of that avatar —
+ *     which is what lifted the words inside it clear of the sentence they
+ *     belong to.
+ *
+ * @param {boolean} options.dark On a dark bubble — the task chat's own messages.
+ * @param {boolean} options.interactive Whether it answers to a pointer; a chip
+ *   that only names somebody must not offer a hover state it cannot honour.
+ */
+export function mentionChipClass({ dark = false, interactive = true } = {}) {
+  return [
+    'inline-flex h-[22px] max-w-full items-center gap-1 whitespace-nowrap rounded-full px-1.5',
+    'align-middle text-[13px] font-semibold leading-none',
+    dark ? 'bg-white/15 text-white' : 'bg-black/[0.07] text-ink',
+    interactive
+      ? `cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 ${
+        dark
+          ? 'hover:bg-white/25 focus-visible:ring-white/40'
+          : 'hover:bg-black/[0.12] focus-visible:ring-ink/20'
+      }`
+      : '',
+  ].filter(Boolean).join(' ');
+}
+
+export const MENTION_CHIP = mentionChipClass();
 
 const ORGANIZATION_ROLE_LABELS = {
   owner: 'Власник',
@@ -95,7 +130,10 @@ export default function HoverCard({ type = 'user', value, children, members }) {
 
   return (
     <span
-      className="relative inline-block"
+      // `align-middle` here as well as on the chip: this wrapper is the box the
+      // sentence actually aligns, and left on its baseline it hung the whole
+      // chip from the bottom edge of the avatar inside it.
+      className="relative inline-block align-middle"
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >

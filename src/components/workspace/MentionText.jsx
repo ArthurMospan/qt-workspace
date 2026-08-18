@@ -1,6 +1,8 @@
 'use client';
 
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import IssueMentionChip from '@/components/workspace/IssueMentionChip';
+import { mentionChipClass } from '@/components/workspace/HoverCard';
 import { filterMentionCandidates } from '@/lib/utils/mentions';
 
 function escapeRegExp(value) {
@@ -8,6 +10,17 @@ function escapeRegExp(value) {
 }
 
 const URL_PATTERN = 'https?:\\/\\/[^\\s]+';
+
+// `#QT-12`, at a word boundary — the same rule the composer above this text
+// uses to decide it should offer the task picker. The boundary character is
+// part of the match because a lookbehind is not worth the browser floor; it is
+// handed back as plain text below.
+//
+// The task chat is where `#` mentions are *written* most often, and it was the
+// one surface that never read them back: the picker inserted a key and the
+// message then showed that key, raw, while the same message in the workspace
+// chat showed the task's name. Same text, two different products.
+const ISSUE_PATTERN = '(?:^|[\\s([{])#[\\p{L}\\p{N}-]+';
 
 // Everything up to the first whitespace is greedy, so a pasted address that
 // ends a sentence swallows the punctuation. Hand that tail back as plain text —
@@ -48,7 +61,10 @@ export default function MentionText({ text = '', members = [], dark = false, exc
   const mentionPattern = candidates.length
     ? `@(?:${candidates.map(member => escapeRegExp(member.name)).join('|')})(?=\\s|[.,!?;:]|$)`
     : null;
-  const regex = new RegExp(`(${[URL_PATTERN, mentionPattern].filter(Boolean).join('|')})`, 'g');
+  const regex = new RegExp(
+    `(${[URL_PATTERN, mentionPattern, ISSUE_PATTERN].filter(Boolean).join('|')})`,
+    'gu',
+  );
 
   const nodes = [];
   let cursor = 0;
@@ -62,15 +78,23 @@ export default function MentionText({ text = '', members = [], dark = false, exc
     if (token.startsWith('@')) {
       const member = byName.get(token.slice(1));
       nodes.push(
-        <span
-          key={`mention-${match.index}`}
-          className={`mx-[2px] inline-flex max-w-full items-center gap-1 rounded-full px-2 py-[2px] align-middle text-[12px] font-bold ${
-            dark ? 'bg-white/15 text-white' : 'bg-black/[0.08] text-ink'
-          }`}
-        >
-          <UserAvatar user={member} size="xs" />
+        <span key={`mention-${match.index}`} className={mentionChipClass({ dark, interactive: false })}>
+          <UserAvatar user={member} size="chat-mention" />
           <span className="truncate">{member.name}</span>
         </span>,
+      );
+      continue;
+    }
+
+    if (!token.startsWith('http')) {
+      const hash = token.indexOf('#');
+      if (hash > 0) nodes.push(token.slice(0, hash));
+      nodes.push(
+        <IssueMentionChip
+          key={`issue-${match.index}`}
+          issueKey={token.slice(hash + 1).toLocaleUpperCase('uk-UA')}
+          dark={dark}
+        />,
       );
       continue;
     }

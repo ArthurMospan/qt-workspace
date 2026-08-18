@@ -118,6 +118,61 @@ test('a description is a fact in the feed, never a diff', () => {
   );
 });
 
+test('what the server did reads as what changed, not as its own action id', () => {
+  // The board writes `moved`, the workflow editor `workflow-status-migrated`;
+  // both are a status change to whoever reads the history, and both used to
+  // print their raw id under a person's name.
+  assert.equal(
+    describeAuditEvent({ action: 'moved', from: 'backlog', to: 'qa' }, CONTEXT),
+    'Статус змінено: «Беклог» → «Тестування»',
+  );
+  assert.equal(
+    describeAuditEvent({ action: 'workflow-status-migrated', from: 'backlog', to: 'qa' }, CONTEXT),
+    'Статус змінено: «Беклог» → «Тестування»',
+  );
+  // Dragging a card up its own column writes the same entry as crossing into
+  // another one. Reading that out as a status change claims a move that never
+  // happened.
+  assert.equal(
+    describeAuditEvent({ action: 'moved', from: 'qa', to: 'qa' }, CONTEXT),
+    'Позицію на дошці змінено',
+  );
+});
+
+test('a bulk change reads in the same words a single edit produces', () => {
+  assert.equal(
+    describeAuditEvent({
+      action: 'bulk_priority',
+      from: JSON.stringify({ priority: 'low' }),
+      to: JSON.stringify({ priority: 'high' }),
+    }, CONTEXT),
+    'Пріоритет змінено: «Низький» → «Високий»',
+  );
+  assert.equal(
+    describeAuditEvent({
+      action: 'bulk_assignees-add',
+      from: JSON.stringify({ assigneeIds: ['member-a'] }),
+      to: JSON.stringify({ assigneeIds: ['member-a', 'member-b'] }),
+    }, CONTEXT),
+    'Виконавців змінено: «Оля» → «Оля, Дмитро»',
+  );
+  // A deadline is the one value that reaches the log as a serialised Firestore
+  // Timestamp rather than a number.
+  assert.equal(
+    describeAuditEvent({
+      action: 'bulk_deadline',
+      from: JSON.stringify({ dueDate: null }),
+      to: JSON.stringify({ dueDate: { _seconds: Date.UTC(2026, 7, 19) / 1000, _nanoseconds: 0 } }),
+    }, CONTEXT),
+    'Дедлайн змінено на «19 серп. 2026 р.»',
+  );
+  // A patch this build cannot read still names the operation that wrote it.
+  assert.equal(
+    describeAuditEvent({ action: 'bulk_backlog', from: '', to: '' }, CONTEXT),
+    'Масова дія: повернути в backlog',
+  );
+});
+
 test('an action with no phrase names itself instead of claiming an update', () => {
   assert.equal(describeAuditEvent({ action: 'created' }, CONTEXT), 'Створено завдання');
   assert.equal(

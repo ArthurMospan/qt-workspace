@@ -345,8 +345,12 @@ function ThreadSidebar({
 
   return (
     <div data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl">
+      {/* Header. `md:rounded-t-*` is the same repair `ChatConversationHeader`
+          carries and for the same reason: Chromium does not apply an ancestor's
+          rounded clip to a descendant that paints a `backdrop-filter`, so this
+          bar filled the pane's top corners square while the rest of it rounded.
+          Only at md+ — below that the pane is the whole screen. */}
+      <div data-ui-surface="local" className="relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]">
         <div className="flex items-center gap-2">
           <ChatIcon size={16} className="text-muted" />
           <h3 className="ui-type-card-title text-ink">Гілка</h3>
@@ -527,6 +531,18 @@ export default function ChatPage() {
   // Until it has, the list must not animate anywhere: it should simply be
   // rendered at the bottom, the way every messenger opens a chat.
   const initialScrollDoneRef = useRef(false);
+  // Until when the two corrections that keep this conversation pinned to its
+  // newest message must stand down, because the reader asked to be somewhere
+  // else — a pinned message, a search hit, a file in «Матеріали».
+  //
+  // Both of them used to win. Jumping closes the side panel, the conversation
+  // re-flows into the freed width, the resize observer fires and sends the
+  // scroller back to the bottom while the jump is still animating — so from the
+  // bottom of a channel, clicking a pinned message did nothing at all. Scrolling
+  // up first "fixed" it only because `isScrolledUp` is the observer's own
+  // stand-down flag, which is exactly the symptom that was reported.
+  const holdScrollUntilRef = useRef(0);
+  const isHoldingScroll = () => Date.now() < holdScrollUntilRef.current;
   // Notification links open the exact conversation instead of dropping the
   // user on #general.
   useEffect(() => {
@@ -605,7 +621,7 @@ export default function ChatPage() {
     // ever right for a message that arrives while you are already reading the
     // bottom of one you have been sitting in.
     const isInitialPlacement = !initialScrollDoneRef.current;
-    if (!isScrolledUp) {
+    if (!isScrolledUp && !isHoldingScroll()) {
       if (scrollElement && count > 0) {
         scrollElement.scrollTo({
           top: scrollElement.scrollHeight,
@@ -632,8 +648,9 @@ export default function ChatPage() {
   useEffect(() => {
     if (typeof ResizeObserver === 'undefined') return undefined;
     const observer = new ResizeObserver(() => {
-      if (isScrolledUp) return;
+      if (isScrolledUp || isHoldingScroll()) return;
       requestAnimationFrame(() => {
+        if (isHoldingScroll()) return;
         const scrollElement = chatScrollRef.current;
         scrollElement?.scrollTo({ top: scrollElement.scrollHeight, behavior: 'instant' });
       });
@@ -1006,17 +1023,32 @@ export default function ChatPage() {
   const handleJumpToMessage = (messageId) => {
     setChatSearch('');
     setShowChannelInfo(false);
-    requestAnimationFrame(() => {
+    // Long enough to outlast the smooth scroll and the re-flow that closing the
+    // panel causes, short enough that a message arriving afterwards still
+    // brings a reader sitting at the bottom along with it.
+    holdScrollUntilRef.current = Date.now() + 1200;
+    // Clearing the search re-renders the list, so the row may not exist in this
+    // frame — the message was filtered out of it a moment ago. Wait for it
+    // rather than scrolling to nothing, which is the other half of why this
+    // only ever worked on the second try.
+    let attemptsLeft = 10;
+    const land = () => {
       const element = messageRefs.current.get(messageId);
-      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      element?.animate(
+      if (!element) {
+        if (attemptsLeft-- > 0) requestAnimationFrame(land);
+        return;
+      }
+      setIsScrolledUp(true);
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.animate(
         [
           { backgroundColor: 'rgba(31, 31, 31, 0.12)' },
           { backgroundColor: 'transparent' },
         ],
         { duration: 1200, easing: 'ease-out' },
       );
-    });
+    };
+    requestAnimationFrame(land);
   };
 
   return (

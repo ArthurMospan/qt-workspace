@@ -11,7 +11,12 @@
       "mcp__plugin_vercel_vercel__list_deployments",
       "Read(//c/Users/Arthu/QuickTeam/qt/**)",
       "Bash(npx next *)",
-      "PowerShell(npm run test:unit 2>&1)"
+      "PowerShell(npm run test:unit 2>&1)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/ui-kit)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_pages",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__resize_page",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__emulate"
     ]
   }
 }

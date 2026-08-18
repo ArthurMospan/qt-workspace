@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   chatAttachmentKind,
+  chatAttachmentNames,
   collectChatAttachments,
   formatChatFileSize,
   messageMatchesChatSearch,
@@ -137,6 +138,23 @@ test('chat search finds text, author, and attachment names', () => {
   assert.equal(messageMatchesChatSearch(message, 'invoice'), false);
 });
 
+test('a pinned file is listed by name, not as the word «Вкладення»', async () => {
+  // «Вкладення» is the one thing every such message has in common, so it told
+  // the reader nothing: three pinned files were three identical lines.
+  assert.equal(
+    chatAttachmentNames([{ name: 'kosторис-Q3.xlsx' }, { name: 'brief.pdf' }]),
+    'kosторис-Q3.xlsx, brief.pdf',
+  );
+  // A record with no name of its own still says what kind of thing it is.
+  assert.equal(chatAttachmentNames([{ type: 'image/png' }]), 'Зображення');
+  assert.equal(chatAttachmentNames([]), '');
+  assert.equal(chatAttachmentNames(undefined), '');
+
+  const panel = await readFile(new URL('../src/components/ui/Chat/ChannelInfoPanel.jsx', import.meta.url), 'utf8');
+  assert.match(panel, /chatAttachmentNames\(message\.attachments\)/);
+  assert.doesNotMatch(panel, /\? 'Вкладення'/);
+});
+
 test('collectChatAttachments keeps message context and skips broken records', () => {
   const attachments = collectChatAttachments([
     {
@@ -200,10 +218,16 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   // One shape, defined once: a mentioned task and a mentioned person are the
   // same kind of thing to read past, so the chip is literally the same string
   // rather than two that happen to agree today.
-  assert.match(mentionChip, /import \{ MENTION_CHIP \} from '\.\/HoverCard'/);
-  assert.match(mentionChip, /className=\{MENTION_CHIP\}/);
-  assert.match(hoverCardChip, /export const MENTION_CHIP/);
+  assert.match(mentionChip, /import \{ mentionChipClass \} from '\.\/HoverCard'/);
+  assert.match(mentionChip, /className=\{mentionChipClass\(\{ dark \}\)\}/);
+  assert.match(hoverCardChip, /export function mentionChipClass/);
   assert.match(hoverCardChip, /bg-black\/\[0\.07\]/);
+  // A chip must not stand taller than the line it sits in, and must sit on the
+  // same baseline as the words around it. Inheriting the body's `leading-relaxed`
+  // did the first; a baseline-aligned wrapper around an avatar did the second.
+  assert.match(hoverCardChip, /leading-none/);
+  assert.match(hoverCardChip, /h-\[22px\]/);
+  assert.match(hoverCardChip, /className="relative inline-block align-middle"/);
   // `#` searches task numbers, not prose: typing 12 used to return every task
   // whose description happened to contain those characters.
   assert.match(page, /searchIssues\(queryText, activeOrgId, null, \{ mention: true \}\)/);
@@ -221,6 +245,24 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   // A lookup that could not be made is not an answer. Caching it meant a chat
   // opened before Firebase restored the session never resolved a mention again.
   assert.match(mentionChip, /resolved\.delete\(id\)/);
+});
+
+test('a task chat reads back the task mentions its own composer writes', async () => {
+  const [mentionText, timeline] = await Promise.all([
+    readFile(new URL('../src/components/workspace/MentionText.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  // The task composer has offered the `#` picker all along — and the message it
+  // produced then showed the bare key, while the identical text in the
+  // workspace chat showed the task's name.
+  assert.match(timeline, /<IssueMentionMenu/);
+  assert.match(mentionText, /<IssueMentionChip/);
+  assert.match(mentionText, /ISSUE_PATTERN/);
+  // Same chip as everywhere else, and one that survives a dark bubble: an own
+  // message here is white on near-black, where a black tint is invisible.
+  assert.match(mentionText, /mentionChipClass\(\{ dark, interactive: false \}\)/);
+  assert.match(mentionText, /dark=\{dark\}/);
 });
 
 test('chat user suggestions require an at sign and message actions are keyboard reachable', async () => {

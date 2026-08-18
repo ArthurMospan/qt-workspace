@@ -183,7 +183,11 @@ export default function NavMenuSection() {
               {/* Thread rail — the second pane, and the only reason chat opts
                   out of the shell drawing a single content pane. */}
               <div data-ui-overlay="responsive-pane" className="hidden shrink-0 flex-col overflow-hidden rounded-[16px] bg-canvas md:flex md:w-[280px]">
-                <div className="relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl">
+                {/* `rounded-t-*`: a bar that paints a `backdrop-filter` is not
+                    clipped by its pane's rounded corners in Chromium, so it
+                    filled them square — the same repair the real thread pane
+                    and `ChatConversationHeader` both carry. */}
+                <div className="relative z-10 flex h-[56px] shrink-0 items-center justify-between rounded-t-[var(--ui-radius-surface)] border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl">
                   <div className="flex items-center gap-2">
                     <ChatIcon size={16} className="text-muted" />
                     <h3 className="ui-type-card-title text-ink">Гілка</h3>
