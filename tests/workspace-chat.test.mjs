@@ -432,3 +432,19 @@ test('the unread boundary waits for the cursor, and stops repeating itself', asy
   // And the line itself is dismissed by pointing at it, once it has been read.
   assert.match(timeline, /onMouseEnter=\{boundary\.read \? dismissBoundary : undefined\}/);
 });
+
+// What a project card costs to draw.
+test('a project card counts what is new without reading a whole channel', async () => {
+  const dashboard = await readFile(new URL('../src/app/(app)/page.js', import.meta.url), 'utf8');
+
+  // It listened to a project chat's entire history — no `limit`, one listener
+  // per card — so opening the dashboard read every message ever written in
+  // every project, to colour a number that stops being interesting past a dozen.
+  assert.match(dashboard, /const PROJECT_UNREAD_WINDOW = 50;/);
+  assert.match(dashboard, /query\(messagesRef, orderBy\('createdAt', 'desc'\), limit\(PROJECT_UNREAD_WINDOW\)\)/);
+  assert.doesNotMatch(dashboard, /onSnapshot\(query\(messagesRef\)/);
+  // And it was keyed on `currentUser` and `members`, both of which are new
+  // objects whenever any field of any profile changes — so that whole read was
+  // repeated on identity churn nobody asked for.
+  assert.match(dashboard, /\}, \[project\.id, activeOrgId, uid, memberIdentity\]\);/);
+});

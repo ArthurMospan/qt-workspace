@@ -1,11 +1,12 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { reportLoadError, userFacingErrorMessage } from '@/lib/utils/errors';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
+
 import {
   chunkProjectIds,
   flattenDocumentBuckets,
@@ -55,6 +56,11 @@ import {
   undeliveredEmailsMessage,
 } from '@/lib/utils/inviteEmails';
 
+// How far back a project card looks to colour its unread badge. A number on a
+// card is a hint, not an audit: reading a whole channel's history to compute it
+// costs the same as opening the channel, once per card, on every dashboard.
+const PROJECT_UNREAD_WINDOW = 50;
+
 // ── Project Card ─────────────────────────────────────────────────────────────
 const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading, now }) => {
   const router = useRouter();
@@ -75,14 +81,27 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
   const stackChip = isLarge ? 30 : 24;
   const stackOverlap = isLarge ? '-space-x-[10px]' : '-space-x-[8px]';
 
+  // The badge on a project card, and two things it must not do.
+  //
+  // It listened to a project chat's *entire* history — no `limit`, one listener
+  // per card — so opening the dashboard read every message ever written in every
+  // project, to colour a number that stops being interesting past a dozen. And
+  // the effect was keyed on `currentUser` and `members`, both of which are new
+  // objects whenever any field of any profile changes, so that whole read was
+  // repeated on identity churn nobody asked for. Which is how a free-tier daily
+  // read quota goes without anybody doing anything.
+  //
+  // The newest page is enough to count what is new, and the subscription is
+  // keyed on the two strings it actually depends on.
+  const uid = currentUser?.id || currentUser?.uid || null;
+  const memberIdentity = members.map(member => member.id || member.uid).join(',');
   useEffect(() => {
-    if (!project?.id || !activeOrgId || !currentUser) return;
-    const uid = currentUser.id || currentUser.uid;
+    if (!project?.id || !activeOrgId || !uid) return undefined;
     const channelId = `project_${project.id}`;
-    
+
     const readStateRef = doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${channelId}`);
     const messagesRef = collection(db, 'organizations', activeOrgId, 'channels', channelId, 'messages');
-    
+
     let lastReadTime = 0;
     let messagesList = [];
 
@@ -102,16 +121,24 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
       updateUnread();
     }, () => {});
 
-    const unsubMsgs = onSnapshot(query(messagesRef), (snap) => {
-      messagesList = snap.docs.map(d => d.data());
-      updateUnread();
-    }, () => {});
+    const unsubMsgs = onSnapshot(
+      query(messagesRef, orderBy('createdAt', 'desc'), limit(PROJECT_UNREAD_WINDOW)),
+      (snap) => {
+        messagesList = snap.docs.map(d => d.data());
+        updateUnread();
+      },
+      () => {},
+    );
 
     return () => {
       unsubRead();
       unsubMsgs();
     };
-  }, [project.id, activeOrgId, currentUser, members]);
+    // `members` is read inside, but it is not what this subscription depends on:
+    // it is a list of people whose identity changes with every presence tick,
+    // and re-subscribing on it means re-reading the messages.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id, activeOrgId, uid, memberIdentity]);
 
   const handleCardClick = (e) => {
     if (e.target.closest('.no-nav')) return;
