@@ -19,6 +19,7 @@ import LoadOlderButton from '@/components/ui/Chat/LoadOlderButton';
 import { IconAction, Pill, Popover, useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
+import { can } from '@/lib/utils/can';
 import { COMMENT_WINDOW, useComments } from '@/lib/hooks/useComments';
 import { useSearch } from '@/lib/hooks/useSearch';
 import { AUDIT_WINDOW, useAuditLog } from '@/lib/hooks/useAuditLog';
@@ -176,7 +177,10 @@ export default function UnifiedTimeline({
   onUnreadCountChange,
 }) {
   const router = useRouter();
-  const { currentUser, projects = [], activeOrgId } = useAppContext();
+  const { currentUser, projects = [], activeOrgId, orgRole } = useAppContext();
+  // Owners and admins may remove a comment that should not stand; editing one
+  // stays with its author, because an edited comment still carries their name.
+  const canModerateComments = can(orgRole, 'moderate:content');
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirmDialog = useConfirm();
   const project = projects.find(item => item.id === projectId);
@@ -409,10 +413,10 @@ export default function UnifiedTimeline({
     focusComposer();
   };
 
-  const handleDelete = async comment => {
+  const handleDelete = async (comment, mine = true) => {
     const hasFiles = Array.isArray(comment.attachments) && comment.attachments.length > 0;
     const confirmed = await confirmDialog({
-      title: 'Видалити повідомлення?',
+      title: mine ? 'Видалити повідомлення?' : 'Видалити повідомлення учасника?',
       message: hasFiles
         ? 'Повідомлення та прикріплені файли буде видалено остаточно, зокрема зі сховища.'
         : 'Цю дію неможливо скасувати.',
@@ -857,7 +861,7 @@ export default function UnifiedTimeline({
                       <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-lg:opacity-100">
                         <IconAction label="Відповісти" icon={Reply} size="micro" composition="chat-micro-action" appearance="quiet" shape="micro" onClick={() => beginReply(item)} title="Відповісти" />
                         {isMe && <IconAction label="Редагувати повідомлення" icon={Pencil} size="micro" composition="chat-micro-action" appearance="quiet" shape="micro" onClick={() => beginEdit(item)} title="Редагувати" />}
-                        {isMe && <IconAction label="Видалити повідомлення" icon={Trash2} size="micro" composition="chat-micro-action" appearance="quiet-danger" shape="micro" onClick={() => handleDelete(item)} title="Видалити" />}
+                        {(isMe || canModerateComments) && <IconAction label="Видалити повідомлення" icon={Trash2} size="micro" composition="chat-micro-action" appearance="quiet-danger" shape="micro" onClick={() => handleDelete(item, isMe)} title={isMe ? 'Видалити' : 'Видалити як адміністратор'} />}
                       </div>
                     )}
                 </div>

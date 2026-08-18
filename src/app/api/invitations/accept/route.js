@@ -2,6 +2,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authenticateRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { restoreProjectAccess } from '@/lib/server/orgMembership';
+import { MEMBERSHIP_ARCHIVE } from '@/lib/utils/orgMembership.mjs';
 
 export async function POST(request) {
   try {
@@ -26,6 +28,9 @@ export async function POST(request) {
     const batch = db.batch();
     let accepted = 0;
     const acceptedOrganizationIds = new Set();
+    // Projects to hand back to someone who used to be here; restored after the
+    // batch, because each id has to be read before it can be written to.
+    const projectsToRestore = new Map();
 
     for (const invitationDoc of invitationsSnap.docs) {
       const invitation = invitationDoc.data();
@@ -57,6 +62,18 @@ export async function POST(request) {
 
       const membershipId = `${organizationId}_${uid}`;
       const role = invitation.role === 'admin' ? 'admin' : 'member';
+      // A returning colleague consumes their archived seat instead of sitting
+      // down beside it: two records for one person would put them in the
+      // directory twice, once active and once deactivated.
+      const archiveRef = db.collection(MEMBERSHIP_ARCHIVE).doc(membershipId);
+      const archiveSnap = await archiveRef.get();
+      if (archiveSnap.exists) {
+        batch.delete(archiveRef);
+        const archivedProjectIds = archiveSnap.data().projectIds;
+        if (Array.isArray(archivedProjectIds) && archivedProjectIds.length) {
+          projectsToRestore.set(organizationId, archivedProjectIds);
+        }
+      }
       batch.set(db.collection('orgMemberships').doc(membershipId), {
         id: membershipId,
         orgId: organizationId,
@@ -86,6 +103,9 @@ export async function POST(request) {
       });
     });
     if (accepted > 0) await batch.commit();
+    for (const [organizationId, projectIds] of projectsToRestore) {
+      await restoreProjectAccess({ organizationId, userId: uid, projectIds });
+    }
     return NextResponse.json({ accepted });
   } catch (error) {
     return routeErrorResponse(error, { context: 'Invitation Accept', fallbackMessage: 'Internal Server Error' });

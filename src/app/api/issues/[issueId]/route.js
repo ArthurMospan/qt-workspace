@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
+import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
 import {
   billedTimeLogDetails,
   isBilledTimeLog,
@@ -35,10 +36,15 @@ export async function DELETE(request, context) {
     }
 
     const issue = issueSnap.data();
+    // Deleting is a project right, not an organization right: a member reaches
+    // the tasks of the projects they belong to and no others. The role check
+    // below only says the role may delete at all — `projectWriteError` inside
+    // the transaction decides whether it may delete *this* one, against the
+    // project document the transaction itself read.
     const authorization = await authorizeOrgRequest(
       request,
       issue.organizationId,
-      ['owner', 'admin'],
+      ['owner', 'admin', 'member'],
     );
     if (authorization.error) {
       return NextResponse.json({
@@ -100,11 +106,17 @@ export async function DELETE(request, context) {
           'Проєкт завдання не знайдено',
         );
       }
-      if (projectSnap.data().deletionPending === true) {
+      const projectAccessError = projectWriteError(
+        { id: projectSnap.id, ...projectSnap.data() },
+        current.organizationId,
+        authorization.membership?.role,
+        authorization.user.uid,
+      );
+      if (projectAccessError) {
         throw apiTransactionError(
-          'PROJECT_DELETING',
-          409,
-          'Проєкт уже видаляється',
+          'PROJECT_FORBIDDEN',
+          projectAccessError === 'Ви не входите до команди цього проєкту' ? 403 : 409,
+          projectAccessError,
         );
       }
       if (estimateReservationSnap.exists) {

@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { hasProjectAccess } from '@/lib/utils/projectAccess.mjs';
 import {
   canRestoreIssueTombstone,
   issueTombstoneId,
@@ -20,7 +21,9 @@ export async function POST(request, context) {
     const organizationId = typeof body.organizationId === 'string'
       ? body.organizationId.trim().slice(0, 200)
       : '';
-    const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin']);
+    // Whoever may delete a task may undo it. Restricting the undo to admins
+    // made the trash a one-way door for the person who opened it by mistake.
+    const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin', 'member']);
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     }
@@ -75,6 +78,9 @@ export async function POST(request, context) {
         || project.data().deletionPending === true
       ) {
         throw restoreError('PROJECT_NOT_AVAILABLE', 409, 'Проєкт задачі більше недоступний');
+      }
+      if (!hasProjectAccess(project.data(), authorization.membership?.role, authorization.user.uid)) {
+        throw restoreError('PROJECT_FORBIDDEN', 403, 'Ви не входите до команди цього проєкту');
       }
 
       const now = FieldValue.serverTimestamp();

@@ -348,6 +348,7 @@ function ThreadSidebar({
   onError,
   onClose,
   loading,
+  canModerate = false,
 }) {
   const scrollRef = useRef(null);
   const confirmDialog = useConfirm();
@@ -443,14 +444,21 @@ function ThreadSidebar({
                   onOpen={onOpenAttachment}
                 />
               </div>
-              {reply.senderId === myUid && (
+              {(reply.senderId === myUid || canModerate) && (
                 <IconAction
                   onClick={async () => {
-                    if (await confirmDialog({ title: 'Видалити відповідь?', confirmText: 'Видалити', danger: true })) onDeleteReply(reply.id);
+                    const mine = reply.senderId === myUid;
+                    const confirmed = await confirmDialog({
+                      title: mine ? 'Видалити відповідь?' : 'Видалити відповідь учасника?',
+                      message: mine ? undefined : 'Її не побачить ніхто в гілці. Скасувати не вийде.',
+                      confirmText: 'Видалити',
+                      danger: true,
+                    });
+                    if (confirmed) onDeleteReply(reply.id);
                   }}
                   icon={Trash2}
                   label="Видалити відповідь"
-                  title="Видалити"
+                  title={reply.senderId === myUid ? 'Видалити' : 'Видалити як адміністратор'}
                   size="xs"
                   shape="compact"
                   appearance="quiet-danger"
@@ -521,6 +529,9 @@ export default function ChatPage() {
   const myMemberInfo = members.find(m => (m.id || m.uid) === myUid);
   const myRole = myMemberInfo?.role || 'member';
   const isAdminOrOwner = myRole === 'owner' || myRole === 'admin';
+  // Moderation reaches group channels only. A direct room is not readable by an
+  // administrator — the rules say so — and so must not be deletable either.
+  const canModerateRoom = isAdminOrOwner && activeChannel.type === 'channel';
 
   const getRoomId = useCallback(() => {
     if (activeChannel.type === 'channel') return activeChannel.id;
@@ -1352,6 +1363,7 @@ export default function ChatPage() {
               seenReplies={seenReplies}
               onPin={handlePin}
               onOpenAttachment={setViewerAttachment}
+              canModerate={canModerateRoom}
             />
 
             {/* Input */}
@@ -1383,6 +1395,7 @@ export default function ChatPage() {
               onError={message => showToast(message, 'error')}
               onClose={closeThread}
               loading={loading}
+              canModerate={canModerateRoom}
             />
           )}
 

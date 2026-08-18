@@ -1,5 +1,11 @@
 // src/lib/utils/can.js
 // Role-Based Access Control (RBAC) permissions matrix
+//
+// One rule about this file: an entry describes what the product actually
+// enforces, never what someone once meant it to enforce. Firestore rules and
+// the server routes are authoritative; when they disagree with an entry here,
+// the entry is the bug. Two entries have already drifted that way, so every
+// permission below names the route or rule that backs it.
 
 export const PERMISSIONS = {
   // Projects
@@ -14,7 +20,14 @@ export const PERMISSIONS = {
   'manage:sprints': ['owner', 'admin'], // Створення/старт/завершення спринтів
 
   // Team
-  'manage:team': ['owner', 'admin'],    // Запрошення/видалення учасників
+  //
+  // `manage:team` is the invitation and project-team permission — it is not
+  // one undivided "team management" right, because the product splits it:
+  // inviting and deactivating are owner+admin, ownership is the owner's alone.
+  'manage:team': ['owner', 'admin'],          // Запрошення, склад команди проєкту
+  'manage:member_roles': ['owner', 'admin'],  // member ↔ admin, /api/organizations/[id]/members/[memberId]
+  'deactivate:member': ['owner', 'admin'],    // Забрати доступ, лишивши дані
+  'transfer:ownership': ['owner'],            // /api/organizations/[organizationId]
 
   // Finance
   //
@@ -28,13 +41,22 @@ export const PERMISSIONS = {
   'manage:finance': ['owner', 'admin'], // Рахунки, ставки, чужі табелі
 
   // Issues
+  //
+  // A member may delete a task in a project they belong to. Access to the
+  // project is what grants it, exactly as in Linear and Asana: the alternative
+  // — a typo that only an administrator can clear — is not a safety property,
+  // it is a queue. The task lands in the trash either way and can be restored.
+  // Project scope is enforced server-side in /api/issues/[issueId] and
+  // /api/issues/bulk; being a member of the organization is not enough.
   'create:issue': ['owner', 'admin', 'member'],
   'edit:issue': ['owner', 'admin', 'member'],
-  'delete:issue': ['owner', 'admin'],   // Member не може видаляти завдання
+  'delete:issue': ['owner', 'admin', 'member'],
 
-  // Comments
+  // Comments and chat
   'create:comment': ['owner', 'admin', 'member'],
   'edit:comment': ['owner', 'admin', 'member'], // Only on own comments
+  'moderate:content': ['owner', 'admin'],       // Прибрати чужий коментар або повідомлення
+  'manage:channels': ['owner', 'admin'],        // Створити/видалити канал
 };
 
 /**

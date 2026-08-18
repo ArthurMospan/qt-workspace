@@ -24,6 +24,8 @@ import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
 import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
+import { can } from '@/lib/utils/can';
 import { DEFAULT_ORGANIZATION_TIME_ZONE, zonedDateTimeToUtcMs } from '@/lib/utils/timeZone.mjs';
 
 const ACTION_CONCURRENCY = 8;
@@ -73,13 +75,12 @@ function duplicateData(issue) {
 }
 
 function projectAccessError(project, organizationId, authorization) {
-  if (!project || project.organizationId !== organizationId) return 'Проєкт задачі не знайдено';
-  if (project.deletionPending === true) return 'Проєкт уже видаляється';
-  if (
-    authorization.membership?.role === 'member'
-    && !(Array.isArray(project.team) && project.team.includes(authorization.user.uid))
-  ) return 'Ви не входите до команди цього проєкту';
-  return '';
+  return projectWriteError(
+    project,
+    organizationId,
+    authorization.membership?.role,
+    authorization.user.uid,
+  );
 }
 
 function cleanIds(value) {
@@ -212,8 +213,10 @@ export async function POST(request) {
 
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin', 'member']);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
-    if (action.permission === 'delete:issue' && !['owner', 'admin'].includes(authorization.membership?.role)) {
-      return NextResponse.json({ error: 'Архівувати задачі можуть owner або admin' }, { status: 403 });
+    // Whether a role may archive at all comes from the matrix; whether it may
+    // archive *this* task comes from `projectAccessError` below, per issue.
+    if (action.permission && !can(authorization.membership?.role, action.permission)) {
+      return NextResponse.json({ error: 'Ця масова дія недоступна для вашої ролі' }, { status: 403 });
     }
     if (!(await enforceRateLimit('issue-bulk', authorization.user.uid, 20, 60))) {
       return NextResponse.json({ error: 'Забагато масових операцій. Спробуйте за хвилину' }, { status: 429 });

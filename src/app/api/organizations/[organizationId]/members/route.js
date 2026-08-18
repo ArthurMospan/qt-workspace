@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  MEMBER_STATUS,
+  MEMBERSHIP_ARCHIVE,
+  MEMBERSHIP_COLLECTION,
+} from '@/lib/utils/orgMembership.mjs';
 
 const PUBLIC_PROFILE_FIELDS = [
   'name', 'email', 'customAvatar', 'avatar', 'photoURL', 'phone', 'title', 'status', 'statusEmoji',
@@ -26,12 +31,23 @@ export async function GET(request, context) {
     }
 
     const db = getAdminDb();
-    const membershipsSnap = await db.collection('orgMemberships')
-      .where('orgId', '==', organizationId)
-      .get();
-    const memberships = membershipsSnap.docs
+    // Deactivated people stay in the directory. Every task they were assigned,
+    // every comment they wrote and every hour they logged still names them, and
+    // a directory that forgets them turns all of that into an unknown id. They
+    // come back flagged, so a picker can leave them out while history keeps
+    // rendering their name and face.
+    const [membershipsSnap, archivedSnap] = await Promise.all([
+      db.collection(MEMBERSHIP_COLLECTION).where('orgId', '==', organizationId).get(),
+      db.collection(MEMBERSHIP_ARCHIVE).where('orgId', '==', organizationId).get(),
+    ]);
+    const activeMemberships = membershipsSnap.docs
       .map(item => item.data())
-      .filter(membership => membership.removalPending !== true);
+      .filter(membership => membership.removalPending !== true)
+      .map(membership => ({ ...membership, status: MEMBER_STATUS.active }));
+    const archivedMemberships = archivedSnap.docs
+      .map(item => item.data())
+      .map(membership => ({ ...membership, status: MEMBER_STATUS.deactivated }));
+    const memberships = [...activeMemberships, ...archivedMemberships];
     const profileSnaps = memberships.length
       ? await db.getAll(...memberships.map(item => db.collection('users').doc(item.userId)))
       : [];
@@ -59,6 +75,8 @@ export async function GET(request, context) {
         id: membership.userId,
         uid: membership.userId,
         role: membership.role,
+        status: membership.status,
+        deactivatedAt: serializeValue(membership.deactivatedAt) || null,
         joinedAt: serializeValue(membership.joinedAt) || null,
         positionId: membership.positionId || '',
         ...(canViewBilling ? {

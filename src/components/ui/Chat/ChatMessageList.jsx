@@ -58,6 +58,7 @@ function isSameDay(a, b) {
  * @param {() => void} props.onJumpToLatest Scrolls to the newest message.
  * @param {number} props.unreadCount How many unread messages sit below the fold.
  * @param {object[]} props.typingUsers Who is typing right now.
+ * @param {boolean} props.canModerate The reader may remove someone else's message in this room.
  * @param {string} props.searchTerm Current query; matches are highlighted in place.
  * @param {(message) => void} props.onEdit Opens a message for editing.
  * @param {(message) => void} props.onDelete Deletes it.
@@ -89,6 +90,7 @@ export default function ChatMessageList({
   onThread,
   onPin,
   onOpenAttachment,
+  canModerate = false,
 }) {
   return (
     <>
@@ -144,6 +146,7 @@ export default function ChatMessageList({
                     onOpenAttachment={onOpenAttachment}
                     searchTerm={searchTerm}
                     seenReplyCount={seenReplies[msg.id] || 0}
+                    canModerate={canModerate}
                   />
                 </div>
               );

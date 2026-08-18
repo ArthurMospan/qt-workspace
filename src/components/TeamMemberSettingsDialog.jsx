@@ -27,7 +27,13 @@ export default function TeamMemberSettingsDialog({
   if (!member) return null;
   const uid = member.id || member.uid;
   const isMe = uid === currentUserId;
-  const canChangeRole = isOwner && !isMe && member.role !== 'owner';
+  // Administrators promote and demote, the owner seat moves only by transfer,
+  // and nobody edits their own role — that last one is what stops the last
+  // administrator from locking the organization out of its own settings.
+  const canChangeRole = isAdmin && !isMe && member.role !== 'owner';
+  const roleHint = member.role === 'owner'
+    ? 'Роль власника фіксована'
+    : isMe ? 'Свою роль змінити не можна' : 'Потрібні права адміністратора';
   const canChangePosition = isAdmin;
 
   return (
@@ -45,7 +51,7 @@ export default function TeamMemberSettingsDialog({
         <section>
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Роль і доступ</p>
-            {!canChangeRole && <span className="text-[10px] text-faint">{member.role === 'owner' ? 'Роль власника фіксована' : 'Лише власник може змінювати'}</span>}
+            {!canChangeRole && <span className="text-[10px] text-faint">{roleHint}</span>}
           </div>
           <div className="grid gap-2">
             {member.role === 'owner' ? (
@@ -101,7 +107,7 @@ export default function TeamMemberSettingsDialog({
           </div>
         </section>
 
-        {isAdmin && !isMe && (
+        {isAdmin && !isMe && member.role !== 'owner' && (
           <div className="border-t border-line pt-5">
             <Button
               style="outline"

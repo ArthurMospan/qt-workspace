@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { authenticateRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { hashInviteToken } from '@/lib/server/inviteLinks';
+import { restoreProjectAccess } from '@/lib/server/orgMembership';
+import { MEMBERSHIP_ARCHIVE } from '@/lib/utils/orgMembership.mjs';
 
 // Accepting an invite link. The token is looked up by hash; the joiner gets
 // exactly the role the admin fixed at creation — nothing in the request body
@@ -49,8 +51,19 @@ export async function POST(request) {
 
       const membershipId = `${organizationId}_${uid}`;
       const membershipRef = db.collection('orgMemberships').doc(membershipId);
-      const membershipSnap = await tx.get(membershipRef);
+      const archiveRef = db.collection(MEMBERSHIP_ARCHIVE).doc(membershipId);
+      const [membershipSnap, archiveSnap] = await Promise.all([
+        tx.get(membershipRef),
+        tx.get(archiveRef),
+      ]);
       if (membershipSnap.exists) return { organizationId, alreadyMember: true };
+
+      // Someone who was deactivated and now walks back in through a link must
+      // consume their archived seat, not sit down beside it: two records for
+      // one person would list them in the directory twice, once as active and
+      // once as gone.
+      const archived = archiveSnap.exists ? archiveSnap.data() : null;
+      if (archived) tx.delete(archiveRef);
 
       tx.set(membershipRef, {
         id: membershipId,
@@ -76,10 +89,21 @@ export async function POST(request) {
         lastUsedAt: FieldValue.serverTimestamp(),
         lastUsedBy: uid,
       });
-      return { organizationId };
+      return {
+        organizationId,
+        restoredProjectIds: Array.isArray(archived?.projectIds) ? archived.projectIds : [],
+      };
     });
 
     if (result.error) return INVALID();
+
+    if (result.restoredProjectIds?.length) {
+      await restoreProjectAccess({
+        organizationId: result.organizationId,
+        userId: uid,
+        projectIds: result.restoredProjectIds,
+      });
+    }
 
     const orgSnap = await db.collection('organizations').doc(result.organizationId).get();
     return NextResponse.json({

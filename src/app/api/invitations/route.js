@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { deliverEmail, invitationEmailHtml } from '@/lib/server/email';
+import { reactivateMembership } from '@/lib/server/orgMembership';
 
 // The invitation must be created even when the email provider is down or not
 // configured — the pending doc alone already works (it is auto-accepted on the
@@ -78,6 +79,27 @@ export async function POST(request) {
       const membershipRef = db.collection('orgMemberships').doc(membershipId);
       if ((await membershipRef.get()).exists) {
         return NextResponse.json({ error: 'User is already a member' }, { status: 409 });
+      }
+
+      // Someone who used to be here comes back to their own seat, not to a
+      // blank one: the same position, the same projects, and every task still
+      // assigned to them. Creating a fresh membership instead would leave the
+      // archive behind and quietly strand all of it.
+      const reactivated = await reactivateMembership({
+        organizationId,
+        userId,
+        role: safeRole,
+        extraProjectIds: invitedProjectIds,
+        actorId: authorization.user.uid,
+      });
+      if (reactivated.restored) {
+        const emailSent = await sendInvitationEmail(db, {
+          email: normalizedEmail,
+          organizationId,
+          inviterUid: authorization.user.uid,
+          role: reactivated.role,
+        });
+        return NextResponse.json({ type: 'reactivated', emailSent }, { status: 200 });
       }
       const batch = db.batch();
       batch.set(membershipRef, {

@@ -388,6 +388,48 @@ test('authors can delete their own comments but not another authors comments', a
   await assertFails(deleteDoc(doc(db, 'issues', 'issue-a', 'comments', 'owner-comment')));
 });
 
+test('an admin removes a comment they did not write, but cannot rewrite it', async () => {
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const commentRef = db => doc(db, 'issues', 'issue-a', 'comments', 'moderated-comment');
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(commentRef(context.firestore()), {
+      authorId: 'owner-a', text: 'Something that should not stand', createdAt: new Date(),
+    });
+  });
+
+  // A plain member on the project can read it and still may not remove it.
+  await assertFails(deleteDoc(commentRef(memberDb)));
+  // Editing stays with the author even for an admin: the comment carries the
+  // author's name either way, so nobody else may put words in it.
+  await assertFails(updateDoc(commentRef(adminDb), { text: 'Rewritten by an admin' }));
+  await assertSucceeds(deleteDoc(commentRef(adminDb)));
+});
+
+test('an admin removes a channel message they did not send, but not one in a DM', async () => {
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const otherMemberDb = environment.authenticatedContext('member-offteam').firestore();
+  const channelMessage = db => doc(
+    db, 'organizations', 'org-a', 'channels', 'general', 'messages', 'moderated-message',
+  );
+  const directMessage = db => doc(
+    db, 'organizations', 'org-a', 'channels', DM_ROOM, 'messages', 'm1',
+  );
+  await seedDirectRoom();
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(channelMessage(context.firestore()), {
+      senderId: 'member-a', text: 'Off-topic', reactions: {}, replyCount: 0,
+    });
+  });
+
+  // Another member of the organization is not a moderator.
+  await assertFails(deleteDoc(channelMessage(otherMemberDb)));
+  await assertSucceeds(deleteDoc(channelMessage(adminDb)));
+  // A direct room is not readable by an administrator, so it is not moderatable
+  // either — moderation must never become a way into a private conversation.
+  await assertFails(deleteDoc(directMessage(adminDb)));
+});
+
 test('clients cannot delete task time logs, including their own', async () => {
   const memberDb = environment.authenticatedContext('member-a').firestore();
   await environment.withSecurityRulesDisabled(async context => {

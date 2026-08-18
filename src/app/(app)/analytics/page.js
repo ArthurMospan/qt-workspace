@@ -455,7 +455,12 @@ export default function WorkspaceAnalyticsPage() {
   // Through the matrix, not beside it: a hand-rolled role comparison is how the
   // documented permission and the shipped one drift apart.
   const canSeeBilling = can(orgRole, 'manage:finance');
-  const canSeeTeamTimesheet = canSeeBilling;
+  // Minutes are not money. Every record behind this table is already readable
+  // by anyone on the project — the worklog is part of the task, exactly as in
+  // Jira — so hiding the member selector never protected anything; it only made
+  // the screen disagree with `firestore.rules`. What stays behind
+  // `manage:finance` is money: rates, invoices and the «Рахунок» tab.
+  const canSeeTeamTimesheet = true;
 
   const { members } = useOrganization();
   const { priorities, types } = useWorkflowConfig();

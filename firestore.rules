@@ -4,8 +4,11 @@ rules_version = '2';
 // QuickTeam Firestore rules
 //
 // Multi-tenant model: every org-scoped collection is guarded by membership
-// in `orgMemberships/{orgId}_{uid}` (role: owner|admin|member|client). That
-// collection is the single source of truth for roles — see CLAUDE.md.
+// in `orgMemberships/{orgId}_{uid}` (role: owner|admin|member). That
+// collection is the single source of truth for roles — see CLAUDE.md. Taking
+// access away deletes that document and archives it under
+// `orgMembershipArchive`; the person's work is never touched, which is what
+// separates deactivating someone from erasing them.
 //
 // Field-name note: `orgMemberships` docs use `orgId`; every other org-scoped
 // collection (projects, issues, tasks, sprints, timeLogs, issueLinks,
@@ -71,6 +74,17 @@ service cloud.firestore {
 
     function taskOrg(taskId) {
       return get(/databases/$(database)/documents/tasks/$(taskId)).data.organizationId;
+    }
+
+    // The organization a comment or a project message belongs to, so that
+    // moderation can be authorized without duplicating the scope walk. Each
+    // costs one document read and is used only on delete, which is rare.
+    function issueOrg(issueId) {
+      return get(/databases/$(database)/documents/issues/$(issueId)).data.organizationId;
+    }
+
+    function projectOrg(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data.organizationId;
     }
 
     function canAccessProject(projectId, orgId) {
@@ -168,6 +182,17 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── orgMembershipArchive/{orgId}_{uid} ─────────────────────────────
+    // Where a membership goes when someone is deactivated or leaves. It holds
+    // the seat — role, position, the projects they were on — so that access can
+    // be restored exactly, and it grants nothing while it sits here: every rule
+    // proves membership against `orgMemberships`, and this document is not
+    // there. Read and written by the Admin SDK only, like the invitation flow
+    // it shares its lifecycle with.
+    match /orgMembershipArchive/{archivedId} {
+      allow read, write: if false;
+    }
+
     // ── users/{uid} — private self profile. Organization-visible profile
     //    fields are returned by /api/organizations/:id/members. ─────────
     match /users/{uid} {
@@ -242,8 +267,10 @@ service cloud.firestore {
           resource.data.senderId == request.auth.uid &&
           request.resource.data.senderId == resource.data.senderId;
         allow delete: if projectAcceptsNestedWrites(projectId) &&
-          canAccessProjectById(projectId) &&
-          resource.data.senderId == request.auth.uid;
+          canAccessProjectById(projectId) && (
+          resource.data.senderId == request.auth.uid ||
+          isOrgAdminOrOwner(projectOrg(projectId))
+        );
       }
     }
 
@@ -314,9 +341,15 @@ service cloud.firestore {
            request.resource.data.authorId == resource.data.authorId) ||
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
         );
+        // Moderation: the author, or an owner/admin of the organization. Editing
+        // is deliberately NOT extended — an edited comment still carries the
+        // author's name, so nobody else may put words in their mouth; removing
+        // something that should not stand is the moderation the product needs.
         allow delete: if issueAcceptsNestedWrites(issueId) &&
-          canAccessIssueProject(issueId) &&
-          resource.data.authorId == request.auth.uid;
+          canAccessIssueProject(issueId) && (
+          resource.data.authorId == request.auth.uid ||
+          isOrgAdminOrOwner(issueOrg(issueId))
+        );
       }
 
       // Append-only activity log.
@@ -522,7 +555,12 @@ service cloud.firestore {
             request.resource.data.diff(resource.data).affectedKeys()
               .hasOnly(['reactions', 'replyCount', 'isPinned'])
           );
-        allow delete: if canAccessRoom() && resource.data.senderId == request.auth.uid;
+        // A direct message is not moderatable: an owner cannot read that room,
+        // and must not be able to reach into it to delete either.
+        allow delete: if canAccessRoom() && (
+          resource.data.senderId == request.auth.uid ||
+          (!isDirectRoom() && isOrgAdminOrOwner(orgId))
+        );
 
         match /replies/{replyId} {
           allow read: if canAccessRoom();
@@ -530,7 +568,10 @@ service cloud.firestore {
           allow update: if canAccessRoom() &&
             resource.data.senderId == request.auth.uid &&
             request.resource.data.senderId == resource.data.senderId;
-          allow delete: if canAccessRoom() && resource.data.senderId == request.auth.uid;
+          allow delete: if canAccessRoom() && (
+            resource.data.senderId == request.auth.uid ||
+            (!isDirectRoom() && isOrgAdminOrOwner(orgId))
+          );
         }
       }
     }

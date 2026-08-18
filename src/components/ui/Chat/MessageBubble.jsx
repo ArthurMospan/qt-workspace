@@ -37,13 +37,15 @@ import { plural } from '@/lib/utils/plural.mjs';
  * @param {(msg) => void} props.onThread Opens its thread.
  * @param {(msg) => void} props.onPin Pins or unpins it.
  * @param {(attachment) => void} props.onOpenAttachment Opens an attachment in the viewer.
+ * @param {boolean} props.canModerate The reader is an owner/admin of a group channel and may remove someone else's message. Never true in a direct room.
  * @param {boolean} props.isThread Inside a thread pane: no thread action, tighter layout.
  * @param {number} props.seenReplyCount How many of this message's replies this reader has already seen.
  * @param {string} props.searchTerm Current query; matches are highlighted in the text.
  */
 export default function MessageBubble({
   msg, prevMsg, myUid, members, onReact, onEdit, onDelete, onThread,
-  onPin, onOpenAttachment, isThread = false, searchTerm = '', seenReplyCount = 0
+  onPin, onOpenAttachment, isThread = false, searchTerm = '', seenReplyCount = 0,
+  canModerate = false,
 }) {
   const unreadReplies = Math.max(0, Number(msg.replyCount || 0) - Number(seenReplyCount || 0));
   const [showActions, setShowActions] = useState(false);
@@ -70,6 +72,10 @@ export default function MessageBubble({
     || ((msg.createdAt?.toMillis?.() ?? 0) - (prevMsg.createdAt?.toMillis?.() ?? 0) > 300000);
 
   const isMe = msg.senderId === myUid;
+  // Editing belongs to the author alone — an edited message still carries their
+  // name. Removing one that should not stand is what moderation is for, so the
+  // delete action, and only that one, is also offered to owners and admins.
+  const canDelete = isMe || canModerate;
   // An edit that changes nothing is not an edit, and an empty one is a delete
   // asked for in the wrong place; neither may be saved.
   const editChanged = editText.trim().length > 0 && editText.trim() !== (msg.text || '').trim();
@@ -340,21 +346,29 @@ export default function MessageBubble({
             />
           )}
 
-          {/* Edit & Delete (own messages only) */}
-          {isMe && (
+          {/* Edit (author only) and Delete (author, or a moderator) */}
+          {canDelete && (
             <>
               <div className="w-px h-4 bg-line mx-0.5" />
-              <Button
-                onClick={() => { setEditing(true); setEditText(msg.text); }}
-                style="ghost" size="icon-sm" icon={Edit2}
-                title="Редагувати"
-              />
+              {isMe && (
+                <Button
+                  onClick={() => { setEditing(true); setEditText(msg.text); }}
+                  style="ghost" size="icon-sm" icon={Edit2}
+                  title="Редагувати"
+                />
+              )}
               <Button
                 onClick={async () => {
-                  if (await confirmDialog({ title: 'Видалити повідомлення?', confirmText: 'Видалити', danger: true })) onDelete(msg.id);
+                  const confirmed = await confirmDialog({
+                    title: isMe ? 'Видалити повідомлення?' : 'Видалити повідомлення учасника?',
+                    message: isMe ? undefined : 'Його не побачить ніхто в каналі. Скасувати не вийде.',
+                    confirmText: 'Видалити',
+                    danger: true,
+                  });
+                  if (confirmed) onDelete(msg.id);
                 }}
                 style="ghost" color="red" size="icon-sm" icon={Trash2}
-                title="Видалити"
+                title={isMe ? 'Видалити' : 'Видалити як адміністратор'}
               />
             </>
           )}

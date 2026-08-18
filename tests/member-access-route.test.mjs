@@ -4,25 +4,50 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
-test('member mutations use the authenticated server route and cascade stale access', async () => {
-  const [route, hook] = await Promise.all([
+test('deactivating a member closes their access and leaves their work alone', async () => {
+  const [route, archive, hook] = await Promise.all([
     read('../src/app/api/organizations/[organizationId]/members/[memberId]/route.js'),
+    read('../src/lib/server/orgMembership.js'),
     read('../src/lib/hooks/useOrganization.js'),
   ]);
 
-  assert.match(route, /authorizeOrgRequest\(request, organizationId, \['owner', 'admin'\]\)/);
+  // Access is closed in the two places that grant it, and nowhere else.
   assert.match(route, /where\('team', 'array-contains', memberId\)/);
-  assert.match(route, /where\('assigneeIds', 'array-contains', memberId\)/);
-  assert.match(route, /where\('watcherIds', 'array-contains', memberId\)/);
   assert.match(route, /team: FieldValue\.arrayRemove\(memberId\)/);
-  assert.match(route, /assigneeIds: FieldValue\.arrayRemove\(memberId\)/);
-  assert.match(route, /watcherIds = FieldValue\.arrayRemove\(memberId\)/);
-  assert.match(route, /removalPending: true/);
   assert.match(route, /transaction\.delete\(membershipRef\)/);
+  assert.match(route, /MEMBERSHIP_ARCHIVE/);
   assert.match(route, /memberDirectoryVersion: FieldValue\.increment\(1\)/);
+
+  // The record of what the person did is not access and is never rewritten.
+  // These two writes are what turned "remove from team" into a quiet edit of
+  // every task they had ever been assigned or had been watching.
+  assert.doesNotMatch(route, /assigneeIds: FieldValue\.arrayRemove/);
+  assert.doesNotMatch(route, /watcherIds = FieldValue\.arrayRemove/);
+
+  // Leaving needs no privilege; taking someone else's access away does.
+  assert.match(route, /const leavingSelf = memberId === authorization\.user\.uid/);
+  assert.match(route, /!leavingSelf && !can\(authorization\.membership\?\.role, 'deactivate:member'\)/);
+  assert.match(route, /role === 'owner'/);
+
+  // Coming back restores the seat rather than creating a new one.
+  assert.match(archive, /transaction\.delete\(archiveRef\)/);
+  assert.match(archive, /arrayUnion\(userId\)/);
+
   assert.doesNotMatch(hook, /updateDoc\(membershipRef/);
   assert.doesNotMatch(hook, /deleteDoc\(membershipRef/);
   assert.match(hook, /removeOrganizationMember\(activeOrgId, uid\)/);
+});
+
+test('an administrator may change a role, and only the owner seat is off limits', async () => {
+  const [route, dialog] = await Promise.all([
+    read('../src/app/api/organizations/[organizationId]/members/[memberId]/route.js'),
+    read('../src/components/TeamMemberSettingsDialog.jsx'),
+  ]);
+  assert.match(route, /authorizeOrgRequest\(request, organizationId, \['owner', 'admin'\]\)/);
+  assert.doesNotMatch(route, /Only the owner can change member roles/);
+  assert.match(route, /action === 'role' && membership\.role === 'owner'/);
+  assert.match(route, /memberId === authorization\.user\.uid/);
+  assert.match(dialog, /canChangeRole = isAdmin && !isMe && member\.role !== 'owner'/);
 });
 
 test('removal confirmation reports the current project impact before deleting', async () => {

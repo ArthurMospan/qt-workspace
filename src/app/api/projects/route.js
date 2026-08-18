@@ -52,11 +52,29 @@ export async function POST(req) {
         .filter(memberId => typeof memberId === 'string' && memberId.trim())
         .map(memberId => memberId.trim())
     )].slice(0, 100);
+    // Membership lives in `orgMemberships/{orgId}_{uid}` and nowhere else. This
+    // used to read `organizations/{orgId}/members/{uid}`, a collection the
+    // product never writes, so every snapshot came back missing and the whole
+    // chosen team was dropped in silence — the project was created with its
+    // author alone, and `team` is the field that decides who can see it. An id
+    // that is not a member of this organization is now refused rather than
+    // ignored, because dropping it is exactly the failure that hid this bug.
     const memberRefs = requestedTeam.map(memberId =>
-      db.collection('organizations').doc(organizationId).collection('members').doc(memberId)
+      db.collection('orgMemberships').doc(`${organizationId}_${memberId}`)
     );
     const memberSnaps = memberRefs.length ? await db.getAll(...memberRefs) : [];
-    const validTeam = memberSnaps.filter(snapshot => snapshot.exists).map(snapshot => snapshot.id);
+    const invalidTeamMember = memberSnaps.some((snapshot, index) => (
+      !snapshot.exists
+      || snapshot.data().orgId !== organizationId
+      || snapshot.data().userId !== requestedTeam[index]
+    ));
+    if (invalidTeamMember) {
+      return NextResponse.json({
+        error: 'Один із учасників команди не належить цій організації',
+        code: 'INVALID_TEAM_SCOPE',
+      }, { status: 400 });
+    }
+    const validTeam = requestedTeam;
 
     const orgRef = db.collection('organizations').doc(organizationId);
     const projectRef = db.collection('projects').doc();
