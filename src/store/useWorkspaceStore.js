@@ -246,7 +246,14 @@ const useWorkspaceStore = create((set, get) => ({
   // selectors read a single number from this map, so unchanged cards do not
   // subscribe to Firestore or rerender for another issue's cursor.
   issueReadState: {},
-  setIssueReadState: (readState) => set({ issueReadState: readState }),
+  // Whether that map is an answer yet. An empty map means two opposite things —
+  // «this reader has opened nothing» and «the cursors have not arrived» — and a
+  // task timeline that cannot tell them apart reads its whole history as
+  // unread, draws its boundary at the day the task was created, and sends the
+  // reader there. Nothing may judge what is new until this is true.
+  issueReadStateLoaded: false,
+  setIssueReadState: (readState) => set({ issueReadState: readState, issueReadStateLoaded: true }),
+  resetIssueReadState: () => set({ issueReadState: {}, issueReadStateLoaded: false }),
 
   // ── Breadcrumbs (set by each page) ────────────────────────────────
   breadcrumbs: [],   // [{ label, href? }]

@@ -13,6 +13,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 import { useAppContext } from '@/lib/context/AppContext';
+import useFittedLabel from '@/lib/hooks/useFittedLabel';
 
 /**
  * The one shape a mention has, whoever it names. `IssueMentionChip` and the
@@ -32,7 +33,8 @@ import { useAppContext } from '@/lib/context/AppContext';
  *
  *   • No `overflow: hidden` on the chip. An inline-block that clips takes its
  *     bottom margin edge as its baseline instead of its text — which is why the
- *     label is shortened as a *string* rather than truncated as a box.
+ *     label is shortened as a *string* rather than truncated as a box, by
+ *     `useFittedLabel`, against the width the chip really has.
  *   • The avatar is positioned, not laid out. Out of flow it cannot touch the
  *     line box, and `top-1/2 -translate-y-1/2` centres it in the chip exactly,
  *     whatever the font's metrics are.
@@ -61,14 +63,6 @@ export function mentionChipClass({ dark = false, interactive = true } = {}) {
 
 /** The 16px badge at the chip's left, centred in it and out of the line's way. */
 export const MENTION_CHIP_BADGE = 'absolute left-[3px] top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full';
-
-// A chip is a word in a sentence, so a long one is shortened as text rather
-// than clipped as a box: clipping needs `overflow: hidden`, and that is exactly
-// what would cost the chip its baseline.
-export function mentionChipLabel(value, limit = 44) {
-  const text = String(value || '');
-  return text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text;
-}
 
 export const MENTION_CHIP = mentionChipClass();
 
@@ -127,6 +121,10 @@ export default function HoverCard({ type = 'user', value, members, dark = false 
   // No lookup: the organization's members are already on the page, which is why
   // this half never needed a request and the task half did.
   const member = findMember(members, value);
+  // Names are as long as people's names are. The capsule shortens the one it
+  // shows to the room it has; the whole name stays in the tooltip.
+  const fullName = member?.name || String(value || '').trim();
+  const [chipRef, label] = useFittedLabel(fullName);
 
   const openUser = () => {
     const userId = member?.id || member?.uid;
@@ -162,16 +160,17 @@ export default function HoverCard({ type = 'user', value, members, dark = false 
       onMouseLeave={() => setShow(false)}
     >
       <button
+        ref={chipRef}
         type="button"
         onClick={openUser}
-        title={`Відкрити профіль ${member?.name || value}`}
+        title={`Відкрити профіль ${fullName}`}
         className={mentionChipClass({ dark })}
         data-mention={type}
       >
         <span className={MENTION_CHIP_BADGE}>
           <UserAvatar user={member || { name: value }} size="xs" />
         </span>
-        {mentionChipLabel(member?.name || value)}
+        {label}
       </button>
 
       {show && (

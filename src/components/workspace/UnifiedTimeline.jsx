@@ -191,9 +191,12 @@ export default function UnifiedTimeline({
     timeZone: organizationTimeZone(org),
   }), [statuses, priorities, types, labels, sprints, members, org]);
 
-  const { comments, addComment, updateComment, deleteComment, markCommentsRead } = useComments(issueId);
-  const { entries: auditLogs } = useAuditLog(issueId);
-  const { logs: timeLogs } = useTimeLogs(issueId, projectId);
+  const {
+    comments, loading: commentsLoading,
+    addComment, updateComment, deleteComment, markCommentsRead,
+  } = useComments(issueId);
+  const { entries: auditLogs, loading: auditLoading } = useAuditLog(issueId);
+  const { logs: timeLogs, loading: timeLogsLoading } = useTimeLogs(issueId, projectId);
 
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -248,13 +251,20 @@ export default function UnifiedTimeline({
   // The same cursor the dot on the card reads. It only moves when the reader
   // leaves the task, so it does not shift under them mid-visit — and it is
   // already in the store, so the boundary costs no read of its own.
+  //
+  // Until the cursor stream has actually answered, this reads 0 — «never seen
+  // anything» — and every line of the task's history back to the day it was
+  // created counts as new. That is where «9 нових» pointing at the top of a
+  // task nobody had touched came from, so nothing is judged unread before the
+  // answer arrives.
+  const readCursorsLoaded = useWorkspaceStore(state => state.issueReadStateLoaded);
   const lastSeenAt = useWorkspaceStore(state => state.issueReadState[issueId] || 0);
   const unreadChangeIds = useMemo(() => {
-    if (!myId) return [];
+    if (!myId || !readCursorsLoaded) return [];
     return auditLogs
       .filter(entry => isIssueChangeUnread(entry, lastSeenAt, myId))
       .map(entry => entry.id);
-  }, [auditLogs, lastSeenAt, myId]);
+  }, [auditLogs, lastSeenAt, myId, readCursorsLoaded]);
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
@@ -307,20 +317,44 @@ export default function UnifiedTimeline({
   // Latched during render, not in an effect: it is derived from what this very
   // render already knows, and an effect would mean one painted frame in which
   // the list has no line — at exactly the moment the list is being placed on it.
-  const [boundary, setBoundary] = useState({ issueId: null, key: null, count: 0 });
+  //
+  // «Settled» is the second half of the same problem. A task's feed arrives as
+  // three subscriptions that finish in three different renders, and a boundary
+  // latched off the first of them names the first unread *comment* in a task
+  // whose oldest unread item is a change. It waits for all three.
+  const feedSettled = readCursorsLoaded && !commentsLoading && !auditLoading && !timeLogsLoading;
+  const BOUNDARY_NONE = { key: null, count: 0, read: false, dismissed: false };
+  const [boundary, setBoundary] = useState({ issueId: null, ...BOUNDARY_NONE });
   if (boundary.issueId !== issueId) {
-    setBoundary({ issueId, key: null, count: 0 });
-  } else if (isActive && !boundary.key && liveFirstUnreadKey) {
-    setBoundary({ issueId, key: liveFirstUnreadKey, count: unreadTotal });
+    setBoundary({ issueId, ...BOUNDARY_NONE });
+  } else if (isActive && feedSettled && !boundary.key && liveFirstUnreadKey) {
+    setBoundary({ ...boundary, key: liveFirstUnreadKey, count: unreadTotal });
   }
   const sessionBoundary = boundary.issueId === issueId ? boundary.key : null;
   const boundaryCount = boundary.count;
+  // Dismissed by pointing at it. The line is a landmark, not a notice: once the
+  // reader is looking at what it separates, it has said everything it had to
+  // say, and it used to stand there repeating «Нові повідомлення (3)» for the
+  // rest of the visit however much of them had been read. Hovering is the
+  // cheapest way to say «yes, I see them» without asking for a click.
+  // Kept on the boundary itself, which is already reset by a change of task, so
+  // there is no second piece of state to keep in step with the first.
+  const dismissBoundary = useCallback(
+    () => setBoundary(current => (current.dismissed ? current : { ...current, dismissed: true })),
+    [],
+  );
 
   const unreadLabel = unreadChangeIds.length === 0
     ? 'Нові повідомлення'
     : (unreadCommentIds.length === 0 ? 'Нові зміни' : 'Нове в задачі');
-  const renderUnreadBoundary = itemKey => (itemKey === sessionBoundary ? (
-    <div ref={unreadMarkerRef}>
+  const renderUnreadBoundary = itemKey => (itemKey === sessionBoundary && !boundary.dismissed ? (
+    <div
+      ref={unreadMarkerRef}
+      // Only after it has been read: dismissing a line the reader has not
+      // reached yet would take away the very thing they came back for.
+      onMouseEnter={boundary.read ? dismissBoundary : undefined}
+      className={`transition-opacity duration-300 ${boundary.read ? 'opacity-70' : 'opacity-100'}`}
+    >
       <UnreadDivider count={boundaryCount} label={unreadLabel} />
     </div>
   ) : null);
@@ -469,20 +503,28 @@ export default function UnifiedTimeline({
   // showed its bottom. The flag that says "this issue has been placed" is now
   // set by the placement itself rather than by having run at all.
   useEffect(() => {
-    const becameActive = isActive && !wasActiveRef.current;
+    // The reset belongs to the transition itself, not to the first render that
+    // also has something to show: leaving it below the guard meant reopening a
+    // task whose feed had not arrived yet consumed the transition and never
+    // placed the conversation at all.
+    if (isActive && !wasActiveRef.current) positionedIssueRef.current = null;
     wasActiveRef.current = isActive;
     if (!isActive || timeline.length === 0) return undefined;
-    if (becameActive) positionedIssueRef.current = null;
     const shouldPositionConversation = positionedIssueRef.current !== issueId;
 
     const frame = requestAnimationFrame(() => {
       const scroll = scrollRef.current;
       if (!scroll) return;
       if (shouldPositionConversation) {
-        // A boundary that has not been resolved yet is worth one more frame:
-        // placing at the bottom and correcting afterwards is the jump this was
-        // reported for.
-        if (unreadTotal > 0 && !unreadMarkerRef.current) return;
+        // Waiting for the boundary rather than placing at the bottom and
+        // correcting afterwards — that correction is the jump this was reported
+        // for. `sessionBoundary` is in this effect's dependencies precisely so
+        // that the wait ends: the line is latched during a render that changes
+        // neither the feed's length nor the unread count, so an effect that did
+        // not watch it simply never ran again, and the conversation stayed
+        // where an unplaced scroller sits — at the very top.
+        if (!feedSettled) return;
+        if (sessionBoundary && !unreadMarkerRef.current) return;
         positionedIssueRef.current = issueId;
         if (unreadMarkerRef.current) {
           scrollToUnread('auto');
@@ -496,7 +538,7 @@ export default function UnifiedTimeline({
       if (wasNearBottomRef.current) scroll.scrollTop = scroll.scrollHeight;
     });
     return () => cancelAnimationFrame(frame);
-  }, [isActive, issueId, timeline.length, unreadTotal]);
+  }, [feedSettled, isActive, issueId, sessionBoundary, timeline.length]);
 
   // A compact task screen keeps the timeline mounted while its chat pane is
   // hidden. That preserves the live unread badge without falsely consuming the
@@ -554,6 +596,7 @@ export default function UnifiedTimeline({
       readTimer = window.setTimeout(() => {
         if (unreadCommentIds.length > 0) markCommentsRead(unreadCommentIds, myId);
         consumeChanges();
+        setBoundary(current => (current.read ? current : { ...current, read: true }));
       }, 500);
     }, { root: scroll, threshold: 0.8 });
 
@@ -808,7 +851,13 @@ export default function UnifiedTimeline({
 
       {!isArchived && (
         <ChatComposerDock ref={wrapperRef} scrollRef={scrollRef} composition="timeline-composer">
-          {unreadTotal > 0 && !isUnreadMarkerVisible && (
+          {/* The button and the line are one thing said twice, so they say the
+              same number. The button used to count what was *still* unread
+              while the line counted what had been unread on arrival, which is
+              how «1 нове» could take a reader to a line reading «3». And once
+              the line has been read the button has nowhere left to send
+              anybody, so it goes. */}
+          {sessionBoundary && !boundary.dismissed && !boundary.read && !isUnreadMarkerVisible && (
             <div className="absolute inset-x-0 -top-10 z-20 flex justify-center">
               <Button
                 style="primary"
@@ -816,7 +865,7 @@ export default function UnifiedTimeline({
                 icon={unreadDirection === 'up' ? ChevronUp : ChevronDown}
                 onClick={() => scrollToUnread()}
               >
-                {unreadTotal} нових
+                {boundaryCount} нових
               </Button>
             </div>
           )}

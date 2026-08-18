@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 228,
-    "parsedFiles": 228,
+    "productFiles": 230,
+    "parsedFiles": 230,
     "parseErrors": 0,
     "nativeControls": 19,
     "structures": {
@@ -203,7 +203,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/HoverCard.jsx:164",
+      "location": "src/components/workspace/HoverCard.jsx:162",
       "className": "",
       "text": "",
       "childElements": [
@@ -231,7 +231,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/IssueMentionChip.jsx:105",
+      "location": "src/components/workspace/IssueMentionChip.jsx:182",
       "className": "",
       "text": "",
       "childElements": [
@@ -664,7 +664,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:848",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:897",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

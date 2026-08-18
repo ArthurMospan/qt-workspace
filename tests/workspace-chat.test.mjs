@@ -218,7 +218,7 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   // One shape, defined once: a mentioned task and a mentioned person are the
   // same kind of thing to read past, so the chip is literally the same string
   // rather than two that happen to agree today.
-  assert.match(mentionChip, /mentionChipClass, mentionChipLabel \} from '\.\/HoverCard'/);
+  assert.match(mentionChip, /mentionChipClass \} from '\.\/HoverCard'/);
   assert.match(mentionChip, /className=\{mentionChipClass\(\{ dark \}\)\}/);
   assert.match(hoverCardChip, /export function mentionChipClass/);
   assert.match(hoverCardChip, /bg-black\/\[0\.06\]/);
@@ -228,27 +228,42 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   // browser synthesises one, and the sentence steps where anybody is named.
   assert.match(hoverCardChip, /relative inline-block whitespace-nowrap rounded-full/);
   assert.match(hoverCardChip, /align-baseline/);
-  // Two things would silently take that baseline away again.
+  // Two things would silently take that baseline away again. Measured in the
+  // browser: a line carrying a capsule is 22.75px, and 26.75px the instant that
+  // capsule clips — so a long name is shortened as a string, by `useFittedLabel`
+  // against the width the capsule really has, and never clipped as a box.
   assert.doesNotMatch(hoverCardChip, /mentionChipClass[\s\S]{0,400}overflow-hidden/);
+  assert.match(hoverCardChip, /useFittedLabel\(fullName\)/);
+  assert.match(mentionChip, /useFittedLabel\(fullTitle\)/);
   assert.match(hoverCardChip, /MENTION_CHIP_BADGE = 'absolute/);
   assert.match(hoverCardChip, /className="relative inline-block align-baseline"/);
   // `#` searches task numbers, not prose: typing 12 used to return every task
   // whose description happened to contain those characters.
   assert.match(page, /searchIssues\(queryText, activeOrgId, null, \{ mention: true \}\)/);
-  assert.ok(content.includes('|#[\\\\p{L}\\\\p{N}-]+|'));
+  // Only what *matched* is a mention or a task. `String.split` with a capturing
+  // group hands back the text between the matches too, and deciding what a piece
+  // is by its first character therefore turned «@ у чаті завдання» — a sentence
+  // that matched nothing — into a capsule naming somebody called « у чаті завдання».
+  assert.match(content, /tokenizeMessageLine\(line, \{ memberNames \}\)/);
+  assert.doesNotMatch(content, /part\.startsWith\('@'\)/);
   // A mention is read where it was written: it opens the quick-view panel, not
   // a navigation out of the conversation you are having.
   //
   // A mentioned task says what it is called, so there is nothing to hover for:
   // the chip resolves the title once per key through the same call the picker
   // makes, and clicking it opens the quick-view panel.
-  assert.match(mentionChip, /mention: 'issue'/);
+  // …and it resolves that title with an exact-key lookup, never with search.
+  // Search cannot know which documents match a word, so it reads every task,
+  // project, membership and event in the organization; paying that per capsule
+  // is what exhausted a day's read quota in an afternoon.
+  assert.match(mentionChip, /\/api\/issues\/lookup\?/);
+  assert.doesNotMatch(mentionChip, /api\/search/);
   assert.match(mentionChip, /openIssueQuickView\(issue\)/);
   assert.match(content, /<IssueMentionChip/);
-  assert.doesNotMatch(mentionChip, /legacyStoredIssueKey|collection\(db, 'issues'\)/);
+  assert.doesNotMatch(mentionChip, /collection\(db, 'issues'\)/);
   // A lookup that could not be made is not an answer. Caching it meant a chat
   // opened before Firebase restored the session never resolved a mention again.
-  assert.match(mentionChip, /resolved\.delete\(id\)/);
+  assert.match(mentionChip, /resolved\.delete\(`\$\{organizationId\}:\$\{key\}`\)/);
 });
 
 test('a task chat reads back the task mentions its own composer writes', async () => {
@@ -262,7 +277,9 @@ test('a task chat reads back the task mentions its own composer writes', async (
   // workspace chat showed the task's name.
   assert.match(timeline, /<IssueMentionMenu/);
   assert.match(mentionText, /<IssueMentionChip/);
-  assert.match(mentionText, /ISSUE_PATTERN/);
+  // Both chats read the same sentences, so both ask the same tokenizer rather
+  // than carrying two copies of the rules that disagree about what a mention is.
+  assert.match(mentionText, /tokenizeMessageLine\(text, \{ memberNames, formatting: false \}\)/);
   // The very same component, not a lookalike span. The retyped copy could not be
   // clicked, so a person named in a task chat had no profile behind their name
   // while the identical text in the workspace chat did.

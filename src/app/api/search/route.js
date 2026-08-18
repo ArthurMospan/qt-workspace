@@ -24,6 +24,46 @@ import {
 
 const WEIGHTS = { key: [100, 80, 50], name: [90, 60, 40], body: [0, 0, 20] };
 
+// Ranking happens in memory, so answering a question means reading the whole
+// corpus first — and a person typing «design» asks six questions, one per
+// settled keystroke, each of which used to re-read every task, project,
+// membership and event in the organization. The scan is kept for a minute and
+// shared by every request that lands on the same instance, which turns a word
+// typed into a search box from six scans into one.
+//
+// Only what was read is kept, never who may see it: the visibility rules below
+// run per request, against the caller's own membership, on every hit.
+const CORPUS_TTL_MS = 60_000;
+// A corpus too big to hold is a corpus not worth holding; those organizations
+// need a search index rather than a cache, and must not exhaust the instance
+// trying to pretend otherwise.
+const CORPUS_MAX_DOCS = 5000;
+const corpusCache = new Map();
+
+function corpusKey(organizationId, projectId, mention) {
+  return `${organizationId}|${projectId}|${mention ? 'mention' : 'full'}`;
+}
+
+async function readCorpus(key, load) {
+  const cached = corpusCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  const value = await load();
+  const size = Object.values(value).reduce(
+    (total, part) => total + (Array.isArray(part?.docs) ? part.docs.length : 0),
+    0,
+  );
+  if (size <= CORPUS_MAX_DOCS) {
+    corpusCache.set(key, { value, expiresAt: Date.now() + CORPUS_TTL_MS });
+    // Nothing here is worth a leak: expired organizations are dropped whenever
+    // another one is written.
+    for (const [id, entry] of corpusCache) {
+      if (entry.expiresAt <= Date.now()) corpusCache.delete(id);
+    }
+  }
+  return value;
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -67,7 +107,19 @@ export async function GET(request) {
       }
       scopedProject = { id: scopedProjectSnapshot.id, ...data };
     }
-    const [issuesSnapshot, projectsSnapshot, membershipsSnapshot, eventsSnapshot] = await Promise.all([
+    // Picking a task to mention asks about tasks. It used to read the people,
+    // the projects' calendars and every membership beside them and then throw
+    // all three away — three organization-wide scans, per keystroke, for an
+    // answer that could not contain a person or an event. On a free-tier read
+    // quota that is not an inefficiency, it is the outage.
+    const EMPTY_SNAPSHOT = { docs: [] };
+    const {
+      issues: issuesSnapshot,
+      projects: projectsSnapshot,
+      memberships: membershipsSnapshot,
+      events: eventsSnapshot,
+    } = await readCorpus(corpusKey(organizationId, projectId, mention), async () => {
+    const [issues, projects, memberships, events] = await Promise.all([
       issuesQuery
         .select('issueKey', 'title', 'description', 'projectId', 'type', 'assigneeIds', 'createdAt', 'columnId', 'status', 'dueDate')
         .get(),
@@ -77,11 +129,32 @@ export async function GET(request) {
           .where('organizationId', '==', organizationId)
           .select('name', 'description', 'issuePrefix', 'team', 'status')
           .get(),
-      db.collection('orgMemberships').where('orgId', '==', organizationId).get(),
-      eventsQuery
-        .select('title', 'description', 'location', 'type', 'visibility', 'organizerId', 'participantIds', 'projectId', 'startAt')
-        .get(),
+      mention
+        ? EMPTY_SNAPSHOT
+        : db.collection('orgMemberships').where('orgId', '==', organizationId)
+          .select('userId', 'role', 'orgId')
+          .get(),
+      mention
+        ? EMPTY_SNAPSHOT
+        : eventsQuery
+          .select('title', 'description', 'location', 'type', 'visibility', 'organizerId', 'participantIds', 'projectId', 'startAt')
+          .get(),
     ]);
+      // Snapshots are held as their documents' data, so a cached corpus cannot
+      // keep a Firestore query object alive behind it.
+      const plain = snapshot => ({
+        docs: snapshot.docs.map(document => {
+          const data = document.data();
+          return { id: document.id, data: () => data };
+        }),
+      });
+      return {
+        issues: plain(issues),
+        projects: plain(projects),
+        memberships: plain(memberships),
+        events: plain(events),
+      };
+    });
 
     const projectRecords = projectsSnapshot.docs.map(document => ({ id: document.id, ...document.data() }));
     const projectsById = new Map(projectRecords.map(project => [project.id, project]));

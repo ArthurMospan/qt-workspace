@@ -10,7 +10,7 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 338,
+    "files": 340,
     "elements": 4209,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
@@ -260,14 +260,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/workspace/HoverCard.jsx:164",
+      "location": "src/components/workspace/HoverCard.jsx:162",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/workspace/IssueMentionChip.jsx:105",
+      "location": "src/components/workspace/IssueMentionChip.jsx:182",
       "attributes": [
         "title"
       ]
@@ -295,14 +295,14 @@
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:705",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:748",
       "attributes": [
         "label"
       ]
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:725",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:768",
       "attributes": [
         "label"
       ]

@@ -14,14 +14,17 @@ export default function IssueReadStateBridge() {
   const { activeOrgId, currentUser } = useAppContext();
   const userId = currentUser?.uid || currentUser?.id || null;
   const setIssueReadState = useWorkspaceStore(state => state.setIssueReadState);
+  const resetIssueReadState = useWorkspaceStore(state => state.resetIssueReadState);
 
   useEffect(() => {
     if (!activeOrgId || !userId) {
-      queueMicrotask(() => setIssueReadState({}));
+      queueMicrotask(() => resetIssueReadState());
       return undefined;
     }
 
-    queueMicrotask(() => setIssueReadState({}));
+    // Cleared, and *marked* uncleared: until the first snapshot lands, an empty
+    // map must not be read as «nothing here has ever been seen».
+    queueMicrotask(() => resetIssueReadState());
 
     const readStateQuery = query(
       collection(db, 'organizations', activeOrgId, 'issueReadState'),
@@ -39,9 +42,9 @@ export default function IssueReadStateBridge() {
     });
 
     return () => unsubscribe();
-  }, [activeOrgId, setIssueReadState, userId]);
+  }, [activeOrgId, resetIssueReadState, setIssueReadState, userId]);
 
-  useEffect(() => () => setIssueReadState({}), [setIssueReadState]);
+  useEffect(() => () => resetIssueReadState(), [resetIssueReadState]);
 
   return null;
 }

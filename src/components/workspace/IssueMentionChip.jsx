@@ -14,31 +14,99 @@ import { TaskIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import { auth } from '@/lib/firebase';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { MENTION_CHIP_BADGE, mentionChipClass, mentionChipLabel } from './HoverCard';
+import useFittedLabel from '@/lib/hooks/useFittedLabel';
+import { MENTION_CHIP_BADGE, mentionChipClass } from './HoverCard';
 
-// One request per key for the lifetime of the page, shared by every message on
-// it: a conversation that mentions three tasks twenty times asks three times.
+// One request for the whole page, and one answer per key for the whole session.
 //
-// Only an *answer* is kept. The first version cached the failure too, and the
-// most common failure is the one that happens on mount — Firebase has not
-// restored the session yet, so there is no token to send. Caching that meant a
-// chat opened before sign-in finished never resolved a single mention for the
-// rest of the visit.
+// Each capsule used to ask the search endpoint on its own, and each of those
+// answers cost a full scan of four collections. Eight tasks named in one
+// conversation were therefore eight organization-wide scans *per page view* —
+// the read budget of a whole day, spent on drawing eight words. It is now one
+// batched request against an equality query, and a reload does not repeat it.
 const resolved = new Map();
+const CACHE_KEY = 'qt.issueMentions.v1';
+const CACHE_TTL_MS = 10 * 60 * 1000;
 
-async function fetchIssueByKey(organizationId, issueKey) {
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) throw new Error('Not signed in yet');
-  const params = new URLSearchParams({ organizationId, q: issueKey, mention: 'issue' });
-  const response = await fetch(`/api/search?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || 'Search failed');
-  return (payload.results || []).find(item => (
-    String(item.issueKey || '').toLocaleUpperCase('uk-UA') === issueKey
-  )) || null;
+function sessionCache() {
+  try {
+    if (typeof sessionStorage === 'undefined') return {};
+    const stored = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}');
+    return stored && typeof stored === 'object' ? stored : {};
+  } catch {
+    return {};
+  }
+}
+
+function rememberInSession(entries) {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const stored = sessionCache();
+    const now = Date.now();
+    for (const [id, issue] of entries) stored[id] = { at: now, issue };
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+  } catch {
+    // A full or disabled session store is not a reason to fail a mention.
+  }
+}
+
+function recallFromSession(id) {
+  const entry = sessionCache()[id];
+  if (!entry || Date.now() - Number(entry.at || 0) > CACHE_TTL_MS) return undefined;
+  return entry.issue ?? null;
+}
+
+// Capsules mount in the same commit, so the keys they want are collected within
+// one microtask and asked for together.
+let pendingKeys = new Map();
+let flushScheduled = false;
+// The endpoint answers up to twenty keys at a time; a conversation with more
+// distinct tasks in it is asked in as many requests, never as many as keys.
+const LOOKUP_BATCH = 20;
+
+async function flush(organizationId) {
+  const batch = pendingKeys;
+  pendingKeys = new Map();
+  flushScheduled = false;
+  const allKeys = [...batch.keys()];
+  for (let index = 0; index < allKeys.length; index += LOOKUP_BATCH) {
+    const slice = allKeys.slice(index, index + LOOKUP_BATCH);
+    void askFor(organizationId, slice, new Map(slice.map(key => [key, batch.get(key)])));
+  }
+}
+
+async function askFor(organizationId, keys, batch) {
+  try {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Not signed in yet');
+    const params = new URLSearchParams({ organizationId, keys: keys.join(',') });
+    const response = await fetch(`/api/issues/lookup?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || 'Lookup failed');
+
+    const byKey = new Map((payload.results || []).flatMap(issue => [
+      [String(issue.issueKey || '').toLocaleUpperCase('uk-UA'), issue],
+      [String(issue.storedIssueKey || '').toLocaleUpperCase('uk-UA'), issue],
+    ].filter(([key]) => key)));
+    const answered = [];
+    for (const [key, waiting] of batch) {
+      const issue = byKey.get(key) || null;
+      answered.push([`${organizationId}:${key}`, issue]);
+      waiting.forEach(resolve => resolve(issue));
+    }
+    // Only *answers* are kept. A key that resolves to nothing is an answer; a
+    // key that could not be asked about is not, so the next render tries again.
+    rememberInSession(answered);
+  } catch (error) {
+    console.error('[IssueMentionChip] lookup failed', keys, error);
+    for (const [key, waiting] of batch) {
+      resolved.delete(`${organizationId}:${key}`);
+      waiting.forEach(resolve => resolve(null));
+    }
+  }
 }
 
 function resolveIssueMention(organizationId, issueKey) {
@@ -46,17 +114,22 @@ function resolveIssueMention(organizationId, issueKey) {
   const cached = resolved.get(id);
   if (cached) return cached;
 
-  const request = fetchIssueByKey(organizationId, issueKey).then(issue => {
-    // A key that resolves to nothing is a real answer and worth keeping; a key
-    // that could not be asked about is not, so the next render tries again.
-    if (!issue) resolved.set(id, Promise.resolve(null));
-    return issue;
-  }).catch(error => {
-    resolved.delete(id);
-    console.error('[IssueMentionChip] lookup failed', issueKey, error);
-    return null;
-  });
+  const remembered = recallFromSession(id);
+  if (remembered !== undefined) {
+    const answer = Promise.resolve(remembered);
+    resolved.set(id, answer);
+    return answer;
+  }
 
+  const request = new Promise(resolve => {
+    const waiting = pendingKeys.get(issueKey) || [];
+    waiting.push(resolve);
+    pendingKeys.set(issueKey, waiting);
+    if (!flushScheduled) {
+      flushScheduled = true;
+      queueMicrotask(() => flush(organizationId));
+    }
+  });
   resolved.set(id, request);
   return request;
 }
@@ -72,6 +145,10 @@ export default function IssueMentionChip({ issueKey, dark = false }) {
   const { activeOrgId, currentUser } = useAppContext();
   const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
   const [issue, setIssue] = useState(null);
+  // A task's name is written by whoever created it and can be a whole sentence.
+  // The capsule shows as much of it as it has room for; `title` keeps all of it.
+  const fullTitle = issue?.title || issueKey;
+  const [chipRef, label] = useFittedLabel(fullTitle);
   // Re-run once the session arrives: the first attempt on a cold page has no
   // token, and the chip has to try again rather than stay a bare key forever.
   const signedInAs = currentUser?.uid || currentUser?.id || '';
@@ -103,6 +180,7 @@ export default function IssueMentionChip({ issueKey, dark = false }) {
 
   return (
     <button
+      ref={chipRef}
       type="button"
       onClick={open}
       title={issue ? `${issueKey}: ${issue.title}` : `Завдання ${issueKey}`}
@@ -114,7 +192,7 @@ export default function IssueMentionChip({ issueKey, dark = false }) {
       <span className={`${MENTION_CHIP_BADGE} ${dark ? 'text-white/70' : 'text-muted'}`}>
         <TaskIcon size={12} />
       </span>
-      {mentionChipLabel(issue?.title || issueKey)}
+      {label}
     </button>
   );
 }
