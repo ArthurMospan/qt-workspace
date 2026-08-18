@@ -2,7 +2,7 @@ import React from 'react';
 import HoverCard from './HoverCard';
 import IssueMentionChip from './IssueMentionChip';
 import { ChatAttachmentList } from '@/components/ui/Chat/ChatAttachmentList';
-import { tokenizeMessageLine } from '@/lib/utils/messageTokens.mjs';
+import { issueMentionTitles, tokenizeMessageLine } from '@/lib/utils/messageTokens.mjs';
 
 // Before attachments were a field of their own, a file was written into the
 // message text — `![attachment](url)` for a picture, `📎 name` for anything
@@ -24,8 +24,12 @@ function legacyAttachment(line) {
   return null;
 }
 
-export default function MessageContent({ text, members, searchTerm }) {
+export default function MessageContent({ text, members, searchTerm, issueMentions }) {
   if (!text) return null;
+  // What the message wrote down about the tasks it names, so drawing it costs
+  // no request. Messages written before this field existed have none, and fall
+  // back to the batched lookup inside the capsule.
+  const storedTitles = issueMentionTitles(issueMentions);
   const memberNames = (members || [])
     .map(member => member.name || member.displayName || member.email)
     .filter(Boolean);
@@ -78,8 +82,10 @@ export default function MessageContent({ text, members, searchTerm }) {
                 );
               case 'mention':
                 return <HoverCard key={tokenIndex} type="user" value={token.value} members={members} />;
-              case 'issue':
-                return <IssueMentionChip key={tokenIndex} issueKey={token.value.toLocaleUpperCase('uk-UA')} />;
+              case 'issue': {
+                const key = token.value.toLocaleUpperCase('uk-UA');
+                return <IssueMentionChip key={tokenIndex} issueKey={key} title={storedTitles[key] || ''} />;
+              }
               case 'link':
                 return (
                   <a

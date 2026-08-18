@@ -6,6 +6,7 @@ import { ChatIcon } from '@/lib/design/icons';
 import EmptyState from '../Feedback/EmptyState';
 import Pill from '../DataDisplay/Pill';
 import MessageBubble from './MessageBubble';
+import LoadOlderButton from './LoadOlderButton';
 
 // ─── UI Kit: Chat Message List ───────────────────────────────────────────────
 // The scrolling body of a conversation: day separators, message rows, the
@@ -116,15 +117,7 @@ export default function ChatMessageList({
             {/* Only the latest window is subscribed; older history loads on
                 demand so opening a busy channel is not an unbounded read. */}
             {hasMore && !searchTerm.trim() && (
-              <div className="flex justify-center pb-2 pt-1">
-                <button
-                  type="button"
-                  onClick={onLoadMore}
-                  className="rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-[#ebebeb] hover:text-ink"
-                >
-                  Показати давніші повідомлення
-                </button>
-              </div>
+              <LoadOlderButton onClick={onLoadMore} />
             )}
             {messages.map((msg, i) => {
               const prev = i > 0 ? messages[i - 1] : null;

@@ -15,12 +15,13 @@ import Button from '@/components/ui/Button';
 import ChatComposerDock from '@/components/ui/ChatComposerDock';
 import ChatComposerCore from '@/components/ui/ChatComposerCore';
 import UnreadDivider from '@/components/ui/Chat/UnreadDivider';
+import LoadOlderButton from '@/components/ui/Chat/LoadOlderButton';
 import { IconAction, Pill, Popover, useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
-import { useComments } from '@/lib/hooks/useComments';
+import { COMMENT_WINDOW, useComments } from '@/lib/hooks/useComments';
 import { useSearch } from '@/lib/hooks/useSearch';
-import { useAuditLog } from '@/lib/hooks/useAuditLog';
+import { AUDIT_WINDOW, useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { describeAuditEvent } from '@/lib/utils/issueAuditEvents.mjs';
@@ -38,6 +39,7 @@ import MentionText from '@/components/workspace/MentionText';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { extractMentionedUserIds, filterMentionCandidates } from '@/lib/utils/mentions';
+import { collectIssueMentions } from '@/lib/utils/messageTokens.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import {
   ATTACHMENT_UPLOAD_ACCEPT,
@@ -191,11 +193,20 @@ export default function UnifiedTimeline({
     timeZone: organizationTimeZone(org),
   }), [statuses, priorities, types, labels, sprints, members, org]);
 
+  // A task discussed for a year must not cost its whole year to open. The feed
+  // arrives as a window of the newest activity — the same rule the chat channel
+  // follows — and grows only when the reader asks for more.
+  const [historyWindow, setHistoryWindow] = useState(1);
   const {
-    comments, loading: commentsLoading,
+    comments, loading: commentsLoading, hasMore: hasOlderComments,
     addComment, updateComment, deleteComment, markCommentsRead,
-  } = useComments(issueId);
-  const { entries: auditLogs, loading: auditLoading } = useAuditLog(issueId);
+  } = useComments(issueId, COMMENT_WINDOW * historyWindow);
+  const {
+    entries: auditLogs,
+    loading: auditLoading,
+    hasMore: hasOlderChanges,
+  } = useAuditLog(issueId, AUDIT_WINDOW * historyWindow);
+  const hasOlderHistory = hasOlderComments || hasOlderChanges;
   const { logs: timeLogs, loading: timeLogsLoading } = useTimeLogs(issueId, projectId);
 
   const [input, setInput] = useState('');
@@ -240,6 +251,7 @@ export default function UnifiedTimeline({
     ignoreIndex: -1,
   });
   const [issueMention, setIssueMention] = useState({ active: false, query: '', startIndex: -1, cursorIndex: -1 });
+  const resolvedIssues = useRef(new Map());
   const {
     results: issueResults,
     loading: issueSearchLoading,
@@ -461,6 +473,11 @@ export default function UnifiedTimeline({
 
   const selectIssueMention = mentioned => {
     if (!mentioned?.issueKey) return;
+    // The picker had the name on screen; the comment keeps it.
+    resolvedIssues.current.set(
+      String(mentioned.issueKey).toLocaleUpperCase('uk-UA'),
+      { id: mentioned.id, title: mentioned.title || '' },
+    );
     const textBefore = input.slice(0, issueMention.startIndex);
     const textAfter = input.slice(issueMention.cursorIndex);
     const mentionText = `#${mentioned.issueKey} `;
@@ -655,7 +672,10 @@ export default function UnifiedTimeline({
           }));
         }
         const mentionedUserIds = extractMentionedUserIds(text, members, myId);
-        await addComment(issueId, text, currentUser, attachments, replyTo, { mentionedUserIds });
+        await addComment(issueId, text, currentUser, attachments, replyTo, {
+          mentionedUserIds,
+          issueMentions: collectIssueMentions(text, resolvedIssues.current),
+        });
         const taskChatLink = `${issuePath(issue, project || projectId)}?view=chat`;
         if (mentionedUserIds.length > 0) {
           try {
@@ -725,6 +745,15 @@ export default function UnifiedTimeline({
             description="Почніть обговорення завдання з командою."
             context="flexible"
           />
+        )}
+
+        {/* The window's edge, and the way past it. Without this control the
+            feed would simply end, and a task's older history would be
+            unreachable rather than merely unloaded. */}
+        {hasOlderHistory && timeline.length > 0 && (
+          <LoadOlderButton onClick={() => setHistoryWindow(current => current + 1)}>
+            Показати давнішу історію
+          </LoadOlderButton>
         )}
 
         {timeline.map((item, index) => {
@@ -798,7 +827,13 @@ export default function UnifiedTimeline({
                     <ReplyQuote replyTo={item.replyTo} dark={isMe} />
                     {item.text && (
                       <div className="whitespace-pre-wrap">
-                        <MentionText text={item.text} members={members} dark={isMe} excludeMemberId={item.authorId} />
+                        <MentionText
+                          text={item.text}
+                          members={members}
+                          dark={isMe}
+                          excludeMemberId={item.authorId}
+                          issueMentions={item.issueMentions}
+                        />
                       </div>
                     )}
                     <ChatAttachmentList

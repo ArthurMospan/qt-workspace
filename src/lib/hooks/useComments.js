@@ -2,40 +2,50 @@
 
 // src/lib/hooks/useComments.js — Internal comments for an issue (subcollection)
 import { useState, useEffect, useCallback } from 'react';
-import { arrayUnion, collection, deleteField, doc, getCountFromServer, onSnapshot, increment, runTransaction, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { arrayUnion, collection, deleteField, doc, getCountFromServer, limit, onSnapshot, orderBy, query, increment, runTransaction, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
 import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
-export function useComments(issueId) {
+// How much of a conversation opens with the task. The same reasoning as a chat
+// channel: the newest page is what a reader arrives for, and the rest is loaded
+// when they ask for it — a task discussed for a year must not cost its whole
+// year every time somebody opens it.
+export const COMMENT_WINDOW = 60;
+
+/**
+ * The task's comments, oldest first — which is how they are read — over a
+ * window of the newest ones, which is how they are fetched.
+ *
+ * @param {string} issueId The task.
+ * @param {number} windowSize How many of the newest comments to subscribe to.
+ */
+export function useComments(issueId, windowSize = COMMENT_WINDOW) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   useEffect(() => {
     if (!issueId) {
       queueMicrotask(() => setLoading(false));
-      return;
+      return undefined;
     }
-    const colRef = collection(db, 'issues', issueId, 'comments');
-    const unsub = onSnapshot(colRef, {
+    const conversationQuery = query(
+      collection(db, 'issues', issueId, 'comments'),
+      orderBy('createdAt', 'desc'),
+      limit(windowSize),
+    );
+    const unsub = onSnapshot(conversationQuery, {
       serverTimestamps: 'estimate'
     }, snap => {
-      const docs = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-      // Sort client-side by createdAt asc
-      docs.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis?.() ?? 0;
-        const bTime = b.createdAt?.toMillis?.() ?? 0;
-        return aTime - bTime;
-      });
-      setComments(docs);
+      // Newest first out of the query, oldest first into the conversation.
+      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse());
+      setHasMore(snap.size >= windowSize);
       setLoading(false);
     }, err => {
       reportLoadError('[useComments]', err);
       setLoading(false);
     });
     return () => unsub();
-  }, [issueId]);
+  }, [issueId, windowSize]);
 
   // -------------------------------------------------------------------------
   // addComment
@@ -56,6 +66,9 @@ export function useComments(issueId) {
         authorAvatar: user.avatar || user.photoURL || null,
         text: text?.trim() || '',
         attachments,
+        // What the composer already resolved about the tasks this comment
+        // names, so drawing them later costs nothing. See `collectIssueMentions`.
+        issueMentions: Array.isArray(options.issueMentions) ? options.issueMentions : [],
         // The sender has read their own message — read receipts compare readBy
         // against everyone except the sender.
         readBy: authorId ? [authorId] : [],
@@ -172,6 +185,7 @@ export function useComments(issueId) {
   return {
     comments,
     loading,
+    hasMore,
     addComment,
     updateComment,
     deleteComment,

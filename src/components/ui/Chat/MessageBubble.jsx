@@ -220,7 +220,12 @@ export default function MessageBubble({
         ) : (
           <div>
             <div className="text-[14px] text-ink leading-relaxed break-words">
-              <MessageContent text={msg.text} members={members} searchTerm={searchTerm} />
+              <MessageContent
+                text={msg.text}
+                members={members}
+                searchTerm={searchTerm}
+                issueMentions={msg.issueMentions}
+              />
               {msg.isEdited && <span className="text-[11px] text-muted ml-1">(редаговано)</span>}
             </div>
 

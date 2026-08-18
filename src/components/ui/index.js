@@ -138,6 +138,7 @@ export { default as KeyboardShortcutsDialog } from './Navigation/KeyboardShortcu
 export { default as MessageBubble } from './Chat/MessageBubble'
 export { default as ChatMessageList } from './Chat/ChatMessageList'
 export { default as UnreadDivider } from './Chat/UnreadDivider'
+export { default as LoadOlderButton } from './Chat/LoadOlderButton'
 export { default as ChatConversationHeader } from './Chat/ChatConversationHeader'
 export { default as ChatSearchBanner } from './Chat/ChatSearchBanner'
 export { default as ChannelInfoPanel } from './Chat/ChannelInfoPanel'

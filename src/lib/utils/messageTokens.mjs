@@ -153,3 +153,51 @@ export function tokenizeMessageLine(line, { memberNames = [], formatting = true 
   pushText(text.slice(cursor));
   return tokens;
 }
+
+/**
+ * The task mentions a message carries with it.
+ *
+ * A `#QT-12` in a message used to be a *question*: every capsule asked the
+ * server what that task was called, on every render, for the life of the
+ * message. That is the wrong shape for the problem — the composer that wrote
+ * the mention already had the answer on screen when the author picked it from
+ * the list. It writes it down instead, and the capsule reads it back for free
+ * for as long as the message exists. Slack, Linear and GitHub all store the
+ * resolved reference in the message for the same reason.
+ *
+ * Kept honest against the text: a name the author typed and then deleted must
+ * not be carried, and the text is the truth about what was said.
+ *
+ * @param {string} text The message as written.
+ * @param {Map|object} remembered Keys the composer resolved, `KEY -> {id, title}`.
+ * @returns {{key: string, id?: string, title: string}[]} Only the ones still said.
+ */
+export function collectIssueMentions(text, remembered) {
+  const source = remembered instanceof Map ? remembered : new Map(Object.entries(remembered || {}));
+  if (source.size === 0) return [];
+  const said = new Set(
+    String(text || '')
+      .split('\n')
+      .flatMap(line => tokenizeMessageLine(line, { memberNames: [], formatting: false }))
+      .filter(token => token.type === 'issue')
+      .map(token => token.value.toLocaleUpperCase('uk-UA')),
+  );
+  return [...source.entries()]
+    .filter(([key]) => said.has(String(key).toLocaleUpperCase('uk-UA')))
+    .map(([key, issue]) => ({
+      key: String(key).toLocaleUpperCase('uk-UA'),
+      ...(issue?.id ? { id: issue.id } : {}),
+      title: String(issue?.title || ''),
+    }))
+    .filter(entry => entry.title);
+}
+
+/** The stored mentions of one message, as a `KEY -> title` lookup. */
+export function issueMentionTitles(mentions) {
+  const titles = {};
+  for (const entry of Array.isArray(mentions) ? mentions : []) {
+    const key = String(entry?.key || '').toLocaleUpperCase('uk-UA');
+    if (key && entry?.title) titles[key] = String(entry.title);
+  }
+  return titles;
+}

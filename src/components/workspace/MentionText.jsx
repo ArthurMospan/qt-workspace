@@ -3,7 +3,7 @@
 import IssueMentionChip from '@/components/workspace/IssueMentionChip';
 import HoverCard from '@/components/workspace/HoverCard';
 import { filterMentionCandidates } from '@/lib/utils/mentions';
-import { tokenizeMessageLine } from '@/lib/utils/messageTokens.mjs';
+import { issueMentionTitles, tokenizeMessageLine } from '@/lib/utils/messageTokens.mjs';
 
 // The task chat's messages, read back.
 //
@@ -13,9 +13,18 @@ import { tokenizeMessageLine } from '@/lib/utils/messageTokens.mjs';
 // sentences written by the same people, so both now ask
 // `tokenizeMessageLine`; the only difference left is that this surface has no
 // `*bold*` marks to read, which it says outright.
-export default function MentionText({ text = '', members = [], dark = false, excludeMemberId = '' }) {
+export default function MentionText({
+  text = '',
+  members = [],
+  dark = false,
+  excludeMemberId = '',
+  issueMentions,
+}) {
   if (!text) return text;
 
+  // What this comment wrote down about the tasks it names. A capsule with a
+  // name in hand asks the server nothing.
+  const storedTitles = issueMentionTitles(issueMentions);
   const memberNames = filterMentionCandidates(members, excludeMemberId).map(member => member.name);
   const tokens = tokenizeMessageLine(text, { memberNames, formatting: false });
   if (tokens.length === 0) return text;
@@ -28,14 +37,17 @@ export default function MentionText({ text = '', members = [], dark = false, exc
         // lookalike span: a mention here opens the person's profile and shows
         // their card, which the retyped copy never could.
         return <HoverCard key={index} value={token.value} members={members} dark={dark} />;
-      case 'issue':
+      case 'issue': {
+        const key = token.value.toLocaleUpperCase('uk-UA');
         return (
           <IssueMentionChip
             key={index}
-            issueKey={token.value.toLocaleUpperCase('uk-UA')}
+            issueKey={key}
+            title={storedTitles[key] || ''}
             dark={dark}
           />
         );
+      }
       case 'link':
         return (
           <a

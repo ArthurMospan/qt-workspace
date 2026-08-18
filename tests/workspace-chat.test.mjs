@@ -434,17 +434,57 @@ test('the unread boundary waits for the cursor, and stops repeating itself', asy
 });
 
 // What a project card costs to draw.
-test('a project card counts what is new without reading a whole channel', async () => {
-  const dashboard = await readFile(new URL('../src/app/(app)/page.js', import.meta.url), 'utf8');
+test('a project card counts what is new without reading anything', async () => {
+  const [dashboard, chatUtils] = await Promise.all([
+    readFile(new URL('../src/app/(app)/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/utils/workspaceChat.mjs', import.meta.url), 'utf8'),
+  ]);
 
-  // It listened to a project chat's entire history — no `limit`, one listener
-  // per card — so opening the dashboard read every message ever written in
-  // every project, to colour a number that stops being interesting past a dozen.
-  assert.match(dashboard, /const PROJECT_UNREAD_WINDOW = 50;/);
-  assert.match(dashboard, /query\(messagesRef, orderBy\('createdAt', 'desc'\), limit\(PROJECT_UNREAD_WINDOW\)\)/);
+  // Two live listeners *per card*: the entire message history of
+  // `project_<id>` and its read cursor — over a channel the product stopped
+  // writing to, so the dashboard read a dead conversation's whole history, once
+  // per project, for a number that could only ever be zero.
+  assert.match(chatUtils, /channel\.id\.startsWith\('project_'\)/);
+  assert.doesNotMatch(dashboard, /project_\$\{project\.id\}/);
   assert.doesNotMatch(dashboard, /onSnapshot\(query\(messagesRef\)/);
-  // And it was keyed on `currentUser` and `members`, both of which are new
-  // objects whenever any field of any profile changes — so that whole read was
-  // repeated on identity churn nobody asked for.
-  assert.match(dashboard, /\}, \[project\.id, activeOrgId, uid, memberIdentity\]\);/);
+  // Both facts are already in the notification stream the layout subscribes to
+  // once and the sidebar's project dot already reads.
+  assert.match(dashboard, /item\.type === 'chat_message'/);
+  assert.match(dashboard, /item\.type === 'mentioned'/);
+  assert.match(dashboard, /const notifications = useWorkspaceStore\(state => state\.notifications\)/);
+});
+
+// One publisher, many readers — the rule the store already states for this
+// number, and the sidebar was quietly breaking it.
+test('the workspace subscribes to its channel list once', async () => {
+  const [sidebar, bridge] = await Promise.all([
+    readFile(new URL('../src/components/WorkspaceSidebar.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/WorkspaceNotificationBridge.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(bridge, /useUnreadChatCount\(\)/);
+  assert.doesNotMatch(sidebar, /import \{ useUnreadChatCount \}/);
+  assert.match(sidebar, /useWorkspaceStore\(s => s\.unreadChatCount\)/);
+});
+
+// A task's history is not read whole to show the end of it.
+test('a task opens on a window of its history, not all of it', async () => {
+  const [audit, comments, timeline] = await Promise.all([
+    readFile(new URL('../src/lib/hooks/useAuditLog.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/hooks/useComments.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  // The audit log read the subcollection whole, sorted it in the browser and
+  // kept fifty — so four hundred recorded changes cost four hundred reads to
+  // draw fifty rows, and the cost grew every time anybody touched the task.
+  assert.match(audit, /orderBy\('createdAt', 'desc'\),\s*\n\s*limit\(windowSize\)/);
+  assert.doesNotMatch(audit, /docs\.slice\(0, LIMIT\)/);
+  assert.match(comments, /orderBy\('createdAt', 'desc'\),\s*\n\s*limit\(windowSize\)/);
+  // Windowed, not truncated: what is not loaded is still reachable.
+  assert.match(timeline, /setHistoryWindow\(current => current \+ 1\)/);
+  assert.match(timeline, /hasOlderHistory/);
+  // And through the same control the chat uses, rather than a second one that
+  // happens to look like it.
+  assert.match(timeline, /<LoadOlderButton/);
 });

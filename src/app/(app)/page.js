@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { doc, collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { reportLoadError, userFacingErrorMessage } from '@/lib/utils/errors';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
@@ -33,7 +33,6 @@ import {
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-import { extractMentionedUserIds } from '@/lib/utils/mentions';
 import TaskCounters from '@/components/ui/TaskManagement/TaskCounters';
 import ContextMenu from '@/components/ui/ContextMenu';
 import Alert from '@/components/ui/Feedback/Alert';
@@ -56,10 +55,6 @@ import {
   undeliveredEmailsMessage,
 } from '@/lib/utils/inviteEmails';
 
-// How far back a project card looks to colour its unread badge. A number on a
-// card is a hint, not an audit: reading a whole channel's history to compute it
-// costs the same as opening the channel, once per card, on every dashboard.
-const PROJECT_UNREAD_WINDOW = 50;
 
 // ── Project Card ─────────────────────────────────────────────────────────────
 const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading, now }) => {
@@ -69,8 +64,7 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
   const confirmDialog = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showBoardConfig, setShowBoardConfig] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [mentionCount, setMentionCount] = useState(0);
+  const notifications = useWorkspaceStore(state => state.notifications);
   const isArchived = project.status === 'archived';
   const teamCount = Array.isArray(project.team) ? project.team.length : 0;
 
@@ -81,64 +75,32 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
   const stackChip = isLarge ? 30 : 24;
   const stackOverlap = isLarge ? '-space-x-[10px]' : '-space-x-[8px]';
 
-  // The badge on a project card, and two things it must not do.
+  // The two badges on a project card, and what they used to cost.
   //
-  // It listened to a project chat's *entire* history — no `limit`, one listener
-  // per card — so opening the dashboard read every message ever written in every
-  // project, to colour a number that stops being interesting past a dozen. And
-  // the effect was keyed on `currentUser` and `members`, both of which are new
-  // objects whenever any field of any profile changes, so that whole read was
-  // repeated on identity churn nobody asked for. Which is how a free-tier daily
-  // read quota goes without anybody doing anything.
+  // They were fed by two live listeners *per card*: one over the entire message
+  // history of `project_<id>` and one over its read cursor. That channel is
+  // legacy — `isVisibleChatChannel` has excluded `project_*` rooms for a while
+  // and nothing in the product writes to one any more — so opening the
+  // dashboard read a dead conversation's whole history, once per project, to
+  // draw a number that could only ever be zero.
   //
-  // The newest page is enough to count what is new, and the subscription is
-  // keyed on the two strings it actually depends on.
-  const uid = currentUser?.id || currentUser?.uid || null;
-  const memberIdentity = members.map(member => member.id || member.uid).join(',');
-  useEffect(() => {
-    if (!project?.id || !activeOrgId || !uid) return undefined;
-    const channelId = `project_${project.id}`;
-
-    const readStateRef = doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${channelId}`);
-    const messagesRef = collection(db, 'organizations', activeOrgId, 'channels', channelId, 'messages');
-
-    let lastReadTime = 0;
-    let messagesList = [];
-
-    const updateUnread = () => {
-      const unread = messagesList.filter(message => (
-        message.senderId !== uid
-        && (message.createdAt?.toMillis?.() || 0) > lastReadTime
-      ));
-      setUnreadCount(unread.length);
-      setMentionCount(unread.filter(message => (
-        extractMentionedUserIds(message.text, members, message.senderId).includes(uid)
-      )).length);
+  // Both facts are already in the workspace's notification stream, which is
+  // subscribed once at the layout and shared by the sidebar's project dot. The
+  // card reads the same stream: no listener, no document, and a number that is
+  // about something that actually happens.
+  const projectNotices = useMemo(() => {
+    const mine = notifications.filter(item => (
+      !item.read
+      && item.projectId === project.id
+      && item.organizationId === activeOrgId
+    ));
+    return {
+      unread: mine.filter(item => item.type === 'chat_message').length,
+      mentions: mine.filter(item => item.type === 'mentioned').length,
     };
-
-    const unsubRead = onSnapshot(readStateRef, (snap) => {
-      lastReadTime = snap.exists() ? (snap.data().lastReadAt?.toMillis?.() || 0) : 0;
-      updateUnread();
-    }, () => {});
-
-    const unsubMsgs = onSnapshot(
-      query(messagesRef, orderBy('createdAt', 'desc'), limit(PROJECT_UNREAD_WINDOW)),
-      (snap) => {
-        messagesList = snap.docs.map(d => d.data());
-        updateUnread();
-      },
-      () => {},
-    );
-
-    return () => {
-      unsubRead();
-      unsubMsgs();
-    };
-    // `members` is read inside, but it is not what this subscription depends on:
-    // it is a list of people whose identity changes with every presence tick,
-    // and re-subscribing on it means re-reading the messages.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.id, activeOrgId, uid, memberIdentity]);
+  }, [activeOrgId, notifications, project.id]);
+  const unreadCount = projectNotices.unread;
+  const mentionCount = projectNotices.mentions;
 
   const handleCardClick = (e) => {
     if (e.target.closest('.no-nav')) return;

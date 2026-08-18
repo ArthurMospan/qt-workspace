@@ -33,6 +33,7 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 import EmojiPicker from 'emoji-picker-react';
 import { activeTypingUserIds, channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
+import { collectIssueMentions } from '@/lib/utils/messageTokens.mjs';
 import { formatLastSeenUk } from '@/lib/utils/presence.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -76,6 +77,10 @@ function MessageInput({
     align: 'start',
   });
   const sendingRef = useRef(false);
+  // What the picker already knew. The list the author chose from carried the
+  // task's name; writing it into the message is why the capsule never has to
+  // ask the server what that task is called again.
+  const resolvedIssues = useRef(new Map());
   const {
     results: issueResults,
     loading: issueSearchLoading,
@@ -179,7 +184,7 @@ function MessageInput({
       }
     }
     try {
-      await onSend(text, uploaded);
+      await onSend(text, uploaded, collectIssueMentions(text, resolvedIssues.current));
       setText('');
       setAttachments([]);
       setUploadProgress({});
@@ -224,6 +229,10 @@ function MessageInput({
 
   const insertIssue = issue => {
     if (!issue?.issueKey) return;
+    resolvedIssues.current.set(
+      String(issue.issueKey).toLocaleUpperCase('uk-UA'),
+      { id: issue.id, title: issue.title || '' },
+    );
     const before = text.slice(0, mentionStart);
     const after = text.slice(mentionCursor);
     setText(`${before}#${issue.issueKey} ${after}`);
@@ -904,11 +913,11 @@ export default function ChatPage() {
       user: member,
     })), [members, myUid]);
 
-  const handleSendMessage = async (text, attachments) => {
+  const handleSendMessage = async (text, attachments, issueMentions) => {
     clearTimeout(typingRef.current);
     setTyping(false);
     try {
-      await sendMessage(text, attachments);
+      await sendMessage(text, attachments, issueMentions);
       if (activeChannel.type === 'channel') {
         const mentionedUserIds = extractMentionedUserIds(text, mentionMembers, myUid);
         if (mentionedUserIds.length) {
@@ -945,8 +954,8 @@ export default function ChatPage() {
   // Everyone the thread already belongs to is told: whoever wrote the message,
   // and whoever has answered it before. That list is read off the replies this
   // pane already has open, so telling them costs nothing at all.
-  const handleSendThread = async (text, attachments) => {
-    await sendThreadMessage(text, attachments);
+  const handleSendThread = async (text, attachments, issueMentions) => {
+    await sendThreadMessage(text, attachments, issueMentions);
     const parent = activeThreadParent;
     if (!parent) return;
     const followers = [...new Set([

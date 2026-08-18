@@ -250,7 +250,10 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     });
     return () => unsub();
   }, [channelId, activeOrgId]);
-  const sendMessage = async (text, attachments = []) => {
+  // `issueMentions` is what the composer already resolved: `[{key, id, title}]`.
+  // Stored on the message so a `#QT-12` capsule can be drawn without asking the
+  // server anything, for as long as that message exists.
+  const sendMessage = async (text, attachments = [], issueMentions = []) => {
     if (!text.trim() && attachments.length === 0 || !currentUser || !channelId) return;
     try {
       const uid = currentUser.id || currentUser.uid;
@@ -296,6 +299,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       batch.set(messageRef, {
         text: text.trim(),
         attachments: attachments,
+        issueMentions: Array.isArray(issueMentions) ? issueMentions : [],
         senderId: uid,
         user: currentUser.name || 'Користувач',
         avatar: currentUser.avatar || null,
@@ -455,7 +459,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       typingStateRef.current = !isTyping;
     }
   };
-  const sendThreadMessage = async (text, attachments = []) => {
+  const sendThreadMessage = async (text, attachments = [], issueMentions = []) => {
     if (!text.trim() && attachments.length === 0 || !currentUser || !channelId || !activeThreadId) return;
     try {
       const parentRef = doc(db, 'organizations', activeOrgId, 'channels', channelId, 'messages', activeThreadId);
@@ -464,6 +468,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       batch.set(replyRef, {
         text: text.trim(),
         attachments: attachments,
+        issueMentions: Array.isArray(issueMentions) ? issueMentions : [],
         senderId: currentUser.id || currentUser.uid,
         user: currentUser.name || 'Користувач',
         avatar: currentUser.avatar || null,

@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import { useProjectUnreadIndicators } from '@/lib/hooks/useProjectUnreadIndicators';
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
@@ -40,7 +39,12 @@ export default function WorkspaceSidebar() {
     try { localStorage.setItem('qt_sidebar_collapsed', collapsed ? '1' : '0'); } catch {}
   }, [collapsed]);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
-  const unreadChats = useUnreadChatCount();
+  // Read, not subscribed. Calling `useUnreadChatCount()` here opened a second
+  // pair of organization-wide listeners — channels and read cursors — beside
+  // the pair the notification bridge already keeps, so every page in the
+  // workspace paid for that list twice. One publisher, many readers: the bridge
+  // publishes the number, everything else reads it.
+  const unreadChats = useWorkspaceStore(s => s.unreadChatCount);
   const userId = currentUser?.id || currentUser?.uid;
   const { unreadProjectIds, markProjectRead } = useProjectUnreadIndicators(userId, activeOrgId);
   const notifications = useWorkspaceStore(s => s.notifications);

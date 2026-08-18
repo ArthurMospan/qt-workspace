@@ -139,28 +139,35 @@ function resolveIssueMention(organizationId, issueKey) {
  * it in the quick-view panel without leaving the conversation.
  *
  * @param {string} props.issueKey The key written in the message, already uppercased.
+ * @param {string} props.title The name the message itself carries, if it has one.
+ *   A message written by the current product stores what its composer resolved,
+ *   so the overwhelming majority of capsules never ask the server anything.
  * @param {boolean} props.dark On a dark bubble — a task chat message of your own.
  */
-export default function IssueMentionChip({ issueKey, dark = false }) {
+export default function IssueMentionChip({ issueKey, title = '', dark = false }) {
   const { activeOrgId, currentUser } = useAppContext();
   const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
   const [issue, setIssue] = useState(null);
   // A task's name is written by whoever created it and can be a whole sentence.
   // The capsule shows as much of it as it has room for; `title` keeps all of it.
-  const fullTitle = issue?.title || issueKey;
+  const fullTitle = issue?.title || title || issueKey;
   const [chipRef, label] = useFittedLabel(fullTitle);
   // Re-run once the session arrives: the first attempt on a cold page has no
   // token, and the chip has to try again rather than stay a bare key forever.
   const signedInAs = currentUser?.uid || currentUser?.id || '';
 
   useEffect(() => {
-    if (!activeOrgId || !issueKey || !signedInAs) return undefined;
+    // A message that carries the name has already answered the only question a
+    // capsule asks on screen. Opening the task still needs its id, and that is
+    // resolved by the click — once, for a task somebody actually went to — not
+    // by every message that ever named it.
+    if (title || !activeOrgId || !issueKey || !signedInAs) return undefined;
     let cancelled = false;
     resolveIssueMention(activeOrgId, issueKey).then(found => {
       if (!cancelled && found) setIssue(found);
     });
     return () => { cancelled = true; };
-  }, [activeOrgId, issueKey, signedInAs]);
+  }, [activeOrgId, issueKey, signedInAs, title]);
 
   // Clicking is never refused. If the name has not arrived — a slow request, a
   // page opened and clicked in the same second — the click resolves it and then

@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 112,
-    "stateful": 100,
-    "hover": 67,
-    "focus": 68,
+    "components": 113,
+    "stateful": 101,
+    "hover": 68,
+    "focus": 69,
     "disabled": 35,
     "loading": 6,
     "error": 6,
-    "long-text": 69
+    "long-text": 70
   },
   "components": {
     "Alert": {
@@ -251,6 +251,11 @@
     },
     "ListRow": {
       "disabled": "native",
+      "hover": "own",
+      "focus": "global",
+      "long-text": "children"
+    },
+    "LoadOlderButton": {
       "hover": "own",
       "focus": "global",
       "long-text": "children"
@@ -705,6 +710,9 @@
     "ListRow": [
       "surfaces",
       "variant-matrix"
+    ],
+    "LoadOlderButton": [
+      "chat-elements"
     ],
     "LoadingSpinner": [
       "feedback",

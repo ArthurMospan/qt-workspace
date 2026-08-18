@@ -7,6 +7,7 @@ import ChatSearchBanner from '@/components/ui/Chat/ChatSearchBanner';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
 import IssueMentionMenu from '@/components/ui/Chat/IssueMentionMenu';
 import UnreadDivider from '@/components/ui/Chat/UnreadDivider';
+import LoadOlderButton from '@/components/ui/Chat/LoadOlderButton';
 import { ChatAttachmentList, PendingChatAttachments } from '@/components/ui/Chat/ChatAttachmentList';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import FileInput from '@/components/ui/Forms/FileInput';
@@ -177,6 +178,19 @@ export default function ChatElementsSection() {
       >
         <div className="w-full max-w-[560px]">
           <UnreadDivider count={4} />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Межа завантаженої історії"
+        description="Ні канал, ні чат завдання не підписані на всю історію — відкривається найновіша сторінка, а ця кнопка розширює вікно. Один елемент для обох, щоб «давніші повідомлення» і «давніша історія» не розʼїхались."
+        filePath="src/components/ui/Chat/LoadOlderButton.jsx"
+        component="LoadOlderButton"
+        fullWidth
+      >
+        <div className="w-full max-w-[560px]">
+          <LoadOlderButton onClick={() => {}} />
+          <LoadOlderButton onClick={() => {}}>Показати давнішу історію</LoadOlderButton>
         </div>
       </PreviewBlock>
 

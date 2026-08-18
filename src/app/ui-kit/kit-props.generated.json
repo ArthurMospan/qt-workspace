@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 112,
-    "props": 834,
-    "documentedProps": 834,
+    "components": 113,
+    "props": 835,
+    "documentedProps": 835,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3260,6 +3260,19 @@
           "type": "(event) => void",
           "values": [],
           "description": "Opens whatever the row stands for."
+        }
+      ]
+    },
+    "LoadOlderButton": {
+      "file": "src/components/ui/Chat/LoadOlderButton.jsx",
+      "summary": "The control at the top of a windowed history, which loads the page before it.",
+      "props": [
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Widens the window."
         }
       ]
     },

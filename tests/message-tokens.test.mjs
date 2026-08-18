@@ -90,3 +90,27 @@ test('plain text is one token, not one per gap', () => {
   ]);
   assert.equal(parse('').length, 0);
 });
+
+test('a message carries the task names its composer already knew', async () => {
+  const { collectIssueMentions, issueMentionTitles } = await import('../src/lib/utils/messageTokens.mjs');
+  const remembered = new Map([
+    ['QT-12', { id: 'a', title: 'Форма створення договору' }],
+    ['QT-99', { id: 'b', title: 'Видалено з тексту' }],
+  ]);
+
+  // Only what is still said. A mention the author typed and then deleted must
+  // not travel with the message.
+  assert.deepEqual(collectIssueMentions('готово у #QT-12', remembered), [
+    { key: 'QT-12', id: 'a', title: 'Форма створення договору' },
+  ]);
+  assert.deepEqual(collectIssueMentions('нічого не згадано', remembered), []);
+  assert.deepEqual(collectIssueMentions('#QT-12', {}), []);
+
+  // Case is not a different task.
+  assert.equal(collectIssueMentions('дивись #qt-12', remembered).length, 1);
+
+  assert.deepEqual(
+    issueMentionTitles([{ key: 'qt-12', title: 'Назва' }, { key: '', title: 'x' }, { title: 'y' }]),
+    { 'QT-12': 'Назва' },
+  );
+});

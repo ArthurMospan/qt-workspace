@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 112,
-      "used": 112,
+      "components": 113,
+      "used": 113,
       "unused": 0,
-      "covered": 107,
+      "covered": 108,
       "uncovered": 0,
       "routes": 12,
-      "previews": 142,
+      "previews": 143,
       "internal": 5,
       "unlisted": 0
     },
@@ -231,7 +231,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/IssueMentionChip.jsx:182",
+      "location": "src/components/workspace/IssueMentionChip.jsx:189",
       "className": "",
       "text": "",
       "childElements": [
@@ -311,7 +311,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:268",
+      "location": "src/components/WorkspaceSidebar.jsx:272",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -326,7 +326,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:291",
+      "location": "src/components/WorkspaceSidebar.jsx:295",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -341,7 +341,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:351",
+      "location": "src/components/WorkspaceSidebar.jsx:355",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -356,7 +356,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:429",
+      "location": "src/components/WorkspaceSidebar.jsx:433",
       "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
@@ -428,17 +428,17 @@
       "context": "navigation-sheet-row"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:268",
+      "location": "src/components/WorkspaceSidebar.jsx:272",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:291",
+      "location": "src/components/WorkspaceSidebar.jsx:295",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:351",
+      "location": "src/components/WorkspaceSidebar.jsx:355",
       "tag": "button",
       "context": "branding-action"
     }
@@ -454,7 +454,7 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/chat/page.js:363",
+      "location": "src/app/(app)/chat/page.js:372",
       "tag": "div",
       "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },
@@ -469,12 +469,12 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:222",
+      "location": "src/app/(app)/page.js:184",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:234",
+      "location": "src/app/(app)/page.js:196",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
@@ -664,7 +664,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:911",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:946",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
