@@ -388,6 +388,20 @@ test('authors can delete their own comments but not another authors comments', a
   await assertFails(deleteDoc(doc(db, 'issues', 'issue-a', 'comments', 'owner-comment')));
 });
 
+test('the legacy tasks collection is closed to browsers', async () => {
+  // It used to authorize any member of the organization, with no project scope —
+  // the last org-wide read path in the workspace. Nothing reads it any more.
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'tasks', 'legacy-task'), {
+      organizationId: 'org-a', title: 'Legacy',
+    });
+  });
+  for (const uid of ['member-a', 'admin-a', 'owner-a']) {
+    const db = environment.authenticatedContext(uid).firestore();
+    await assertFails(getDoc(doc(db, 'tasks', 'legacy-task')));
+  }
+});
+
 test('an admin removes a comment they did not write, but cannot rewrite it', async () => {
   const adminDb = environment.authenticatedContext('admin-a').firestore();
   const memberDb = environment.authenticatedContext('member-a').firestore();

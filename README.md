@@ -129,7 +129,7 @@ Primary collections:
 - `system/notificationSweep` — the scheduled sweep's watermark and last counts. Server-written only; Firestore rules have no `system` match, so browsers cannot read or forge it.
 - organization-scoped `channels`, `messages` and `readState`
 
-`tasks` is a legacy read-only collection. New development must use `issues`.
+`tasks` is a legacy collection and is closed to browsers entirely — nothing in the product reads it, and its old rule was the last org-wide read path that ignored project scope. New development must use `issues`.
 
 ### Issue IDs
 

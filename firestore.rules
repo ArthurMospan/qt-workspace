@@ -72,10 +72,6 @@ service cloud.firestore {
         );
     }
 
-    function taskOrg(taskId) {
-      return get(/databases/$(database)/documents/tasks/$(taskId)).data.organizationId;
-    }
-
     // The organization a comment or a project message belongs to, so that
     // moderation can be authorized without duplicating the scope walk. Each
     // costs one document read and is used only on delete, which is rare.
@@ -378,13 +374,19 @@ service cloud.firestore {
     }
 
     // ── tasks/{taskId} — legacy/parallel collection to issues ───────────
+    //
+    // Closed to browsers entirely. Nothing in the product reads this collection
+    // any more — every screen uses `issues` — and the rule it used to carry was
+    // the last org-wide read path left in the workspace: it authorized any
+    // member of the organization, without asking which project the row belonged
+    // to. Access here is `orgMemberships` *and* `project.team`, and a legacy
+    // collection is not a reason to keep an exception to that. A migration
+    // needing this data reads it through the Admin SDK, like every other one.
     match /tasks/{taskId} {
-      allow read: if isOrgMember(resource.data.organizationId);
-      allow create, update, delete: if false; // Legacy collection; new work uses issues.
+      allow read, write: if false;
 
       match /taskComments/{commentId} {
-        allow read: if isOrgMember(taskOrg(taskId));
-        allow create, update, delete: if false;
+        allow read, write: if false;
       }
     }
 
