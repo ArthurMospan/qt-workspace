@@ -176,7 +176,7 @@ function AttachmentTile({
     : <div className={className}>{content}</div>;
 }
 
-function PendingAttachment({ file, onRemove, compact }) {
+function PendingAttachment({ file, onRemove, compact, progress }) {
   // A picture and a sound are worth resolving before the message is sent: you
   // can see what you picked and hear the voice note back. A video is not — the
   // browser has to decode it to paint one frame, and a composer holding four
@@ -191,41 +191,75 @@ function PendingAttachment({ file, onRemove, compact }) {
     return () => URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
 
+  const uploading = typeof progress === 'number';
   return (
-    <AttachmentTile
-      attachment={file}
-      previewUrl={previewUrl}
-      onRemove={onRemove}
-      compact={compact}
-    />
+    <div className="relative min-w-0">
+      <AttachmentTile
+        attachment={file}
+        previewUrl={previewUrl}
+        onRemove={uploading ? null : onRemove}
+        compact={compact}
+      />
+      {/* Real bytes, not a fabricated crawl: `uploadFile` reports the upload's
+          own progress and this is where it lands. A message with a photo on it
+          used to sit there with nothing moving, which reads as a hang. */}
+      {uploading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-[10px] bg-white/85 backdrop-blur-[2px]">
+          <span className="text-[11px] font-semibold text-ink">{Math.round(progress)}%</span>
+          <span className="h-1 w-2/3 overflow-hidden rounded-full bg-black/10">
+            <span
+              className="block h-full rounded-full bg-ink transition-[width] duration-200"
+              style={{ width: `${Math.max(3, Math.min(100, progress))}%` }}
+            />
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
+
+// Where a file is being shown, and therefore how. This used to be four
+// `className` overrides at four call sites — `max-w-[280px]` in the task chat,
+// `max-w-[260px] sm:grid-cols-1` in a thread, `max-w-none sm:grid-cols-1` in the
+// materials list, nothing at all in the workspace chat — so the same PNG was a
+// 140px tile in one chat, a 96px tile squeezed into half of 280px in the next,
+// and a full-width row in the third. A file on a message looks like a file on a
+// message, wherever the message is.
+const ATTACHMENT_CONTEXTS = {
+  message: { grid: 'mt-2 w-full max-w-[420px] gap-1.5', compact: false, columns: 2 },
+  panel: { grid: 'mt-0 w-full gap-1.5', compact: true, columns: 1 },
+};
 
 /**
  * The files attached to a sent message, as a grid of tiles.
  *
  * @param {object[]} props.attachments The stored files.
  * @param {(attachment) => void} props.onOpen Opens one in the viewer.
- * @param {boolean} props.compact Denser tiles, for threads and narrow panes.
+ * @param {'message'|'panel'} props.context Where this is being shown; picks the tile size and the columns.
  * @param {boolean} props.dark Inverted tiles, for a message bubble on a dark surface.
  * @param {string} props.className Placement in the parent only.
  */
 export function ChatAttachmentList({
   attachments = [],
   onOpen,
-  compact = false,
+  context = 'message',
   dark = false,
   className = '',
 }) {
   if (attachments.length === 0) return null;
+  const preset = ATTACHMENT_CONTEXTS[context] || ATTACHMENT_CONTEXTS.message;
+  // One file takes the whole width. Left in a two-column grid it sat in the
+  // left half with an empty half beside it, which reads as a file that failed
+  // to load rather than as the only file on the message.
+  const columns = preset.columns === 2 && attachments.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1';
   return (
-    <div className={`mt-2 grid min-w-0 w-full max-w-[560px] grid-cols-1 gap-1.5 sm:min-w-[210px] sm:grid-cols-2 ${className}`}>
+    <div className={`grid min-w-0 grid-cols-1 ${preset.grid} ${columns} ${className}`}>
       {attachments.map((attachment, index) => (
         <AttachmentTile
           key={`${attachment.chatAttachmentKey || attachment.name || 'file'}-${index}`}
           attachment={attachment}
           onOpen={onOpen}
-          compact={compact}
+          compact={preset.compact}
           dark={dark}
         />
       ))}
@@ -241,9 +275,16 @@ export function ChatAttachmentList({
  * @param {File[]} props.files Files picked but not yet uploaded.
  * @param {(index: number) => void} props.onRemove Drops one from the selection.
  * @param {boolean} props.compact Denser tiles.
+ * @param {Record<number, number>} props.progress Percent uploaded, by index, while the message is being sent.
  * @param {string} props.className Placement in the parent only.
  */
-export function PendingChatAttachments({ files = [], onRemove, compact = true, className = '' }) {
+export function PendingChatAttachments({
+  files = [],
+  onRemove,
+  compact = true,
+  progress = {},
+  className = '',
+}) {
   if (files.length === 0) return null;
   return (
     <div className={`grid grid-cols-1 gap-1.5 sm:grid-cols-2 ${className}`}>
@@ -252,6 +293,7 @@ export function PendingChatAttachments({ files = [], onRemove, compact = true, c
           key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
           file={file}
           compact={compact}
+          progress={progress[index]}
           onRemove={() => onRemove(index)}
         />
       ))}

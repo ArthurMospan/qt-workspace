@@ -1,10 +1,11 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckCheck, ChevronDown, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, CheckCheck, ChevronDown, ChevronUp, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
 import { useRouter } from 'next/navigation';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
+import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
 import IssueMentionMenu from '@/components/ui/Chat/IssueMentionMenu';
 import FileInput from '@/components/ui/Forms/FileInput';
@@ -23,7 +24,13 @@ import { useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { describeAuditEvent } from '@/lib/utils/issueAuditEvents.mjs';
-import { isIssueChangeUnread } from '@/lib/utils/issueReadState.mjs';
+import {
+  isIssueChangeUnread,
+  issueActivityCursor,
+  timestampMillis,
+} from '@/lib/utils/issueReadState.mjs';
+import { markIssueSeen } from '@/lib/services/issueReadState';
+import { reportLoadError } from '@/lib/utils/errors';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -102,15 +109,40 @@ function StatusEmoji({ member }) {
   );
 }
 
-function SystemEventMessage({ text, time, actorName }) {
+// «Пріоритет змінено: «Низький» → «Високий»» is a sentence with two facts in
+// it, and it used to arrive as one flat grey run where the values — the only
+// part anybody is scanning for — read exactly like the words around them. The
+// phrase already marks them, in the quotes `describeAuditEvent` writes; this
+// just honours the marking it was already given.
+function emphasise(text) {
+  return String(text || '').split(/(«[^»]*»)/g).map((part, index) => (
+    part.startsWith('«') && part.endsWith('»')
+      ? <strong key={index} className="font-semibold text-ink">{part.slice(1, -1)}</strong>
+      : <React.Fragment key={index}>{part}</React.Fragment>
+  ));
+}
+
+/**
+ * One thing that happened to the task, as a line in the conversation.
+ *
+ * A face, then who and what, then when — all of it in one flowing paragraph.
+ * The time used to be a flex sibling of the text, so a change long enough to
+ * wrap left it floating vertically centred against three lines with nothing
+ * under it; inline at the end of the sentence it simply follows the last word.
+ */
+function SystemEventMessage({ text, time, actorName, actor }) {
   return (
     <div className="flex justify-center px-3">
-      <div data-ui-surface="system-message" className="ui-surface flex max-w-[92%] items-center gap-2 text-[11px] text-muted">
-        <span className="min-w-0 text-center leading-4">
-          {actorName && <strong className="font-bold text-ink">{actorName} · </strong>}
-          {text}
+      <div data-ui-surface="system-message" className="ui-surface flex max-w-[92%] items-start gap-2">
+        <span className="mt-[1px] shrink-0">
+          <UserAvatar user={actor || { name: actorName }} size="chat-mention" />
         </span>
-        <span className="shrink-0 text-[10px] font-medium text-[#a1a1a1]">{time}</span>
+        <p className="min-w-0 text-[11px] leading-[18px] text-muted">
+          {actorName && <strong className="font-semibold text-ink">{actorName}</strong>}
+          {actorName && ' '}
+          {emphasise(text)}
+          {time && <span className="ml-1.5 whitespace-nowrap text-[10px] text-faint">{time}</span>}
+        </p>
       </div>
     </div>
   );
@@ -167,6 +199,7 @@ export default function UnifiedTimeline({
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
   const [pendingFiles, setPendingFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
   const [replyTo, setReplyTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [viewerAttachment, setViewerAttachment] = useState(null);
@@ -180,6 +213,7 @@ export default function UnifiedTimeline({
   const previousTimelineLengthRef = useRef(0);
   const positionedIssueRef = useRef(null);
   const [isUnreadMarkerVisible, setIsUnreadMarkerVisible] = useState(false);
+  const [unreadDirection, setUnreadDirection] = useState('down');
 
   const [mentionState, setMentionState] = useState({
     active: false,
@@ -251,13 +285,8 @@ export default function UnifiedTimeline({
   // same thing to a reader coming back to a task — «що тут сталося без мене» —
   // and the line used to be drawn from the messages alone, so a task where
   // somebody moved the deadline and said nothing looked untouched below it.
-  //
-  // The two halves are still consumed differently, and deliberately: a message
-  // is read when the boundary has been on screen for half a second, a change
-  // when the reader leaves the task. Turning away from an open task must not
-  // count as having read what changed in it.
   const unreadTotal = unreadCommentIds.length + unreadChangeIds.length;
-  const firstUnreadKey = useMemo(() => {
+  const liveFirstUnreadKey = useMemo(() => {
     if (unreadTotal === 0) return null;
     const unreadComments = new Set(unreadCommentIds);
     const unreadChanges = new Set(unreadChangeIds);
@@ -267,21 +296,41 @@ export default function UnifiedTimeline({
     ));
     return first ? `${first._type}-${first.id}` : null;
   }, [timeline, unreadCommentIds, unreadChangeIds, unreadTotal]);
+
+  // Where the line was when this visit began, and where it stays for the rest
+  // of it. Reading is what empties `unreadTotal`, and a boundary derived
+  // straight from it therefore vanished the instant it was read — taking its
+  // own height out of the list under the reader and leaving nothing to say what
+  // had been new. Every messenger keeps that line until you leave and come
+  // back; so does this one now.
+  //
+  // Latched during render, not in an effect: it is derived from what this very
+  // render already knows, and an effect would mean one painted frame in which
+  // the list has no line — at exactly the moment the list is being placed on it.
+  const [boundary, setBoundary] = useState({ issueId: null, key: null, count: 0 });
+  if (boundary.issueId !== issueId) {
+    setBoundary({ issueId, key: null, count: 0 });
+  } else if (isActive && !boundary.key && liveFirstUnreadKey) {
+    setBoundary({ issueId, key: liveFirstUnreadKey, count: unreadTotal });
+  }
+  const sessionBoundary = boundary.issueId === issueId ? boundary.key : null;
+  const boundaryCount = boundary.count;
+
   const unreadLabel = unreadChangeIds.length === 0
     ? 'Нові повідомлення'
     : (unreadCommentIds.length === 0 ? 'Нові зміни' : 'Нове в задачі');
-  const renderUnreadBoundary = itemKey => (itemKey === firstUnreadKey ? (
+  const renderUnreadBoundary = itemKey => (itemKey === sessionBoundary ? (
     <div ref={unreadMarkerRef}>
-      <UnreadDivider count={unreadTotal} label={unreadLabel} />
+      <UnreadDivider count={boundaryCount} label={unreadLabel} />
     </div>
   ) : null);
 
   const resetComposer = () => {
     setInput('');
     setPendingFiles([]);
+    setUploadProgress({});
     setReplyTo(null);
     setEditingComment(null);
-    if (inputRef.current) inputRef.current.style.height = '32px';
   };
 
   const focusComposer = () => setTimeout(() => inputRef.current?.focus(), 0);
@@ -408,28 +457,46 @@ export default function UnifiedTimeline({
     unreadMarkerRef.current?.scrollIntoView({ behavior, block: 'center' });
   };
 
+  // Landing the conversation, once.
+  //
+  // This effect re-ran on every change to `timeline.length`, and a task's feed
+  // does not arrive in one piece: comments, changes and time logs are three
+  // separate subscriptions that settle in three separate renders. The first of
+  // them placed the reader on the unread line correctly — and the second, no
+  // longer the "first position", fell through to `wasNearBottomRef`, which is
+  // `true` before anybody has scrolled anything. So the list snapped to the
+  // newest message a frame later, and a task opened with eleven unread items
+  // showed its bottom. The flag that says "this issue has been placed" is now
+  // set by the placement itself rather than by having run at all.
   useEffect(() => {
-    const previousLength = previousTimelineLengthRef.current;
-    previousTimelineLengthRef.current = timeline.length;
     const becameActive = isActive && !wasActiveRef.current;
     wasActiveRef.current = isActive;
     if (!isActive || timeline.length === 0) return undefined;
-    const isFirstPositionForIssue = positionedIssueRef.current !== issueId;
-    if (isFirstPositionForIssue) positionedIssueRef.current = issueId;
-    const shouldPositionConversation = isFirstPositionForIssue || becameActive;
+    if (becameActive) positionedIssueRef.current = null;
+    const shouldPositionConversation = positionedIssueRef.current !== issueId;
 
     const frame = requestAnimationFrame(() => {
-      if (shouldPositionConversation && firstUnreadKey) {
-        scrollToUnread(previousLength === 0 ? 'auto' : 'smooth');
+      const scroll = scrollRef.current;
+      if (!scroll) return;
+      if (shouldPositionConversation) {
+        // A boundary that has not been resolved yet is worth one more frame:
+        // placing at the bottom and correcting afterwards is the jump this was
+        // reported for.
+        if (unreadTotal > 0 && !unreadMarkerRef.current) return;
+        positionedIssueRef.current = issueId;
+        if (unreadMarkerRef.current) {
+          scrollToUnread('auto');
+          return;
+        }
+        scroll.scrollTop = scroll.scrollHeight;
         return;
       }
-      if (shouldPositionConversation || wasNearBottomRef.current) {
-        const scroll = scrollRef.current;
-        if (scroll) scroll.scrollTop = scroll.scrollHeight;
-      }
+      // Afterwards the list only follows new activity, and only for a reader
+      // who is already at the bottom of it.
+      if (wasNearBottomRef.current) scroll.scrollTop = scroll.scrollHeight;
     });
     return () => cancelAnimationFrame(frame);
-  }, [firstUnreadKey, isActive, issueId, timeline.length]);
+  }, [isActive, issueId, timeline.length, unreadTotal]);
 
   // A compact task screen keeps the timeline mounted while its chat pane is
   // hidden. That preserves the live unread badge without falsely consuming the
@@ -438,13 +505,38 @@ export default function UnifiedTimeline({
     onUnreadCountChange?.(unreadCommentIds.length);
   }, [onUnreadCountChange, unreadCommentIds.length]);
 
+  // Changes were consumed only by leaving the task, which is why the badge
+  // stayed at «11 нових» for a whole visit however far you read: nothing on
+  // this screen could move that cursor. Seeing the boundary is the same act of
+  // reading for a change as it is for a message, so it consumes both halves
+  // now, and the count actually falls to zero while you are looking at it.
+  // A number, not the array it came from: an audit snapshot arrives with a new
+  // array identity every time it refreshes, and hanging the observer's callback
+  // off that identity meant the half-second read timer was torn down and
+  // restarted by traffic that had changed nothing.
+  const newestActivityMillis = useMemo(() => Math.max(
+    issueActivityCursor(issue),
+    ...auditLogs.map(entry => timestampMillis(entry.createdAt)),
+    0,
+  ), [auditLogs, issue]);
+  const consumeChanges = useCallback(() => {
+    if (!activeOrgId || !myId || !issueId || !newestActivityMillis) return;
+    markIssueSeen({
+      organizationId: activeOrgId,
+      issueId,
+      userId: myId,
+      lastSeenAt: new Date(newestActivityMillis),
+    }).catch(error => reportLoadError('[task-chat] mark changes seen', error));
+  }, [activeOrgId, issueId, myId, newestActivityMillis]);
+
   // Read receipts: a visible pane alone is not enough. The unread boundary has
   // to enter the scroll viewport, so opening a long task chat cannot consume
   // messages that remained above or below the fold.
   //
-  // The observer also runs for a boundary made only of changes: it is what tells
-  // the jump button whether the line is already on screen. Only the messages are
-  // consumed here — the changes are consumed by leaving the task.
+  // The observer also reports which way the line lies. The jump button carried a
+  // fixed chevron pointing down while the boundary, on a conversation that had
+  // been sent to its bottom, was almost always above — so it announced eleven
+  // new messages, pointed down, and then scrolled up.
   useEffect(() => {
     const marker = unreadMarkerRef.current;
     const scroll = scrollRef.current;
@@ -455,9 +547,13 @@ export default function UnifiedTimeline({
     let readTimer = null;
     const observer = new IntersectionObserver(([entry]) => {
       setIsUnreadMarkerVisible(entry.isIntersecting);
-      if (!entry.isIntersecting || readTimer || unreadCommentIds.length === 0) return;
+      if (!entry.isIntersecting && entry.rootBounds) {
+        setUnreadDirection(entry.boundingClientRect.top < entry.rootBounds.top ? 'up' : 'down');
+      }
+      if (!entry.isIntersecting || readTimer) return;
       readTimer = window.setTimeout(() => {
-        markCommentsRead(unreadCommentIds, myId);
+        if (unreadCommentIds.length > 0) markCommentsRead(unreadCommentIds, myId);
+        consumeChanges();
       }, 500);
     }, { root: scroll, threshold: 0.8 });
 
@@ -466,14 +562,22 @@ export default function UnifiedTimeline({
       observer.disconnect();
       if (readTimer) window.clearTimeout(readTimer);
     };
-  }, [isActive, markCommentsRead, myId, unreadCommentIds, unreadTotal]);
+  }, [consumeChanges, isActive, markCommentsRead, myId, unreadCommentIds, unreadTotal]);
 
   const addPendingFiles = fileList => {
     const files = Array.from(fileList || []);
+    // Same rule and same wording as the workspace composer: the file that was
+    // refused says so itself, instead of one flat sentence carrying a size limit
+    // that was never the storage's real one.
+    const rejected = files.map(file => ({ file, ...uploadFilePolicy(file) })).filter(entry => entry.error);
     const accepted = files
-      .filter(file => !uploadFilePolicy(file, { maxBytes: 20 * 1024 * 1024 }).error)
+      .filter(file => !uploadFilePolicy(file).error)
       .slice(0, Math.max(0, 5 - pendingFiles.length));
-    if (accepted.length !== files.length) showToast('До 5 файлів, максимум 20 МБ кожен', 'error');
+    if (rejected.length > 0) {
+      showToast(`${rejected[0].file.name}: ${rejected[0].error}`, 'error');
+    } else if (accepted.length !== files.length) {
+      showToast('До 5 файлів на повідомлення', 'error');
+    }
     setPendingFiles(previous => [...previous, ...accepted]);
   };
 
@@ -488,7 +592,11 @@ export default function UnifiedTimeline({
       } else {
         const folder = `organizations/${project?.organizationId || 'shared'}/comments`;
         const attachments = [];
-        for (const file of pendingFiles) attachments.push(await uploadFile(file, folder));
+        for (const [index, file] of pendingFiles.entries()) {
+          attachments.push(await uploadFile(file, folder, percent => {
+            setUploadProgress(previous => ({ ...previous, [index]: percent }));
+          }));
+        }
         const mentionedUserIds = extractMentionedUserIds(text, members, myId);
         await addComment(issueId, text, currentUser, attachments, replyTo, { mentionedUserIds });
         const taskChatLink = `${issuePath(issue, project || projectId)}?view=chat`;
@@ -639,8 +747,6 @@ export default function UnifiedTimeline({
                     <ChatAttachmentList
                       attachments={item.attachments}
                       dark={isMe}
-                      compact
-                      className="max-w-[280px]"
                       onOpen={setViewerAttachment}
                     />
                   </div>
@@ -675,7 +781,7 @@ export default function UnifiedTimeline({
             return (
               <Fragment key={`time-${item.id}`}>
                 {separator}
-                <SystemEventMessage text={text} time={fmtClock(item.loggedAt)} actorName={actorName} />
+                <SystemEventMessage text={text} time={fmtClock(item.loggedAt)} actorName={actorName} actor={member} />
               </Fragment>
             );
           }
@@ -691,6 +797,7 @@ export default function UnifiedTimeline({
                   text={describeAuditEvent(item, auditContext)}
                   time={fmtClock(item.createdAt)}
                   actorName={actorName}
+                  actor={member}
                 />
               </Fragment>
             );
@@ -706,7 +813,7 @@ export default function UnifiedTimeline({
               <Button
                 style="primary"
                 size="sm"
-                icon={ChevronDown}
+                icon={unreadDirection === 'up' ? ChevronUp : ChevronDown}
                 onClick={() => scrollToUnread()}
               >
                 {unreadTotal} нових
@@ -753,11 +860,12 @@ export default function UnifiedTimeline({
             textareaRef={inputRef}
             value={input}
             onChange={event => {
+              // No manual resize here: `ChatComposerCore` measures the value, so
+              // a message opened for editing arrives at its full height instead
+              // of in a two-line box that has to be scrolled.
               setInput(event.target.value);
               checkMentions(event.target.value, event.target.selectionStart);
               checkIssueMention(event.target.value, event.target.selectionStart);
-              event.target.style.height = 'auto';
-              event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
             }}
             onClick={event => {
               checkMentions(event.target.value, event.target.selectionStart);
@@ -800,11 +908,11 @@ export default function UnifiedTimeline({
               }
             }}
             placeholder={editingComment ? 'Змінити повідомлення...' : 'Написати повідомлення...'}
-            textareaStyle={{ height: '32px' }}
             attachments={pendingFiles.length > 0 ? (
               <div className="border-b border-black/[0.05] p-2">
                 <PendingChatAttachments
                   files={pendingFiles}
+                  progress={uploadProgress}
                   onRemove={index => setPendingFiles(files => files.filter((_, fileIndex) => fileIndex !== index))}
                 />
               </div>

@@ -75,7 +75,22 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
       }
       request.onload = () => {
         if (request.status < 200 || request.status >= 300) {
-          reject(new Error(`Cloudinary upload error: ${request.status} ${request.statusText}`));
+          // What the storage said, in words. «Cloudinary upload error: 400 Bad
+          // Request» reached the user verbatim, and there is nothing in it that
+          // says which file, why, or what to do about it. The pre-flight policy
+          // should already have caught the common cause — a file over the real
+          // limit — so anything arriving here is genuinely unexpected.
+          let detail = '';
+          try {
+            detail = JSON.parse(request.responseText)?.error?.message || '';
+          } catch {
+            detail = '';
+          }
+          reject(new Error(
+            detail
+              ? `Сховище відхилило файл: ${detail}`
+              : `Не вдалося завантажити файл (код ${request.status})`,
+          ));
           return;
         }
         try {

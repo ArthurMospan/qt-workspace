@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import { ArrowUp, Send } from 'lucide-react';
 
 const VARIANTS = {
@@ -22,6 +23,15 @@ const VARIANTS = {
 };
 
 const ROUND_SEND_CLASS = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform hover:scale-105 disabled:bg-[#cfcfcf] disabled:hover:scale-100';
+
+// How tall the field may grow before it starts scrolling instead, per variant.
+// It is the one number the growth needs and the only thing the three chats
+// disagreed about.
+const MAX_HEIGHT = { workspace: 200, timeline: 120, qtplus: 120 };
+
+const Spinner = ({ className = '' }) => (
+  <span className={`h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white ${className}`} />
+);
 
 /**
  * The message input itself, shared by all three chats — workspace, timeline and
@@ -74,9 +84,28 @@ export default function ChatComposerCore({
 }) {
   const composer = VARIANTS[variant] || VARIANTS.workspace;
   const sendDisabled = !canSubmit || sending || disabled;
+
+  // The field grows with what is in it — measured here, from `value`, rather
+  // than in each caller's `onChange`. Doing it on the event meant it only ever
+  // grew for text somebody typed: opening a long message for editing put a
+  // whole paragraph into a two-line box that had to be scrolled, because
+  // nothing about that assignment was an input event. Same for a draft
+  // restored, a mention inserted by the picker, or text pasted by script.
+  const innerRef = useRef(null);
+  const setTextareaRef = useCallback(node => { innerRef.current = node; }, []);
+  useImperativeHandle(textareaRef, () => innerRef.current, []);
+  useLayoutEffect(() => {
+    const field = innerRef.current;
+    if (!field) return;
+    const max = MAX_HEIGHT[variant] || MAX_HEIGHT.workspace;
+    field.style.height = 'auto';
+    field.style.height = `${Math.min(field.scrollHeight, max)}px`;
+    field.style.overflowY = field.scrollHeight > max ? 'auto' : 'hidden';
+  }, [value, variant]);
+
   const textarea = (
     <textarea
-      ref={textareaRef}
+      ref={setTextareaRef}
       value={value}
       onChange={onChange}
       onKeyDown={onKeyDown}
@@ -108,12 +137,8 @@ export default function ChatComposerCore({
                 : 'bg-ink text-white shadow-sm hover:bg-[#333] active:scale-95'
             }`}
           >
-            {sending ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            ) : (
-              <Send size={14} />
-            )}
-            <span>{sendLabel}</span>
+            {sending ? <Spinner /> : <Send size={14} />}
+            <span>{sending ? 'Надсилання…' : sendLabel}</span>
           </button>
         </div>
       </div>
@@ -134,7 +159,7 @@ export default function ChatComposerCore({
             aria-label={sendAriaLabel}
             className={ROUND_SEND_CLASS}
           >
-            <ArrowUp size={16} />
+            {sending ? <Spinner /> : <ArrowUp size={16} />}
           </button>
         </div>
       </div>

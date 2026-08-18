@@ -1,7 +1,27 @@
 import React from 'react';
 import HoverCard from './HoverCard';
 import IssueMentionChip from './IssueMentionChip';
-import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import { ChatAttachmentList } from '@/components/ui/Chat/ChatAttachmentList';
+
+// Before attachments were a field of their own, a file was written into the
+// message text — `![attachment](url)` for a picture, `📎 name` for anything
+// else. Those messages are still in the channels, and each of the two used to
+// draw itself: a bare 300px `<img>` with a border, and a grey 40px box with a
+// paperclip in the middle of the name. Neither looked like the tile the same
+// file gets today, which is most of why files in chat "все по-різному".
+//
+// They are read out as attachments now and handed to the one tile.
+function legacyAttachment(line) {
+  if (line.startsWith('![attachment](') && line.endsWith(')')) {
+    const url = line.slice(14, -1);
+    return url ? { name: url.split(/[?#]/)[0].split('/').pop() || 'Зображення', url } : null;
+  }
+  if (line.startsWith('📎 ')) {
+    const name = line.slice(2).trim();
+    return name ? { name } : null;
+  }
+  return null;
+}
 
 export default function MessageContent({ text, members, searchTerm }) {
   if (!text) return null;
@@ -33,25 +53,13 @@ export default function MessageContent({ text, members, searchTerm }) {
   };
 
   // We split by lines first
-  const lines = text.split('\n');
+  const allLines = text.split('\n');
+  const legacyAttachments = allLines.map(legacyAttachment).filter(Boolean);
+  const lines = allLines.filter(line => !legacyAttachment(line));
 
   return (
     <>
       {lines.map((line, idx) => {
-        // Handle images
-        if (line.startsWith('![attachment](')) {
-          const url = line.slice(14, -1);
-          // eslint-disable-next-line @next/next/no-img-element
-          return <img key={idx} src={url} alt="attachment" className="max-w-[300px] max-h-[300px] rounded-[8px] border border-line mt-2 mb-1 object-cover" />;
-        }
-        if (line.startsWith('📎 ')) {
-          return (
-             <div key={idx} data-ui-surface="local" className="h-[40px] px-3 mt-1 inline-flex items-center bg-canvas rounded-[6px] border border-line text-[12px] font-medium text-ink">
-               {line}
-             </div>
-          );
-        }
-
         // Tokenizer for formatting
         // We need to parse **, *, _, ~, `, @user, #issue, URLs
         // A simple regex approach that splits the string
@@ -83,17 +91,8 @@ export default function MessageContent({ text, members, searchTerm }) {
                 return <code key={pIdx} className="bg-[#f0f0f0] text-[#e01e5a] px-1 py-0.5 rounded text-[13px] font-mono">{part.slice(1, -1)}</code>;
               }
               if (part.startsWith('@')) {
-                const memberName = part.slice(1);
-                const member = (members || []).find(item =>
-                  [item.name, item.displayName, item.email]
-                    .filter(Boolean)
-                    .some(value => value.toLowerCase() === memberName.toLowerCase())
-                );
                 return (
-                  <HoverCard key={pIdx} type="user" value={memberName} members={members}>
-                    <span className="shrink-0"><UserAvatar user={member || { name: memberName }} size="chat-mention" /></span>
-                    <span className="truncate">{memberName}</span>
-                  </HoverCard>
+                  <HoverCard key={pIdx} type="user" value={part.slice(1)} members={members} />
                 );
               }
               if (part.startsWith('#')) {
@@ -124,6 +123,7 @@ export default function MessageContent({ text, members, searchTerm }) {
           </div>
         );
       })}
+      <ChatAttachmentList attachments={legacyAttachments} />
     </>
   );
 }

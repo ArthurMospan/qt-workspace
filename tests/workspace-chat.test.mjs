@@ -218,16 +218,20 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   // One shape, defined once: a mentioned task and a mentioned person are the
   // same kind of thing to read past, so the chip is literally the same string
   // rather than two that happen to agree today.
-  assert.match(mentionChip, /import \{ mentionChipClass \} from '\.\/HoverCard'/);
+  assert.match(mentionChip, /mentionChipClass, mentionChipLabel \} from '\.\/HoverCard'/);
   assert.match(mentionChip, /className=\{mentionChipClass\(\{ dark \}\)\}/);
   assert.match(hoverCardChip, /export function mentionChipClass/);
-  assert.match(hoverCardChip, /bg-black\/\[0\.07\]/);
-  // A chip must not stand taller than the line it sits in, and must sit on the
-  // same baseline as the words around it. Inheriting the body's `leading-relaxed`
-  // did the first; a baseline-aligned wrapper around an avatar did the second.
-  assert.match(hoverCardChip, /leading-none/);
-  assert.match(hoverCardChip, /h-\[22px\]/);
-  assert.match(hoverCardChip, /className="relative inline-block align-middle"/);
+  assert.match(hoverCardChip, /bg-black\/\[0\.06\]/);
+  // The chip is an inline-block, and that is what makes the name in it sit on
+  // the sentence's own baseline: an inline-block takes the baseline of the text
+  // inside it. A flex chip has none to offer — its first item is a face — so the
+  // browser synthesises one, and the sentence steps where anybody is named.
+  assert.match(hoverCardChip, /relative inline-block whitespace-nowrap rounded-full/);
+  assert.match(hoverCardChip, /align-baseline/);
+  // Two things would silently take that baseline away again.
+  assert.doesNotMatch(hoverCardChip, /mentionChipClass[\s\S]{0,400}overflow-hidden/);
+  assert.match(hoverCardChip, /MENTION_CHIP_BADGE = 'absolute/);
+  assert.match(hoverCardChip, /className="relative inline-block align-baseline"/);
   // `#` searches task numbers, not prose: typing 12 used to return every task
   // whose description happened to contain those characters.
   assert.match(page, /searchIssues\(queryText, activeOrgId, null, \{ mention: true \}\)/);
@@ -259,9 +263,13 @@ test('a task chat reads back the task mentions its own composer writes', async (
   assert.match(timeline, /<IssueMentionMenu/);
   assert.match(mentionText, /<IssueMentionChip/);
   assert.match(mentionText, /ISSUE_PATTERN/);
-  // Same chip as everywhere else, and one that survives a dark bubble: an own
-  // message here is white on near-black, where a black tint is invisible.
-  assert.match(mentionText, /mentionChipClass\(\{ dark, interactive: false \}\)/);
+  // The very same component, not a lookalike span. The retyped copy could not be
+  // clicked, so a person named in a task chat had no profile behind their name
+  // while the identical text in the workspace chat did.
+  assert.match(mentionText, /<HoverCard\b/);
+  assert.doesNotMatch(mentionText, /mentionChipClass/);
+  // And it survives a dark bubble: an own message here is white on near-black,
+  // where a black tint is invisible.
   assert.match(mentionText, /dark=\{dark\}/);
 });
 

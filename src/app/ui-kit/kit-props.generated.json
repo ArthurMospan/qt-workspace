@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 112,
-    "props": 831,
-    "documentedProps": 831,
+    "props": 832,
+    "documentedProps": 832,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1048,11 +1048,11 @@
           "description": "Placement in the parent only."
         },
         {
-          "name": "compact",
-          "default": "false",
-          "type": "boolean",
+          "name": "context",
+          "default": "'message'",
+          "type": "'message'|'panel'",
           "values": [],
-          "description": "Denser tiles, for threads and narrow panes."
+          "description": "Where this is being shown; picks the tile size and the columns."
         },
         {
           "name": "dark",
@@ -4178,6 +4178,13 @@
           "type": "(index: number) => void",
           "values": [],
           "description": "Drops one from the selection."
+        },
+        {
+          "name": "progress",
+          "default": "{}",
+          "type": "Record<number, number>",
+          "values": [],
+          "description": "Percent uploaded, by index, while the message is being sent."
         }
       ]
     },

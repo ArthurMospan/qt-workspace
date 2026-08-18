@@ -1,8 +1,7 @@
 'use client';
 
-import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import IssueMentionChip from '@/components/workspace/IssueMentionChip';
-import { mentionChipClass } from '@/components/workspace/HoverCard';
+import HoverCard from '@/components/workspace/HoverCard';
 import { filterMentionCandidates } from '@/lib/utils/mentions';
 
 function escapeRegExp(value) {
@@ -54,7 +53,6 @@ export default function MentionText({ text = '', members = [], dark = false, exc
 
   const candidates = filterMentionCandidates(members, excludeMemberId)
     .sort((a, b) => b.name.length - a.name.length);
-  const byName = new Map(candidates.map(member => [member.name, member]));
 
   // URLs first: alternation resolves left to right at a given position, and a
   // link may itself contain an `@`, which must not be read as a mention.
@@ -76,12 +74,16 @@ export default function MentionText({ text = '', members = [], dark = false, exc
     cursor = regex.lastIndex;
 
     if (token.startsWith('@')) {
-      const member = byName.get(token.slice(1));
+      // The very same component the workspace chat uses, rather than a lookalike
+      // span: a mention here opens the person's profile and shows their card,
+      // which the retyped copy never could.
       nodes.push(
-        <span key={`mention-${match.index}`} className={mentionChipClass({ dark, interactive: false })}>
-          <UserAvatar user={member} size="chat-mention" />
-          <span className="truncate">{member.name}</span>
-        </span>,
+        <HoverCard
+          key={`mention-${match.index}`}
+          value={token.slice(1)}
+          members={members}
+          dark={dark}
+        />,
       );
       continue;
     }

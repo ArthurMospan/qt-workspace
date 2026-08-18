@@ -18,9 +18,21 @@ test('task chat exposes an unread boundary and reads it only after visibility', 
   // The boundary counts everything the feed carries — messages and changes both.
   // Drawn from the messages alone, it left a task where somebody moved the
   // deadline and said nothing looking untouched.
-  assert.match(timeline, /<UnreadDivider count=\{unreadTotal\}/);
+  assert.match(timeline, /const unreadTotal = unreadCommentIds\.length \+ unreadChangeIds\.length;/);
+  assert.match(timeline, /<UnreadDivider count=\{boundaryCount\}/);
   assert.match(timeline, /new IntersectionObserver/);
   assert.match(timeline, /scrollToUnread/);
+  // The line stays where the visit found it. Derived live from `unreadTotal` it
+  // disappeared the moment it was read, pulling its own height out of the list
+  // under the reader.
+  assert.match(timeline, /sessionBoundary/);
+  // Reading the boundary consumes the changes too. They used to be consumed
+  // only by leaving the task, so «11 нових» stood there for a whole visit no
+  // matter how far you read.
+  assert.match(timeline, /consumeChanges\(\);/);
+  assert.match(timeline, /markIssueSeen\(\{/);
+  // The jump button points where the line actually is.
+  assert.match(timeline, /unreadDirection === 'up' \? ChevronUp : ChevronDown/);
   assert.match(detail, /label: 'Чат'.*count: unreadTaskChatCount/);
 });
 

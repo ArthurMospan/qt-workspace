@@ -527,10 +527,13 @@
     background: var(--color-surface);
     box-shadow: 0 8px 30px rgb(0 0 0 / 12%);
   }
+  /* A stadium radius is right for one line and wrong for three: a wrapped
+     change read as a lozenge with its corners bulging past the text. 14px is
+     the radius of everything else this size and holds at any height. */
   .ui-surface[data-ui-surface='system-message'] {
-    border-radius: 999px;
+    border-radius: 14px;
     background: rgb(0 0 0 / 4.5%);
-    padding: 8px 12px;
+    padding: 6px 10px 6px 8px;
   }
   .ui-surface[data-ui-surface='project-card'] {
     min-height: 220px;

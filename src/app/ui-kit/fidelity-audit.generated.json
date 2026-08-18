@@ -203,14 +203,16 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/HoverCard.jsx:140",
+      "location": "src/components/workspace/HoverCard.jsx:164",
       "className": "",
       "text": "",
-      "childElements": [],
+      "childElements": [
+        "span"
+      ],
       "ariaLabel": "Відкрити профіль …",
       "styled": false,
       "reviewed": "",
-      "resembles": "",
+      "resembles": "IconAction",
       "structure": "chat",
       "routes": [
         "/",
@@ -452,7 +454,7 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/chat/page.js:353",
+      "location": "src/app/(app)/chat/page.js:363",
       "tag": "div",
       "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },
@@ -647,7 +649,7 @@
       "className": "rounded-[12px] border border-line bg-surface flex flex-col overflow-hidden"
     },
     {
-      "location": "src/components/workspace/qtplus/chat/ChatMessage.jsx:86",
+      "location": "src/components/workspace/qtplus/chat/ChatMessage.jsx:96",
       "tag": "div",
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
@@ -662,7 +664,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:741",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:848",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

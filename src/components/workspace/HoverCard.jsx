@@ -19,18 +19,26 @@ import { useAppContext } from '@/lib/context/AppContext';
  * task chat's `MentionText` wear the same one, so a mentioned task and a
  * mentioned person read alike in a sentence.
  *
- * Two of these declarations are load-bearing rather than decorative, and both
- * are why a sentence used to step where a chip appeared in it:
+ * It is an **inline-block, not a flex box**, and that is the whole trick. An
+ * inline-block's baseline is the baseline of the text inside it, so the name in
+ * the chip sits on exactly the line the sentence sits on — by construction,
+ * with no tuned offset and nothing to drift. A flex chip has no text baseline
+ * to offer (its first item is a face, not a word), so the browser synthesises
+ * one from whatever that face happens to be; every previous attempt here was
+ * really an attempt to guess that synthesis, and every one of them left the
+ * words in the chip a pixel or two off the words around them.
  *
- *   • `leading-none` with a fixed height. The chip inherits the message body's
- *     `leading-relaxed`, so its own words carried a 23px line box inside a 23px
- *     one and the padding went on top — a 27px chip on a 23px line. Every line
- *     that mentioned anybody stood taller than the lines around it.
- *   • `align-middle`, on the chip *and* on whatever wraps it. An inline-flex box
- *     whose first item is an avatar has no text baseline to offer, so a
- *     baseline-aligned wrapper hangs the chip from the bottom of that avatar —
- *     which is what lifted the words inside it clear of the sentence they
- *     belong to.
+ * Three rules keep it that way, and breaking any of them puts the step back:
+ *
+ *   • No `overflow: hidden` on the chip. An inline-block that clips takes its
+ *     bottom margin edge as its baseline instead of its text — which is why the
+ *     label is shortened as a *string* rather than truncated as a box.
+ *   • The avatar is positioned, not laid out. Out of flow it cannot touch the
+ *     line box, and `top-1/2 -translate-y-1/2` centres it in the chip exactly,
+ *     whatever the font's metrics are.
+ *   • `leading-[20px]` against the body's 14px/22.75px line. The chip's whole
+ *     box then fits inside the line the sentence already occupies, so a
+ *     paragraph does not grow by so much as a pixel where somebody is named.
  *
  * @param {boolean} options.dark On a dark bubble — the task chat's own messages.
  * @param {boolean} options.interactive Whether it answers to a pointer; a chip
@@ -38,17 +46,28 @@ import { useAppContext } from '@/lib/context/AppContext';
  */
 export function mentionChipClass({ dark = false, interactive = true } = {}) {
   return [
-    'inline-flex h-[22px] max-w-full items-center gap-1 whitespace-nowrap rounded-full px-1.5',
-    'align-middle text-[13px] font-semibold leading-none',
-    dark ? 'bg-white/15 text-white' : 'bg-black/[0.07] text-ink',
+    'relative inline-block whitespace-nowrap rounded-full pl-[25px] pr-2',
+    'align-baseline text-[13px] font-medium leading-[20px]',
+    dark ? 'bg-white/15 text-white' : 'bg-black/[0.06] text-ink',
     interactive
       ? `cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 ${
         dark
           ? 'hover:bg-white/25 focus-visible:ring-white/40'
-          : 'hover:bg-black/[0.12] focus-visible:ring-ink/20'
+          : 'hover:bg-black/[0.11] focus-visible:ring-ink/20'
       }`
       : '',
   ].filter(Boolean).join(' ');
+}
+
+/** The 16px badge at the chip's left, centred in it and out of the line's way. */
+export const MENTION_CHIP_BADGE = 'absolute left-[3px] top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full';
+
+// A chip is a word in a sentence, so a long one is shortened as text rather
+// than clipped as a box: clipping needs `overflow: hidden`, and that is exactly
+// what would cost the chip its baseline.
+export function mentionChipLabel(value, limit = 44) {
+  const text = String(value || '');
+  return text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text;
 }
 
 export const MENTION_CHIP = mentionChipClass();
@@ -83,12 +102,17 @@ function findMember(members, value) {
 /**
  * A mentioned person, as a chip with a card behind it.
  *
+ * The chip's own contents used to arrive as `children`, which meant every chat
+ * that wanted a mention had to retype the face and the name — and the task chat,
+ * which did retype them, ended up with a mention that could not be clicked. The
+ * chip is built here now; a caller says who is named, not how it looks.
+ *
  * @param {'user'} props.type Kept so a call site says what it is naming; a task is `IssueMentionChip`.
  * @param {string} props.value The name written after the `@`.
  * @param {object[]} props.members Everyone in the organization, which is where the name resolves from.
- * @param {React.ReactNode} props.children What the chip shows — a face and a name.
+ * @param {boolean} props.dark On a dark bubble — a task chat message of your own.
  */
-export default function HoverCard({ type = 'user', value, children, members }) {
+export default function HoverCard({ type = 'user', value, members, dark = false }) {
   const { currentUser } = useAppContext();
   const router = useRouter();
   const pathname = usePathname();
@@ -130,10 +154,10 @@ export default function HoverCard({ type = 'user', value, children, members }) {
 
   return (
     <span
-      // `align-middle` here as well as on the chip: this wrapper is the box the
-      // sentence actually aligns, and left on its baseline it hung the whole
-      // chip from the bottom edge of the avatar inside it.
-      className="relative inline-block align-middle"
+      // Baseline-aligned, like the chip it wraps: an inline-block takes the
+      // baseline of its last line box, and that line box is the chip, so the
+      // wrapper passes the chip's own baseline straight through to the sentence.
+      className="relative inline-block align-baseline"
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >
@@ -141,10 +165,13 @@ export default function HoverCard({ type = 'user', value, children, members }) {
         type="button"
         onClick={openUser}
         title={`Відкрити профіль ${member?.name || value}`}
-        className={MENTION_CHIP}
+        className={mentionChipClass({ dark })}
         data-mention={type}
       >
-        {children}
+        <span className={MENTION_CHIP_BADGE}>
+          <UserAvatar user={member || { name: value }} size="xs" />
+        </span>
+        {mentionChipLabel(member?.name || value)}
       </button>
 
       {show && (

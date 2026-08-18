@@ -14,7 +14,7 @@ import { TaskIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import { auth } from '@/lib/firebase';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { mentionChipClass } from './HoverCard';
+import { MENTION_CHIP_BADGE, mentionChipClass, mentionChipLabel } from './HoverCard';
 
 // One request per key for the lifetime of the page, shared by every message on
 // it: a conversation that mentions three tasks twenty times asks three times.
@@ -107,13 +107,14 @@ export default function IssueMentionChip({ issueKey, dark = false }) {
       onClick={open}
       title={issue ? `${issueKey}: ${issue.title}` : `Завдання ${issueKey}`}
       className={mentionChipClass({ dark })}
+      data-mention="issue"
     >
-      {/* Where the avatar sits on a person's mention, at the avatar's own
-          18px, so the two chips are the same height and the same rhythm. */}
-      <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center ${dark ? 'text-white/70' : 'text-muted'}`}>
-        <TaskIcon size={13} />
+      {/* Exactly where the face sits on a person's mention, at the same size
+          and out of the line's way, so the two chips are one shape. */}
+      <span className={`${MENTION_CHIP_BADGE} ${dark ? 'text-white/70' : 'text-muted'}`}>
+        <TaskIcon size={12} />
       </span>
-      <span className="truncate">{issue?.title || issueKey}</span>
+      {mentionChipLabel(issue?.title || issueKey)}
     </button>
   );
 }

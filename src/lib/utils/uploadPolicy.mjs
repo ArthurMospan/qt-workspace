@@ -1,5 +1,25 @@
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
+/**
+ * What the storage behind this actually accepts, per kind of file.
+ *
+ * There was one number here — 25 MB — and it was ours, not Cloudinary's. A 15 MB
+ * photo therefore passed every check we make, got a signature from our own
+ * server, and was then refused by the upload itself: «Помилка надсилання:
+ * Cloudinary upload error: 400 Bad Request», with nothing in it that a person
+ * could act on. A limit that is not the real limit is worse than no limit,
+ * because it moves the refusal to the one place that cannot explain itself.
+ *
+ * These are the delivery limits for images and raw files (10 MB) and for
+ * video/audio (100 MB). Lowering ours to match is what lets the composer say
+ * «Файл завеликий — до 10 МБ» before a byte leaves the browser.
+ */
+export const MAX_UPLOAD_BYTES_BY_RESOURCE = Object.freeze({
+  image: 10 * 1024 * 1024,
+  raw: 10 * 1024 * 1024,
+  video: 100 * 1024 * 1024,
+});
+
 const FORMAT_POLICY = Object.freeze({
   jpg: { resourceType: 'image', mimeTypes: ['image/jpeg'], formats: ['jpg', 'jpeg'] },
   jpeg: { resourceType: 'image', mimeTypes: ['image/jpeg'], formats: ['jpg', 'jpeg'] },
@@ -81,8 +101,15 @@ export function uploadFilePolicy(file, { maxBytes = MAX_UPLOAD_BYTES } = {}) {
   if (!name || name.length > 240 || !policy) {
     return { error: 'Цей тип файлу не підтримується' };
   }
-  if (!Number.isSafeInteger(size) || size <= 0 || size > maxBytes) {
-    return { error: `Файл завеликий — ліміт ${Math.floor(maxBytes / 1024 / 1024)} МБ` };
+  // The caller's ceiling and the storage's, whichever is lower. A caller may ask
+  // for less than the storage allows; it may never ask for more, because the
+  // upload is what would refuse and it refuses in HTTP status codes.
+  const limit = Math.min(
+    maxBytes,
+    MAX_UPLOAD_BYTES_BY_RESOURCE[policy.resourceType] ?? MAX_UPLOAD_BYTES,
+  );
+  if (!Number.isSafeInteger(size) || size <= 0 || size > limit) {
+    return { error: `Файл завеликий — до ${Math.floor(limit / 1024 / 1024)} МБ` };
   }
   if (!policy.mimeTypes.includes(mimeType)) {
     return { error: 'Тип файла не відповідає його розширенню' };

@@ -337,8 +337,7 @@ export default function ChannelInfoPanel({
                   <div key={attachment.chatAttachmentKey} data-ui-surface="local" className="rounded-xl border border-line/70 bg-white p-2">
                     <ChatAttachmentList
                       attachments={[attachment]}
-                      compact
-                      className="mt-0 min-w-0 max-w-none sm:grid-cols-1"
+                      context="panel"
                       onOpen={onOpenAttachment}
                     />
                     <TextAction

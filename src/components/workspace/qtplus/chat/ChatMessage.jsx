@@ -4,14 +4,18 @@ import { Trash2, Check, CheckCheck } from 'lucide-react';
 import TextAction from '@/components/ui/TextAction';
 import { formatMsgTime } from '@/lib/portal/qtplusChatView.mjs';
 
-function ChatAuthorAvatar({ name, url }) {
+function ChatAuthorAvatar({ name, url, size = 32 }) {
   const initial = (name || '?').trim().charAt(0).toUpperCase();
+  const box = { width: size, height: size };
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element -- avatars come from arbitrary identity providers, which next/image cannot whitelist
-    return <img src={url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />;
+    return <img src={url} alt="" style={box} className="shrink-0 rounded-full object-cover" />;
   }
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-semibold text-muted">
+    <div
+      style={{ ...box, fontSize: size <= 20 ? 9 : 11 }}
+      className="flex shrink-0 items-center justify-center rounded-full bg-white font-semibold text-muted"
+    >
       {initial}
     </div>
   );
@@ -28,12 +32,18 @@ export default function ChatMessage({ view, othersCount, onDelete }) {
     const time = formatMsgTime(view.createdAtMs);
     return (
       <div className="flex justify-center px-3 py-1">
-        <div data-ui-surface="system-message" className="ui-surface flex max-w-[92%] items-center gap-2 text-[11px] text-muted">
-          <span className="min-w-0 text-center leading-4">
-            {view.senderId && <strong className="font-bold text-ink">{view.senderName} · </strong>}
-            {view.text}
+        {/* Той самий рядок, що й у чаті завдання: час — інлайн у кінці речення,
+            а не окрема колонка, яка зависає збоку від тексту в три рядки. */}
+        <div data-ui-surface="system-message" className="ui-surface flex max-w-[92%] items-start gap-2">
+          <span className="mt-[1px] shrink-0">
+            <ChatAuthorAvatar name={view.senderName} url={view.avatarUrl} size={18} />
           </span>
-          {time && <span className="shrink-0 text-[10px] font-medium text-[#a1a1a1]">{time}</span>}
+          <p className="min-w-0 text-[11px] leading-[18px] text-muted">
+            {view.senderId && <strong className="font-semibold text-ink">{view.senderName}</strong>}
+            {view.senderId && ' '}
+            {view.text}
+            {time && <span className="ml-1.5 whitespace-nowrap text-[10px] text-faint">{time}</span>}
+          </p>
         </div>
       </div>
     );

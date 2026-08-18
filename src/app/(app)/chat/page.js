@@ -58,6 +58,7 @@ function MessageInput({
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
   const [showEmoji, setShowEmoji] = useState(false);
   const [mentionType, setMentionType] = useState(null);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -105,11 +106,9 @@ function MessageInput({
   const handleChange = (e) => {
     const val = e.target.value;
     setText(val);
-    // Auto-resize
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
-    }
+    // The field's height is `ChatComposerCore`'s job now: it measures the value
+    // rather than the keystroke, which is the only way text that arrives without
+    // one — an edit opened, a mention inserted, a draft restored — can size it.
     // Mention detection
     const cursor = e.target.selectionStart;
     const before = val.slice(0, cursor);
@@ -164,11 +163,16 @@ function MessageInput({
       try {
         // Organization-scoped so ownership stays provable when the file is
         // later released by /api/upload/delete.
-        uploaded = await Promise.all(attachments.map(file =>
-          uploadFile(file, `organizations/${activeOrgId}/chat`)));
+        uploaded = await Promise.all(attachments.map((file, index) =>
+          uploadFile(file, `organizations/${activeOrgId}/chat`, percent => {
+            setUploadProgress(previous => ({ ...previous, [index]: percent }));
+          })));
       } catch (e) {
         console.error('Upload error', e);
-        onError?.('Не вдалося завантажити вкладення');
+        // The uploader now says what the storage refused and why; repeating
+        // «Не вдалося завантажити вкладення» over it threw that away.
+        onError?.(e?.message || 'Не вдалося завантажити вкладення');
+        setUploadProgress({});
         setUploading(false);
         sendingRef.current = false;
         return;
@@ -178,8 +182,8 @@ function MessageInput({
       await onSend(text, uploaded);
       setText('');
       setAttachments([]);
+      setUploadProgress({});
       setMentionType(null);
-      if (textareaRef.current) textareaRef.current.style.height = 'auto';
     } catch (error) {
       console.error('[workspace-chat] Send failed:', error);
       onError?.('Не вдалося надіслати повідомлення');
@@ -193,11 +197,16 @@ function MessageInput({
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     const roomLeft = Math.max(0, 5 - attachments.length);
-    const accepted = files
-      .filter(file => !uploadFilePolicy(file, { maxBytes: 20 * 1024 * 1024 }).error)
-      .slice(0, roomLeft);
-    if (accepted.length !== files.length) {
-      onError?.('До 5 файлів, максимум 20 МБ кожен');
+    // The refusal is the file's own, in its own words. One flat sentence about
+    // «20 МБ» was the wrong number as well as the wrong reason: an unsupported
+    // type and a file over the limit read identically, and neither was true of
+    // the file the reader had actually picked.
+    const rejected = files.map(file => ({ file, ...uploadFilePolicy(file) })).filter(entry => entry.error);
+    const accepted = files.filter(file => !uploadFilePolicy(file).error).slice(0, roomLeft);
+    if (rejected.length > 0) {
+      onError?.(`${rejected[0].file.name}: ${rejected[0].error}`);
+    } else if (accepted.length !== files.length) {
+      onError?.('До 5 файлів на повідомлення');
     }
     setAttachments(previous => [...previous, ...accepted]);
     if (fileRef.current) fileRef.current.value = '';
@@ -284,6 +293,7 @@ function MessageInput({
           <div className="border-b border-black/[0.05] p-2">
             <PendingChatAttachments
               files={attachments}
+              progress={uploadProgress}
               onRemove={index => setAttachments(previous => previous.filter((_, itemIndex) => itemIndex !== index))}
             />
           </div>
@@ -421,8 +431,6 @@ function ThreadSidebar({
                 <p className="text-[13px] text-ink leading-relaxed">{reply.text}</p>
                 <ChatAttachmentList
                   attachments={reply.attachments}
-                  compact
-                  className="max-w-[260px] sm:grid-cols-1"
                   onOpen={onOpenAttachment}
                 />
               </div>
