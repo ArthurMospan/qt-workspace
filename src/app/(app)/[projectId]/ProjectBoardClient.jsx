@@ -24,6 +24,7 @@ import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
 import { can } from '@/lib/utils/can';
+import { sprintsForProject } from '@/lib/utils/sprintScope.mjs';
 import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
@@ -160,7 +161,11 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
-  const activeSprints = sprints.filter(s => s.status === 'active');
+  // Sprints that reach this project: the organization-wide ones plus those
+  // scoped to it. A sprint belonging to another project is not this board's
+  // business, in its filter or in its task pickers.
+  const projectSprints = sprintsForProject(sprints, projectId, { includeCompleted: true });
+  const activeSprints = projectSprints.filter(s => s.status === 'active');
   const boardIssues = issues.filter(i => {
     const normalizedSearch = projectSearch.trim().toLowerCase();
     if (normalizedSearch && ![i.issueKey, i.title, i.description]
@@ -408,7 +413,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                   options={[
                     { value: 'all', label: 'Всі спринти' },
                     { value: 'active', label: 'Активний спринт' },
-                    ...sprints.map(s => ({ value: s.id, label: s.name }))
+                    ...projectSprints.map(s => ({ value: s.id, label: s.name }))
                   ]}
                   variant="ghost"
                 />
@@ -505,7 +510,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               onMoveIssue={handleMoveIssue}
               onBulkUpdate={handleBulkUpdate}
               issueLinks={issueLinks}
-              sprints={sprints}
+              sprints={projectSprints}
               isArchived={isArchived}
               canArchive={can(orgRole, 'delete:issue')}
               selectionScopeKey={selectionScopeKey}
@@ -519,7 +524,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               issueLinks={issueLinks}
               members={members}
               labels={labels}
-              sprints={sprints}
+              sprints={projectSprints}
               projectId={projectId}
               columns={tableColumns}
               sort={tableSort}
@@ -546,7 +551,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
             issueLinks={issueLinks}
             members={members}
             labels={labels}
-            sprints={sprints}
+            sprints={projectSprints}
             projectId={projectId}
             projectName={project?.name}
             hiddenGroupIds={project?.hiddenColumns || []}
@@ -589,7 +594,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
           name: project.name,
           hiddenColumns: project.hiddenColumns || [],
         } : null}
-        sprints={sprints}
+        sprints={projectSprints}
       />
       {activeTab === 'analytics' && (
         <AnalyticsTab

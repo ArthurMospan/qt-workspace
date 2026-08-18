@@ -42,6 +42,7 @@ import { plural } from '@/lib/utils/plural.mjs';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
+import { sprintsForProject } from '@/lib/utils/sprintScope.mjs';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { MultiSelect, Select } from '@/components/ui/Select';
 import { AttributeTrigger, ContextMenu, DetailLayout, DetailSection, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
@@ -265,6 +266,16 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
 
   const { stages }   = useStagesForProject(projectId);
   const { sprints = [] } = useSprints();
+  // Only sprints that cover this task's project, plus whichever sprint it is
+  // already in — a scope narrowed after the fact must not make the current
+  // value vanish from its own picker.
+  const scopedSprints = sprintsForProject(sprints, projectId);
+  const currentSprint = issue?.sprintId
+    ? sprints.find(sprint => sprint.id === issue.sprintId)
+    : null;
+  const selectableSprints = currentSprint && !scopedSprints.some(sprint => sprint.id === currentSprint.id)
+    ? [...scopedSprints, currentSprint]
+    : scopedSprints;
 
   // Чат завдання отримує другий таб «QuickTeam+», коли проєкт звʼязано з
   // проєктом порталу — портальний чат просто як додатковий (IssueQtPlusChat
@@ -1456,7 +1467,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       onChange={val => update({ sprintId: val || null })} 
                       options={[
                         { value: '', label: 'Без спринта' },
-                        ...sprints.map(s => ({ value: s.id, label: s.name }))
+                        ...selectableSprints.map(s => ({ value: s.id, label: s.name }))
                       ]} 
                       buttonClassName={compactSelectClass}
                     />
@@ -1553,7 +1564,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                             disabled={isArchived}
                             value={issue.sprintId || ''}
                             onChange={val => update({ sprintId: val || null })}
-                            options={[{ value: '', label: 'Без спринта' }, ...sprints.map(item => ({ value: item.id, label: item.name }))]}
+                            options={[{ value: '', label: 'Без спринта' }, ...selectableSprints.map(item => ({ value: item.id, label: item.name }))]}
                           />
                         </div>
                         <div className="flex flex-col gap-1.5 sm:hidden">

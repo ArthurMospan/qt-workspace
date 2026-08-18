@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
+import { sprintCoversProject } from '@/lib/utils/sprintScope.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
   DEFAULT_LABEL_IDS,
@@ -174,6 +175,14 @@ export async function POST(request) {
         || sprintSnap.data().status === 'completed'
       ) {
         return NextResponse.json({ error: 'Некоректний або вже завершений спринт' }, { status: 400 });
+      }
+      // A sprint may be scoped to specific projects, and a task from another
+      // project has no business in it — see sprintScope.mjs.
+      if (!sprintCoversProject(sprintSnap.data(), projectId)) {
+        return NextResponse.json({
+          error: 'Цей спринт не охоплює проєкт завдання',
+          code: 'SPRINT_PROJECT_SCOPE',
+        }, { status: 400 });
       }
     }
 

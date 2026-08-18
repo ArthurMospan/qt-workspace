@@ -42,16 +42,18 @@ import {
   UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
 } from '@/lib/utils/dndAnnouncements.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
+import { sprintProjectIds, sprintScopeLabel } from '@/lib/utils/sprintScope.mjs';
 import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
 import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
 import { nextSectionExpansion } from '@/lib/utils/sectionExpansion.mjs';
 
-function SprintEditModal({ sprint, onClose, onSave }) {
+function SprintEditModal({ sprint, projects = [], onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
   const [goal, setGoal] = useState(sprint.goal || '');
   const [startDate, setStartDate] = useState(() => toLocalDateInput(sprint.startDate));
   const [endDate, setEndDate] = useState(() => toLocalDateInput(sprint.endDate));
+  const [projectIds, setProjectIds] = useState(() => sprintProjectIds(sprint));
 
   const [nameError, setNameError] = useState('');
 
@@ -64,6 +66,7 @@ function SprintEditModal({ sprint, onClose, onSave }) {
     onSave({
       name,
       goal,
+      projectIds,
       startDate: fromDateInput(startDate),
       endDate: fromDateInput(endDate, { endOfDay: true })
     });
@@ -94,6 +97,19 @@ function SprintEditModal({ sprint, onClose, onSave }) {
           <FormGroup label="Ціль спринта">
             <Textarea value={goal} onChange={e => setGoal(e.target.value)} rows={2} />
           </FormGroup>
+          <FormGroup
+            label="Проєкти"
+            hint="Нічого не обрано — спринт для всіх проєктів. Кілька спринтів можуть іти одночасно, якщо не претендують на один проєкт"
+          >
+            <MultiSelect
+              value={projectIds}
+              onChange={setProjectIds}
+              options={projects.map(project => ({ value: project.id, label: project.name }))}
+              placeholder="Усі проєкти"
+              selectAllLabel="Усі проєкти"
+              ariaLabel="Проєкти спринта"
+            />
+          </FormGroup>
           <div className="flex gap-4">
             <FormGroup label="Дата початку" className="flex-1">
               <DatePicker value={startDate} onChange={setStartDate} aria-label="Дата початку" />
@@ -107,11 +123,12 @@ function SprintEditModal({ sprint, onClose, onSave }) {
   );
 }
 
-function SprintCreateModal({ onClose, onSave }) {
+function SprintCreateModal({ projects = [], onClose, onSave }) {
   const [name, setName] = useState('');
   const [goal, setGoal] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [projectIds, setProjectIds] = useState([]);
 
   const [nameError, setNameError] = useState('');
 
@@ -124,6 +141,7 @@ function SprintCreateModal({ onClose, onSave }) {
     onSave({
       name,
       goal,
+      projectIds,
       startDate: fromDateInput(startDate),
       endDate: fromDateInput(endDate, { endOfDay: true })
     });
@@ -154,6 +172,19 @@ function SprintCreateModal({ onClose, onSave }) {
           </FormGroup>
           <FormGroup label="Ціль спринта">
             <Textarea value={goal} placeholder="Опишіть ціль цього спринта..." onChange={e => setGoal(e.target.value)} rows={2} />
+          </FormGroup>
+          <FormGroup
+            label="Проєкти"
+            hint="Нічого не обрано — спринт для всіх проєктів. Кілька спринтів можуть іти одночасно, якщо не претендують на один проєкт"
+          >
+            <MultiSelect
+              value={projectIds}
+              onChange={setProjectIds}
+              options={projects.map(project => ({ value: project.id, label: project.name }))}
+              placeholder="Усі проєкти"
+              selectAllLabel="Усі проєкти"
+              ariaLabel="Проєкти спринта"
+            />
           </FormGroup>
           <div className="flex gap-4">
             <FormGroup label="Дата початку" className="flex-1">
@@ -260,6 +291,9 @@ export default function GlobalSprintsPage() {
   // desktop, which is the layout that has room either way.
   const compactSprintActions = useIsMobile() === true;
   const projectIds = (projects || []).map(p => p.id);
+  // A sprint is scoped to live projects; an archived one is not something new
+  // work gets planned into.
+  const activeProjectsForScope = (projects || []).filter(project => project.status !== 'archived');
   const {
     issues: snapshotIssues,
     issueLinks,
@@ -691,6 +725,12 @@ export default function GlobalSprintsPage() {
                               is closed, so it takes the ink tone: definitive, and
                               distinct from active green and planned grey. */}
                           {sprint.status === 'completed' && <StatusPill label="Завершено" color="#1f1f1f" />}
+                          {/* What the sprint covers. Two sprints can be active
+                              at once, so «Активний» alone no longer says which
+                              work it is active for. */}
+                          <Pill size="md" className="shrink-0 max-md:hidden">
+                            {sprintScopeLabel(sprint, projects || [])}
+                          </Pill>
                           <span className="text-[11px] text-muted shrink-0 max-sm:hidden">
                             {sprintIssues.length} {plural(sprintIssues.length, ['завдання', 'завдання', 'завдань'])}
                           </span>
@@ -968,6 +1008,7 @@ export default function GlobalSprintsPage() {
       {editingSprint && (
         <SprintEditModal
           sprint={editingSprint}
+          projects={activeProjectsForScope}
           onClose={() => setEditingSprint(null)}
           onSave={async (updates) => {
             try {
@@ -985,6 +1026,7 @@ export default function GlobalSprintsPage() {
       {/* Create Sprint Modal */}
       {showCreateSprintModal && (
         <SprintCreateModal
+          projects={activeProjectsForScope}
           onClose={() => setShowCreateSprintModal(false)}
           onSave={handleCreateSprint}
         />
