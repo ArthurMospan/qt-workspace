@@ -32,12 +32,15 @@ export default function TeamMemberSettingsDialog({
   // Administrators promote and demote, the owner seat moves only by transfer,
   // and nobody edits their own role — that last one is what stops the last
   // administrator from locking the organization out of its own settings.
-  const canChangeRole = isAdmin && !isMe && member.role !== 'owner';
+  // A deactivated seat has no membership document to write to, so its role and
+  // position are frozen until the access comes back carrying them.
   const isDeactivated = !isActiveMember(member);
+  const canChangeRole = isAdmin && !isMe && member.role !== 'owner' && !isDeactivated;
   const roleHint = member.role === 'owner'
     ? 'Роль власника фіксована'
+    : isDeactivated ? 'Спершу поверніть доступ'
     : isMe ? 'Свою роль змінити не можна' : 'Потрібні права адміністратора';
-  const canChangePosition = isAdmin;
+  const canChangePosition = isAdmin && !isDeactivated;
 
   return (
     <Dialog isOpen onClose={onClose} title="Налаштування учасника" size="md">
@@ -87,7 +90,7 @@ export default function TeamMemberSettingsDialog({
         <section>
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Посада</p>
-            {!canChangePosition && <span className="text-[10px] text-faint">Потрібні права адміністратора</span>}
+            {!canChangePosition && <span className="text-[10px] text-faint">{isDeactivated ? 'Спершу поверніть доступ' : 'Потрібні права адміністратора'}</span>}
           </div>
           <div className="grid max-h-[320px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             <OptionCard
