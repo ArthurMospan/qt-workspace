@@ -114,7 +114,7 @@ function relativeActivity(value, now) {
 function riskReading(stat) {
   if (stat.overdue > 0) return { tone: 'danger', label: `${stat.overdue} прострочено` };
   if (stat.open >= 8) return { tone: 'warning', label: 'Високе навантаження' };
-  if (stat.open > 0 && stat.minutes === 0) return { tone: 'neutral', label: 'Час не списано' };
+  if (stat.open > 0 && stat.minutes === 0) return { tone: 'neutral', label: 'Час не зафіксовано' };
   return { tone: 'success', label: 'Стабільно' };
 }
 
@@ -151,7 +151,7 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
         <KpiCard
           icon={Clock}
           value={fmtH(summary.minutes)}
-          label={`Списано за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
+          label={`Зафіксовано за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
           sub="за задачами та подіями"
         />
         <KpiCard
@@ -406,7 +406,7 @@ function MemberOverview({ stat, projects, members, events, period }) {
   return (
     <>
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard icon={Clock} value={fmtH(stat.minutes)} label="Списано часу" sub={`≈ ${fmtH(averagePerDay)} на календарний день`} />
+        <KpiCard icon={Clock} value={fmtH(stat.minutes)} label="Зафіксовано часу" sub={`≈ ${fmtH(averagePerDay)} на календарний день`} />
         <KpiCard icon={CheckCircle2} value={stat.done} label="Завершено" sub={`${completionRate}% від активного набору`} />
         <KpiCard icon={Target} value={stat.inProgress} label="Зараз у роботі" sub={`${stat.open} відкритих загалом`} />
         <KpiCard icon={AlertTriangle} value={stat.overdue} label="Прострочено" sub={stat.overdue ? 'потребує уваги' : 'затримок немає'} />

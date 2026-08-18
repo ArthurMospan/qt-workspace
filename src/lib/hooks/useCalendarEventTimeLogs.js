@@ -6,7 +6,7 @@ import { reportLoadError } from '@/lib/utils/errors';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 
 async function calendarTimeLogRequest(path, options = {}) {
-  return authenticatedRequest(path, options, 'Не вдалося оновити списаний час');
+  return authenticatedRequest(path, options, 'Не вдалося оновити зафіксований час');
 }
 
 function requestPath({

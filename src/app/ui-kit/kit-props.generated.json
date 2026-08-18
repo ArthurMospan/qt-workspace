@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 113,
-    "props": 835,
-    "documentedProps": 835,
+    "props": 837,
+    "documentedProps": 837,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1578,6 +1578,13 @@
           "type": "string",
           "values": [],
           "description": "Id for the native input; generated when omitted."
+        },
+        {
+          "name": "indeterminate",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Some of what it stands for is ticked and"
         },
         {
           "name": "label",
@@ -6475,7 +6482,7 @@
     },
     "Toast": {
       "file": "src/components/ui/Feedback/Toast.jsx",
-      "summary": "Transient feedback that something happened, floating above the page and closing itself. Anything the reader has to act on is an `Alert`, which stays.",
+      "summary": "Transient feedback that something happened, floating above the page and closing itself. Anything the reader has to act on is an `Alert`, which stays. can fix it.",
       "props": [
         {
           "name": "action",
@@ -6511,6 +6518,13 @@
           "type": "() => void",
           "values": [],
           "description": "Fires when it closes, by timer or by the ×."
+        },
+        {
+          "name": "onReport",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Offers to send this failure to the people who"
         },
         {
           "name": "variant",

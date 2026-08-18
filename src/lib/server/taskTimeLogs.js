@@ -38,13 +38,13 @@ export async function readTaskTimeLogJson(request) {
     throw taskTimeLogError(
       'TASK_TIME_PAYLOAD_TOO_LARGE',
       413,
-      'Запит на списання часу завеликий',
+      'Запит на фіксацію часу завеликий',
     );
   }
   try {
     const body = await readJsonBody(request, {
       code: 'TASK_TIME_INVALID_JSON',
-      message: 'Некоректний JSON для списання часу',
+      message: 'Некоректний JSON для фіксації часу',
     });
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       throw new Error('INVALID_BODY');
@@ -55,7 +55,7 @@ export async function readTaskTimeLogJson(request) {
     throw taskTimeLogError(
       'TASK_TIME_INVALID_JSON',
       400,
-      'Некоректний JSON для списання часу',
+      'Некоректний JSON для фіксації часу',
     );
   }
 }

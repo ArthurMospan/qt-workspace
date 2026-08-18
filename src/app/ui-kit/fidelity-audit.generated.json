@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 230,
-    "parsedFiles": 230,
+    "productFiles": 232,
+    "parsedFiles": 232,
     "parseErrors": 0,
     "nativeControls": 19,
     "structures": {
@@ -45,7 +45,7 @@
       "unused": 0,
       "covered": 108,
       "uncovered": 0,
-      "routes": 12,
+      "routes": 13,
       "previews": 143,
       "internal": 5,
       "unlisted": 0
@@ -223,6 +223,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -251,6 +252,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",

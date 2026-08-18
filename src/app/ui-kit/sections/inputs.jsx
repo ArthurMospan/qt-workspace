@@ -35,6 +35,9 @@ export default function InputsSection() {
       <PreviewBlock title="Checkbox & Toggle" component="ToggleSwitch" description="Ті самі Checkbox і ToggleSwitch, які зараз використовує продукт.">
         <div className="flex items-center gap-[24px] flex-wrap">
           <Checkbox checked={chk} onChange={setChk} label="Я погоджуюся з умовами" id="chk-demo" />
+          {/* Третій стан — для шапки списку, де вибрана частина рядків. Клік
+              з нього дає «вибрано», бо «частково» це не те, чим можна стати. */}
+          <Checkbox indeterminate onChange={() => {}} label="Вибрано частину" id="chk-indeterminate" />
           <ToggleSwitch checked={tgl} onChange={setTgl} label="Активний спринт" />
         </div>
       </PreviewBlock>

@@ -322,7 +322,7 @@ export default function GlobalSprintsPage() {
         sprintId: targetSprintId,
         updatedAt: serverTimestamp()
       });
-      showToast('Спринт оновлено ✓');
+      showToast('Спринт оновлено');
     } catch (err) {
       revertPatch([issueId]);
       console.error(err);
@@ -334,7 +334,7 @@ export default function GlobalSprintsPage() {
     try {
       await createSprint(sprintData);
       setShowCreateSprintModal(false);
-      showToast('Спринт створено ✓');
+      showToast('Спринт створено');
     } catch (e) {
       console.error(e);
       showToast('Помилка створення спринта');
@@ -344,7 +344,7 @@ export default function GlobalSprintsPage() {
   const handleStartSprint = async (sprintId) => {
     try {
       await startSprint(sprintId);
-      showToast('Спринт розпочато ✓');
+      showToast('Спринт розпочато');
     } catch (error) {
       showToast(error.message || 'Помилка запуску спринта', 'error');
     }
@@ -972,7 +972,7 @@ export default function GlobalSprintsPage() {
             try {
               await updateSprint(editingSprint.id, updates);
               setEditingSprint(null);
-              showToast('Спринт оновлено ✓');
+              showToast('Спринт оновлено');
             } catch (err) {
               console.error(err);
               showToast('Помилка оновлення спринта');
@@ -1000,7 +1000,7 @@ export default function GlobalSprintsPage() {
             try {
               await completeSprint(showCompleteSprintModal.id, moveToSprintId);
               setShowCompleteSprintModal(null);
-              showToast('Спринт успішно завершено ✓');
+              showToast('Спринт успішно завершено');
             } catch (err) {
               console.error(err);
               showToast('Помилка завершення спринта');
@@ -1036,7 +1036,7 @@ export default function GlobalSprintsPage() {
             },
           });
 
-          showToast('Задачу створено ✓');
+          showToast('Задачу створено');
           return { ...created, projectId: formData.projectId };
         }}
         projects={projects}

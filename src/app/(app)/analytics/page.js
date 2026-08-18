@@ -337,7 +337,7 @@ function AnalyticsContent({
             value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% виконано`} />
           <KpiCard icon={Zap} label={`Закрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`} onClick={() => onTabChange('velocity')}
             value={stats.recentDone} series={closedTrend} sub="тренди — у Продуктивності" />
-          <KpiCard icon={Clock} label={`Списано часу за ${period} ${plural(period, ['день', 'дні', 'днів'])}`} onClick={() => onTabChange('timesheet')}
+          <KpiCard icon={Clock} label={`Зафіксовано часу за ${period} ${plural(period, ['день', 'дні', 'днів'])}`} onClick={() => onTabChange('timesheet')}
             value={fmtH(stats.periodMin)} sub="деталі — у Табелі" />
           <KpiCard icon={AlertTriangle} label="Прострочено"
             value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'усе вчасно'} />
@@ -680,7 +680,7 @@ export default function WorkspaceAnalyticsPage() {
           onTabChange={setActiveTab}
           mobileActions={
             activeTab === 'timesheet' ? (
-              <Button style="primary" size="icon-lg" icon={Plus} onClick={() => setTsLogOpen(true)} title="Списати час" />
+              <Button style="primary" size="icon-lg" icon={Plus} onClick={() => setTsLogOpen(true)} title="Зафіксувати час" />
             ) : null
           }
           filters={
@@ -735,7 +735,7 @@ export default function WorkspaceAnalyticsPage() {
                 </FilterBar>
                 {exportMenu}
                 <Button style="primary" size="lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="max-md:hidden">
-                  Списати час
+                  Зафіксувати час
                 </Button>
               </>
             ) : activeTab === 'workload' ? (

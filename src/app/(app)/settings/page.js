@@ -1803,7 +1803,7 @@ export default function SettingsPage() {
       organizationId: activeOrgId,
       actor: { id: uid, name: currentUser?.name || '', avatar: currentUser?.avatar || '' },
     });
-    showToast('Тестове сповіщення надіслано ✓');
+    showToast('Тестове сповіщення надіслано');
   };
 
   const saveIntegration = async (enabled) => {
@@ -1910,7 +1910,7 @@ export default function SettingsPage() {
   };
 
   const handleUpgradePlan = async (newPlan = 'pro') => {
-    showToast('Підключення платіжної системи в розробці 🛠️');
+    showToast('Підключення платіжної системи в розробці 🛠');
   };
 
   const unarchiveProject = async (id) => {

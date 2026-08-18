@@ -531,7 +531,7 @@ export default function CalendarEventDialog({
     // Checked here rather than by the browser, so the message reads like the
     // rest of the product instead of an untranslated native bubble.
     if (!Number.isFinite(minutes) || minutes < 1) {
-      setError('Вкажіть, скільки хвилин списати');
+      setError('Вкажіть, скільки хвилин зафіксувати');
       return;
     }
     setTimeSaving(true);

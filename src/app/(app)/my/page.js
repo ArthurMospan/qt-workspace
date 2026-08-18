@@ -166,7 +166,7 @@ export default function MyTasksPage() {
       }
       if (result?.statusChanged) {
         const selectedStatus = statuses.find(status => status.id === result.statusId)?.label;
-        showToast(selectedStatus ? `Перенесено в «${selectedStatus}» ✓` : 'Статус оновлено ✓');
+        showToast(selectedStatus ? `Перенесено в «${selectedStatus}»` : 'Статус оновлено');
       }
       return true;
     } catch (err) {
@@ -435,7 +435,7 @@ export default function MyTasksPage() {
             organizationId: activeOrgId,
           });
 
-          showToast('Задачу створено ✓');
+          showToast('Задачу створено');
           return { ...created, projectId: formData.projectId };
         }}
         projects={projects}

@@ -10,8 +10,8 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 341,
-    "elements": 4212,
+    "files": 343,
+    "elements": 4242,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -230,14 +230,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:449",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:460",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:720",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:731",
       "attributes": [
         "title",
         "aria-label"
@@ -245,7 +245,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:883",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:911",
       "attributes": [
         "title"
       ]

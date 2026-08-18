@@ -205,7 +205,7 @@ function CalendarEventTimeSheet({
       isOpen
       onClose={onClose}
       title="Трекінг часу"
-      description={`Загалом списано: ${formatMinutes(totalMinutes)}`}
+      description={`Загалом зафіксовано: ${formatMinutes(totalMinutes)}`}
       titleContext="dialog"
       size="md"
       bodyPadding="responsive"
@@ -214,7 +214,7 @@ function CalendarEventTimeSheet({
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
-                {form.id ? 'Змінити витрачений час' : 'Списати час'}
+                {form.id ? 'Змінити витрачений час' : 'Зафіксувати час'}
               </p>
               <div className="flex gap-2">
                 <div className="relative flex-1">

@@ -197,7 +197,7 @@ function IssueRow({
     .map(uid => members.find(member => (member.id || member.uid) === uid))
     .filter(Boolean);
   const effortLabel = issueLogs.totalMinutes > 0
-    ? `Списано ${fmtMin(issueLogs.totalMinutes)}`
+    ? `Зафіксовано ${fmtMin(issueLogs.totalMinutes)}`
     : issue.estimateMinutes
       ? `Оцінка ${fmtMin(issue.estimateMinutes)}`
       : 'Без часу й оцінки';
@@ -997,7 +997,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
     if (selectedOverlap.itemIds.length > 0) {
       setTab('issues');
       showToast(
-        'Частина вибраних позицій або списаного часу вже входить в інший рахунок. Зніміть позиції з попередженням.',
+        'Частина вибраних позицій або зафіксованого часу вже входить в інший рахунок. Зніміть позиції з попередженням.',
         'error',
       );
       return;
@@ -1387,7 +1387,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
               </p>
             </div>
             <div data-ui-surface="nested-panel" data-ui-padding="sm" className="ui-surface">
-              <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Списано часу</p>
+              <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Зафіксовано часу</p>
               <p className="text-[18px] font-bold text-ink mt-[2px]">{fmtMin(totalLoggedMin)}</p>
             </div>
           </div>
@@ -1426,7 +1426,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
             <Alert
               variant="warning"
               title={`${selectedConflictCount} ${plural(selectedConflictCount, ['позиція', 'позиції', 'позицій'])} уже є в рахунках`}
-              description="Зніміть їх з вибору перед збереженням, щоб не виставити той самий списаний час двічі."
+              description="Зніміть їх з вибору перед збереженням, щоб не виставити той самий зафіксований час двічі."
             />
           ) : null}
 
@@ -1471,7 +1471,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
           isSaved={invoicePreview.kind === 'saved'}
           onClose={closeInvoicePreview}
           onPrintBlocked={() => showToast('Дозвольте спливаючі вікна, щоб надрукувати рахунок', 'error')}
-          onCopied={() => showToast('Рахунок скопійовано ✓')}
+          onCopied={() => showToast('Рахунок скопійовано')}
           onCopyFailed={() => showToast('Не вдалося скопіювати рахунок', 'error')}
         />
       )}

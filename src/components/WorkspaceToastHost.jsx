@@ -2,16 +2,49 @@
 // src/components/WorkspaceToastHost.jsx
 // Store connector: reads the toast from useWorkspaceStore and renders it
 // through the ui-kit Toast (single source of truth for the toast visuals).
+import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UiToast from '@/components/ui/Feedback/Toast';
+import { reportError } from '@/lib/services/errorReports';
 
 export default function WorkspaceToastHost() {
   const toast = useWorkspaceStore(s => s.toast);
   const clearToast = useWorkspaceStore(s => s.clearToast);
+  const showToast = useWorkspaceStore(s => s.showToast);
+  const { activeOrgId, orgRole } = useAppContext();
+  const router = useRouter();
+
+  const message = typeof toast === 'string' ? toast : toast?.message;
+  const detail = typeof toast === 'string' ? '' : toast?.detail;
+  const context = typeof toast === 'string' ? '' : toast?.context;
+
+  // What the reader saw, what actually happened, and where. Sending it is one
+  // click because a failure the user has to describe is a failure that never
+  // gets described.
+  const send = useCallback(async () => {
+    try {
+      await reportError({
+        organizationId: activeOrgId,
+        message,
+        detail,
+        context,
+        path: typeof window === 'undefined' ? '' : window.location.pathname + window.location.search,
+      });
+      // The one person who can read them is offered the way there, once,
+      // where they already are — rather than a navigation entry every member
+      // sees and nobody uses.
+      showToast('Дякуємо — звіт надіслано', 'success', orgRole === 'owner' ? {
+        action: { label: 'Відкрити звіти', onClick: () => router.push('/errors') },
+      } : {});
+    } catch {
+      showToast('Не вдалося надіслати звіт', 'error', { context: 'error-report' });
+    }
+  }, [activeOrgId, context, detail, message, orgRole, router, showToast]);
 
   if (!toast) return null;
 
-  const message = typeof toast === 'string' ? toast : toast.message;
   const variant = toast.type || 'success';
 
   return (
@@ -21,6 +54,9 @@ export default function WorkspaceToastHost() {
       message={message}
       action={toast.action?.label}
       onAction={toast.action?.onClick}
+      // Only where there is somewhere to send it, and never for the toast that
+      // confirms a report — otherwise a failed report offers to report itself.
+      onReport={activeOrgId && context !== 'error-report' ? send : undefined}
       autoClose={false}
       onClose={clearToast}
     />

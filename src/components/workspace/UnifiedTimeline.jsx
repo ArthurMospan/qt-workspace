@@ -868,7 +868,7 @@ export default function UnifiedTimeline({
 
           if (item._type === 'time') {
             const member = members.find(candidate => (candidate.id || candidate.uid) === item.userId);
-            const text = `Списано ${fmtTime(item.spentMinutes)}${item.description ? ` · ${item.description}` : ''}`;
+            const text = `Зафіксовано ${fmtTime(item.spentMinutes)}${item.description ? ` · ${item.description}` : ''}`;
             const actorName = member?.name || item.userName || item.externalActor?.name || org?.name || 'Система';
             return (
               <Fragment key={`time-${item.id}`}>

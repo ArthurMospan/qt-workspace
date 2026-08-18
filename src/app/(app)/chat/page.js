@@ -825,7 +825,7 @@ export default function ChatPage() {
       await updateDoc(doc(db, 'organizations', activeOrgId, 'channels', getRoomId(), 'messages', msgId), {
         isPinned: pin
       });
-      showToast(pin ? 'Повідомлення закріплено ✓' : 'Знято з закріплення');
+      showToast(pin ? 'Повідомлення закріплено' : 'Знято з закріплення');
     } catch (e) {
       console.error(e);
       showToast('Не вдалося змінити закріплення', 'error');
@@ -895,7 +895,7 @@ export default function ChatPage() {
       setIsCreatingChannel(false);
       resetChannelDraft();
       openChannel({ id, type: 'channel' });
-      showToast('Канал створено ✓');
+      showToast('Канал створено');
     } catch (channelError) {
       // createChannel now reports *why* it refused (duplicate name, unusable
       // slug, denied write) instead of silently returning null.

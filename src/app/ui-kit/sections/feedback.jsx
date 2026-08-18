@@ -55,6 +55,9 @@ export default function FeedbackSection() {
             message={`Toast variant="${toast}"`}
             action="Скасувати"
             onAction={() => setToast(null)}
+            // Тільки помилка має цю кнопку — і саме вона тримається довше
+            // (9 с проти 3.5 с), бо її треба встигнути прочитати й вирішити.
+            onReport={() => setToast(null)}
             autoClose={false}
             onClose={() => setToast(null)}
           />

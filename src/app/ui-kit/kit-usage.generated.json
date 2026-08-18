@@ -7,7 +7,7 @@
     "unused": 0,
     "covered": 108,
     "uncovered": 0,
-    "routes": 12,
+    "routes": 13,
     "previews": 143,
     "internal": 5,
     "unlisted": 0
@@ -318,6 +318,21 @@
       "TypeBadge",
       "UserAvatar"
     ],
+    "/errors": [
+      "Button",
+      "Checkbox",
+      "EmptyState",
+      "LoadingSpinner",
+      "PageHeader",
+      "Pill",
+      "PriorityIcon",
+      "Surface",
+      "Tag",
+      "TaskCounters",
+      "TaskIdentity",
+      "TypeBadge",
+      "UserAvatar"
+    ],
     "/my": [
       "Alert",
       "BulkActionBar",
@@ -623,7 +638,7 @@
     },
     "Button": {
       "file": "src/components/ui/Button.jsx",
-      "count": 34,
+      "count": 35,
       "showcased": true,
       "usedByKit": [
         "AttachmentRow",
@@ -649,6 +664,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -660,6 +676,7 @@
         "src/app/(app)/calendar/page.js",
         "src/app/(app)/chat/page.js",
         "src/app/(app)/error.js",
+        "src/app/(app)/errors/page.js",
         "src/app/(app)/layout.js",
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
@@ -898,6 +915,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -1168,7 +1186,7 @@
     },
     "EmptyState": {
       "file": "src/components/ui/Feedback/EmptyState.jsx",
-      "count": 15,
+      "count": 16,
       "showcased": true,
       "usedByKit": [
         "ChatMessageList",
@@ -1184,6 +1202,7 @@
         "/analytics/team/[memberId]",
         "/calendar",
         "/calendar/event/[eventId]",
+        "/errors",
         "/sprints",
         "/team"
       ],
@@ -1191,6 +1210,7 @@
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/analytics/team/[memberId]/page.js",
         "src/app/(app)/calendar/page.js",
+        "src/app/(app)/errors/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/team/page.js",
         "src/components/WorkspaceInfoCenter.jsx",
@@ -1534,7 +1554,7 @@
     },
     "LoadingSpinner": {
       "file": "src/components/ui/Feedback/LoadingSpinner.jsx",
-      "count": 11,
+      "count": 12,
       "showcased": true,
       "usedByKit": [
         "MemberRail",
@@ -1547,6 +1567,7 @@
         "/analytics/team/[memberId]",
         "/calendar",
         "/calendar/event/[eventId]",
+        "/errors",
         "/my",
         "/settings",
         "/team"
@@ -1556,6 +1577,7 @@
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/analytics/team/[memberId]/page.js",
         "src/app/(app)/calendar/page.js",
+        "src/app/(app)/errors/page.js",
         "src/app/(app)/loading.js",
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
@@ -1756,7 +1778,7 @@
     },
     "PageHeader": {
       "file": "src/components/ui/Layout/PageHeader.jsx",
-      "count": 6,
+      "count": 7,
       "showcased": true,
       "usedByKit": [],
       "routes": [
@@ -1764,6 +1786,7 @@
         "/[projectId]",
         "/analytics",
         "/calendar",
+        "/errors",
         "/my",
         "/sprints"
       ],
@@ -1771,6 +1794,7 @@
         "src/app/(app)/[projectId]/ProjectBoardClient.jsx",
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/calendar/page.js",
+        "src/app/(app)/errors/page.js",
         "src/app/(app)/my/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/sprints/page.js"
@@ -1793,7 +1817,7 @@
     },
     "Pill": {
       "file": "src/components/ui/DataDisplay/Pill.jsx",
-      "count": 18,
+      "count": 19,
       "showcased": true,
       "usedByKit": [
         "ChatMessageList",
@@ -1817,6 +1841,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -1824,6 +1849,7 @@
       ],
       "usedIn": [
         "src/app/(app)/[projectId]/ProjectBoardClient.jsx",
+        "src/app/(app)/errors/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
@@ -1910,6 +1936,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -2114,7 +2141,7 @@
     },
     "Surface": {
       "file": "src/components/ui/Surface.jsx",
-      "count": 9,
+      "count": 10,
       "showcased": true,
       "usedByKit": [
         "TaskListView",
@@ -2126,6 +2153,7 @@
         "/analytics",
         "/analytics/team/[memberId]",
         "/calendar",
+        "/errors",
         "/settings",
         "/sprints",
         "/team"
@@ -2134,6 +2162,7 @@
         "src/app/(app)/analytics/page.js",
         "src/app/(app)/analytics/team/[memberId]/page.js",
         "src/app/(app)/calendar/page.js",
+        "src/app/(app)/errors/page.js",
         "src/app/(app)/page.js",
         "src/app/(app)/settings/page.js",
         "src/app/(app)/sprints/page.js",
@@ -2187,6 +2216,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -2228,6 +2258,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -2254,6 +2285,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -2528,6 +2560,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -2580,6 +2613,7 @@
         "/calendar",
         "/calendar/event/[eventId]",
         "/chat",
+        "/errors",
         "/my",
         "/settings",
         "/sprints",
@@ -2813,7 +2847,7 @@
           ]
         },
         "md": {
-          "count": 47,
+          "count": 48,
           "routes": [
             "/",
             "/[projectId]",
@@ -2823,6 +2857,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints"
@@ -2831,6 +2866,7 @@
             "src/app/(app)/chat/page.js:1153",
             "src/app/(app)/chat/page.js:1161",
             "src/app/(app)/error.js:24",
+            "src/app/(app)/errors/page.js:81",
             "src/app/(app)/my/page.js:457",
             "src/app/(app)/page.js:577",
             "src/app/(app)/page.js:578",
@@ -3072,7 +3108,7 @@
           ]
         },
         "ghost": {
-          "count": 67,
+          "count": 68,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
@@ -3081,6 +3117,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -3094,6 +3131,7 @@
             "src/app/(app)/calendar/page.js:590",
             "src/app/(app)/calendar/page.js:591",
             "src/app/(app)/chat/page.js:1230",
+            "src/app/(app)/errors/page.js:81",
             "src/app/(app)/settings/page.js:2326",
             "src/app/(app)/settings/page.js:2920",
             "src/app/(app)/settings/page.js:3033",
@@ -3168,7 +3206,7 @@
       },
       "shape": {
         "(default)": {
-          "count": 178,
+          "count": 179,
           "routes": [
             "/",
             "/[projectId]",
@@ -3178,6 +3216,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -3206,6 +3245,7 @@
             "src/app/(app)/chat/page.js:1161",
             "src/app/(app)/chat/page.js:1230",
             "src/app/(app)/error.js:24",
+            "src/app/(app)/errors/page.js:81",
             "src/app/(app)/layout.js:117",
             "src/app/(app)/my/page.js:252",
             "src/app/(app)/my/page.js:326",
@@ -3386,7 +3426,7 @@
       },
       "surface": {
         "(default)": {
-          "count": 180,
+          "count": 181,
           "routes": [
             "/",
             "/[projectId]",
@@ -3396,6 +3436,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -3424,6 +3465,7 @@
             "src/app/(app)/chat/page.js:1161",
             "src/app/(app)/chat/page.js:1230",
             "src/app/(app)/error.js:24",
+            "src/app/(app)/errors/page.js:81",
             "src/app/(app)/layout.js:117",
             "src/app/(app)/my/page.js:252",
             "src/app/(app)/my/page.js:326",
@@ -3595,7 +3637,7 @@
       },
       "color": {
         "(default)": {
-          "count": 165,
+          "count": 166,
           "routes": [
             "/",
             "/[projectId]",
@@ -3605,6 +3647,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -3633,6 +3676,7 @@
             "src/app/(app)/chat/page.js:1161",
             "src/app/(app)/chat/page.js:1230",
             "src/app/(app)/error.js:24",
+            "src/app/(app)/errors/page.js:81",
             "src/app/(app)/layout.js:117",
             "src/app/(app)/my/page.js:326",
             "src/app/(app)/my/page.js:457",
@@ -3833,7 +3877,7 @@
           ]
         },
         "(default)": {
-          "count": 166,
+          "count": 167,
           "routes": [
             "/",
             "/[projectId]",
@@ -3843,6 +3887,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -3870,6 +3915,7 @@
             "src/app/(app)/chat/page.js:1161",
             "src/app/(app)/chat/page.js:1230",
             "src/app/(app)/error.js:24",
+            "src/app/(app)/errors/page.js:81",
             "src/app/(app)/my/page.js:252",
             "src/app/(app)/my/page.js:326",
             "src/app/(app)/my/page.js:457",
@@ -5385,6 +5431,15 @@
             "src/app/(app)/sprints/page.js:875"
           ]
         },
+        "(default)": {
+          "count": 1,
+          "routes": [
+            "/errors"
+          ],
+          "files": [
+            "src/app/(app)/errors/page.js:104"
+          ]
+        },
         "card": {
           "count": 1,
           "routes": [
@@ -5450,13 +5505,15 @@
           ]
         },
         "md": {
-          "count": 2,
+          "count": 3,
           "routes": [
             "/",
             "/[projectId]/issue/[issueId]",
+            "/errors",
             "/sprints"
           ],
           "files": [
+            "src/app/(app)/errors/page.js:104",
             "src/app/(app)/page.js:972",
             "src/components/workspace/IssueDetail.jsx:1898"
           ]
@@ -5504,18 +5561,20 @@
           ]
         },
         "(default)": {
-          "count": 7,
+          "count": 8,
           "routes": [
             "/",
             "/[projectId]/issue/[issueId]",
             "/analytics",
             "/calendar",
+            "/errors",
             "/settings",
             "/sprints",
             "/team"
           ],
           "files": [
             "src/app/(app)/calendar/page.js:609",
+            "src/app/(app)/errors/page.js:104",
             "src/app/(app)/page.js:972",
             "src/app/(app)/page.js:987",
             "src/app/(app)/settings/page.js:3311",
@@ -5548,6 +5607,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -5571,7 +5631,7 @@
           ]
         },
         "(default)": {
-          "count": 10,
+          "count": 11,
           "routes": [
             "/",
             "/[projectId]",
@@ -5581,12 +5641,14 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
             "/team"
           ],
           "files": [
+            "src/app/(app)/errors/page.js:107",
             "src/app/(app)/settings/page.js:3014",
             "src/app/(app)/settings/page.js:3246",
             "src/app/(app)/settings/page.js:3323",
@@ -5666,6 +5728,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -5726,6 +5789,40 @@
             "src/components/workspace/calendar/CalendarEventPage.jsx:1379"
           ]
         },
+        "sm": {
+          "count": 14,
+          "routes": [
+            "/",
+            "/[projectId]",
+            "/[projectId]/issue/[issueId]",
+            "/analytics",
+            "/analytics/team/[memberId]",
+            "/calendar",
+            "/calendar/event/[eventId]",
+            "/chat",
+            "/errors",
+            "/my",
+            "/settings",
+            "/sprints",
+            "/team"
+          ],
+          "files": [
+            "src/app/(app)/errors/page.js:107",
+            "src/app/(app)/settings/page.js:3323",
+            "src/components/SearchModal.jsx:118",
+            "src/components/WorkspaceHeader.jsx:489",
+            "src/components/WorkspaceInfoCenter.jsx:111",
+            "src/components/migrations/DataMigrationSettings.jsx:114",
+            "src/components/workspace/BillingTab.jsx:248",
+            "src/components/workspace/BillingTab.jsx:251",
+            "src/components/workspace/BillingTab.jsx:481",
+            "src/components/workspace/BillingTab.jsx:483",
+            "src/components/workspace/IssueCard.jsx:301",
+            "src/components/workspace/IssueCard.jsx:313",
+            "src/components/workspace/IssueCard.jsx:327",
+            "src/components/workspace/IssueDetail.jsx:1396"
+          ]
+        },
         "(default)": {
           "count": 2,
           "routes": [
@@ -5748,6 +5845,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -5770,38 +5868,6 @@
             "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/WorkloadTab.jsx:129",
             "src/components/workspace/WorkloadTab.jsx:130"
-          ]
-        },
-        "sm": {
-          "count": 13,
-          "routes": [
-            "/",
-            "/[projectId]",
-            "/[projectId]/issue/[issueId]",
-            "/analytics",
-            "/analytics/team/[memberId]",
-            "/calendar",
-            "/calendar/event/[eventId]",
-            "/chat",
-            "/my",
-            "/settings",
-            "/sprints",
-            "/team"
-          ],
-          "files": [
-            "src/app/(app)/settings/page.js:3323",
-            "src/components/SearchModal.jsx:118",
-            "src/components/WorkspaceHeader.jsx:489",
-            "src/components/WorkspaceInfoCenter.jsx:111",
-            "src/components/migrations/DataMigrationSettings.jsx:114",
-            "src/components/workspace/BillingTab.jsx:248",
-            "src/components/workspace/BillingTab.jsx:251",
-            "src/components/workspace/BillingTab.jsx:481",
-            "src/components/workspace/BillingTab.jsx:483",
-            "src/components/workspace/IssueCard.jsx:301",
-            "src/components/workspace/IssueCard.jsx:313",
-            "src/components/workspace/IssueCard.jsx:327",
-            "src/components/workspace/IssueDetail.jsx:1396"
           ]
         },
         "chat-day": {
@@ -5852,6 +5918,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -5872,7 +5939,7 @@
           ]
         },
         "(default)": {
-          "count": 35,
+          "count": 36,
           "routes": [
             "/",
             "/[projectId]",
@@ -5882,12 +5949,14 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
             "/team"
           ],
           "files": [
+            "src/app/(app)/errors/page.js:107",
             "src/app/(app)/page.js:202",
             "src/app/(app)/settings/page.js:3014",
             "src/app/(app)/settings/page.js:3329",
@@ -5928,7 +5997,7 @@
       },
       "appearance": {
         "(default)": {
-          "count": 40,
+          "count": 41,
           "routes": [
             "/",
             "/[projectId]",
@@ -5938,6 +6007,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -5945,6 +6015,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
+            "src/app/(app)/errors/page.js:107",
             "src/app/(app)/page.js:202",
             "src/app/(app)/settings/page.js:3323",
             "src/app/(app)/settings/page.js:3329",
@@ -6013,7 +6084,7 @@
       },
       "preset": {
         "(default)": {
-          "count": 43,
+          "count": 44,
           "routes": [
             "/",
             "/[projectId]",
@@ -6023,6 +6094,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -6030,6 +6102,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
+            "src/app/(app)/errors/page.js:107",
             "src/app/(app)/settings/page.js:3014",
             "src/app/(app)/settings/page.js:3246",
             "src/app/(app)/settings/page.js:3323",
@@ -6085,6 +6158,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -6099,7 +6173,7 @@
       },
       "weight": {
         "(default)": {
-          "count": 35,
+          "count": 36,
           "routes": [
             "/",
             "/[projectId]",
@@ -6109,6 +6183,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -6116,6 +6191,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
+            "src/app/(app)/errors/page.js:107",
             "src/app/(app)/page.js:202",
             "src/app/(app)/settings/page.js:3014",
             "src/app/(app)/settings/page.js:3246",
@@ -6163,6 +6239,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -6225,6 +6302,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -6250,6 +6328,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -6272,6 +6351,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -6944,12 +7024,13 @@
     "EmptyState": {
       "context": {
         "(default)": {
-          "count": 12,
+          "count": 15,
           "routes": [
             "/analytics",
             "/analytics/team/[memberId]",
             "/calendar",
             "/calendar/event/[eventId]",
+            "/errors",
             "/team"
           ],
           "files": [
@@ -6957,6 +7038,9 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:614",
+            "src/app/(app)/errors/page.js:67",
+            "src/app/(app)/errors/page.js:94",
+            "src/app/(app)/errors/page.js:96",
             "src/app/(app)/team/page.js:137",
             "src/components/profile/ProfileView.jsx:358",
             "src/components/profile/ProfileView.jsx:394",
@@ -7017,7 +7101,7 @@
       },
       "density": {
         "(default)": {
-          "count": 21,
+          "count": 24,
           "routes": [
             "/",
             "/[projectId]",
@@ -7026,6 +7110,7 @@
             "/analytics/team/[memberId]",
             "/calendar",
             "/calendar/event/[eventId]",
+            "/errors",
             "/sprints",
             "/team"
           ],
@@ -7034,6 +7119,9 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:614",
+            "src/app/(app)/errors/page.js:67",
+            "src/app/(app)/errors/page.js:94",
+            "src/app/(app)/errors/page.js:96",
             "src/app/(app)/page.js:973",
             "src/app/(app)/team/page.js:137",
             "src/components/WorkspaceInfoCenter.jsx:152",
@@ -7067,7 +7155,7 @@
       },
       "surface": {
         "(default)": {
-          "count": 15,
+          "count": 18,
           "routes": [
             "/",
             "/[projectId]",
@@ -7076,6 +7164,7 @@
             "/analytics/team/[memberId]",
             "/calendar",
             "/calendar/event/[eventId]",
+            "/errors",
             "/sprints",
             "/team"
           ],
@@ -7084,6 +7173,9 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:95",
             "src/app/(app)/calendar/page.js:393",
             "src/app/(app)/calendar/page.js:614",
+            "src/app/(app)/errors/page.js:67",
+            "src/app/(app)/errors/page.js:94",
+            "src/app/(app)/errors/page.js:96",
             "src/app/(app)/page.js:973",
             "src/app/(app)/team/page.js:137",
             "src/components/profile/ProfileView.jsx:358",
@@ -7146,6 +7238,15 @@
             "src/components/profile/ProfileView.jsx:391",
             "src/components/workspace/BillingTab.jsx:1238",
             "src/components/workspace/calendar/CalendarEventPage.jsx:742"
+          ]
+        },
+        "(default)": {
+          "count": 1,
+          "routes": [
+            "/errors"
+          ],
+          "files": [
+            "src/app/(app)/errors/page.js:92"
           ]
         },
         "sm": {
@@ -7835,6 +7936,7 @@
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat",
+            "/errors",
             "/my",
             "/settings",
             "/sprints",
@@ -8165,7 +8267,7 @@
     "Icon-Only Buttons": "<div className=\"flex flex-col gap-[20px] w-full\">\n  <div>\n    <h4 className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]\">Large — 36×36px (icon-lg)</h4>\n    <div className=\"flex items-center gap-[8px]\">\n      <Button style=\"primary\" size=\"icon-lg\" icon={Plus}>Додати</Button>\n      <Button style=\"secondary\" size=\"icon-lg\" icon={Edit2}>Редагувати</Button>\n      <Button style=\"ghost\" size=\"icon-lg\" icon={Settings}>Налаштування</Button>\n      <Button style=\"secondary\" color=\"red\" size=\"icon-lg\" icon={Trash2}>Видалити</Button>\n    </div>\n  </div>\n  <div>\n    <h4 className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]\">Medium — 32×32px (icon)</h4>\n    <div className=\"flex items-center gap-[8px]\">\n      <Button style=\"primary\" size=\"icon\" icon={Plus}>Додати</Button>\n      <Button style=\"secondary\" size=\"icon\" icon={Edit2}>Редагувати</Button>\n      <Button style=\"ghost\" size=\"icon\" icon={Settings}>Налаштування</Button>\n      <Button style=\"secondary\" color=\"red\" size=\"icon\" icon={Trash2}>Видалити</Button>\n    </div>\n  </div>\n  <div>\n    <h4 className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[8px]\">Small — 28×28px (icon-sm)</h4>\n    <div className=\"flex items-center gap-[8px]\">\n      <Button style=\"primary\" size=\"icon-sm\" icon={Plus}>Додати</Button>\n      <Button style=\"secondary\" size=\"icon-sm\" icon={Edit2}>Редагувати</Button>\n      <Button style=\"ghost\" size=\"icon-sm\" icon={Settings}>Налаштування</Button>\n      <Button style=\"secondary\" color=\"red\" size=\"icon-sm\" icon={Trash2}>Видалити</Button>\n    </div>\n  </div>\n</div>",
     "Кнопка відтворення": "<div className=\"flex items-end gap-[20px]\">\n  {[[false, false, 'play'], [true, false, 'pause'], [false, true, 'disabled']].map(([playing, disabled, role]) => (\n    <div key={role} className=\"flex flex-col items-center gap-[6px]\">\n      <MediaPlayButton playing={playing} disabled={disabled} />\n      <span className=\"text-[9px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n</div>",
     "Named Input sizes — sm / md / lg": "<div className=\"max-w-[400px] flex flex-col gap-[12px]\">\n  <Input size=\"sm\" placeholder=\"Small — 28px\" />\n  <Input size=\"md\" placeholder=\"Medium — 32px\" />\n  <Input size=\"lg\" placeholder=\"Large — 36px\" value={val} onChange={e => setVal(e.target.value)} />\n  <Input size=\"md\" preset=\"money\" suffix=\"₴/г\" type=\"number\" defaultValue=\"125\" aria-label=\"Грошове значення\" />\n  <Input size=\"lg\" placeholder=\"Заблоковане поле\" disabled />\n</div>",
-    "Checkbox & Toggle": "<div className=\"flex items-center gap-[24px] flex-wrap\">\n  <Checkbox checked={chk} onChange={setChk} label=\"Я погоджуюся з умовами\" id=\"chk-demo\" />\n  <ToggleSwitch checked={tgl} onChange={setTgl} label=\"Активний спринт\" />\n</div>",
+    "Checkbox & Toggle": "<div className=\"flex items-center gap-[24px] flex-wrap\">\n  <Checkbox checked={chk} onChange={setChk} label=\"Я погоджуюся з умовами\" id=\"chk-demo\" />\n  {/* Третій стан — для шапки списку, де вибрана частина рядків. Клік\n      з нього дає «вибрано», бо «частково» це не те, чим можна стати. */}\n  <Checkbox indeterminate onChange={() => {}} label=\"Вибрано частину\" id=\"chk-indeterminate\" />\n  <ToggleSwitch checked={tgl} onChange={setTgl} label=\"Активний спринт\" />\n</div>",
     "Відповідь на запрошення": "<div className=\"flex w-full flex-col gap-[16px]\">\n  <div className=\"w-full max-w-[320px]\">\n    <p className=\"mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint\">size=&quot;tile&quot;</p>\n    <ResponseChoice size=\"tile\" value={rsvp} onChange={setRsvp} />\n  </div>\n  <div>\n    <p className=\"mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint\">size=&quot;md&quot;</p>\n    <ResponseChoice size=\"md\" value={rsvp} onChange={setRsvp} />\n  </div>\n  <div className=\"flex flex-wrap gap-[16px]\">\n    <div>\n      <p className=\"mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint\">size=&quot;sm&quot; surface=&quot;surface&quot;</p>\n      <ResponseChoice size=\"sm\" surface=\"surface\" value={rsvp} onChange={setRsvp} />\n    </div>\n    <div className=\"rounded-[10px] bg-canvas p-2\">\n      <p className=\"mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint\">size=&quot;sm&quot; surface=&quot;canvas&quot;</p>\n      <ResponseChoice size=\"sm\" surface=\"canvas\" value={rsvp} onChange={setRsvp} />\n    </div>\n  </div>\n  <div>\n    <p className=\"mb-[6px] font-mono text-[10px] uppercase tracking-wider text-faint\">disabled — поки відповідь зберігається</p>\n    <ResponseChoice size=\"md\" value={rsvp} onChange={setRsvp} disabled />\n  </div>\n</div>",
     "Зразок кольору": "<div className=\"flex items-center gap-[24px]\">\n  <div className=\"flex flex-col items-center gap-[8px]\">\n    <ColorSwatch size=\"trigger\" color={swatch} label=\"Обрати колір\" />\n    <span className=\"text-[9px] text-[#cfcfcf]\">trigger</span>\n  </div>\n  <div className=\"flex flex-col items-center gap-[8px]\">\n    <span className=\"flex gap-[6px]\">\n      {['#ef4444', '#f97316', '#10b981', '#3b82f6', '#8b5cf6'].map(colour => (\n        <ColorSwatch\n          key={colour}\n          size=\"choice\"\n          color={colour}\n          selected={colour === swatch}\n          label={`Колір ${colour}`}\n          onClick={() => setSwatch(colour)}\n        />\n      ))}\n    </span>\n    <span className=\"text-[9px] text-[#cfcfcf]\">choice</span>\n  </div>\n  <div className=\"flex flex-col items-center gap-[8px]\">\n    <span className=\"flex gap-[12px]\">\n      <ColorSwatch size=\"theme\" color=\"#1f1f1f\" selected label=\"Темна тема\" />\n      <ColorSwatch size=\"theme\" color=\"#ffffff\" label=\"Світла тема\" />\n      <ColorSwatch size=\"theme\" color=\"conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ec4899, #ef4444)\" label=\"Своя тема\" />\n    </span>\n    <span className=\"text-[9px] text-[#cfcfcf]\">theme</span>\n  </div>\n</div>",
     "Project Status Visibility": "<div className=\"max-w-[520px]\">\n  <StatusVisibilityPicker\n    statuses={DEFAULT_STATUSES}\n    hiddenStatusIds={hiddenStatusIds}\n    onChange={setHiddenStatusIds}\n  />\n</div>",
@@ -8217,8 +8319,8 @@
     "Popover & Tooltip": "<div className=\"flex items-center gap-[24px] flex-wrap\">\n  <Popover\n    trigger={<Button style=\"secondary\">Показати Popover</Button>}\n    position=\"bottom\"\n  >\n    <div className=\"p-2\">\n      <h4 className=\"text-[14px] font-bold mb-1\">Інформаційне вікно</h4>\n      <p className=\"text-[12px] text-[#9a9a9a]\">Корисна інформація або додаткові налаштування.</p>\n    </div>\n  </Popover>\n\n  <Tooltip content=\"Це підказка при наведенні\" position=\"top\">\n    <Button style=\"secondary\">Наведіть для підказки</Button>\n  </Tooltip>\n</div>",
     "Context Menu": "<div className=\"flex items-start gap-[40px] flex-wrap\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Інтерактивне меню</span>\n    <ContextMenu\n      trigger={<Button style=\"secondary\" size=\"icon\" icon={MoreVertical}>Меню</Button>}\n      items={menuItems}\n    />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Меню-перемикач (мітки задачі)</span>\n    <ContextMenu\n      trigger={(\n        <Button style=\"secondary\" size=\"sm\" composition=\"inline-add-action\" icon={Plus}>\n          Додати мітку\n        </Button>\n      )}\n      dropdownClassName=\"w-[220px]\"\n      closeOnSelect={false}\n      items={toggleMenuItems}\n    />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Експорт (ContextMenu + Button)</span>\n    {/* The live component, with a document small enough to read. It is\n        the same control the analytics tabs and the invoice carry, and\n        the only kit component whose menu items do work rather than\n        navigate. */}\n    <ExportMenu size=\"md\" build={() => KIT_EXPORT_DOCUMENT} />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider\">Меню людини (align=&quot;start&quot;)</span>\n    <ContextMenu\n      align=\"start\"\n      dropdownClassName=\"w-[210px]\"\n      trigger={(\n        <MetaTrigger\n          label=\"Автор:\"\n          user={{ id: 'u1', name: 'Артур Моспан' }}\n          name=\"Артур Моспан\"\n          className=\"text-[12px] font-medium text-muted\"\n        />\n      )}\n      items={[\n        { icon: User, label: 'Переглянути профіль' },\n        { icon: MessageCircle, label: 'Написати в чат' },\n      ]}\n    />\n  </div>\n</div>",
     "Командна палітра": "<div className=\"flex items-center gap-[16px] flex-wrap\">\n  <Button style=\"secondary\" icon={Command} onClick={() => setPaletteOpen(true)}>\n    Відкрити палітру\n  </Button>\n  <Button style=\"secondary\" icon={Keyboard} onClick={() => setShortcutsOpen(true)}>\n    Гарячі клавіші\n  </Button>\n</div>\n<CommandPalette\n  isOpen={paletteOpen}\n  onClose={() => setPaletteOpen(false)}\n  commands={paletteCommands}\n  issues={KIT_PALETTE_ISSUES}\n  projects={KIT_PALETTE_PROJECTS}\n  onSelect={() => {}}\n  initialQuery=\"дизайн\"\n  initialScope={{ type: 'project', projectId: 'p1', label: 'у проєкті Mobile App Redesign' }}\n  requestKey={1}\n/>\n<KeyboardShortcutsDialog isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />",
-    "KPI Cards": "<div className=\"grid grid-cols-2 lg:grid-cols-4 gap-4 w-full\">\n  <KpiCard label=\"Всі завдання\" value=\"89 / 124\" sub=\"71% прогресу\" icon={Target} trend={12} />\n  <KpiCard label=\"Velocity (7д)\" value=\"14\" sub=\"завдань за тиждень\" icon={Zap} trend={-5} />\n  <KpiCard label=\"Списано часу\" value=\"45г 30хв\" sub=\"по 4 проєктах\" icon={Clock} />\n  <KpiCard label=\"Команда\" value=\"8\" sub=\"учасників із завданнями\" icon={Users} />\n</div>",
-    "Показник": "<div className=\"grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4\">\n  <KpiCard icon={BarChart2} value=\"18 / 46\" label=\"Робочі задачі\" sub=\"39% виконано\" />\n  <KpiCard\n    icon={TrendingDown}\n    value={18}\n    label=\"Закрито за 30 днів\"\n    trend={24}\n    series={[2, 5, 3, 7, 4, 6, 9, 8, 11, 9, 14, 18]}\n    sub=\"проти попереднього періоду\"\n  />\n  <KpiCard icon={Wallet} value=\"64г\" label=\"Списано часу\" sub=\"деталі — у Табелі\" />\n  <KpiCard icon={AlertTriangle} value={3} label=\"Прострочено\" sub=\"потребують уваги\" />\n</div>",
+    "KPI Cards": "<div className=\"grid grid-cols-2 lg:grid-cols-4 gap-4 w-full\">\n  <KpiCard label=\"Всі завдання\" value=\"89 / 124\" sub=\"71% прогресу\" icon={Target} trend={12} />\n  <KpiCard label=\"Velocity (7д)\" value=\"14\" sub=\"завдань за тиждень\" icon={Zap} trend={-5} />\n  <KpiCard label=\"Зафіксовано часу\" value=\"45г 30хв\" sub=\"по 4 проєктах\" icon={Clock} />\n  <KpiCard label=\"Команда\" value=\"8\" sub=\"учасників із завданнями\" icon={Users} />\n</div>",
+    "Показник": "<div className=\"grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4\">\n  <KpiCard icon={BarChart2} value=\"18 / 46\" label=\"Робочі задачі\" sub=\"39% виконано\" />\n  <KpiCard\n    icon={TrendingDown}\n    value={18}\n    label=\"Закрито за 30 днів\"\n    trend={24}\n    series={[2, 5, 3, 7, 4, 6, 9, 8, 11, 9, 14, 18]}\n    sub=\"проти попереднього періоду\"\n  />\n  <KpiCard icon={Wallet} value=\"64г\" label=\"Зафіксовано часу\" sub=\"деталі — у Табелі\" />\n  <KpiCard icon={AlertTriangle} value={3} label=\"Прострочено\" sub=\"потребують уваги\" />\n</div>",
     "Спарклайн": "<div className=\"flex items-center gap-4\">\n  <Sparkline values={[2, 5, 3, 7, 4, 6, 9, 8, 11, 9, 14, 18]} />\n  <Sparkline values={[18, 14, 15, 9, 11, 8, 9, 6, 4, 3, 5, 2]} />\n</div>",
     "Скільки чого": "<div className=\"grid w-full grid-cols-1 gap-6 md:grid-cols-2\">\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={BarChart2} title=\"По статусах\">\n      <BarList\n        items={[\n          { id: 'todo', label: 'До виконання', value: 14, color: '#6b7280' },\n          { id: 'progress', label: 'У роботі', value: 9, color: '#2f6fb0' },\n          { id: 'review', label: 'На перевірці', value: 4, color: '#cf7a22' },\n          { id: 'done', label: 'Готово', value: 19, color: '#0e8f74' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={Flag} title=\"Куди пішов час\" meta=\"64г\">\n      <BarList\n        scale=\"total\"\n        format={minutes => `${Math.round(minutes / 60)}г`}\n        items={[\n          { id: 'tasks', label: 'Завдання', value: 2400 },\n          { id: 'meetings', label: 'Мітинги', value: 900, color: 'var(--color-chart-2)', meta: '6 подій' },\n          { id: 'focus', label: 'Фокус-час', value: 540, color: 'var(--color-chart-3)' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n</div>",
     "Кількість у часі": "<Card preset=\"borderless\" padding=\"lg\" className=\"w-full\">\n  <DetailSection icon={BarChart2} title=\"Активність\" meta=\"7 днів\">\n    <ColumnChart data={DEMO_DAYS} series={DEMO_FLOW} height={130} />\n  </DetailSection>\n</Card>",
@@ -8228,7 +8330,7 @@
     "Що потребує уваги": "<div className=\"grid w-full grid-cols-1 gap-6 md:grid-cols-2\">\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={AlertTriangle} title=\"Що потребує уваги\">\n      <SignalList\n        signals={[\n          { id: '1', tone: 'critical', count: 4, title: 'Завдання заблоковані залежностями', description: 'Їх стримують незавершені задачі' },\n          { id: '2', tone: 'critical', count: 3, title: 'Прострочені завдання', description: 'Дедлайн минув, робота відкрита' },\n          { id: '3', tone: 'warning', count: 2, title: 'Без виконавця', description: 'Ніхто не відповідає за результат' },\n          { id: '4', tone: 'info', count: 11, title: 'Без оцінки', description: 'Поза беклогом, але без плану за часом' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={AlertTriangle} title=\"Що потребує уваги\">\n      <SignalList signals={[]} emptyText=\"Нічого термінового — усе під контролем\" />\n    </DetailSection>\n  </Card>\n</div>",
     "Alerts": "<div className=\"flex flex-col gap-[12px] max-w-[600px]\">\n  <Alert variant=\"success\" title=\"Операція успішна\">Проєкт успішно створено та додано до бази даних.</Alert>\n  <Alert variant=\"info\" title=\"Потребує уваги\">Будь ласка, перевірте правильність введених даних.</Alert>\n  <Alert variant=\"warning\" title=\"Попередження\">Термін виконання завдання спливає сьогодні.</Alert>\n  <Alert variant=\"error\" title=\"Не вдалося завантажити проєкти\">Спробуйте оновити сторінку.</Alert>\n</div>",
     "Loading Spinner": "<div className=\"flex items-center gap-[24px]\">\n  <LoadingSpinner size=\"sm\" />\n  <LoadingSpinner size=\"md\" />\n</div>",
-    "Toast": "<div className=\"flex flex-wrap gap-2\">\n  {['success', 'error', 'warning', 'info', 'loading'].map(variant => (\n    <Button key={variant} style=\"secondary\" size=\"md\" onClick={() => setToast(variant)}>\n      {variant}\n    </Button>\n  ))}\n</div>\n{toast && (\n  <Toast\n    key={toast}\n    variant={toast}\n    message={`Toast variant=\"${toast}\"`}\n    action=\"Скасувати\"\n    onAction={() => setToast(null)}\n    autoClose={false}\n    onClose={() => setToast(null)}\n  />\n)}",
+    "Toast": "<div className=\"flex flex-wrap gap-2\">\n  {['success', 'error', 'warning', 'info', 'loading'].map(variant => (\n    <Button key={variant} style=\"secondary\" size=\"md\" onClick={() => setToast(variant)}>\n      {variant}\n    </Button>\n  ))}\n</div>\n{toast && (\n  <Toast\n    key={toast}\n    variant={toast}\n    message={`Toast variant=\"${toast}\"`}\n    action=\"Скасувати\"\n    onAction={() => setToast(null)}\n    // Тільки помилка має цю кнопку — і саме вона тримається довше\n    // (9 с проти 3.5 с), бо її треба встигнути прочитати й вирішити.\n    onReport={() => setToast(null)}\n    autoClose={false}\n    onClose={() => setToast(null)}\n  />\n)}",
     "Empty States — продуктові контексти": "<div className=\"grid w-full grid-cols-1 gap-[16px] lg:grid-cols-2\">\n  <Surface preset=\"panel\" padding=\"md\" className=\"w-full\">\n    <EmptyState\n      icon={Folder}\n      title=\"Ще немає проєктів\"\n      description=\"Створіть перший проєкт, щоб організувати завдання та роботу команди.\"\n      action=\"Створити проєкт\"\n      onAction={() => {}}\n      context=\"page\"\n    />\n  </Surface>\n  <div className=\"flex min-h-[328px] flex-1 items-center justify-center rounded-[16px] bg-canvas\">\n    <EmptyState\n      icon={ChatIcon}\n      title=\"Ще немає повідомлень\"\n      description=\"Почніть розмову! 👋\"\n      context=\"page\"\n    />\n  </div>\n</div>\n<div className=\"mt-[16px] grid w-full grid-cols-1 gap-[16px] lg:grid-cols-2\">\n  <EmptyState\n    icon={User}\n    title=\"Нікого не знайдено\"\n    description=\"Спробуйте змінити пошуковий запит.\"\n    density=\"compact\"\n  />\n  <EmptyState\n    icon={ChatIcon}\n    title=\"Ще немає повідомлень\"\n    description=\"Почніть обговорення завдання з командою.\"\n    context=\"flexible\"\n  />\n  <EmptyState\n    icon={Plug}\n    title=\"Підключіть QuickTeam+\"\n    description=\"Підключіть акаунт, щоб працювати з матеріалами та чатом.\"\n    action=\"Підключити QuickTeam+\"\n    onAction={() => {}}\n    context=\"inset\"\n    surface=\"card\"\n  />\n  <EmptyState\n    icon={Plug}\n    title=\"Оберіть проєкт QuickTeam+\"\n    description=\"Привʼяжіть клієнтський проєкт, щоб бачити етапи, матеріали та чат.\"\n    context=\"inset\"\n    surface=\"card\"\n  >\n    <div className=\"mx-auto flex w-full max-w-[420px] flex-col gap-2 sm:flex-row\">\n      <Select\n        value={qtPlusProject}\n        onChange={setQtPlusProject}\n        options={[\n          { value: 'brand', label: 'Brand redesign' },\n          { value: 'mobile', label: 'Mobile application' },\n        ]}\n        placeholder=\"Оберіть проєкт QuickTeam+\"\n        className=\"min-w-0 flex-1 text-left\"\n      />\n      <Button style=\"primary\" size=\"lg\" disabled={!qtPlusProject}>Привʼязати</Button>\n    </div>\n  </EmptyState>\n</div>",
     "Звʼязок": "<Button style=\"secondary\" onClick={() => setOffline(value => !value)}>\n  {offline ? 'Повернути звʼязок' : 'Імітувати офлайн'}\n</Button>\n<ConnectionBanner offline={offline} />",
     "Skeleton — ролі": "<div className=\"grid w-full grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3\">\n  {ROLES.map(([role, caption]) => (\n    <div key={role} className=\"flex flex-col gap-[6px] rounded-[12px] border border-line p-[12px]\">\n      <div className={role === 'panel' ? 'flex h-[120px]' : 'flex'}>\n        <Skeleton preset={role} />\n      </div>\n      <span className=\"font-mono text-[10px] font-bold text-ink\">{role}</span>\n      <span className=\"text-[10px] text-muted\">{caption}</span>\n    </div>\n  ))}\n</div>",

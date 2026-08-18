@@ -311,6 +311,17 @@ export default function TaskTableView({
     scopeKey: selectionScopeKey || `${projectId || 'table'}:${sort}:${dir}`,
   });
 
+  // What the header box stands for, and what it must not pretend to.
+  const drawnAllSelected = drawnRows.length > 0
+    && drawnRows.every(issue => activeSelectedIds.has(issue.id));
+  const drawnSomeSelected = !drawnAllSelected
+    && drawnRows.some(issue => activeSelectedIds.has(issue.id));
+  // Offered only once the visible page is fully selected — «вибрати всі» before
+  // that is a different action nobody asked for — and only while something is
+  // actually out of sight.
+  const offersWholeList = drawnAllSelected && hiddenRowCount > 0
+    && rows.some(issue => !activeSelectedIds.has(issue.id));
+
   const commit = async (issue, patch) => {
     setEditingCell(null);
     if (!patch || Object.keys(patch).length === 0) return;
@@ -760,7 +771,24 @@ export default function TaskTableView({
             <thead>
               <tr>
                 <th scope="col" className={`${HEADER_CELL} sticky left-0 z-[4]`}>
-                  <span className={HEADER_BOX}><span className="sr-only">Вибір</span></span>
+                  <span className={HEADER_BOX}>
+                    {/* Everything on screen, and nothing that is not.
+                        The table draws a page at a time, so a box in the header
+                        that claimed «всі» would select fifty of three hundred
+                        and say otherwise. It stands for the rows actually drawn
+                        — checked when they are all selected, a dash when some
+                        are — and the rest of the list is offered separately,
+                        below, as a sentence with a number in it. */}
+                    <Checkbox
+                      checked={drawnAllSelected}
+                      indeterminate={drawnSomeSelected}
+                      onChange={() => toggleIssueScope(drawnRows.map(issue => issue.id))}
+                      size="sm"
+                      ariaLabel={drawnAllSelected
+                        ? `Зняти вибір з ${drawnRows.length}`
+                        : `Вибрати ${drawnRows.length} на цій сторінці`}
+                    />
+                  </span>
                 </th>
                 {visibleColumns.map(headerCell)}
                 {/* Which columns are on is a fact about this table, so it is
@@ -958,6 +986,30 @@ export default function TaskTableView({
                   </tr>
                 );
               })}
+
+              {/* The second step, and the reason the header box does not take
+                  it by itself. Gmail asks the same question in the same place:
+                  the page is selected, the list is longer, so say by how much
+                  and let the person decide. Selecting three hundred tasks must
+                  be something somebody meant. */}
+              {offersWholeList && (
+                <tr>
+                  <td colSpan={visibleColumns.length + 2} className="p-0">
+                    <div className="sticky left-0 flex w-[max-content] max-w-[100vw] items-center gap-2 border-y border-line bg-canvas px-[10px] py-[8px]">
+                      <span className="text-[12px] text-muted">
+                        Вибрано {activeSelectedIds.size} на цій сторінці.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleIssueScope(rows.map(issue => issue.id))}
+                        className="text-[12px] font-semibold text-ink underline underline-offset-2 transition-colors hover:text-muted"
+                      >
+                        Вибрати всі {rows.length}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
 
               {hiddenRowCount > 0 && (
                 <tr>

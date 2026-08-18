@@ -41,7 +41,20 @@ export default function TaskIdentity({
   parentIssue = null,
   className = '',
 }) {
-  const key = taskDisplayKey(issue, project || (projectName ? { name: projectName } : null));
+  const resolvedProject = project || (projectName ? { name: projectName } : null);
+  const key = taskDisplayKey(issue, resolvedProject);
+  // Through `taskDisplayKey` like the card's own key, not raw: a parent still
+  // stored under the pre-prefix `WS-7` was printed as `WS-7` beside a child
+  // called `DESIGN-363`, as though they belonged to different projects.
+  const parentKey = parentIssue
+    ? taskDisplayKey(
+      parentIssue.issueKey ? parentIssue : { issueKey: issue?.parentIssueKey || '' },
+      resolvedProject,
+    )
+    : '';
+  const parentTitle = parentIssue?.title
+    ? `Батьківське завдання: ${parentIssue.title}`
+    : (parentKey ? `Батьківське завдання ${parentKey}` : 'Це підзавдання');
   const showsProject = showProjectName && Boolean(projectName);
   if (!key && !showsProject && !parentIssue) return null;
 
@@ -69,12 +82,20 @@ export default function TaskIdentity({
               states the same relation and was drawing `Layers` for it. */}
           <span
             className="flex min-w-0 items-center gap-[3px] font-mono text-[10px] font-medium tracking-wide text-faint"
-            title={parentIssue.title || 'Батьківське завдання'}
+            title={parentTitle}
           >
             <ParentTaskIcon size={11} strokeWidth={2} className="shrink-0" />
-            <span className="min-w-0 truncate">
-              {parentIssue.issueKey || parentIssue.title || 'Батьківське завдання'}
-            </span>
+            {/* The key, or nothing at all.
+                This slot printed «Батьківське завдання» whenever the parent
+                could not be named — and a noun phrase where an identifier goes
+                does not read as «unknown», it reads as the task's number. The
+                parent is usually unnameable from the card's own data: it lives
+                in another sprint, another column, or past the loaded page, and
+                the card was searching the issues that happened to be on screen.
+                Tasks written since carry `parentIssueKey`; for older ones the
+                icon alone still says «this hangs under something», which is the
+                whole truth the card has. */}
+            {parentKey && <span className="min-w-0 truncate">{parentKey}</span>}
           </span>
         </>
       )}

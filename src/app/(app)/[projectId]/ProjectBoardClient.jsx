@@ -204,7 +204,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
       const data = { title, columnId };
 
       await createIssue(data, actor);
-      showToast('Задачу додано ✓');
+      showToast('Задачу додано');
     } catch (err) {
       showToast('Помилка: ' + err.message, 'error');
     }
@@ -254,7 +254,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
       estimateMinutes: formData.estimateMinutes || 0,
       sprintId: formData.sprintId || null,
     }, actor);
-    showToast('Задачу створено ✓');
+    showToast('Задачу створено');
     return { ...created, projectId };
   }, [createIssue, showToast]); // eslint-disable-line
 

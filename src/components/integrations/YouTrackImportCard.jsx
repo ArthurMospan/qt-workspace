@@ -514,7 +514,7 @@ export default function YouTrackImportCard({
                     </p>
                     <p className="mt-1 text-[11px] text-muted">
                       Разом із задачами переносяться коментарі, вкладення, зв’язки та work items:
-                      затреканий час з’явиться у списаннях і в сумі витраченого часу задачі.
+                      затрачений час зʼявиться у записах часу і в сумі витраченого часу задачі.
                     </p>
                   </div>
                   {/* The import is driven step by step from this tab, so the tab has to

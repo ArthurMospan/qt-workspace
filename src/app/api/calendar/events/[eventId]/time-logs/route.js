@@ -132,7 +132,7 @@ async function readLiveEventContext({
     throw calendarTimeError(
       'CALENDAR_EVENT_PROJECT_CHANGED',
       409,
-      'Проєкт події змінився. Оновіть подію перед списанням часу',
+      'Проєкт події змінився. Оновіть подію перед фіксацією часу',
     );
   }
   if (!canViewCalendarEvent(event, authorization)) {
@@ -303,7 +303,7 @@ export async function GET(request, context) {
     if (error?.calendarTimeLog) return expectedErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'calendar event time logs GET',
-      fallbackMessage: 'Не вдалося завантажити списаний час',
+      fallbackMessage: 'Не вдалося завантажити зафіксований час',
     });
   }
 }
@@ -377,8 +377,8 @@ export async function POST(request, context) {
             : 'CALENDAR_TIME_VISIBILITY_DISABLED',
           409,
           trackingDisabledReason === 'type'
-            ? 'Цей тип події не передбачає списання часу'
-            : 'Списання часу доступне лише для командних подій',
+            ? 'Цей тип події не передбачає фіксації часу'
+            : 'Фіксація часу доступна лише для командних подій',
         );
       }
       const now = FieldValue.serverTimestamp();
@@ -407,7 +407,7 @@ export async function POST(request, context) {
     if (error?.calendarTimeLog) return expectedErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'calendar event time logs POST',
-      fallbackMessage: 'Не вдалося списати час',
+      fallbackMessage: 'Не вдалося зафіксувати час',
     });
   }
 }
@@ -465,7 +465,7 @@ export async function PATCH(request, context) {
             : 'CALENDAR_TIME_VISIBILITY_DISABLED',
           409,
           trackingDisabledReason === 'type'
-            ? 'Цей тип події не передбачає списання часу'
+            ? 'Цей тип події не передбачає фіксації часу'
             : 'Змінювати час можна лише для командних подій',
         );
       }
@@ -504,7 +504,7 @@ export async function PATCH(request, context) {
     if (error?.calendarTimeLog) return expectedErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'calendar event time logs PATCH',
-      fallbackMessage: 'Не вдалося змінити списаний час',
+      fallbackMessage: 'Не вдалося змінити зафіксований час',
     });
   }
 }
@@ -569,7 +569,7 @@ export async function DELETE(request, context) {
     if (error?.calendarTimeLog) return expectedErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'calendar event time logs DELETE',
-      fallbackMessage: 'Не вдалося видалити списаний час',
+      fallbackMessage: 'Не вдалося видалити зафіксований час',
     });
   }
 }

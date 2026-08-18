@@ -72,7 +72,7 @@ export default function ChartsSection() {
             series={[2, 5, 3, 7, 4, 6, 9, 8, 11, 9, 14, 18]}
             sub="проти попереднього періоду"
           />
-          <KpiCard icon={Wallet} value="64г" label="Списано часу" sub="деталі — у Табелі" />
+          <KpiCard icon={Wallet} value="64г" label="Зафіксовано часу" sub="деталі — у Табелі" />
           <KpiCard icon={AlertTriangle} value={3} label="Прострочено" sub="потребують уваги" />
         </div>
       </PreviewBlock>

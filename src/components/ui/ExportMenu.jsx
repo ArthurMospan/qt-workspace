@@ -68,7 +68,7 @@ export default function ExportMenu({
       if (outcome === 'blocked') {
         showToast('Дозвольте спливаючі вікна, щоб зберегти PDF', 'error');
       } else {
-        showToast('Файл збережено ✓');
+        showToast('Файл збережено');
       }
     } catch (error) {
       console.error('[ExportMenu]', error);

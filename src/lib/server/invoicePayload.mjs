@@ -468,7 +468,7 @@ export function validateInvoiceItemMinutes({ items = [], timeLogsById = {} } = {
   if (changedItemIds.length > 0) {
     reject(
       'INVOICE_TIME_CHANGED',
-      'Списаний час змінився. Оновіть рахунок і перевірте позиції ще раз',
+      'Зафіксований час змінився. Оновіть рахунок і перевірте позиції ще раз',
       409,
       { sourceItemIds: changedItemIds },
     );

@@ -504,7 +504,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     if (logForm?.fromTimer && logForm.minutes > 0) {
       const discard = await confirmDialog({
         title: 'Не зберігати відстежений час?',
-        message: `${logForm.minutes} хв з таймера ще не списано. Якщо закрити зараз, цей час буде втрачено.`,
+        message: `${logForm.minutes} хв з таймера ще не зафіксовано. Якщо закрити зараз, цей час буде втрачено.`,
         confirmText: 'Не зберігати',
         cancelText: 'Повернутись',
         danger: true,
@@ -805,7 +805,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
         : null;
     }
     if (Object.keys(patch).length > 0) {
-      try { await updateIssue(issueId, patch, actor); showToast('Збережено ✓'); }
+      try { await updateIssue(issueId, patch, actor); showToast('Збережено'); }
       catch (err) { showToast(err.message, 'error'); }
     }
     setIsEditing(false);
@@ -934,18 +934,18 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       try {
         if (logForm.id) {
           await updateTimeLog(logForm.id, { spentMinutes: logForm.minutes, description: logForm.desc });
-          showToast('Запис оновлено ✓');
+          showToast('Запис оновлено');
         } else {
           const uid = currentUser?.id || currentUser?.uid;
           await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc);
-          showToast(`${logForm.minutes} хв списано ✓`);
+          showToast(`${logForm.minutes} хв зафіксовано`);
         }
       } catch (err) {
         showToast(err.message || 'Не вдалося зберегти час', 'error');
         return;
       }
     } else if (logForm.minutes === 0 && logForm.estim !== undefined && logForm.estim !== (estimMin || 0)) {
-      showToast('Оцінку часу оновлено ✓');
+      showToast('Оцінку часу оновлено');
     }
     // Saved — the stopped timer's minutes now live in a time log.
     if (logForm.fromTimer) clearPendingTimeLog();
@@ -960,7 +960,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     }))) return;
     try {
       await deleteTimeLog(log.id);
-      showToast('Запис часу видалено ✓');
+      showToast('Запис часу видалено');
     } catch (err) {
       showToast('Помилка видалення: ' + err.message, 'error');
     }
@@ -983,7 +983,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
         uploadedAt: nowMs(),
       })));
       await update({ attachments: arrayUnion(...uploaded) });
-      showToast(`Додано вкладень: ${uploaded.length} ✓`);
+      showToast(`Додано вкладень: ${uploaded.length}`);
       return uploaded;
     } catch (err) {
       showToast('Помилка завантаження файлу', 'error');
@@ -1691,7 +1691,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     surface="canvas"
                     composition="dialog-tabs"
                     options={[
-                      { value: 'spend', label: 'Списати час' },
+                      { value: 'spend', label: 'Зафіксувати час' },
                       ...(!logForm.id ? [{ value: 'estim', label: 'Оцінка часу' }] : []),
                     ]}
                   />
@@ -1699,7 +1699,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   {logTab === 'spend' ? (
                     <div className="flex gap-4">
                       <div className="flex-1">
-                        <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Списати час</p>
+                        <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Зафіксувати час</p>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <Input size="lg" type="number" min="0" placeholder="0" value={Math.floor(logForm.minutes / 60) || ''} onChange={e => {

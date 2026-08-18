@@ -222,7 +222,7 @@ export async function POST(request) {
       if (legacyOverlap.length > 0) {
         throw invoiceError(
           'INVOICE_TIME_LOG_CONFLICT',
-          'Частина списаного часу вже входить в інший рахунок',
+          'Частина зафіксованого часу вже входить в інший рахунок',
           409,
           { sourceTimeLogIds: legacyOverlap },
         );
@@ -452,7 +452,7 @@ export async function POST(request) {
     if (isFirestoreAlreadyExists(error)) {
       return errorResponse(invoiceError(
         'INVOICE_SOURCE_CONFLICT',
-        'Частина позицій або списаного часу вже зарезервована іншим рахунком',
+        'Частина позицій або зафіксованого часу вже зарезервована іншим рахунком',
         409,
         {
           sourceTimeLogIds: requestedSourceTimeLogIds,

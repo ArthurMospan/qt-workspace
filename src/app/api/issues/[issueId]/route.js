@@ -143,7 +143,7 @@ export async function DELETE(request, context) {
         throw apiTransactionError(
           'ISSUE_HAS_BILLED_TIME',
           409,
-          'Завдання має списаний у рахунок час і не може бути видалене',
+          'Завдання має зафіксований у рахунок час і не може бути видалене',
           {
             billedTimeLogCount: billedLogs.length,
             ...details,

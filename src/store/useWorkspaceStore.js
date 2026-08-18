@@ -190,10 +190,28 @@ const useWorkspaceStore = create((set, get) => ({
     const id = (get()._toastSeq || 0) + 1;
     const previousTimer = get()._toastTimer;
     if (previousTimer) clearTimeout(previousTimer);
+    // A confirmation is read at a glance and can go; a failure has to be read,
+    // and often decided about — «повідомити про це?» — which nobody manages in
+    // three and a half seconds. Same toast, two different jobs.
+    const duration = options.duration
+      || (type === 'error' ? 9000 : type === 'warning' ? 6000 : 3500);
     const timer = setTimeout(() => {
       if (get().toast?.id === id) set({ toast: null, _toastTimer: null });
-    }, options.duration || 3500);
-    set({ toast: { message, type, id, action: options.action }, _toastSeq: id, _toastTimer: timer });
+    }, duration);
+    set({
+      toast: {
+        message,
+        type,
+        id,
+        action: options.action,
+        // What the reporter would send. The message alone is what the user was
+        // shown; `detail` is what actually happened, and only a failure has one.
+        detail: options.detail || null,
+        context: options.context || '',
+      },
+      _toastSeq: id,
+      _toastTimer: timer,
+    });
   },
   clearToast: () => {
     const timer = get()._toastTimer;

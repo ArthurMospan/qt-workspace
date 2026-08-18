@@ -376,7 +376,7 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
   );
 }
 
-// ── "Списати час" modal ───────────────────────────────────────────────────────
+// ── "Зафіксувати час" modal ───────────────────────────────────────────────────────
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -455,7 +455,7 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
         description: desc,
         loggedAt: loggedAt.toISOString(),
       });
-      showToast('Час списано ✓');
+      showToast('Час зафіксовано');
       setIssueId(''); setHours(''); setMins(''); setDesc('');
       onClose();
     } catch (err) {
@@ -468,7 +468,7 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      title="Списати час"
+      title="Зафіксувати час"
       size="sm"
       footer={
         <>

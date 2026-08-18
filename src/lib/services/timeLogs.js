@@ -65,7 +65,7 @@ export function createTaskTimeLogViaApi({
       description,
       ...(loggedAt ? { loggedAt } : {}),
     }),
-  }, 'Не вдалося списати час');
+  }, 'Не вдалося зафіксувати час');
 }
 
 export function updateTaskTimeLogViaApi({
@@ -84,7 +84,7 @@ export function updateTaskTimeLogViaApi({
       ...(spentMinutes !== undefined ? { spentMinutes } : {}),
       ...(description !== undefined ? { description } : {}),
     }),
-  }, 'Не вдалося змінити списаний час');
+  }, 'Не вдалося змінити зафіксований час');
 }
 
 export function deleteTaskTimeLogViaApi({
@@ -97,6 +97,6 @@ export function deleteTaskTimeLogViaApi({
   return taskTimeLogRequest(
     `${taskTimeLogPath(issueId, logId)}?${query}`,
     { method: 'DELETE' },
-    'Не вдалося видалити списаний час',
+    'Не вдалося видалити зафіксований час',
   );
 }

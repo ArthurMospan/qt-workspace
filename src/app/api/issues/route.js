@@ -98,6 +98,7 @@ export async function POST(request) {
     }
 
     const parentIssueId = normalizeParentIssueId(data.parentIssueId);
+    let parentIssueKey = '';
     if (parentIssueId === undefined) {
       return NextResponse.json({
         error: 'Некоректний ідентифікатор батьківського завдання',
@@ -270,6 +271,7 @@ export async function POST(request) {
         const parent = parentSnap.exists
           ? { id: parentSnap.id, ...parentSnap.data() }
           : null;
+        parentIssueKey = parent?.issueKey || '';
         const hierarchyError = validateIssueParentAssignment({
           issueId: issueRef.id,
           issue: {
@@ -332,6 +334,10 @@ export async function POST(request) {
         spentMinutesMirrorVersion: 1,
         timeLogMutationVersion: 0,
         parentIssueId,
+        // Denormalised for the same reason a mention carries its task's title:
+        // the writer knows it, the reader would otherwise have to go looking,
+        // and «looking» means a card guessing from whatever is on screen.
+        ...(parentIssueKey ? { parentIssueKey } : {}),
         watcherIds: [],
         order: -next,
         createdBy: authorization.user.uid,

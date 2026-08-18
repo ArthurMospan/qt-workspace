@@ -337,8 +337,8 @@ export function buildOverviewExport({
           { label: 'Робочі задачі', value: `${stats.done} / ${stats.total}` },
           { label: 'Виконано', value: `${stats.completionPct}%` },
           { label: `Закрито за ${period} днів`, value: String(stats.recentDone) },
-          { label: 'Списано часу', value: durationLabel(stats.periodMin) },
-          { label: 'Списано годин', value: String(hoursValue(stats.periodMin)).replace('.', ',') },
+          { label: 'Зафіксовано часу', value: durationLabel(stats.periodMin) },
+          { label: 'Зафіксовано годин', value: String(hoursValue(stats.periodMin)).replace('.', ',') },
           { label: 'Прострочено', value: String(stats.overdue.length) },
           { label: 'Без виконавця', value: String(stats.noAssignee) },
           { label: 'Без оцінки', value: String(stats.unestimated) },
@@ -540,8 +540,8 @@ export function buildMemberExport({
           { id: 'value', label: 'Значення', width: 16, value: row => row.value },
         ],
         rows: [
-          { label: 'Списано часу', value: durationLabel(stat.minutes) },
-          { label: 'Списано годин', value: String(hoursValue(stat.minutes)).replace('.', ',') },
+          { label: 'Зафіксовано часу', value: durationLabel(stat.minutes) },
+          { label: 'Зафіксовано годин', value: String(hoursValue(stat.minutes)).replace('.', ',') },
           { label: `Завершено за ${period} днів`, value: String(stat.done) },
           { label: 'Зараз у роботі', value: String(stat.inProgress) },
           { label: 'Відкритих', value: String(stat.open) },
@@ -689,7 +689,7 @@ export function buildVelocityExport({
 // ── Рахунок ─────────────────────────────────────────────────────────────────
 
 const INVOICE_SOURCE_LABELS = {
-  actual: 'За списаним часом',
+  actual: 'За зафіксованим часом',
   estimate: 'За оцінкою',
   manual: 'Вручну',
 };

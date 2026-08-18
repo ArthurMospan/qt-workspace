@@ -134,7 +134,7 @@ export async function PATCH(request, context) {
     if (error?.taskTimeLog) return taskTimeLogErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'task time log PATCH',
-      fallbackMessage: 'Не вдалося змінити списаний час',
+      fallbackMessage: 'Не вдалося змінити зафіксований час',
     });
   }
 }
@@ -204,7 +204,7 @@ export async function DELETE(request, context) {
     if (error?.taskTimeLog) return taskTimeLogErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'task time log DELETE',
-      fallbackMessage: 'Не вдалося видалити списаний час',
+      fallbackMessage: 'Не вдалося видалити зафіксований час',
     });
   }
 }

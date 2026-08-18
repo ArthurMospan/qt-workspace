@@ -43,7 +43,7 @@ export async function POST(request, context) {
       throw taskTimeLogError(
         'TASK_TIME_INVALID',
         400,
-        'Перевірте завдання, тривалість, опис і дату списання часу',
+        'Перевірте завдання, тривалість, опис і дату фіксації часу',
       );
     }
 
@@ -104,7 +104,7 @@ export async function POST(request, context) {
           throw taskTimeLogError(
             'TASK_TIME_ESTIMATE_RESERVATION_SCOPE_CONFLICT',
             409,
-            'Резерв оцінки завдання має некоректну область. Потрібна звірка рахунку перед списанням часу',
+            'Резерв оцінки завдання має некоректну область. Потрібна звірка рахунку перед фіксацією часу',
             { estimateReservationId: estimateReservationSnapshot.id },
           );
         }
@@ -147,7 +147,7 @@ export async function POST(request, context) {
     if (error?.taskTimeLog) return taskTimeLogErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'task time log POST',
-      fallbackMessage: 'Не вдалося списати час',
+      fallbackMessage: 'Не вдалося зафіксувати час',
     });
   }
 }

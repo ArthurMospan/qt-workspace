@@ -271,7 +271,7 @@ test('an invoice exports the saved document, its sources and its totals', () => 
   assert.equal(summary.total.amount, 1350);
 
   const csv = lines(toCsv(document));
-  assert.ok(csv.some(line => line.startsWith('QT-12;Форма;Готово;1г 30хв;1,50;За списаним часом;75,00')));
+  assert.ok(csv.some(line => line.startsWith('QT-12;Форма;Готово;1г 30хв;1,50;За зафіксованим часом;75,00')));
   // A negative amount must stay a number. The guard against formula cells sees
   // a leading `-` and would otherwise quote the discount into text, which is
   // how a column of money silently stops adding up.

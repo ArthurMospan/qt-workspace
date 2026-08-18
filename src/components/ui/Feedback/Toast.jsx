@@ -14,6 +14,9 @@ import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
  * @param {() => void} props.onAction Handler for that action.
  * @param {number} props.autoClose Milliseconds before it closes itself; 0 keeps it until dismissed.
  * @param {() => void} props.onClose Fires when it closes, by timer or by the ×.
+ * @param {() => void} props.onReport Offers to send this failure to the people who
+ *   can fix it. Only a failure has one, and it is deliberately the quietest
+ *   thing in the toast: an offer, not an instruction.
  */
 export function Toast({
   variant = 'info', // success, error, warning, info, loading
@@ -22,6 +25,7 @@ export function Toast({
   onAction,
   autoClose = 3000,
   onClose,
+  onReport,
 }) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -53,7 +57,10 @@ export function Toast({
       style={{ zIndex: GLOBAL_NOTIFICATION_Z_INDEX }}
     >
       <div 
-        className="ui-toast flex items-center gap-3 bg-ink text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto transition-all"
+        // Wrapping, and a ceiling. A failure toast carries a message, an undo
+        // and an offer to report it — on a 360px screen that is wider than the
+        // screen, and a single non-wrapping row simply hung off the edge.
+        className="ui-toast flex max-w-[calc(100vw-24px)] flex-wrap items-center gap-x-3 gap-y-2 bg-ink text-white px-5 py-3 rounded-[12px] shadow-xl text-[13px] font-medium pointer-events-auto transition-all"
       >
         {isSuccess && <CheckCircle size={15} className="text-green-400 shrink-0" />}
         {isError && <AlertCircle size={15} className="text-red-400 shrink-0" />}
@@ -73,6 +80,20 @@ export function Toast({
             className="text-blue-400 hover:text-blue-300 font-bold ml-2 text-[11px] transition-colors"
           >
             {action}
+          </button>
+        )}
+
+        {isError && onReport && (
+          <button
+            type="button"
+            onClick={() => {
+              onReport();
+              setIsVisible(false);
+              onClose?.();
+            }}
+            className="ml-2 shrink-0 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/70 transition-colors hover:bg-white/20 hover:text-white"
+          >
+            Повідомити про помилку
           </button>
         )}
 

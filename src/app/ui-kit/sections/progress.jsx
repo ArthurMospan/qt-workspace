@@ -10,7 +10,7 @@ export default function ProgressSection() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
           <KpiCard label="Всі завдання" value="89 / 124" sub="71% прогресу" icon={Target} trend={12} />
           <KpiCard label="Velocity (7д)" value="14" sub="завдань за тиждень" icon={Zap} trend={-5} />
-          <KpiCard label="Списано часу" value="45г 30хв" sub="по 4 проєктах" icon={Clock} />
+          <KpiCard label="Зафіксовано часу" value="45г 30хв" sub="по 4 проєктах" icon={Clock} />
           <KpiCard label="Команда" value="8" sub="учасників із завданнями" icon={Users} />
         </div>
       </PreviewBlock>

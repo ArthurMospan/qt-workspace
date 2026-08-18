@@ -204,6 +204,17 @@ export async function PATCH(request, context) {
       const now = FieldValue.serverTimestamp();
       transaction.update(issueRef, {
         parentIssueId,
+        // The parent's key, written down where the child can read it.
+        //
+        // A subtask card shows the task it hangs under, and it used to find
+        // that task by searching the issues that happened to be loaded on the
+        // same screen. The parent is usually not among them — another sprint,
+        // another column, past the page — so the identifier slot fell through
+        // to the words «Батьківське завдання», which read as if that were the
+        // task's number. This transaction has already read the parent to
+        // validate the move; keeping its key costs nothing and means no card
+        // ever has to look one up.
+        parentIssueKey: parent?.issueKey || FieldValue.delete(),
         parentEpicId: FieldValue.delete(),
         updatedAt: now,
       });
