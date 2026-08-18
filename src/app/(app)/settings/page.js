@@ -14,6 +14,15 @@ import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { deleteAccount, fetchAccountDeletionImpact } from '@/lib/services/account';
 import { plural } from '@/lib/utils/plural.mjs';
 import { isActiveMember } from '@/lib/utils/orgMembership.mjs';
+import { archivedIssuesOf } from '@/lib/utils/issueArchive.mjs';
+import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
+import { useLocalization } from '@/lib/hooks/useLocalization';
+import {
+  fetchDeletedIssues,
+  restoreDeletedIssue,
+  setIssueArchived,
+} from '@/lib/services/issues';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
@@ -49,6 +58,7 @@ import {
   Label,
   Pill,
   PriorityBadge,
+  Segmented,
   Surface,
   useConfirm,
   Popover
@@ -153,12 +163,35 @@ const NAV = [
   { id: 'priorities',    label: 'Пріоритети',       icon: AlertTriangle, group: 'Налаштування процесів', adminOnly: true },
   { id: 'labels',        label: 'Мітки',            icon: TagIcon,       group: 'Налаштування процесів', adminOnly: true },
   { id: 'positions',     label: 'Посади та ставки', icon: Briefcase,     group: 'Налаштування процесів', adminOnly: true },
-  { id: 'archives',      label: 'Архів проєктів',    icon: Archive,       group: 'Інше' },
+  { id: 'archives',      label: 'Архів',            icon: Archive,       group: 'Інше' },
   { id: 'danger',        label: 'Видалення даних',  icon: Shield,        group: 'Інше', danger: false, adminOnly: true },
 ];
 
 // ── Primitives ───────────────────────────────────────────────────────
 // Toggle removed - using ToggleSwitch from UI Kit
+
+function ArchiveEmpty({ title, hint }) {
+  return (
+    <div className="py-12 flex flex-col items-center justify-center text-center">
+      <div className="w-12 h-12 rounded-full bg-canvas flex items-center justify-center mb-3">
+        <Archive size={20} className="text-muted" />
+      </div>
+      <p className="text-[14px] font-bold text-ink">{title}</p>
+      <p className="text-[12px] text-muted mt-1 max-w-[420px]">{hint}</p>
+    </div>
+  );
+}
+
+// «за 4 години» is the only thing worth saying about a deleted task: how long
+// is left before it goes for good.
+function remainingTrashTime(purgeAfterMs) {
+  const left = Number(purgeAfterMs) - Date.now();
+  if (!Number.isFinite(left) || left <= 0) return 'зникає зараз';
+  const hours = Math.floor(left / 3_600_000);
+  if (hours >= 1) return `зникає за ${hours} ${plural(hours, ['годину', 'години', 'годин'])}`;
+  const minutes = Math.max(1, Math.round(left / 60_000));
+  return `зникає за ${minutes} ${plural(minutes, ['хвилину', 'хвилини', 'хвилин'])}`;
+}
 
 function Row({ label, desc, children, danger = false }) {
   return (
@@ -684,6 +717,73 @@ export default function SettingsPage() {
 
   // Mobile single-pane mode: 'sidebar' (список розділів) або 'content' (розділ)
   const [mobilePane, setMobilePane] = useState('sidebar');
+
+  // ── «Архів» ──────────────────────────────────────────────────
+  // Three lists, one section. The task streams only start once the section is
+  // open: an archive nobody is looking at must not cost a subscription — the
+  // whole workspace shares one read budget.
+  const [archiveTab, setArchiveTab] = useState('projects');
+  const archiveSectionOpen = activeSection === 'archives';
+  const archiveProjectIds = useMemo(() => (
+    archiveSectionOpen && archiveTab === 'issues'
+      ? (projects || []).map(project => project.id)
+      : []
+  ), [archiveSectionOpen, archiveTab, projects]);
+  const {
+    issues: archiveScopedIssues,
+    loading: archivedIssuesLoading,
+  } = useWorkspaceAnalytics(archiveProjectIds, {
+    includeLinks: false,
+    includeTimeLogs: false,
+    includeArchived: true,
+  });
+  const archivedIssueList = useMemo(
+    () => archivedIssuesOf(archiveScopedIssues),
+    [archiveScopedIssues],
+  );
+  const [deletedIssues, setDeletedIssues] = useState({ items: [], loading: false });
+  const { formatDate } = useLocalization();
+  const projectNameById = useCallback(id => (
+    (projects || []).find(project => project.id === id)?.name || 'Проєкт видалено'
+  ), [projects]);
+
+  const loadDeletedIssues = useCallback(async () => {
+    if (!activeOrgId) return;
+    setDeletedIssues(current => ({ ...current, loading: true }));
+    try {
+      const items = await fetchDeletedIssues(activeOrgId);
+      setDeletedIssues({ items, loading: false });
+    } catch (error) {
+      setDeletedIssues({ items: [], loading: false });
+      showToast(userFacingErrorMessage(error, 'Не вдалося прочитати нещодавно видалене'), 'error');
+    }
+  }, [activeOrgId, showToast]);
+
+  // A one-time read rather than a subscription: this list changes when somebody
+  // deletes a task, and nobody sits on this tab waiting for that to happen.
+  useEffect(() => {
+    if (!archiveSectionOpen || archiveTab !== 'deleted') return;
+    void loadDeletedIssues();
+  }, [archiveSectionOpen, archiveTab, loadDeletedIssues]);
+
+  const handleUnarchiveIssue = async (issue) => {
+    try {
+      await setIssueArchived(issue.id, false);
+      showToast(`${issue.issueKey || 'Завдання'} повернуто з архіву`);
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося повернути завдання'), 'error');
+    }
+  };
+
+  const handleRestoreDeletedIssue = async (item) => {
+    try {
+      await restoreDeletedIssue(item.issueId, activeOrgId);
+      showToast(`${item.issueKey} відновлено`);
+      await loadDeletedIssues();
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося відновити завдання'), 'error');
+    }
+  };
   // Системний «назад» на телефоні повертає до списку розділів
   const requestPaneClose = useMobilePaneBack(mobilePane === 'content', () => setMobilePane('sidebar'));
 
@@ -3792,42 +3892,136 @@ export default function SettingsPage() {
       );
 
       // ──────────────────────────────────────────────────────────────
+      // One place for everything that is out of the way but not gone. Projects
+      // were already here; tasks used to have nowhere at all — «Архівувати»
+      // deleted them into a tombstone nobody could list, and the only way back
+      // was a banner inside the task while it was still open.
       case 'archives': {
         const archivedProjects = (projects || []).filter(p => p.status === 'archived');
+        const segments = [
+          { value: 'projects', label: `Проєкти${archivedProjects.length ? ` · ${archivedProjects.length}` : ''}` },
+          { value: 'issues', label: `Завдання${archivedIssueList.length ? ` · ${archivedIssueList.length}` : ''}` },
+          { value: 'deleted', label: `Нещодавно видалене${deletedIssues.items.length ? ` · ${deletedIssues.items.length}` : ''}` },
+        ];
         return (
-          <Section title="Архів проєктів" desc="Перелік усіх архівованих проєктів організації з можливістю їх відновлення">
+          <Section
+            title="Архів"
+            desc="Те, що прибрано з роботи, але не втрачено: архівовані проєкти й завдання лежать тут без строку, а видалене — доки не спливе доба"
+            rightAction={(
+              <Segmented value={archiveTab} onChange={setArchiveTab} options={segments} surface="canvas" />
+            )}
+          >
             <Card preset="borderless" padding="lg">
-              {archivedProjects.length === 0 ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-full bg-canvas flex items-center justify-center mb-3">
-                    <Archive size={20} className="text-muted" />
-                  </div>
-                  <p className="text-[14px] font-bold text-ink">Немає архівованих проєктів</p>
-                  <p className="text-[12px] text-muted mt-1">Тут відображатимуться всі архівовані проєкти організації</p>
-                </div>
-              ) : (
-                <div className="flex flex-col divide-y divide-canvas -my-3">
-                  {archivedProjects.map(p => (
-                    <div key={p.id} className="flex items-center justify-between py-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-semibold text-ink truncate">{p.name}</p>
-                        {p.description && (
-                          <p className="text-[12px] text-muted truncate mt-0.5">{p.description}</p>
-                        )}
+              {archiveTab === 'projects' && (
+                archivedProjects.length === 0 ? (
+                  <ArchiveEmpty
+                    title="Немає архівованих проєктів"
+                    hint="Тут відображатимуться всі архівовані проєкти організації"
+                  />
+                ) : (
+                  <div className="flex flex-col divide-y divide-canvas -my-3">
+                    {archivedProjects.map(p => (
+                      <div key={p.id} className="flex items-center justify-between py-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-semibold text-ink truncate">{p.name}</p>
+                          {p.description && (
+                            <p className="text-[12px] text-muted truncate mt-0.5">{p.description}</p>
+                          )}
+                        </div>
+                        <Button
+                          onClick={() => unarchiveProject(p.id)}
+                          style="secondary"
+                          size="sm"
+                          icon={ArchiveRestore}
+                          className="ml-4 shrink-0"
+                        >
+                          Розархівувати
+                        </Button>
                       </div>
-                      <Button
-                        onClick={() => unarchiveProject(p.id)}
-                        style="secondary"
+                    ))}
+                  </div>
+                )
+              )}
 
-                        size="sm"
-                        icon={ArchiveRestore}
-                        className="ml-4 shrink-0"
-                      >
-                        Розархівувати
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+              {archiveTab === 'issues' && (
+                archivedIssuesLoading && archivedIssueList.length === 0 ? (
+                  <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
+                ) : archivedIssueList.length === 0 ? (
+                  <ArchiveEmpty
+                    title="Немає архівованих завдань"
+                    hint="Архівуйте завдання з самої задачі або масовою дією — воно зникне з дошки, але лишиться тут"
+                  />
+                ) : (
+                  <div className="flex flex-col divide-y divide-canvas -my-3">
+                    {archivedIssueList.map(issue => (
+                      <div key={issue.id} className="flex items-center justify-between gap-3 py-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Pill size="md" className="shrink-0">{issue.issueKey || '—'}</Pill>
+                            <p className="truncate text-[13px] font-semibold text-ink">{issue.title || 'Без назви'}</p>
+                          </div>
+                          <p className="mt-0.5 truncate text-[12px] text-muted">
+                            {projectNameById(issue.projectId)}
+                            {issue.archivedAt ? ` · в архіві з ${formatDate(issue.archivedAt)}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Button
+                            style="ghost"
+                            size="sm"
+                            icon={ExternalLink}
+                            onClick={() => router.push(issuePath(issue, issue.projectId))}
+                          >
+                            Відкрити
+                          </Button>
+                          <Button
+                            style="secondary"
+                            size="sm"
+                            icon={ArchiveRestore}
+                            onClick={() => handleUnarchiveIssue(issue)}
+                          >
+                            Повернути
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {archiveTab === 'deleted' && (
+                deletedIssues.loading && deletedIssues.items.length === 0 ? (
+                  <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
+                ) : deletedIssues.items.length === 0 ? (
+                  <ArchiveEmpty
+                    title="Нічого не видаляли"
+                    hint="Видалене завдання лежить тут добу, і його можна повернути. Щоб прибрати завдання назовсім без строку — архівуйте його"
+                  />
+                ) : (
+                  <div className="flex flex-col divide-y divide-canvas -my-3">
+                    {deletedIssues.items.map(item => (
+                      <div key={item.issueId} className="flex items-center justify-between gap-3 py-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Pill size="md" className="shrink-0">{item.issueKey}</Pill>
+                            <p className="truncate text-[13px] font-semibold text-ink">{item.title || 'Без назви'}</p>
+                          </div>
+                          <p className="mt-0.5 truncate text-[12px] text-muted">
+                            {item.projectName || projectNameById(item.projectId)} · {remainingTrashTime(item.purgeAfter)}
+                          </p>
+                        </div>
+                        <Button
+                          style="secondary"
+                          size="sm"
+                          icon={ArchiveRestore}
+                          onClick={() => handleRestoreDeletedIssue(item)}
+                        >
+                          Відновити
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </Card>
           </Section>

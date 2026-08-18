@@ -416,17 +416,17 @@
       "props": [
         {
           "name": "archiveDisabledReason",
-          "default": "'Архівування доступне owner або admin'",
+          "default": "'Видалення доступне owner або admin'",
           "type": "string",
           "values": [],
-          "description": "Explanation shown when archive is unavailable."
+          "description": "Explanation shown when deletion is unavailable."
         },
         {
           "name": "canArchive",
           "default": "false",
           "type": "boolean",
           "values": [],
-          "description": "Whether the current role may archive tasks."
+          "description": "Whether the current role may delete tasks. Archiving needs no permission beyond editing."
         },
         {
           "name": "count",

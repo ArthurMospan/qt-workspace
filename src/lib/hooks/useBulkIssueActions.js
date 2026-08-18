@@ -47,8 +47,10 @@ function resultMessage(result, selectedIssues, action) {
   const base = action === 'duplicate'
     ? `Створено копій: ${completed} із ${requested}`
     : action === 'archive'
-      ? `Архівовано ${completed} із ${requested}`
-      : `Оновлено ${completed} із ${requested}`;
+      ? `В архів: ${completed} із ${requested}`
+      : action === 'delete'
+        ? `Видалено ${completed} із ${requested}`
+        : `Оновлено ${completed} із ${requested}`;
   if (!failed.length) return base;
   const byId = new Map(selectedIssues.map(issue => [issue.id, issue.issueKey || issue.title || issue.id]));
   const reasons = failed

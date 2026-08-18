@@ -6,6 +6,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
+import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import {
   chunkProjectIds,
   flattenDocumentBuckets,
@@ -14,6 +15,9 @@ import {
 export function useWorkspaceAnalytics(projectIds = [], {
   includeLinks = true,
   includeTimeLogs = true,
+  // «Архів» is the one screen that wants them; every other reader — the home
+  // page, sprints, analytics — is looking at work in progress.
+  includeArchived = false,
 } = {}) {
   const { activeOrgId, authLoading, orgLoading } = useAppContext();
   const [issues, setIssues] = useState([]);
@@ -118,7 +122,9 @@ export function useWorkspaceAnalytics(projectIds = [], {
       subscribe({
         key: `issues:${chunkIndex}`,
         buckets: issueBuckets,
-        publish: setIssues,
+        publish: documents => setIssues(
+          includeArchived ? documents : withoutArchivedIssues(documents),
+        ),
         sourceQuery: query(
           collection(db, 'issues'),
           where('organizationId', '==', activeOrgId),
@@ -172,7 +178,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
     });
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [activeOrgId, authLoading, orgLoading, projectScope, queryTarget, includeLinks, includeTimeLogs]);
+  }, [activeOrgId, authLoading, orgLoading, projectScope, queryTarget, includeLinks, includeTimeLogs, includeArchived]);
 
   return { issues, timeLogs, issueLinks, loading };
 }

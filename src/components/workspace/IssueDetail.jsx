@@ -43,9 +43,11 @@ import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { sprintsForProject } from '@/lib/utils/sprintScope.mjs';
+import { isArchivedIssue } from '@/lib/utils/issueArchive.mjs';
+import { setIssueArchived } from '@/lib/services/issues';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { MultiSelect, Select } from '@/components/ui/Select';
-import { AttributeTrigger, ContextMenu, DetailLayout, DetailSection, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
+import { Alert, AttributeTrigger, ContextMenu, DetailLayout, DetailSection, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
@@ -54,7 +56,7 @@ import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
   AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
-  Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon,
+  Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon, Archive, ArchiveRestore,
   Maximize2, User, CircleDot,
 } from 'lucide-react';
 import { ParentTaskIcon, TaskIcon } from '@/lib/design/icons';
@@ -239,7 +241,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     deleteIssue,
     restoreIssue,
     moveIssue,
-  } = useIssues(projectId, { includeLinks: false });
+    // An archived task keeps its own link working — this is the one reader that
+    // asks for them, so «Архів» can open a task and put it back.
+  } = useIssues(projectId, { includeLinks: false, includeArchived: true });
   const project = projects?.find(candidate => candidate.id === projectId);
   const issue = issues.find(candidate => issueMatchesRouteIdentifier(candidate, issueLocator, project));
   const issueId = issue?.id || '';
@@ -262,7 +266,10 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // blank-assignee bug: anyone off the team (e.g. the creator of a task in a
   // project they aren't a team member of) was unresolvable and rendered empty.
   const { members } = useOrganization();
-  const isArchived = project?.status === 'archived';
+  // A task in the archive is read-only for the same reason an archived project
+  // is: it has been put aside, and the one action it offers is coming back.
+  const isIssueArchived = isArchivedIssue(issue);
+  const isArchived = project?.status === 'archived' || isIssueArchived;
 
   const { stages }   = useStagesForProject(projectId);
   const { sprints = [] } = useSprints();
@@ -1120,6 +1127,20 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     }
   };
 
+  const handleArchive = async (archived) => {
+    if (archived && !(await confirmDialog({
+      title: `Архівувати ${issue.issueKey}?`,
+      message: 'Завдання зникне з дошки, списків і звітів, але лишиться в «Архіві» — без строку і без втрати даних. Повернути можна будь-коли.',
+      confirmText: 'Архівувати',
+    }))) return;
+    try {
+      await setIssueArchived(issueId, archived);
+      showToast(archived ? 'Завдання в архіві' : 'Завдання повернуто з архіву');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося змінити стан архіву', 'error');
+    }
+  };
+
   const handleDelete = async () => {
     if (!(await confirmDialog({
       title: `Видалити ${issue.issueKey}?`,
@@ -1213,10 +1234,18 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   icon: isWatching ? EyeOff : Eye,
                   onClick: toggleWatch,
                 },
+                // Two different things, and they finally read as two: putting a
+                // task aside for good, and deleting it with a clock running.
+                ...(can(orgRole, 'edit:issue')
+                  ? [{ label: 'Архівувати', icon: Archive, onClick: () => handleArchive(true) }]
+                  : []),
                 ...(can(orgRole, 'delete:issue')
                   ? [{ label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true }]
                   : []),
               ] : []),
+              ...(isIssueArchived && can(orgRole, 'edit:issue')
+                ? [{ label: 'Повернути з архіву', icon: ArchiveRestore, onClick: () => handleArchive(false) }]
+                : []),
             ]}
           />
         </>
@@ -1319,6 +1348,29 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 {headerActions}
               </div>
             </div>
+
+            {/* Why every control on this task is inert. A task that simply
+                disappeared from the board with no explanation on the task itself
+                is what made the old «Архівувати» feel like a loss. */}
+            {isIssueArchived && (
+              <div className="mt-3">
+                <Alert variant="info" title="Завдання в архіві">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span>Воно не показується на дошці, у списках і звітах. Дані збережені — строку немає.</span>
+                    {can(orgRole, 'edit:issue') && (
+                      <Button
+                        style="secondary"
+                        size="sm"
+                        icon={ArchiveRestore}
+                        onClick={() => handleArchive(false)}
+                      >
+                        Повернути з архіву
+                      </Button>
+                    )}
+                  </div>
+                </Alert>
+              </div>
+            )}
 
             {/* Metadata strip for non-editable details */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted font-medium mt-1.5">

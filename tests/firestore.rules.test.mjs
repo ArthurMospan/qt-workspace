@@ -388,6 +388,18 @@ test('authors can delete their own comments but not another authors comments', a
   await assertFails(deleteDoc(doc(db, 'issues', 'issue-a', 'comments', 'owner-comment')));
 });
 
+test('a browser cannot archive a task by writing the field itself', async () => {
+  // Archiving goes through /api/issues/[issueId]/archive, which also writes the
+  // history entry. A client that could set the field would archive silently.
+  const db = environment.authenticatedContext('member-a').firestore();
+  const ref = doc(db, 'issues', 'issue-a');
+  await assertFails(updateDoc(ref, { archivedAt: new Date() }));
+  await assertFails(updateDoc(ref, { archivedBy: 'member-a' }));
+  // An ordinary field on the same document still writes, so this is the field
+  // being refused rather than the whole task being read-only.
+  await assertSucceeds(updateDoc(ref, { title: 'Still editable' }));
+});
+
 test('the legacy tasks collection is closed to browsers', async () => {
   // It used to authorize any member of the organization, with no project scope —
   // the last org-wide read path in the workspace. Nothing reads it any more.

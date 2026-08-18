@@ -320,7 +320,9 @@ service cloud.firestore {
             'status',
             'columnId',
             'completedAt',
-            'order'
+            'order',
+            'archivedAt',
+            'archivedBy'
           ]);
       allow delete: if false; // Server route enforces hierarchy and cascades.
 

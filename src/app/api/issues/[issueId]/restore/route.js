@@ -34,7 +34,7 @@ export async function POST(request, context) {
     );
     const initialTombstone = await tombstoneRef.get();
     if (!initialTombstone.exists) {
-      return NextResponse.json({ error: 'Задачу не знайдено в кошику', code: 'TOMBSTONE_NOT_FOUND' }, { status: 404 });
+      return NextResponse.json({ error: 'Задачу не знайдено серед нещодавно видалених', code: 'TOMBSTONE_NOT_FOUND' }, { status: 404 });
     }
     const initial = initialTombstone.data();
     if (
@@ -43,13 +43,13 @@ export async function POST(request, context) {
       || initial.issue?.organizationId !== organizationId
       || initial.issue?.id !== issueId
     ) {
-      return NextResponse.json({ error: 'Пошкоджена область задачі в кошику', code: 'INVALID_TOMBSTONE_SCOPE' }, { status: 409 });
+      return NextResponse.json({ error: 'Пошкоджений запис видаленої задачі', code: 'INVALID_TOMBSTONE_SCOPE' }, { status: 409 });
     }
 
     const result = await db.runTransaction(async transaction => {
       const tombstoneSnap = await transaction.get(tombstoneRef);
       if (!tombstoneSnap.exists) {
-        throw restoreError('TOMBSTONE_NOT_FOUND', 404, 'Задачу не знайдено в кошику');
+        throw restoreError('TOMBSTONE_NOT_FOUND', 404, 'Задачу не знайдено серед нещодавно видалених');
       }
       const tombstone = tombstoneSnap.data();
       if (!canRestoreIssueTombstone(tombstone)) {
@@ -62,7 +62,7 @@ export async function POST(request, context) {
         || issue.organizationId !== organizationId
         || issue.id !== issueId
       ) {
-        throw restoreError('INVALID_TOMBSTONE_SCOPE', 409, 'Пошкоджена область задачі в кошику');
+        throw restoreError('INVALID_TOMBSTONE_SCOPE', 409, 'Пошкоджений запис видаленої задачі');
       }
 
       const issueRef = db.collection('issues').doc(issueId);

@@ -135,7 +135,7 @@ export async function DELETE(request, context) {
         throw apiTransactionError(
           'ISSUE_ALREADY_DELETED',
           409,
-          'Задачу вже переміщено до кошика',
+          'Задачу вже видалено',
         );
       }
 

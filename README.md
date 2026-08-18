@@ -129,6 +129,8 @@ Primary collections:
 - `system/notificationSweep` — the scheduled sweep's watermark and last counts. Server-written only; Firestore rules have no `system` match, so browsers cannot read or forge it.
 - organization-scoped `channels`, `messages` and `readState`
 
+Archiving and deleting a task are separate, and mean different things. Archiving sets `archivedAt` through `/api/issues/[issueId]/archive`: the document stays where it is, leaves every working list, and has no expiry. Deleting moves the record into a `deletedIssues` tombstone with a 24-hour `purgeAfter`, after which the sweep removes it. Both are reversible until the tombstone is purged; «Налаштування» → «Архів» lists projects, archived tasks and still-restorable deletions.
+
 `tasks` is a legacy collection and is closed to browsers entirely — nothing in the product reads it, and its old rule was the last org-wide read path that ignored project scope. New development must use `issues`.
 
 ### Issue IDs

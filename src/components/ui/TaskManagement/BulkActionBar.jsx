@@ -7,6 +7,7 @@ import {
   Clock3,
   Copy,
   Flag,
+  Archive,
   MoreHorizontal,
   Shapes,
   Tags,
@@ -40,8 +41,8 @@ function encodedOptions(options, operations) {
  * @param {object[]} props.labelOptions Configured task labels.
  * @param {object[]} props.typeOptions Creatable task types.
  * @param {object[]} props.sprintOptions Active or planned sprint destinations.
- * @param {boolean} props.canArchive Whether the current role may archive tasks.
- * @param {string} props.archiveDisabledReason Explanation shown when archive is unavailable.
+ * @param {boolean} props.canArchive Whether the current role may delete tasks. Archiving needs no permission beyond editing.
+ * @param {string} props.archiveDisabledReason Explanation shown when deletion is unavailable.
  * @param {(action: string, value?: unknown) => Promise<unknown>} props.onApply Runs one registry action for the selection.
  * @param {{done: number, total: number}} props.progress How far the running operation has got, when the caller can tell.
  * @param {() => void} props.onClear Leaves selection mode.
@@ -56,7 +57,7 @@ export default function BulkActionBar({
   typeOptions = [],
   sprintOptions = [],
   canArchive = false,
-  archiveDisabledReason = 'Архівування доступне owner або admin',
+  archiveDisabledReason = 'Видалення доступне owner або admin',
   onApply,
   onClear,
 }) {
@@ -114,11 +115,20 @@ export default function BulkActionBar({
   const askArchive = async () => {
     const accepted = await confirm({
       title: `Архівувати ${count} завдань?`,
-      message: 'Завдання зникнуть з активних списків. Залежності або дочірні задачі можуть заблокувати окремі елементи.',
+      message: 'Завдання зникнуть з дошки, списків і звітів, але лишаться в «Архіві» — без строку. Повернути можна будь-коли.',
       confirmText: 'Архівувати',
-      danger: true,
     });
     if (accepted) await apply('archive');
+  };
+
+  const askDelete = async () => {
+    const accepted = await confirm({
+      title: `Видалити ${count} завдань?`,
+      message: 'Завдання потраплять у «Нещодавно видалене» і за кілька днів зникнуть назавжди. Залежності або дочірні задачі можуть заблокувати окремі елементи.',
+      confirmText: 'Видалити',
+      danger: true,
+    });
+    if (accepted) await apply('delete');
   };
 
   // Geometry only. The chip's colours belong to the dark bar and are set in
@@ -274,10 +284,11 @@ export default function BulkActionBar({
           { label: 'Очистити оцінку', icon: Clock3, onClick: () => apply('estimate-clear') },
           { isDivider: true },
           { label: `Дублювати (${count})`, icon: Copy, onClick: () => apply('duplicate') },
+          { label: `Архівувати (${count})`, icon: Archive, onClick: askArchive },
           {
-            label: `Архівувати (${count})`,
+            label: `Видалити (${count})`,
             icon: Trash2,
-            onClick: askArchive,
+            onClick: askDelete,
             isDanger: true,
             disabled: !canArchive,
             disabledReason: canArchive ? '' : archiveDisabledReason,

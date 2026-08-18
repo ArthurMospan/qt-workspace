@@ -19,7 +19,11 @@ export const ISSUE_BULK_ACTIONS = Object.freeze([
   { id: 'sprint', label: 'Перемістити у спринт', value: 'sprintId' },
   { id: 'backlog', label: 'Повернути в backlog', value: 'none' },
   { id: 'duplicate', label: 'Дублювати', value: 'none' },
-  { id: 'archive', label: 'Архівувати', value: 'none', dangerous: true, permission: 'delete:issue' },
+  // Two actions, because they were always two things. `archive` puts tasks
+  // aside reversibly and forever; `delete` is the tombstone flow with a clock on
+  // it. `archive` used to be the second one wearing the first one's name.
+  { id: 'archive', label: 'Архівувати', value: 'none', permission: 'edit:issue' },
+  { id: 'delete', label: 'Видалити', value: 'none', dangerous: true, permission: 'delete:issue' },
 ]);
 
 export const ISSUE_BULK_ACTION_IDS = Object.freeze(ISSUE_BULK_ACTIONS.map(action => action.id));

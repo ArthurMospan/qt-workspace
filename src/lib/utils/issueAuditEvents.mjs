@@ -66,7 +66,9 @@ const ACTION_FIELDS = Object.freeze({
 const ACTION_TEXT = Object.freeze({
   created: 'Створено завдання',
   imported: 'Завдання імпортовано',
-  restored: 'Завдання відновлено з кошика',
+  restored: 'Завдання відновлено',
+  archived: 'Завдання відправлено в архів',
+  unarchived: 'Завдання повернуто з архіву',
   'legacy-subtasks-migrated': 'Підзавдання перенесено в опис',
 });
 

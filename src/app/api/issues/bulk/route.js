@@ -2,6 +2,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { POST as createIssue } from '../route';
 import { DELETE as deleteIssue } from '../[issueId]/route';
+import { PATCH as archiveIssue } from '../[issueId]/archive/route';
 import { PATCH as transitionIssueStatus } from '../[issueId]/status/route';
 import { deliverBulkNotifications } from '@/lib/server/bulkNotifications';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
@@ -279,6 +280,11 @@ export async function POST(request) {
           return { id: issue.id, createdId: created.id, issueKey: created.issueKey };
         }
         if (actionId === 'archive') {
+          const internal = jsonRequest(new URL(`/api/issues/${encodeURIComponent(issue.id)}/archive`, request.url), request, 'PATCH', { archived: true });
+          await responseResult(await archiveIssue(internal, { params: Promise.resolve({ issueId: issue.id }) }));
+          return { id: issue.id, patch: { archivedAt: new Date() }, archived: true };
+        }
+        if (actionId === 'delete') {
           const internal = jsonRequest(new URL(`/api/issues/${encodeURIComponent(issue.id)}?childPolicy=block`, request.url), request, 'DELETE');
           await responseResult(await deleteIssue(internal, { params: Promise.resolve({ issueId: issue.id }) }));
           return { id: issue.id, softDeleted: true };

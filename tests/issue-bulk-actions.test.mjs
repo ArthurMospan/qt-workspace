@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+  ISSUE_BULK_ACTION_BY_ID,
   ISSUE_BULK_ACTION_IDS,
   MAX_BULK_ISSUES,
   normalizeBulkIssueIds,
@@ -21,8 +22,14 @@ test('bulk action registry is complete and the API remains bounded', () => {
     'priority', 'priority-clear',
     'labels-add', 'labels-remove', 'labels-clear',
     'type', 'deadline', 'deadline-clear', 'estimate', 'estimate-clear',
-    'sprint', 'backlog', 'duplicate', 'archive',
+    'sprint', 'backlog', 'duplicate', 'archive', 'delete',
   ]);
+  // Archiving is reversible and permission-wise an edit; deleting starts a
+  // retention clock and stays with the roles that may delete.
+  assert.equal(ISSUE_BULK_ACTION_BY_ID.get('archive').permission, 'edit:issue');
+  assert.equal(ISSUE_BULK_ACTION_BY_ID.get('archive').dangerous, undefined);
+  assert.equal(ISSUE_BULK_ACTION_BY_ID.get('delete').permission, 'delete:issue');
+  assert.equal(ISSUE_BULK_ACTION_BY_ID.get('delete').dangerous, true);
 });
 
 test('bulk values reject malformed or unbounded inputs', () => {

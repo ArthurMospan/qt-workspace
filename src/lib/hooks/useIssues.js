@@ -14,6 +14,7 @@ import {
   transitionIssueStatusViaApi,
 } from '@/lib/services/issues';
 import { createResponseError, reportLoadError } from '@/lib/utils/errors';
+import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
@@ -52,7 +53,7 @@ async function writeAudit(issueId, {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-export function useIssues(projectId, { includeLinks = true } = {}) {
+export function useIssues(projectId, { includeLinks = true, includeArchived = false } = {}) {
   const {
     activeOrgId, currentUser, authLoading, orgLoading
   } = useAppContext();
@@ -151,7 +152,9 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
       // Sort client-side by order ASC, fallback to createdAt asc
       docs.sort(compareIssues);
       deliveredRef.current = true;
-      setSnapshotIssues(docs);
+      // An archived task is not part of the working set. The task detail asks
+      // for them (`includeArchived`) so that its own link keeps opening it.
+      setSnapshotIssues(includeArchived ? docs : withoutArchivedIssues(docs));
       setError(null);
       setLoading(false);
     }, err => {
@@ -183,7 +186,7 @@ export function useIssues(projectId, { includeLinks = true } = {}) {
     }
 
     return () => { unsub(); unsubLinks(); };
-  }, [projectId, activeOrgId, includeLinks, currentUserId, authLoading, orgLoading]);
+  }, [projectId, activeOrgId, includeLinks, includeArchived, currentUserId, authLoading, orgLoading]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit

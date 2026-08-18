@@ -75,3 +75,34 @@ export async function transitionIssueStatusViaApi({
     'Не вдалося змінити статус задачі',
   );
 }
+
+/**
+ * Puts a task in the archive, or takes it back out. Reversible and with no
+ * clock on it — deletion is the other thing, and it lands in «Нещодавно
+ * видалене» instead. See src/lib/utils/issueArchive.mjs.
+ */
+export async function setIssueArchived(issueId, archived) {
+  return authenticatedRequest(
+    `/api/issues/${encodeURIComponent(issueId)}/archive`,
+    { method: 'PATCH', body: JSON.stringify({ archived }) },
+    'Не вдалося змінити стан архіву завдання',
+  );
+}
+
+/** Deleted tasks that can still be restored (a 24-hour window). */
+export async function fetchDeletedIssues(organizationId) {
+  const result = await authenticatedRequest(
+    `/api/issues/trash?organizationId=${encodeURIComponent(organizationId)}`,
+    { cache: 'no-store' },
+    'Не вдалося прочитати нещодавно видалені завдання',
+  );
+  return result.items || [];
+}
+
+export async function restoreDeletedIssue(issueId, organizationId) {
+  return authenticatedRequest(
+    `/api/issues/${encodeURIComponent(issueId)}/restore`,
+    { method: 'POST', body: JSON.stringify({ organizationId }) },
+    'Не вдалося відновити завдання',
+  );
+}

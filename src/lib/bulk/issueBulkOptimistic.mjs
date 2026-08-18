@@ -47,7 +47,11 @@ export function optimisticBulkPatch(issue, action, value, { statusId = null } = 
       return { sprintId: value };
     case 'backlog':
       return { sprintId: null };
+    // Both actions take the task off the screen it was selected on, so both
+    // paint the same local disappearance. What differs is where it lands:
+    // «Архів» for one, «Нещодавно видалене» for the other.
     case 'archive':
+    case 'delete':
       return { _bulkArchived: true };
     default:
       return null;
