@@ -217,6 +217,19 @@ export default function UnifiedTimeline({
   const positionedIssueRef = useRef(null);
   const [isUnreadMarkerVisible, setIsUnreadMarkerVisible] = useState(false);
   const [unreadDirection, setUnreadDirection] = useState('down');
+  // Waiting for the read cursors is right, and waiting forever is not. They
+  // arrive over the network, and a network that cannot answer — an exhausted
+  // quota, a denied read — must not leave the conversation unplaced, which is
+  // the scroller sitting at the very top of the history. After this the list
+  // lands at its newest message, the way a chat with nothing unread opens.
+  // Held as «which task has waited long enough», so opening another one resets
+  // it during that render rather than through a second state update.
+  const [waitedOutFor, setWaitedOutFor] = useState(null);
+  const cursorWaitIsOver = waitedOutFor === issueId;
+  useEffect(() => {
+    const timer = window.setTimeout(() => setWaitedOutFor(issueId), 2500);
+    return () => window.clearTimeout(timer);
+  }, [issueId]);
 
   const [mentionState, setMentionState] = useState({
     active: false,
@@ -322,7 +335,8 @@ export default function UnifiedTimeline({
   // three subscriptions that finish in three different renders, and a boundary
   // latched off the first of them names the first unread *comment* in a task
   // whose oldest unread item is a change. It waits for all three.
-  const feedSettled = readCursorsLoaded && !commentsLoading && !auditLoading && !timeLogsLoading;
+  const feedSettled = (readCursorsLoaded || cursorWaitIsOver)
+    && !commentsLoading && !auditLoading && !timeLogsLoading;
   const BOUNDARY_NONE = { key: null, count: 0, read: false, dismissed: false };
   const [boundary, setBoundary] = useState({ issueId: null, ...BOUNDARY_NONE });
   if (boundary.issueId !== issueId) {

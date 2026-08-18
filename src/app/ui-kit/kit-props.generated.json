@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 112,
-    "props": 832,
-    "documentedProps": 832,
+    "props": 834,
+    "documentedProps": 834,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1482,6 +1482,13 @@
           "type": "string",
           "values": [],
           "description": "Current query; matches are highlighted in place."
+        },
+        {
+          "name": "seenReplies",
+          "default": "{}",
+          "type": "Record<string, number>",
+          "values": [],
+          "description": "How many replies of each message this reader has seen."
         },
         {
           "name": "typingUsers",
@@ -3620,6 +3627,13 @@
           "type": "string",
           "values": [],
           "description": "Current query; matches are highlighted in the text."
+        },
+        {
+          "name": "seenReplyCount",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "How many of this message's replies this reader has already seen."
         }
       ]
     },

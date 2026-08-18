@@ -63,6 +63,7 @@ function isSameDay(a, b) {
  * @param {(message) => void} props.onPin Pins or unpins it.
  * @param {(message, emoji) => void} props.onReact Adds or removes a reaction.
  * @param {(message) => void} props.onThread Opens its thread.
+ * @param {Record<string, number>} props.seenReplies How many replies of each message this reader has seen.
  * @param {(attachment) => void} props.onOpenAttachment Opens an attachment in the viewer.
  */
 export default function ChatMessageList({
@@ -77,6 +78,7 @@ export default function ChatMessageList({
   onLoadMore,
   typingUsers = [],
   unreadCount = 0,
+  seenReplies = {},
   onJumpToLatest,
   myUid,
   members,
@@ -148,6 +150,7 @@ export default function ChatMessageList({
                     onPin={onPin}
                     onOpenAttachment={onOpenAttachment}
                     searchTerm={searchTerm}
+                    seenReplyCount={seenReplies[msg.id] || 0}
                   />
                 </div>
               );

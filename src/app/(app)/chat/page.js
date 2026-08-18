@@ -524,7 +524,7 @@ export default function ChatPage() {
     hasMoreMessages, loadOlderMessages,
     sendMessage, deleteMessage, editMessage, toggleReaction,
     createChannel, setTyping, openThread, closeThread,
-    sendThreadMessage, markAsRead, deleteReply
+    sendThreadMessage, markThreadRead, markAsRead, deleteReply
   } = useWorkspaceChat(getRoomId(), activeChannel.type, activeChannel.type === 'dm' ? activeChannel.id : null);
 
   const messagesEndRef = useRef(null);
@@ -556,12 +556,17 @@ export default function ChatPage() {
   useEffect(() => {
     const dmUserId = searchParams.get('dm');
     const channelId = searchParams.get('channel');
+    const threadId = searchParams.get('thread');
     if (dmUserId && dmUserId !== myUid) {
       queueMicrotask(() => openChannel({ id: dmUserId, type: 'dm' }));
     } else if (channelId) {
       queueMicrotask(() => openChannel({ id: channelId, type: 'channel' }));
     }
-  }, [myUid, searchParams]);
+    // «Відповів у гілці» has to land in that thread. Opening the channel and
+    // leaving the reader to find the message the reply belongs to is the same
+    // as not telling them.
+    if (threadId) queueMicrotask(() => openThread(threadId));
+  }, [myUid, openThread, searchParams]);
 
   // Presence
   useEffect(() => {
@@ -932,8 +937,53 @@ export default function ChatPage() {
     }
   };
 
+  // A reply in a thread used to be invisible from outside it: nothing was
+  // notified, nothing on the message said it had happened, and the reader had
+  // to already be looking at that thread to know. Somebody answering a question
+  // you asked three messages ago simply never reached you.
+  //
+  // Everyone the thread already belongs to is told: whoever wrote the message,
+  // and whoever has answered it before. That list is read off the replies this
+  // pane already has open, so telling them costs nothing at all.
   const handleSendThread = async (text, attachments) => {
     await sendThreadMessage(text, attachments);
+    const parent = activeThreadParent;
+    if (!parent) return;
+    const followers = [...new Set([
+      parent.senderId,
+      ...threadMessages.map(reply => reply.senderId),
+    ])].filter(userId => userId && userId !== myUid);
+    const mentioned = extractMentionedUserIds(text, mentionMembers, myUid);
+    const link = `/chat?${activeChannel.type === 'dm'
+      ? `dm=${encodeURIComponent(activeChannel.id)}`
+      : `channel=${encodeURIComponent(activeChannel.id)}`}&thread=${encodeURIComponent(activeThreadId)}`;
+
+    // A mention is a stronger thing than a reply, so somebody named in a reply
+    // hears about the mention and not twice about the same message.
+    const replyOnly = followers.filter(userId => !mentioned.includes(userId));
+    const announce = [
+      replyOnly.length && {
+        userIds: replyOnly,
+        type: 'chat_message',
+        title: `${currentUser?.name || 'Колега'} відповів у гілці`,
+        body: text.trim().slice(0, 500) || 'Надіслано вкладення',
+        dedupeKey: `thread_reply_${activeThreadId}_${Date.now()}`,
+      },
+      mentioned.length && {
+        userIds: mentioned,
+        type: 'mentioned',
+        title: `${currentUser?.name || 'Колега'} згадав вас у гілці`,
+        body: text.trim().slice(0, 500),
+        dedupeKey: `thread_mention_${activeThreadId}_${Date.now()}`,
+      },
+    ].filter(Boolean);
+
+    for (const notification of announce) {
+      void sendNotification({ ...notification, link, organizationId: activeOrgId })
+        .catch(notificationError => {
+          console.error('[workspace-chat] Thread notification failed:', notificationError);
+        });
+    }
   };
 
   const handleMainTyping = () => {
@@ -972,10 +1022,27 @@ export default function ChatPage() {
     [activeChannelData, members, myUid, typingNow],
   );
 
+  // What this reader has already seen of each thread in this room, so a message
+  // can say how many of its replies are new rather than only how many it has.
+  const roomId = getRoomId();
+  const seenReplies = useMemo(
+    () => readState[roomId]?.threads || {},
+    [readState, roomId],
+  );
+
   const handleOpenThread = (msgId) => {
     setShowChannelInfo(false);
     openThread(msgId);
   };
+
+  // Opening a thread is reading it, and so is a reply arriving while it is
+  // open — otherwise a pane you are looking at keeps announcing «1 нова».
+  useEffect(() => {
+    if (!activeThreadId || !activeThreadParent) return;
+    const seen = seenReplies[activeThreadId] || 0;
+    const total = Math.max(threadMessages.length, Number(activeThreadParent.replyCount || 0));
+    if (total > seen) void markThreadRead(activeThreadId, total);
+  }, [activeThreadId, activeThreadParent, markThreadRead, seenReplies, threadMessages.length]);
 
   const handleOpenChannelInfo = (tab = 'info') => {
     setChannelInfoTab(tab);
@@ -1273,6 +1340,7 @@ export default function ChatPage() {
               onEdit={handleEditMessage}
               onDelete={handleDeleteMessage}
               onThread={handleOpenThread}
+              seenReplies={seenReplies}
               onPin={handlePin}
               onOpenAttachment={setViewerAttachment}
             />

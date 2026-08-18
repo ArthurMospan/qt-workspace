@@ -115,6 +115,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
         state[data.channelId] = {
           lastReadAt: data.lastReadAt,
           messageCount: Number(data.messageCount || 0),
+          threads: data.threads && typeof data.threads === 'object' ? data.threads : {},
         };
       });
       setReadState(state);
@@ -477,6 +478,28 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       throw e;
     }
   };
+  // What of a thread this reader has already seen, kept on the read-state
+  // document they already have for the channel — so a thread costs no document
+  // and no listener of its own, and «5 відповідей» can say how many of them are
+  // new instead of just how many there are.
+  //
+  // It is deliberately not `messageCount` on the channel: a reply is not a
+  // message in the room, and marking the room unread for it would be cleared by
+  // walking into the room without ever opening the thread. Slack keeps the two
+  // apart for the same reason.
+  const markThreadRead = async (parentMsgId, replyCount) => {
+    if (!currentUser || !activeOrgId || !channelId || !parentMsgId) return;
+    const uid = currentUser.id || currentUser.uid;
+    try {
+      await setDoc(doc(db, 'organizations', activeOrgId, 'readState', `${uid}_${channelId}`), {
+        channelId,
+        userId: uid,
+        threads: { [parentMsgId]: Number(replyCount) || 0 },
+      }, { merge: true });
+    } catch (e) {
+      console.error('Error marking thread as read:', e);
+    }
+  };
   const markAsRead = async cId => {
     if (!currentUser || !activeOrgId || !cId) return;
     const uid = currentUser.id || currentUser.uid;
@@ -543,6 +566,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     openThread,
     closeThread,
     sendThreadMessage,
+    markThreadRead,
     markAsRead,
     deleteReply,
     getUnreadCount

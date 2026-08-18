@@ -336,3 +336,99 @@ test('the chat places itself at the latest message instead of scrolling to it', 
   assert.match(list, /<div ref=\{contentRef\}>/);
   assert.match(page, /observer\.observe\(chatContentRef\.current\)/);
 });
+
+// A reply in a thread used to be invisible from outside that thread: nothing
+// was notified, nothing on the message said it had happened, and the reader had
+// to already be looking at the thread to find out. Somebody answering a question
+// asked three messages ago simply never reached the person who asked it.
+test('a reply in a thread reaches the people the thread belongs to', async () => {
+  const [page, hook, bubble, list] = await Promise.all([
+    readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/hooks/useWorkspaceChat.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/ui/Chat/MessageBubble.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/ui/Chat/ChatMessageList.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  // Whoever wrote the message, and whoever has answered it before — read off
+  // the replies the pane already has open, so telling them costs no read.
+  assert.match(page, /parent\.senderId,\s*\n\s*\.\.\.threadMessages\.map\(reply => reply\.senderId\)/);
+  assert.match(page, /відповів у гілці/);
+  assert.match(page, /згадав вас у гілці/);
+  // A mention is the stronger thing, so nobody is told twice about one reply.
+  assert.match(page, /followers\.filter\(userId => !mentioned\.includes\(userId\)\)/);
+  // And the alert lands in the thread itself, not merely in the channel.
+  assert.match(page, /&thread=\$\{encodeURIComponent\(activeThreadId\)\}/);
+  assert.match(page, /searchParams\.get\('thread'\)/);
+  assert.match(page, /if \(threadId\) queueMicrotask\(\(\) => openThread\(threadId\)\)/);
+
+  // Read state per thread lives on the channel read-state document the reader
+  // already has, so a thread costs no document and no listener of its own —
+  // and it is deliberately not the channel's own unread counter, which walking
+  // into the room would clear without the thread ever being opened.
+  assert.match(hook, /threads: \{ \[parentMsgId\]: Number\(replyCount\) \|\| 0 \}/);
+  assert.doesNotMatch(hook, /markThreadRead[\s\S]{0,400}messageCount: increment/);
+  assert.match(page, /void markThreadRead\(activeThreadId, total\)/);
+
+  // The message says how many of its replies are new, not only how many it has.
+  assert.match(bubble, /const unreadReplies = Math\.max\(0, Number\(msg\.replyCount \|\| 0\) - Number\(seenReplyCount \|\| 0\)\)/);
+  assert.match(bubble, /plural\(unreadReplies, \['нова', 'нові', 'нових'\]\)/);
+  assert.match(bubble, /plural\(msg\.replyCount, \['відповідь', 'відповіді', 'відповідей'\]\)/);
+  assert.match(list, /seenReplyCount=\{seenReplies\[msg\.id\] \|\| 0\}/);
+});
+
+// Editing a message is writing a message. What stood here was a fixed two-line
+// box a long message had to be scrolled inside, and two words of underlined
+// text where the buttons should be.
+test('editing a chat message is a real form, not two underlined words', async () => {
+  const bubble = await readFile(new URL('../src/components/ui/Chat/MessageBubble.jsx', import.meta.url), 'utf8');
+
+  assert.match(bubble, /<Button size="sm" style="primary" onClick=\{commitEdit\} disabled=\{!editChanged\}>/);
+  assert.match(bubble, /<Button size="sm" style="ghost" onClick=\{cancelEdit\}>/);
+  assert.doesNotMatch(bubble, /className="font-semibold text-ink hover:underline">Зберегти/);
+  // Grown from the value, not from a keystroke: opening a long message for
+  // editing is an assignment, and an assignment is not an input event.
+  assert.match(bubble, /\}, \[editing, editText\]\);/);
+  // `scrollHeight` is content plus padding, and the box is `border-box`: without
+  // the border added back the field sits one scroll-step short of its own text.
+  assert.match(bubble, /const border = field\.offsetHeight - field\.clientHeight;/);
+  assert.match(bubble, /field\.style\.height = `\$\{Math\.min\(wanted, 320\)\}px`/);
+  assert.doesNotMatch(bubble, /autoFocus\s*\n\s*className="w-full bg-white border/);
+  // An edit that changes nothing is not an edit; an empty one is a delete asked
+  // for in the wrong place.
+  assert.match(bubble, /editText\.trim\(\)\.length > 0 && editText\.trim\(\) !== \(msg\.text \|\| ''\)\.trim\(\)/);
+});
+
+// The line that says «this is where you stopped reading».
+test('the unread boundary waits for the cursor, and stops repeating itself', async () => {
+  const [timeline, bridge, store] = await Promise.all([
+    readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/IssueReadStateBridge.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/store/useWorkspaceStore.js', import.meta.url), 'utf8'),
+  ]);
+
+  // An empty cursor map means two opposite things — «nothing has been opened»
+  // and «the cursors have not arrived» — and a timeline that cannot tell them
+  // apart reads its whole history as unread and sends the reader to the day the
+  // task was created. That is «9 нових» pointing at the top of a quiet task.
+  assert.match(store, /issueReadStateLoaded: false/);
+  assert.match(bridge, /resetIssueReadState\(\)/);
+  assert.match(timeline, /if \(!myId \|\| !readCursorsLoaded\) return \[\]/);
+  // Three subscriptions settle in three renders; a line latched off the first
+  // of them names the wrong item.
+  assert.match(timeline, /const feedSettled = \(readCursorsLoaded \|\| cursorWaitIsOver\)/);
+  // Waiting for those cursors is right; waiting forever is not. A network that
+  // cannot answer must not leave the conversation unplaced — which is the
+  // scroller sitting at the very top of the task's whole history.
+  assert.match(timeline, /setWaitedOutFor\(issueId\), 2500/);
+  assert.match(timeline, /isActive && feedSettled && !boundary\.key && liveFirstUnreadKey/);
+  // The effect that places the conversation has to watch the line, or the wait
+  // for it never ends and the scroller stays where an unplaced one sits — the
+  // very top.
+  assert.match(timeline, /\}, \[feedSettled, isActive, issueId, sessionBoundary, timeline\.length\]\);/);
+  // The button and the line say the same number, and the button goes once the
+  // line has been read — «1 нове» must not lead to a line reading «3».
+  assert.match(timeline, /\{boundaryCount\} нових/);
+  assert.match(timeline, /sessionBoundary && !boundary\.dismissed && !boundary\.read && !isUnreadMarkerVisible/);
+  // And the line itself is dismissed by pointing at it, once it has been read.
+  assert.match(timeline, /onMouseEnter=\{boundary\.read \? dismissBoundary : undefined\}/);
+});

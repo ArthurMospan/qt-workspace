@@ -20,6 +20,7 @@ import { useConfirm } from '@/components/ui/ConfirmProvider';
 import MessageContent from '@/components/workspace/MessageContent';
 import { ChatAttachmentList } from './ChatAttachmentList';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
+import { plural } from '@/lib/utils/plural.mjs';
 
 // ─── Message Bubble ─────────────────────────────────────────────────────────
 /**
@@ -37,16 +38,19 @@ import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
  * @param {(msg) => void} props.onPin Pins or unpins it.
  * @param {(attachment) => void} props.onOpenAttachment Opens an attachment in the viewer.
  * @param {boolean} props.isThread Inside a thread pane: no thread action, tighter layout.
+ * @param {number} props.seenReplyCount How many of this message's replies this reader has already seen.
  * @param {string} props.searchTerm Current query; matches are highlighted in the text.
  */
 export default function MessageBubble({
   msg, prevMsg, myUid, members, onReact, onEdit, onDelete, onThread,
-  onPin, onOpenAttachment, isThread = false, searchTerm = ''
+  onPin, onOpenAttachment, isThread = false, searchTerm = '', seenReplyCount = 0
 }) {
+  const unreadReplies = Math.max(0, Number(msg.replyCount || 0) - Number(seenReplyCount || 0));
   const [showActions, setShowActions] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(msg.text || '');
+  const editFieldRef = useRef(null);
   const emojiButtonRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const emojiPickerPosition = useFloatingOverlay({
@@ -66,7 +70,36 @@ export default function MessageBubble({
     || ((msg.createdAt?.toMillis?.() ?? 0) - (prevMsg.createdAt?.toMillis?.() ?? 0) > 300000);
 
   const isMe = msg.senderId === myUid;
+  // An edit that changes nothing is not an edit, and an empty one is a delete
+  // asked for in the wrong place; neither may be saved.
+  const editChanged = editText.trim().length > 0 && editText.trim() !== (msg.text || '').trim();
+  const commitEdit = () => {
+    if (!editChanged) return;
+    onEdit(msg.id, editText.trim());
+    setEditing(false);
+  };
+  const cancelEdit = () => {
+    setEditing(false);
+    setEditText(msg.text || '');
+  };
   const senderMember = members?.find(member => (member.id || member.uid) === msg.senderId);
+
+  // The field grows with what is in it, measured from the value rather than
+  // from a keystroke: opening a long message for editing is an assignment, not
+  // an input event, which is exactly how a paragraph ended up in a box two
+  // lines tall that had to be scrolled.
+  useEffect(() => {
+    const field = editFieldRef.current;
+    if (!editing || !field) return;
+    field.style.height = 'auto';
+    // `scrollHeight` is content plus padding; the box is `border-box`, so the
+    // border has to be added back or the field is left one scroll-step short of
+    // its own text — a permanent two-pixel scrollbar in a box that looks full.
+    const border = field.offsetHeight - field.clientHeight;
+    const wanted = field.scrollHeight + border;
+    field.style.height = `${Math.min(wanted, 320)}px`;
+    field.style.overflowY = wanted > 320 ? 'auto' : 'hidden';
+  }, [editing, editText]);
 
   // Close emoji picker on outside click
   useEffect(() => {
@@ -152,22 +185,36 @@ export default function MessageBubble({
         )}
 
         {editing ? (
-          <div className="flex flex-col gap-2 mt-1">
+          // Editing a message is writing a message, so it is the same thing to
+          // do: a field that grows with what is in it and two real buttons.
+          // What stood here was a fixed two-line box that a long message had to
+          // be scrolled inside, and two words of underlined text where the
+          // buttons should be — nothing said which of them was the safe one,
+          // and «Скасувати» sat close enough to «Зберегти» to be hit instead.
+          <div className="mt-1 flex flex-col gap-2">
             <textarea
+              ref={editFieldRef}
               value={editText}
               onChange={e => setEditText(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onEdit(msg.id, editText); setEditing(false); }
-                if (e.key === 'Escape') { setEditing(false); setEditText(msg.text); }
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(); }
+                if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
               }}
               autoFocus
-              className="w-full bg-white border border-ink/20 focus:border-ink rounded-xl p-3 text-[14px] outline-none resize-none transition-colors"
-              rows={2}
+              rows={1}
+              aria-label="Редагувати повідомлення"
+              className="w-full resize-none rounded-xl border border-ink/20 bg-white p-3 text-[14px] leading-relaxed text-ink outline-none transition-colors focus:border-ink"
             />
-            <div className="flex items-center gap-2 text-[12px]">
-              <span className="text-muted">Enter — зберегти, Esc — скасувати</span>
-              <button onClick={() => { onEdit(msg.id, editText); setEditing(false); }} className="font-semibold text-ink hover:underline">Зберегти</button>
-              <button onClick={() => { setEditing(false); setEditText(msg.text); }} className="font-semibold text-muted hover:text-ink">Скасувати</button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" style="primary" onClick={commitEdit} disabled={!editChanged}>
+                Зберегти
+              </Button>
+              <Button size="sm" style="ghost" onClick={cancelEdit}>
+                Скасувати
+              </Button>
+              <span className="text-[11px] text-muted">
+                Enter — зберегти · Shift+Enter — новий рядок · Esc — скасувати
+              </span>
             </div>
           </div>
         ) : (
@@ -206,14 +253,26 @@ export default function MessageBubble({
               </div>
             )}
 
-            {/* Thread reply count */}
+            {/* Thread reply count. A thread with answers nobody here has read
+                says so — «2 нові» — because the old line counted the thread's
+                whole size and therefore looked exactly the same whether the
+                reply had arrived a second ago or a week ago. */}
             {!isThread && msg.replyCount > 0 && (
               <button
                 onClick={() => onThread(msg.id)}
-                className="mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-ink hover:underline transition-colors"
+                className={`mt-1.5 flex items-center gap-1.5 rounded-full px-2 py-0.5 -ml-2 text-[12px] font-semibold transition-colors ${
+                  unreadReplies > 0
+                    ? 'bg-ink text-white hover:bg-[#333]'
+                    : 'text-ink hover:underline'
+                }`}
               >
                 <ChatIcon size={12} />
-                {msg.replyCount} {msg.replyCount === 1 ? 'відповідь' : msg.replyCount < 5 ? 'відповіді' : 'відповідей'}
+                {/* «11 відповідь» and «5 нові» are what counting by hand
+                    produces; the organization's own plural rule is a function. */}
+                {msg.replyCount} {plural(msg.replyCount, ['відповідь', 'відповіді', 'відповідей'])}
+                {unreadReplies > 0 && (
+                  <span>· {unreadReplies} {plural(unreadReplies, ['нова', 'нові', 'нових'])}</span>
+                )}
               </button>
             )}
           </div>

@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 340,
-    "elements": 4209,
+    "elements": 4210,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -93,7 +93,7 @@
     },
     {
       "element": "Button",
-      "location": "src/components/ui/Chat/MessageBubble.jsx:271",
+      "location": "src/components/ui/Chat/MessageBubble.jsx:330",
       "attributes": [
         "title"
       ]
@@ -295,14 +295,14 @@
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:748",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:762",
       "attributes": [
         "label"
       ]
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:768",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:782",
       "attributes": [
         "label"
       ]
