@@ -181,6 +181,11 @@ export default function UnifiedTimeline({
   // Owners and admins may remove a comment that should not stand; editing one
   // stays with its author, because an edited comment still carries their name.
   const canModerateComments = can(orgRole, 'moderate:content');
+  // Writing and editing a comment are open to every role that can work in the
+  // project. Reading that from the matrix rather than assuming it keeps the
+  // matrix honest: an entry nothing consults can say anything and stay true.
+  const canWriteComments = can(orgRole, 'create:comment');
+  const canEditOwnComment = can(orgRole, 'edit:comment');
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirmDialog = useConfirm();
   const project = projects.find(item => item.id === projectId);
@@ -860,7 +865,7 @@ export default function UnifiedTimeline({
                     {!isArchived && (
                       <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-lg:opacity-100">
                         <IconAction label="Відповісти" icon={Reply} size="micro" composition="chat-micro-action" appearance="quiet" shape="micro" onClick={() => beginReply(item)} title="Відповісти" />
-                        {isMe && <IconAction label="Редагувати повідомлення" icon={Pencil} size="micro" composition="chat-micro-action" appearance="quiet" shape="micro" onClick={() => beginEdit(item)} title="Редагувати" />}
+                        {isMe && canEditOwnComment && <IconAction label="Редагувати повідомлення" icon={Pencil} size="micro" composition="chat-micro-action" appearance="quiet" shape="micro" onClick={() => beginEdit(item)} title="Редагувати" />}
                         {(isMe || canModerateComments) && <IconAction label="Видалити повідомлення" icon={Trash2} size="micro" composition="chat-micro-action" appearance="quiet-danger" shape="micro" onClick={() => handleDelete(item, isMe)} title={isMe ? 'Видалити' : 'Видалити як адміністратор'} />}
                       </div>
                     )}
@@ -902,7 +907,7 @@ export default function UnifiedTimeline({
         })}
       </div>
 
-      {!isArchived && (
+      {!isArchived && canWriteComments && (
         <ChatComposerDock ref={wrapperRef} scrollRef={scrollRef} composition="timeline-composer">
           {/* The button and the line are one thing said twice, so they say the
               same number. The button used to count what was *still* unread

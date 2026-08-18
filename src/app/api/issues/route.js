@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
+import { rolesFor } from '@/lib/utils/can';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
   DEFAULT_LABEL_IDS,
@@ -69,7 +70,7 @@ export async function POST(request) {
         code: 'INVALID_SCOPE',
       }, { status: 400 });
     }
-    const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin', 'member']);
+    const authorization = await authorizeOrgRequest(request, organizationId, rolesFor('create:issue'));
     if (authorization.error) {
       return NextResponse.json({
         error: localizedIssueAuthorizationMessage(authorization.error),

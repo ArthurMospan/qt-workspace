@@ -15,6 +15,7 @@ import { MultiSelect } from '@/components/ui/Select';
 import { useConfirm, ChannelRail, Counter, FileInput, FormGroup, IconAction, IssueMentionMenu, Label, MentionMenu, SidebarLayout, Textarea } from '@/components/ui';
 import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
+import { can } from '@/lib/utils/can';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { useWorkspaceChat } from '@/lib/hooks/useWorkspaceChat';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
@@ -532,10 +533,14 @@ export default function ChatPage() {
   const myUid = currentUser?.uid || currentUser?.id;
   const myMemberInfo = members.find(m => (m.id || m.uid) === myUid);
   const myRole = myMemberInfo?.role || 'member';
-  const isAdminOrOwner = myRole === 'owner' || myRole === 'admin';
+  // Through the matrix: `manage:channels` is what creating and deleting a
+  // channel needs, and `moderate:content` is what removing somebody else's
+  // message needs. They happen to hold for the same roles today, and writing
+  // them as one role comparison is how that stops being visible.
+  const isAdminOrOwner = can(myRole, 'manage:channels');
   // Moderation reaches group channels only. A direct room is not readable by an
   // administrator — the rules say so — and so must not be deletable either.
-  const canModerateRoom = isAdminOrOwner && activeChannel.type === 'channel';
+  const canModerateRoom = can(myRole, 'moderate:content') && activeChannel.type === 'channel';
 
   const getRoomId = useCallback(() => {
     if (activeChannel.type === 'channel') return activeChannel.id;

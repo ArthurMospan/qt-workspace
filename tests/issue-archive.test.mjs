@@ -42,9 +42,10 @@ test('the archive state is written by the server, never by the browser', async (
     read('../src/app/api/issues/[issueId]/archive/route.js'),
   ]);
   assert.match(rules, /'archivedAt',\s*\n\s*'archivedBy'/);
-  // Whoever may edit in the project may archive there; scope is re-checked
-  // against the project document the transaction itself read.
-  assert.match(route, /\['owner', 'admin', 'member'\]/);
+  // Whoever may edit in the project may archive there — read from the matrix,
+  // not spelled out again — and the scope is re-checked against the project
+  // document the transaction itself read.
+  assert.match(route, /rolesFor\('edit:issue'\)/);
   assert.match(route, /projectWriteError\(/);
   assert.match(route, /action: archived \? 'archived' : 'unarchived'/);
 });

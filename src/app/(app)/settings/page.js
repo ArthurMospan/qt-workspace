@@ -14,6 +14,7 @@ import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { deleteAccount, fetchAccountDeletionImpact } from '@/lib/services/account';
 import { plural } from '@/lib/utils/plural.mjs';
 import { isActiveMember } from '@/lib/utils/orgMembership.mjs';
+import { can } from '@/lib/utils/can';
 import { archivedIssuesOf } from '@/lib/utils/issueArchive.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
@@ -4085,6 +4086,8 @@ export default function SettingsPage() {
         currentUserId={currentUser?.uid || currentUser?.id}
         isOwner={isOwner}
         isAdmin={isAdmin}
+        canManageRoles={can(orgRole, 'manage:member_roles')}
+        canTransferOwnership={can(orgRole, 'transfer:ownership')}
         onClose={() => setMemberSettingsId(null)}
         onRoleChange={handleRoleChange}
         onPositionChange={handlePositionChange}

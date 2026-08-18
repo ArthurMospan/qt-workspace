@@ -13,8 +13,9 @@ export const PERMISSIONS = {
   'delete:project': ['owner', 'admin'],
   'edit:project_settings': ['owner', 'admin'],
 
-  // Board Configuration
-  'edit:board_columns': ['owner', 'admin'],
+  // Board configuration is not a permission of its own: the columns live in
+  // project settings, behind `edit:project_settings`, and the entry that used to
+  // sit here was a second name for the same gate that nothing ever called.
 
   // Sprints
   'manage:sprints': ['owner', 'admin'], // Створення/старт/завершення спринтів
@@ -58,6 +59,14 @@ export const PERMISSIONS = {
   'moderate:content': ['owner', 'admin'],       // Прибрати чужий коментар або повідомлення
   'manage:channels': ['owner', 'admin'],        // Створити/видалити канал
 };
+
+/**
+ * The roles an action is open to, for server routes that take an allow-list.
+ * A route spelling its own list out is the drift this file exists to prevent.
+ */
+export function rolesFor(action) {
+  return PERMISSIONS[action] || [];
+}
 
 /**
  * Checks if the given role is authorized to perform the action.

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
+import { rolesFor } from '@/lib/utils/can';
 
 // Archiving and un-archiving a task. Reversible, with no clock on it — the
 // tombstone flow behind DELETE is the other thing, and the two are deliberately
@@ -43,7 +44,7 @@ export async function PATCH(request, context) {
     const authorization = await authorizeOrgRequest(
       request,
       issue.organizationId,
-      ['owner', 'admin', 'member'],
+      rolesFor('edit:issue'),
     );
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });

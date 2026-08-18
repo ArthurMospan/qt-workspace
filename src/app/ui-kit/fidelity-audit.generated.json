@@ -456,7 +456,7 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/chat/page.js:377",
+      "location": "src/app/(app)/chat/page.js:378",
       "tag": "div",
       "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },
@@ -481,22 +481,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:423",
+      "location": "src/app/(app)/settings/page.js:424",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:443",
+      "location": "src/app/(app)/settings/page.js:444",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:487",
+      "location": "src/app/(app)/settings/page.js:488",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:606",
+      "location": "src/app/(app)/settings/page.js:607",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -666,7 +666,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:950",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:955",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

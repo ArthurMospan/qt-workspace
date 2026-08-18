@@ -48,7 +48,7 @@ test('an administrator may change a role, and only the owner seat is off limits'
   assert.doesNotMatch(route, /Only the owner can change member roles/);
   assert.match(route, /action === 'role' && membership\.role === 'owner'/);
   assert.match(route, /memberId === authorization\.user\.uid/);
-  assert.match(dialog, /canChangeRole = isAdmin && !isMe && member\.role !== 'owner'/);
+  assert.match(dialog, /canChangeRole = canManageRoles && !isMe && member\.role !== 'owner'/);
 });
 
 test('the confirmation says what is taken away and what stays', async () => {
@@ -107,4 +107,35 @@ test('the one-time migration is explicit, dry-run by default and idempotent', as
   assert.match(migration, /--confirm-writes-frozen/);
   assert.match(migration, /FieldValue\.arrayRemove/);
   assert.match(migration, /hourlyRate: FieldValue\.delete\(\)/);
+});
+
+test('every permission in the matrix is read by something', async () => {
+  const { PERMISSIONS } = await import('../src/lib/utils/can.js');
+  const sources = await Promise.all([
+    'src/app/(app)/settings/page.js',
+    'src/app/(app)/analytics/page.js',
+    'src/app/(app)/chat/page.js',
+    'src/app/(app)/page.js',
+    'src/app/(app)/my/page.js',
+    'src/app/(app)/sprints/page.js',
+    'src/app/(app)/[projectId]/ProjectBoardClient.jsx',
+    'src/components/MobileNav.jsx',
+    'src/components/WorkspaceSidebar.jsx',
+    'src/components/WorkspaceCommandPalette.jsx',
+    'src/components/workspace/IssueDetail.jsx',
+    'src/components/workspace/QtPlusProjectTab.jsx',
+    'src/components/workspace/UnifiedTimeline.jsx',
+    'src/lib/bulk/issueBulkActions.mjs',
+    'src/app/api/issues/bulk/route.js',
+    'src/app/api/organizations/[organizationId]/members/[memberId]/route.js',
+    'src/app/api/issues/route.js',
+    'src/app/api/issues/[issueId]/archive/route.js',
+  ].map(path => read(`../${path}`)));
+  const corpus = sources.join('\n');
+
+  // A permission nothing reads is a claim nothing tests: it can say anything at
+  // all and stay true, which is exactly how `manage:finance` came to document a
+  // restriction the product did not have.
+  const unused = Object.keys(PERMISSIONS).filter(permission => !corpus.includes(`'${permission}'`));
+  assert.deepEqual(unused, []);
 });

@@ -64,7 +64,11 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
       const uid = currentUser?.id || currentUser?.uid;
       const result = await inviteMember(email.trim().toLowerCase(), uid, role);
       setSent(true);
-      if (result.type === 'added_directly') {
+      if (result.type === 'reactivated') {
+        // Not a pending invitation: the seat was archived and has just been
+        // handed back, with the role, position and projects it had.
+        showToast('Доступ повернено — людина знову в команді', 'success');
+      } else if (result.type === 'added_directly') {
         showToast('Учасника додано до команди', 'success');
       } else if (result.emailSent === false) {
         // The invitation exists and works — it is accepted automatically on the

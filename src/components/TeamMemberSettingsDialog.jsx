@@ -19,6 +19,8 @@ export default function TeamMemberSettingsDialog({
   currentUserId,
   isOwner,
   isAdmin,
+  canManageRoles = isAdmin,
+  canTransferOwnership = isOwner,
   onClose,
   onRoleChange,
   onPositionChange,
@@ -35,7 +37,7 @@ export default function TeamMemberSettingsDialog({
   // A deactivated seat has no membership document to write to, so its role and
   // position are frozen until the access comes back carrying them.
   const isDeactivated = !isActiveMember(member);
-  const canChangeRole = isAdmin && !isMe && member.role !== 'owner' && !isDeactivated;
+  const canChangeRole = canManageRoles && !isMe && member.role !== 'owner' && !isDeactivated;
   const roleHint = member.role === 'owner'
     ? 'Роль власника фіксована'
     : isDeactivated ? 'Спершу поверніть доступ'
@@ -74,7 +76,7 @@ export default function TeamMemberSettingsDialog({
               />
             ))}
           </div>
-          {isOwner && !isMe && member.role !== 'owner' && (
+          {canTransferOwnership && !isMe && member.role !== 'owner' && (
             <Button
               style="secondary"
               size="md"
