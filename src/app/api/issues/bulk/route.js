@@ -26,7 +26,6 @@ import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
-import { sprintCoversProject } from '@/lib/utils/sprintScope.mjs';
 import { can } from '@/lib/utils/can';
 import { DEFAULT_ORGANIZATION_TIME_ZONE, zonedDateTimeToUtcMs } from '@/lib/utils/timeZone.mjs';
 
@@ -255,8 +254,6 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Спринт не належить організації або вже завершений' }, { status: 400 });
       }
     }
-    // Per-issue scope is checked inside the loop below, because a selection can
-    // span projects and only some of them may be in the sprint's scope.
 
     const results = await inChunks(issues, async issue => {
       try {
@@ -266,9 +263,6 @@ export async function POST(request) {
         const project = projects.get(issue.projectId);
         const accessError = projectAccessError(project, organizationId, authorization);
         if (accessError) throw new Error(accessError);
-        if (sprint && !sprintCoversProject(sprint, issue.projectId)) {
-          throw new Error(`Спринт «${sprint.name}» не охоплює проєкт «${project.name || project.id}»`);
-        }
 
         if (actionId === 'duplicate') {
           const internal = jsonRequest(new URL('/api/issues', request.url), request, 'POST', {

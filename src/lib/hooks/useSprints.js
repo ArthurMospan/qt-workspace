@@ -4,10 +4,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import {
-  conflictingActiveSprint,
-  isOrganizationSprint,
-} from '@/lib/utils/sprintScope.mjs';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { reportLoadError } from '@/lib/utils/errors';
@@ -60,16 +56,9 @@ export function useSprints() {
     let sprintNumber = 1;
     while (usedNumbers.has(sprintNumber)) sprintNumber += 1;
     const name = data.name || `Спринт ${sprintNumber}`;
-    // An empty scope is the whole organization — the shape every sprint written
-    // before project scope existed already has. See sprintScope.mjs.
-    const projectIds = [...new Set(
-      (Array.isArray(data.projectIds) ? data.projectIds : [])
-        .filter(id => typeof id === 'string' && id.trim()),
-    )].slice(0, 50);
     await addDoc(collection(db, 'sprints'), {
       organizationId: activeOrgId,
       name,
-      projectIds,
       goal: data.goal || '',
       startDate: data.startDate || null,
       endDate: data.endDate || null,
@@ -99,19 +88,12 @@ export function useSprints() {
     }
     await deleteDoc(doc(db, 'sprints', sprintId));
   }, [activeOrgId]);
+  // How many sprints run at once is the team's business, not the product's.
+  // Two in parallel for two teams, one per project, one for everything — all of
+  // them are just a set of tasks with a name and dates, and a sprint holds
+  // tasks from any projects. There used to be a guard here refusing to start a
+  // second one; it enforced a way of working nobody asked for.
   const startSprint = useCallback(async sprintId => {
-    // Several sprints may run at once — that is the point of scoping them to
-    // projects. Two of them may not claim the same project, because inside one
-    // project «зараз у роботі» has to name one sprint.
-    const sprint = sprints.find(item => item.id === sprintId);
-    const conflict = conflictingActiveSprint(sprints, sprint);
-    if (conflict) {
-      throw new Error(
-        isOrganizationSprint(conflict) || isOrganizationSprint(sprint)
-          ? `Спринт «${conflict.name}» уже активний і охоплює всі проєкти — завершіть його або звузьте до конкретних проєктів`
-          : `Спринт «${conflict.name}» уже активний у тих самих проєктах`,
-      );
-    }
     const batch = writeBatch(db);
     batch.update(doc(db, 'sprints', sprintId), {
       status: 'active',
@@ -119,7 +101,7 @@ export function useSprints() {
       updatedAt: serverTimestamp()
     });
     await batch.commit();
-  }, [sprints]);
+  }, []);
   const completeSprint = useCallback(async (sprintId, moveToSprintId = null) => {
     if (!activeOrgId) return;
     if (moveToSprintId) {
