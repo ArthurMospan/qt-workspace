@@ -465,8 +465,16 @@ test('high-risk composed previews keep the product markup signatures', () => {
   // Both records render the same timer. The calendar used to carry a
   // byte-identical copy of it, down to the 1px nudge that centres the play
   // triangle, so the two could drift without anything noticing.
-  for (const source of [issueDetail, calendarEvent]) {
-    assert.match(source, /<TimeTrackingControl/, 'the timer comes from the kit on both records');
+  //
+  // They reach it through LiveTimeTracking, which is the only reader of the
+  // store's one-second tick on either screen: reading `timerElapsed` in a
+  // record's own body re-renders the whole record once a second for as long as
+  // a timer runs.
+  const liveTimeTracking = readFileSync(new URL('../src/components/workspace/LiveTimeTracking.jsx', import.meta.url), 'utf8');
+  assert.match(liveTimeTracking, /<TimeTrackingControl/, 'the timer comes from the kit');
+  for (const [name, source] of Object.entries({ IssueDetail: issueDetail, CalendarEventPage: calendarEvent })) {
+    assert.match(source, /<LiveTimeTracking/, `${name} renders the shared timer`);
+    assert.doesNotMatch(source, /state\.timerElapsed|s\.timerElapsed/, `${name} must not subscribe to the tick itself`);
   }
   assert.doesNotMatch(
     calendarEvent,

@@ -177,7 +177,7 @@ export default function Dialog({
 
         {/* Footer */}
         {footer && (
-          <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-line bg-canvas px-5 py-4 sm:px-6">
+          <div className="ui-dialog-footer flex shrink-0 flex-wrap justify-end gap-3 border-t border-line bg-canvas px-5 py-4 sm:px-6">
             {footer}
           </div>
         )}

@@ -9,11 +9,11 @@
   },
   "totals": {
     "componentsWithVariants": 45,
-    "declaredValues": 375,
+    "declaredValues": 376,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 230,
+    "usedAndPreviewed": 231,
     "usedWithoutPreview": 0,
     "declaredUnused": 111
   },
@@ -1238,6 +1238,9 @@
       "variant": [
         "raised",
         "underline"
+      ],
+      "composition": [
+        "pane-switch"
       ]
     },
     "Label": {
@@ -1338,6 +1341,7 @@
     "Skeleton.width": "*[data-ui-skeleton-width]",
     "Skeleton.tone": "*[data-ui-skeleton-tone]",
     "Segmented.composition": ".ui-segmented[data-ui-composition]",
+    "Tabs.composition": ".ui-tabs[data-ui-composition]",
     "ChatComposerDock.composition": ".chat-composer-dock[data-ui-composition]"
   },
   "usage": {
@@ -1450,6 +1454,7 @@
     "IconAction.appearance.auth-close": 1,
     "IconAction.shape.circle": 7,
     "Dialog.bodyPadding.flush": 5,
+    "Tabs.composition.pane-switch": 2,
     "SelectableChip.shape.person": 1,
     "UserAvatar.size.xs": 9,
     "SelectableChip.shape.label": 1,
@@ -1914,6 +1919,7 @@
     "Surface.preset.nested-panel",
     "Surface.preset.panel",
     "Surface.preset.popover",
+    "Tabs.composition.pane-switch",
     "Tabs.variant.raised",
     "Tabs.variant.underline",
     "Tag.size.default",

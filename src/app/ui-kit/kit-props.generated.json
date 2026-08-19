@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 113,
-    "props": 841,
-    "documentedProps": 841,
+    "props": 842,
+    "documentedProps": 842,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5434,6 +5434,15 @@
           "type": "string",
           "values": [],
           "description": "Placement in the parent only."
+        },
+        {
+          "name": "composition",
+          "default": "",
+          "type": "string",
+          "values": [
+            "pane-switch"
+          ],
+          "description": "Named size contract for a specific place, resolved in globals.css."
         },
         {
           "name": "onTabChange",

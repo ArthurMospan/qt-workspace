@@ -56,9 +56,35 @@ function OptionIdentity({ option, size = 14 }) {
   );
 }
 
+// One slot for whatever mark leads an option, 14px wide — the width of the
+// lucide icon a type or a category option already draws.
+//
+// Without it each kind of mark set the text behind it: a 14px icon put the
+// label at 34px from the edge of the control, a 16px priority halo at 36px, and
+// an 8px status dot at 28px. Three stacked fields — Тип, Пріоритет, Статус —
+// therefore started their values at three different places, which is what makes
+// «Беклог» look pushed out of line with the two fields above it. The marks keep
+// their own sizes; they are just centred in a slot of one width.
+const MARK_SLOT = 'flex h-[14px] w-[14px] shrink-0 items-center justify-center';
+
+function OptionMark({ color }) {
+  if (!color) return null;
+  return (
+    <span aria-hidden="true" className={MARK_SLOT}>
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+    </span>
+  );
+}
+
 function OptionPriority({ option }) {
-  if (!option?.priorityMark) return null;
-  return <PriorityIcon priority={option.priorityMark} />;
+  // «Без пріоритету» draws no mark at all, and an empty slot would still take
+  // its 14px plus the row's gap — so the slot exists only when the mark does.
+  if (!option?.priorityMark || option.priorityMark.isNoPriority) return null;
+  return (
+    <span className={MARK_SLOT}>
+      <PriorityIcon priority={option.priorityMark} />
+    </span>
+  );
 }
 
 function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
@@ -270,9 +296,7 @@ export function Select({
       >
         <div className={`flex items-center overflow-hidden ${compact ? 'gap-1' : 'gap-[8px]'}`}>
           {ResolvedTriggerIcon && <ResolvedTriggerIcon size={14} className="text-muted shrink-0" />}
-          {selectedOption?.dotColor && (
-            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedOption.dotColor }} />
-          )}
+          <OptionMark color={selectedOption?.dotColor} />
           <OptionPriority option={selectedOption} />
           <OptionIdentity option={selectedOption} />
           {selectedOption?.icon && (
@@ -318,9 +342,7 @@ export function Select({
                 className={`w-full flex items-center justify-between px-[12px] h-[36px] text-[13px] transition-colors text-left ${index === activeIndex ? 'bg-canvas' : ''} ${value === opt.value ? 'bg-canvas font-bold' : 'font-medium'}`}
               >
                 <div className="flex items-center gap-[8px]">
-                  {opt.dotColor && (
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
-                  )}
+                  <OptionMark color={opt.dotColor} />
                   <OptionPriority option={opt} />
                   <OptionIdentity option={opt} />
                   {opt.icon && (
@@ -583,9 +605,7 @@ export function MultiSelect({
                     <div className={`w-[16px] h-[16px] rounded-[4px] border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-ink border-ink' : 'border-[#d9d9d9] bg-white'}`}>
                       {isSelected && <Check size={12} className="text-white" />}
                     </div>
-                    {opt.dotColor && (
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.dotColor }} />
-                    )}
+                    <OptionMark color={opt.dotColor} />
                     <OptionPriority option={opt} />
                     <OptionIdentity option={opt} />
                     {opt.icon && (

@@ -154,7 +154,10 @@ const SOURCES = {
     surface: { literal: ['canvas', 'surface'] },
   },
   FormGroup: { gap: { literal: ['sm', 'md'] } },
-  Tabs: { variant: { literal: ['raised', 'underline'] } },
+  Tabs: {
+    variant: { literal: ['raised', 'underline'] },
+    composition: { css: ['.ui-tabs', 'data-ui-composition'] },
+  },
   Label: { context: { literal: ['field', 'inline'] } },
   // PageHeader declares no variants: `alt` was removed with the unreachable
   // portal route that was its only caller, leaving one layout and no choice.

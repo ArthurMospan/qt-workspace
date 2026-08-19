@@ -31,8 +31,13 @@ export default function MetaTrigger({ label, user, name, className = '', ...prop
       {...props}
     >
       <span>{label}</span>
-      <UserAvatar user={user} size="xs" />
-      <span className="font-semibold text-ink">{name}</span>
+      {/* The face and the name are one part, so the hover capsule can start at
+          the face on a phone and leave the label flush with the title above it.
+          The chrome for both widths is in globals.css. */}
+      <span data-ui-part="identity">
+        <UserAvatar user={user} size="xs" />
+        <span className="font-semibold text-ink">{name}</span>
+      </span>
     </button>
   );
 }

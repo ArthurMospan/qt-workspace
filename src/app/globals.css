@@ -549,6 +549,34 @@
   .ui-segmented[data-ui-composition='dialog-tabs'] > button {
     flex: 1;
   }
+  /* A tab strip as wide as the sheet it sits in, rather than as wide as its own
+     labels: the pane switch above a task, and the mode switch at the top of the
+     new-task sheet. On a phone that strip is the whole navigation of the screen,
+     so the tabs divide the width between them instead of huddling into the left
+     third of it. */
+  .ui-tabs[data-ui-composition='pane-switch'] {
+    width: 100%;
+  }
+  .ui-tabs[data-ui-composition='pane-switch'] > [role='tab'] {
+    flex: 1;
+    min-width: 0;
+  }
+  /* A dialog's actions are a row that ends at the right edge, which is a row
+     built for a cursor: on a phone it leaves two 90px targets in the corner and
+     a wrapped switch above them. Below md the same actions become a stack of
+     full-width rows, the primary one closest to the thumb because it is last in
+     the markup. Nothing here is per-dialog — every sheet in the product draws
+     its footer through this one element. */
+  @media (max-width: 767px) {
+    .ui-dialog-footer {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .ui-dialog-footer > * {
+      width: 100%;
+      margin-right: 0;
+    }
+  }
   .ui-native-control[data-ui-control='identity-meta-trigger'] {
     display: flex;
     align-items: center;
@@ -559,6 +587,36 @@
   }
   .ui-native-control[data-ui-control='identity-meta-trigger']:hover {
     background: #f0f0f0;
+  }
+  /* Above the phone the whole row is the capsule, label included, and the 6px
+     it is inset by is invisible against a wide column. On a phone that inset is
+     the first thing under the title, and the metadata line starts six pixels to
+     the right of the heading it belongs to. So below md the capsule starts at
+     the face instead: the label sits flush with the title, and the part that
+     lights up is the part that opens a person. `display: contents` above it
+     keeps the wider layout byte-for-byte what it was. */
+  .ui-native-control[data-ui-control='identity-meta-trigger'] > [data-ui-part='identity'] {
+    display: contents;
+  }
+  @media (max-width: 767px) {
+    .ui-native-control[data-ui-control='identity-meta-trigger'] {
+      padding-left: 0;
+    }
+    .ui-native-control[data-ui-control='identity-meta-trigger']:hover {
+      background: transparent;
+    }
+    .ui-native-control[data-ui-control='identity-meta-trigger'] > [data-ui-part='identity'] {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 6px;
+      padding: 2px 6px;
+      margin-block: -2px;
+      transition: background-color 150ms;
+    }
+    .ui-native-control[data-ui-control='identity-meta-trigger']:hover > [data-ui-part='identity'] {
+      background: #f0f0f0;
+    }
   }
   .ui-native-control[data-ui-control='choice-card'] {
     display: flex;

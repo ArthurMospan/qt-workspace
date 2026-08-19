@@ -316,7 +316,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             ]}
             activeTab={mode}
             onTabChange={setMode}
-            className="w-full [&>button]:flex-1"
+            composition="pane-switch"
           />
         </div>
 

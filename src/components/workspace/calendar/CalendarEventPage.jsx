@@ -39,6 +39,7 @@ import {
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import LiveTimeTracking from '@/components/workspace/LiveTimeTracking';
 import {
   AttributeTrigger,
   Button,
@@ -59,7 +60,6 @@ import {
   TaskAttributesPanel,
   Textarea,
   TimeLogRow,
-  TimeTrackingControl,
   TitleInput,
   ToggleSwitch,
   useConfirm,
@@ -339,10 +339,8 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
   } = useCalendarEvents();
   const showToast = useWorkspaceStore(state => state.showToast);
   const activeTimer = useWorkspaceStore(state => state.activeTimer);
-  const timerElapsed = useWorkspaceStore(state => state.timerElapsed);
   const startTimer = useWorkspaceStore(state => state.startTimer);
   const stopTimer = useWorkspaceStore(state => state.stopTimer);
-  const formatElapsed = useWorkspaceStore(state => state.formatElapsed);
   const currentUserId = currentUser?.uid || currentUser?.id || '';
   const event = useMemo(
     () => findCalendarEvent(events, eventId, occurrenceStartAt),
@@ -1180,15 +1178,16 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                       {/* The same control the task page renders. This screen
                           had its own byte-identical copy of it, right down to
                           the 1px nudge on the play triangle. */}
-                      <TimeTrackingControl
+                      <LiveTimeTracking
                         running={isTimerMine}
+                        spentMinutes={totalMinutes}
+                        restingLabel={formatMinutes(totalMinutes)}
                         disabled={!canTrackTime}
                         onToggle={handleTimerToggle}
                         onOpen={() => {
                           setTimerMinutes(0);
                           setTimePanelOpen(true);
                         }}
-                        spentLabel={isTimerMine ? formatElapsed((totalMinutes * 60) + timerElapsed) : formatMinutes(totalMinutes)}
                       />
                     </div>
                     )}

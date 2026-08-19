@@ -44,6 +44,7 @@ const SHAPES = {
  * @param {string} props.activeTab Id of the selected tab.
  * @param {(id: string) => void} props.onTabChange Fires with the newly selected tab id.
  * @param {'raised'|'underline'} props.variant Which of the two strips to draw.
+ * @param {string} props.composition Named size contract for a specific place, resolved in globals.css.
  * @param {string} props.className Placement in the parent only.
  */
 export default function Tabs({
@@ -51,6 +52,7 @@ export default function Tabs({
   activeTab,
   onTabChange,
   variant   = 'raised',
+  composition,
   className = '',
 }) {
   const shape = SHAPES[variant] ?? SHAPES.raised;
@@ -86,7 +88,8 @@ export default function Tabs({
       role="tablist"
       aria-label="Перемикач вкладок"
       onKeyDown={handleKeyDown}
-      className={`${shape.strip} ${className}`}
+      data-ui-composition={composition}
+      className={`ui-tabs ${shape.strip} ${className}`}
     >
       {tabs.map(tab => {
         const Icon   = tab.icon;

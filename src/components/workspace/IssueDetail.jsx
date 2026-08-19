@@ -23,7 +23,7 @@ import UnifiedTimeline from '@/components/workspace/UnifiedTimeline';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import AttachmentRow from '@/components/ui/TaskManagement/AttachmentRow';
 import TimeLogRow from '@/components/ui/TaskManagement/TimeLogRow';
-import TimeTrackingControl from '@/components/ui/TaskManagement/TimeTrackingControl';
+import LiveTimeTracking from '@/components/workspace/LiveTimeTracking';
 import MetaTrigger from '@/components/ui/DataDisplay/MetaTrigger';
 import IssueLinkRow from '@/components/ui/TaskManagement/IssueLinkRow';
 import DescriptionPlaceholder from '@/components/ui/TaskManagement/DescriptionPlaceholder';
@@ -31,6 +31,7 @@ import TitleInput from '@/components/ui/Forms/TitleInput';
 import TextAction from '@/components/ui/TextAction';
 import { getMatFileUrl } from '@/lib/utils/issueAttachments.mjs';
 import { useLocalization } from '@/lib/hooks/useLocalization';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import {
   fromDateInput,
   isDueDateOverdue,
@@ -164,6 +165,32 @@ async function copyIssueUrl(path, showToast) {
   }
 }
 
+// ── The metadata line under the title ──────────────────────────────
+// «Автор … створили … оновили …» rides in the sticky box with the title, so on
+// a phone it holds two of the twelve lines the screen has for as long as you
+// read — to say three things that do not change while you read them.
+//
+// Below md it folds shut the moment the column leaves the top, on the same flag
+// the attribute strip condenses on, and unfolds when you come back to it. The
+// fold is a one-row grid going from `1fr` to `0fr`, so nothing has to know the
+// height of a line that wraps to two on a narrow screen; `inert` takes the
+// author's menu out of reach while it is shut, since a fold is not a hide.
+//
+// Above md there is no wrapper at all — the strip is returned as it was.
+function TitleMeta({ collapsible, folded, children }) {
+  if (!collapsible) return children;
+  return (
+    <div
+      inert={folded}
+      className={`grid transition-[grid-template-rows,opacity] duration-200 ${
+        folded ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'
+      }`}
+    >
+      <div className="overflow-hidden">{children}</div>
+    </div>
+  );
+}
+
 // ── Circular ring progress ─────────────────────────────────────────
 function Ring({ pct, color, size = 36, stroke = 3.5 }) {
   const r    = (size - stroke * 2) / 2;
@@ -255,9 +282,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const setBreadcrumbs = useWorkspaceStore(s => s.setBreadcrumbs);
   const startTimer     = useWorkspaceStore(s => s.startTimer);
   const stopTimer      = useWorkspaceStore(s => s.stopTimer);
+  // `timerElapsed` is deliberately not among these. The store ticks it once a
+  // second while a timer runs, and a screen that reads it in its own body
+  // re-renders whole once a second — this one is two thousand lines of screen.
+  // LiveTimeTracking reads it instead, so the tick reaches the clock and stops.
   const activeTimer    = useWorkspaceStore(s => s.activeTimer);
-  const timerElapsed   = useWorkspaceStore(s => s.timerElapsed);
-  const formatElapsed  = useWorkspaceStore(s => s.formatElapsed);
 
   const teamUids = Array.isArray(project?.team) ? project.team : [];
   // Resolve author/assignee names from ALL organization members, not just the
@@ -360,6 +389,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const [viewerMat,    setViewerMat]    = useState(null); // lightbox
   const [uploadingAttach, setUploadingAttach] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
+  // Which layout is on screen, resolved in JS: the metadata line folds only on
+  // a phone, and a media query cannot tell a component to render less.
+  const isMobile = useIsMobile();
   const TIME_LOGS_PER_PAGE = 5;
 
   // ── Edit mode state ───────────────────────────────────────────────
@@ -1282,7 +1314,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
           // stepper cannot express without the tabs changing width under you.
           <div className="page-gutter shrink-0 overflow-x-auto hide-scrollbar bg-white pb-1 pt-2 lg:hidden">
             <Tabs
-              className="w-max"
+              composition="pane-switch"
               tabs={[
                 { id: 'task', label: 'Завдання', icon: TaskIcon },
                 { id: 'chat', label: 'Чат', icon: MessageCircle, count: unreadTaskChatCount },
@@ -1365,97 +1397,99 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             )}
 
             {/* Metadata strip for non-editable details */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted font-medium mt-1.5">
-              {/* A member's name opens the two things you can do with a person,
-                  so it opens the product's menu — the same panel, rows and icons
-                  the kebab beside the title drops. An external author has no
-                  profile and no chat, so that one stays an explanation. */}
-              {isExternalReporter ? (
-                <Popover
-                  position="bottom"
-                  align="start"
-                  gap={4}
-                  hideCloseIcon
-                  hideArrow
-                  minWidth="200px"
-                  padding="default"
-                  triggerClassName="inline-flex"
-                  trigger={(
-                    <MetaTrigger label="Автор:" user={reporter} name={reporter.name} />
-                  )}
-                >
-                  <div className="w-[260px]">
-                    <p className="text-[13px] font-bold text-ink">Зовнішній автор</p>
-                    <p className="mt-1 text-[12px] leading-relaxed text-muted">{externalReporterSource}</p>
-                    <p className="mt-2 text-[11px] leading-relaxed text-faint">
-                      Це не учасник організації, тому профіль та особистий чат недоступні.
-                    </p>
-                    {youTrackSourceUrl && (
-                      <a
-                        href={youTrackSourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-ink hover:underline"
-                      >
-                        Відкрити в YouTrack <ExternalLink size={11} />
-                      </a>
+            <TitleMeta collapsible={isMobile === true} folded={isHeaderScrolled}>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted font-medium mt-1.5">
+                {/* A member's name opens the two things you can do with a person,
+                    so it opens the product's menu — the same panel, rows and icons
+                    the kebab beside the title drops. An external author has no
+                    profile and no chat, so that one stays an explanation. */}
+                {isExternalReporter ? (
+                  <Popover
+                    position="bottom"
+                    align="start"
+                    gap={4}
+                    hideCloseIcon
+                    hideArrow
+                    minWidth="200px"
+                    padding="default"
+                    triggerClassName="inline-flex"
+                    trigger={(
+                      <MetaTrigger label="Автор:" user={reporter} name={reporter.name} />
                     )}
-                  </div>
-                </Popover>
-              ) : (
-                <ContextMenu
-                  align="start"
-                  dropdownClassName="w-[210px]"
-                  trigger={(
-                    <MetaTrigger label="Автор:" user={reporter} name={reporter.name} />
-                  )}
-                  items={[
-                    {
-                      label: 'Переглянути профіль',
-                      icon: User,
-                      onClick: () => {
-                        const params = new URLSearchParams(searchParams.toString());
-                        params.set('member', reporterMember.id || reporterMember.uid);
-                        router.push(`${pathname}?${params.toString()}`);
+                  >
+                    <div className="w-[260px]">
+                      <p className="text-[13px] font-bold text-ink">Зовнішній автор</p>
+                      <p className="mt-1 text-[12px] leading-relaxed text-muted">{externalReporterSource}</p>
+                      <p className="mt-2 text-[11px] leading-relaxed text-faint">
+                        Це не учасник організації, тому профіль та особистий чат недоступні.
+                      </p>
+                      {youTrackSourceUrl && (
+                        <a
+                          href={youTrackSourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-ink hover:underline"
+                        >
+                          Відкрити в YouTrack <ExternalLink size={11} />
+                        </a>
+                      )}
+                    </div>
+                  </Popover>
+                ) : (
+                  <ContextMenu
+                    align="start"
+                    dropdownClassName="w-[210px]"
+                    trigger={(
+                      <MetaTrigger label="Автор:" user={reporter} name={reporter.name} />
+                    )}
+                    items={[
+                      {
+                        label: 'Переглянути профіль',
+                        icon: User,
+                        onClick: () => {
+                          const params = new URLSearchParams(searchParams.toString());
+                          params.set('member', reporterMember.id || reporterMember.uid);
+                          router.push(`${pathname}?${params.toString()}`);
+                        },
                       },
-                    },
-                    {
-                      label: 'Написати в чат',
-                      icon: MessageCircle,
-                      onClick: () => router.push(`/chat?dm=${encodeURIComponent(reporterMember.id || reporterMember.uid)}`),
-                    },
-                  ]}
-                />
-              )}
-              <span className="w-[3px] h-[3px] rounded-full bg-faint" />
+                      {
+                        label: 'Написати в чат',
+                        icon: MessageCircle,
+                        onClick: () => router.push(`/chat?dm=${encodeURIComponent(reporterMember.id || reporterMember.uid)}`),
+                      },
+                    ]}
+                  />
+                )}
+                <span className="w-[3px] h-[3px] rounded-full bg-faint" />
               
-              {/* Created relative time */}
-              <Tooltip
-                content={`Створено: ${issue.createdAt?.toDate ? issue.createdAt.toDate().toLocaleString('uk-UA') : issue.createdAt ? new Date(issue.createdAt).toLocaleString('uk-UA') : '—'}`}
-                position="bottom"
-              >
-                <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-faint transition-colors">
-                  <span>створили</span>
-                  <span className="text-ink font-semibold">{timeAgo(issue.createdAt)}</span>
-                </div>
-              </Tooltip>
-              <span className="w-[3px] h-[3px] rounded-full bg-faint" />
-              <Tooltip
-                content={`Оновлено: ${(issue.updatedAt || issue.createdAt)?.toDate ? (issue.updatedAt || issue.createdAt).toDate().toLocaleString('uk-UA') : (issue.updatedAt || issue.createdAt) ? new Date(issue.updatedAt || issue.createdAt).toLocaleString('uk-UA') : '—'}`}
-                position="bottom"
-              >
-                <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-faint transition-colors">
-                  <span>оновили</span>
-                  <span className="text-ink font-semibold">{timeAgo(issue.updatedAt || issue.createdAt)}</span>
-                </div>
-              </Tooltip>
-              {isOverdue && (
-                <>
-                  <span className="w-[3px] h-[3px] rounded-full bg-faint" />
-                  <Pill tone="danger" size="sm">Прострочено</Pill>
-                </>
-              )}
-            </div>
+                {/* Created relative time */}
+                <Tooltip
+                  content={`Створено: ${issue.createdAt?.toDate ? issue.createdAt.toDate().toLocaleString('uk-UA') : issue.createdAt ? new Date(issue.createdAt).toLocaleString('uk-UA') : '—'}`}
+                  position="bottom"
+                >
+                  <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-faint transition-colors">
+                    <span>створили</span>
+                    <span className="text-ink font-semibold">{timeAgo(issue.createdAt)}</span>
+                  </div>
+                </Tooltip>
+                <span className="w-[3px] h-[3px] rounded-full bg-faint" />
+                <Tooltip
+                  content={`Оновлено: ${(issue.updatedAt || issue.createdAt)?.toDate ? (issue.updatedAt || issue.createdAt).toDate().toLocaleString('uk-UA') : (issue.updatedAt || issue.createdAt) ? new Date(issue.updatedAt || issue.createdAt).toLocaleString('uk-UA') : '—'}`}
+                  position="bottom"
+                >
+                  <div className="flex items-center gap-1 cursor-help border-b border-dashed border-transparent hover:border-faint transition-colors">
+                    <span>оновили</span>
+                    <span className="text-ink font-semibold">{timeAgo(issue.updatedAt || issue.createdAt)}</span>
+                  </div>
+                </Tooltip>
+                {isOverdue && (
+                  <>
+                    <span className="w-[3px] h-[3px] rounded-full bg-faint" />
+                    <Pill tone="danger" size="sm">Прострочено</Pill>
+                  </>
+                )}
+              </div>
+            </TitleMeta>
           </div>
           <div className="hidden shrink-0 items-center gap-2 pt-1 sm:flex">
             {headerActions}
@@ -1559,15 +1593,16 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     })}
                   >
                     <span className={attributeLabelClass}><span className="sm:hidden">Час</span><span className="max-sm:hidden">Трекінг часу</span></span>
-                    <TimeTrackingControl
+                    <LiveTimeTracking
                       running={isTimerMine}
+                      spentMinutes={spentMin}
+                      restingLabel={fmtMin(spentMin)}
                       disabled={isArchived}
                       onToggle={handleTimerToggle}
                       onOpen={() => {
                         setLogForm({ minutes: 0, estim: estimMin || 0, desc: '' });
                         setLogTab('spend');
                       }}
-                      spentLabel={isTimerMine ? formatElapsed((spentMin * 60) + timerElapsed) : fmtMin(spentMin)}
                       estimateLabel={estimMin > 0 ? fmtMin(estimMin) : null}
                     />
                   </div>
