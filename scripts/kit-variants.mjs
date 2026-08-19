@@ -160,6 +160,7 @@ const SOURCES = {
   ChatComposerDock: { composition: { css: ['.chat-composer-dock', 'data-ui-composition'] } },
   TaskAttributesPanel: { context: { literal: ['calendar', 'task'] } },
   SidebarLayout: { context: { map: ['Layout/SidebarLayout.jsx', 'CONTEXTS'] } },
+  MobilePaneBack: { context: { map: ['Navigation/MobilePaneBack.jsx', 'CONTEXTS'] } },
   DetailLayout: { context: { map: ['Layout/DetailLayout.jsx', 'CONTEXTS'] } },
   DetailSection: { density: { map: ['Layout/DetailSection.jsx', 'DENSITIES'] } },
   // Progress is `neutral` by default because most progress means nothing beyond

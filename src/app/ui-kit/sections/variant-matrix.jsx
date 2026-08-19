@@ -7,6 +7,7 @@ import { Select, MultiSelect } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
 import { AttributeTrigger, DetailSection, Meter, FormGroup, IconAction, Label, Pill, Tag, Counter, ToggleSwitch, Alert, LoadingSpinner, Skeleton, EmptyState, Popover, Card, Segmented, UserAvatar, ChatComposerCore, MarkdownViewer, SelectableChip, ResponseChoice, CalendarEntry, CalendarDayNumber, CalendarDayCell, ColorSwatch, ListRow, Tabs, FileThumb } from '@/components/ui';
 import MentionMenu from '@/components/ui/Chat/MentionMenu';
+import MobilePaneBack from '@/components/ui/Navigation/MobilePaneBack';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
 import TextAction from '@/components/ui/TextAction';
 import kitUsage from '../kit-usage.generated.json';
@@ -135,6 +136,15 @@ const VARIANT_BASE = {
     <div className="w-full max-w-[240px]">
       <MentionMenu members={KIT_MENTION_MEMBERS.slice(0, 2)} onSelect={() => {}} {...props} />
     </div>
+  ),
+  // `pane` hides itself at md and up, which is every width this catalogue is
+  // read at — so the cell would be empty, and an empty cell reads as a broken
+  // preview rather than as the point being made. Forced visible here, with the
+  // words under it saying which of the two is on screen.
+  MobilePaneBack: (props) => (
+    <span className="[&_button]:!block">
+      <MobilePaneBack label="Назад" onClick={() => {}} {...props} />
+    </span>
   ),
 };
 

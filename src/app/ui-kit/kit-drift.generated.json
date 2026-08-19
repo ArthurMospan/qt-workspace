@@ -8,12 +8,12 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 44,
-    "declaredValues": 370,
+    "componentsWithVariants": 45,
+    "declaredValues": 372,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 227,
+    "usedAndPreviewed": 229,
     "usedWithoutPreview": 0,
     "declaredUnused": 109
   },
@@ -1260,6 +1260,12 @@
         "team"
       ]
     },
+    "MobilePaneBack": {
+      "context": [
+        "level",
+        "pane"
+      ]
+    },
     "DetailLayout": {
       "context": [
         "event",
@@ -1337,9 +1343,9 @@
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
-    "Button.style.ghost": 84,
+    "Button.style.ghost": 82,
     "Button.size.icon-sm": 21,
-    "Button.size.sm": 54,
+    "Button.size.sm": 52,
     "Button.size.icon": 23,
     "Surface.preset.panel": 10,
     "Surface.padding.lg": 5,
@@ -1382,6 +1388,8 @@
     "Select.filterRole.date": 1,
     "Select.filterRole.sort": 1,
     "EmptyState.context.page": 4,
+    "MobilePaneBack.context.level": 1,
+    "MobilePaneBack.context.pane": 1,
     "Input.composition.inline-edit": 1,
     "IconAction.appearance.primary": 2,
     "IconAction.size.compact": 3,
@@ -1764,6 +1772,8 @@
     "Meter.tone.danger",
     "Meter.tone.neutral",
     "Meter.tone.warning",
+    "MobilePaneBack.context.level",
+    "MobilePaneBack.context.pane",
     "MultiSelect.filterRole.date",
     "MultiSelect.filterRole.member",
     "MultiSelect.filterRole.priority",

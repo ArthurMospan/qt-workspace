@@ -32,7 +32,7 @@ import {
   User, Bell, Shield, Zap, Users, GitBranch,
   Shapes, Check, Plus, Trash2, Edit2, X, Save,
   Building, LogOut, Download, RefreshCw, Mail,
-  Copy, ExternalLink, ChevronRight, ArrowLeft, AlertTriangle,
+  Copy, ExternalLink, ChevronRight, AlertTriangle,
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock,
@@ -217,25 +217,35 @@ function Row({ label, desc, children, danger = false }) {
   );
 }
 
-// The one way back on a phone, published to every Section on the screen rather
-// than threaded through fifteen call sites. It always means "one level up":
-// out of an integration, out of a migration source, and otherwise out of the
-// section entirely — see `mobileBack` below. A screen shows at most one.
+// The one way back, published to every Section on the screen rather than
+// threaded through fifteen call sites. It always means "one level up": out of
+// an integration, out of a migration source, and otherwise out of the section
+// entirely — see `mobileBack` below. A screen shows at most one.
+//
+// A section that has a level above it inside the screen passes `backLabel`, and
+// its arrow stays on a desk too, because the level is there at every width.
+// Without one the arrow is the way out of the pane, which only a phone has.
 const SectionBackContext = createContext(null);
 
-function Section({ title, desc, backAction, rightAction, children }) {
+function Section({ title, desc, backLabel, rightAction, children }) {
   const mobileBack = useContext(SectionBackContext);
   return (
     <div className="flex flex-col">
-      {/* Desktop keeps the labelled way back: there are no panes there, so
-          «Усі інтеграції» is the only thing that says where the arrow goes.
-          On a phone the arrow beside the title replaces it — two stacked back
-          buttons pointing at different places was the bug. */}
-      {backAction && <div className="mb-3 hidden items-center md:flex">{backAction}</div>}
+      {/* One control, one place, at every width.
+          A desk used to get a labelled ghost button on its own line above the
+          title — «← Усі інтеграції» — and a phone got the arrow beside the
+          title. Two shapes for one action, and the labelled one cost a row of
+          the screen to say what the title says already. The arrow is it now;
+          where it goes is still spoken, as its accessible name. */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-start gap-[10px]">
           {mobileBack && (
-            <MobilePaneBack onClick={mobileBack} label="Назад" className="mt-[2px]" />
+            <MobilePaneBack
+              onClick={mobileBack}
+              label={backLabel || 'Назад'}
+              context={backLabel ? 'level' : 'pane'}
+              className="mt-[2px]"
+            />
           )}
           <div className="min-w-0 flex-1">
             <h2 className="ui-type-detail-title text-ink tracking-tight">{title}</h2>
@@ -3083,7 +3093,7 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'migration': {
-        // The same header shape as «Інтеграції» below: the way back lives above
+        // The same header shape as «Інтеграції» below: the way back lives beside
         // the title, not inside the body, and the title names where you are.
         const migrationSource = MIGRATION_SOURCE_TITLES[migrationProvider] || '';
         return (
@@ -3092,11 +3102,7 @@ export default function SettingsPage() {
             desc={migrationProvider
               ? 'Що переноситься, як зіставляються люди й що буде пропущено'
               : 'Перенесіть робочі проєкти та історію команди у QuickTeam'}
-            backAction={migrationProvider ? (
-              <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setMigrationProvider('')}>
-                Усі джерела
-              </Button>
-            ) : null}
+            backLabel={migrationProvider ? 'Усі джерела' : ''}
           >
             <DataMigrationSettings
               organizationId={activeOrgId}
@@ -3205,11 +3211,7 @@ export default function SettingsPage() {
           <Section
             title={integrationTitle}
             desc="Опис, стан і налаштування інтеграції"
-            backAction={(
-              <Button style="ghost" size="sm" icon={ArrowLeft} onClick={() => setIntegrationDetail('')}>
-                Усі інтеграції
-              </Button>
-            )}
+            backLabel="Усі інтеграції"
             rightAction={saveButton}
           >
 

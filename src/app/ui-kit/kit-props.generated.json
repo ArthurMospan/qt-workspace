@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 113,
-    "props": 839,
-    "documentedProps": 839,
+    "props": 840,
+    "documentedProps": 840,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3759,7 +3759,7 @@
     },
     "MobilePaneBack": {
       "file": "src/components/ui/Navigation/MobilePaneBack.jsx",
-      "summary": "The way back to the list on a phone.",
+      "summary": "The way back, as an arrow beside the title. `context` decides whether it is the way out of a pane — which only a phone has — or a step inside a screen, which every width has.",
       "props": [
         {
           "name": "className",
@@ -3767,6 +3767,16 @@
           "type": "string",
           "values": [],
           "description": "Placement in the parent only."
+        },
+        {
+          "name": "context",
+          "default": "'pane'",
+          "type": "'pane'|'level'",
+          "values": [
+            "level",
+            "pane"
+          ],
+          "description": "Out of a single pane (phone only), or one step up inside a screen (every width)."
         },
         {
           "name": "label",

@@ -216,15 +216,23 @@ export default function NavMenuSection() {
       </PreviewBlock>
 
       <PreviewBlock
-        title="Вихід із панелі на мобільному"
+        title="Шлях назад — стрілка в заголовку"
         component="MobilePaneBack"
-        description="SidebarLayout показує нижче md лише одну панель, тож та панель мусить пропонувати шлях назад. Стрілка стоїть у заголовку — рядок із підписом коштував телефону цілий рядок і, гірше, дублювався: розділ налаштувань зі своїм «Усі інтеграції» малював дві кнопки назад одна над одною. Підпис лишився як доступна назва й підказка. Тут control видно завжди — у продукті він ховається на md і вище, де обидві панелі й так на екрані."
+        description="Один control замість двох. context=&quot;pane&quot; — вихід із панелі: SidebarLayout нижче md показує лише одну панель, тож видима мусить пропонувати вихід, а на md і вище стрілка ховається, бо обидві панелі й так на екрані. context=&quot;level&quot; — крок усередині екрана («Інтеграції» → одна інтеграція, «Перенесення даних» → одне джерело); такий крок є на будь-якій ширині, тож стрілка лишається і на десктопі. Раніше level малювався кнопкою з підписом над заголовком на десктопі й стрілкою на телефоні — одна дія у двох формах. Підпис нікуди не подівся: він доступна назва й підказка. Перший рядок тут показано примусово, бо pane сам себе ховає на цій ширині."
         filePath="src/components/ui/Navigation/MobilePaneBack.jsx"
       >
-        <div className="flex items-center gap-4 rounded-[12px] bg-white p-[16px] [&_button]:!flex">
-          <MobilePaneBack label="До списку команди" onClick={() => {}} />
-          <MobilePaneBack label="Всі налаштування" onClick={() => {}} />
-          <MobilePaneBack label="До списку чатів" onClick={() => {}} />
+        <div className="flex flex-col gap-[12px]">
+          <div className="flex items-center gap-4 rounded-[12px] bg-white p-[16px] [&_button]:!flex">
+            <span className="font-mono text-[10px] font-bold text-faint">pane</span>
+            <MobilePaneBack label="До списку команди" onClick={() => {}} />
+            <MobilePaneBack label="Всі налаштування" onClick={() => {}} />
+            <MobilePaneBack label="До списку чатів" onClick={() => {}} />
+          </div>
+          <div className="flex items-center gap-4 rounded-[12px] bg-white p-[16px]">
+            <span className="font-mono text-[10px] font-bold text-faint">level</span>
+            <MobilePaneBack context="level" label="Усі інтеграції" onClick={() => {}} />
+            <MobilePaneBack context="level" label="Усі джерела" onClick={() => {}} />
+          </div>
         </div>
       </PreviewBlock>
     </div>

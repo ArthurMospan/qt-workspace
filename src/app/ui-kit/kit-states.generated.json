@@ -744,7 +744,8 @@
       "variant-matrix"
     ],
     "MobilePaneBack": [
-      "inner-nav-layout"
+      "inner-nav-layout",
+      "variant-matrix"
     ],
     "MultiSelect": [
       "selects",
