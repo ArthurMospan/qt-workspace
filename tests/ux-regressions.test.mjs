@@ -207,8 +207,9 @@ test('the planning board reads like the boards it borrows from', async () => {
   // be handed only its own column, so a subtask dropped into a sprint could not
   // find its parent there and fell back to the words «Батьківське завдання»
   // where the key belongs.
-  // Once for the card in «Без спринта», once for the row inside a sprint.
-  assert.equal(sprints.match(/allIssues=\{issues\}/g)?.length, 2);
+  // Once for the card in «Без спринта», once for the row inside a sprint, once
+  // for the row in the dialog that puts an existing task into a sprint.
+  assert.equal(sprints.match(/allIssues=\{issues\}/g)?.length, 3);
   assert.doesNotMatch(sprints, /issues=\{issueList\}/);
   // Both also say what blocks a task, so the two views of one list agree.
   assert.match(sprints, /<TaskRow[\s\S]{0,400}?issueLinks=\{issueLinks\}/);

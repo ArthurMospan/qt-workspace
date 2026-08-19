@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 234,
-    "parsedFiles": 234,
+    "productFiles": 236,
+    "parsedFiles": 236,
     "parseErrors": 0,
     "nativeControls": 19,
     "structures": {
@@ -501,19 +501,19 @@
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:652",
-      "tag": "div",
-      "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
-    },
-    {
-      "location": "src/app/(app)/sprints/page.js:831",
+      "location": "src/app/(app)/sprints/page.js:1016",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:845",
+      "location": "src/app/(app)/sprints/page.js:1030",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
+    },
+    {
+      "location": "src/app/(app)/sprints/page.js:837",
+      "tag": "div",
+      "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
       "location": "src/components/AudioTaskPanel.jsx:200",
@@ -581,7 +581,7 @@
       "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
     },
     {
-      "location": "src/components/workspace/AgileBoard.jsx:622",
+      "location": "src/components/workspace/AgileBoard.jsx:470",
       "tag": "div",
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },

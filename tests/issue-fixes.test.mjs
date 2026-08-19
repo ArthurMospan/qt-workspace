@@ -85,10 +85,11 @@ test('QUI-74 gives sprint backlog cards the canonical Kanban card width', async 
 
   // The sprint rows keep the board's inset; a phone gets a tighter one, because
   // 16px of gutter on each side of a 390px screen is a sixth of the card.
-  assert.match(
-    source,
-    /isBacklogCol \? 'px-\[8px\]' : 'px-2 sm:px-4'/,
-  );
+  // «Без спринта» owns its own scroller now — it is the one list long enough to
+  // need virtualizing — so the two insets are declared where each list is built
+  // rather than chosen by a flag inside one shared renderer.
+  assert.match(source, /const listClass = '[^']*px-\[8px\][^']*'/);
+  assert.match(source, /className="flex min-h-\[60px\] flex-col px-2 pb-4 pt-1 sm:px-4"/);
   // 82vw was the board's *peek*: a column that shows a slice of the next one so
   // you know to swipe. Below lg the sprints page has no next column — «Без
   // спринта» is stacked under the sprints — so the peek was 18% of the screen
@@ -336,5 +337,5 @@ test('QUI-67 and QUI-87 keep the sprint task column responsive and fixed on desk
   assert.match(backlogSurface[1], /w-full/);
   assert.match(backlogSurface[1], /lg:w-\[280px\]/);
   assert.doesNotMatch(backlogSurface[1], /(?:lg|xl|2xl):w-\[[\d.]+%\]/);
-  assert.match(source, /isBacklogCol \? 'px-\[8px\]' : 'px-2 sm:px-4'/);
+  assert.match(source, /const listClass = '[^']*px-\[8px\][^']*'/);
 });

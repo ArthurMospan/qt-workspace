@@ -11,6 +11,7 @@ import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import IssueCard from '@/components/workspace/IssueCard';
+import VirtualDroppableColumn from '@/components/workspace/VirtualDroppableColumn';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
@@ -23,7 +24,7 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import {
   Plus, Play, Check, Trash2, Edit2, Calendar,
   ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
-  AlertCircle, CheckSquare, Filter, MoreVertical
+  AlertCircle, CheckSquare, Filter, MoreVertical, ListPlus, Search
 } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
@@ -46,6 +47,8 @@ import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
 import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
 import { nextSectionExpansion } from '@/lib/utils/sectionExpansion.mjs';
+import { COLUMN_VIRTUALIZATION_THRESHOLD } from '@/lib/utils/boardRendering.mjs';
+import { sprintCandidateIssues } from '@/lib/utils/sprintPlanning.mjs';
 
 function SprintEditModal({ sprint, onClose, onSave }) {
   const [name, setName] = useState(sprint.name || '');
@@ -212,6 +215,122 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
   );
 }
 
+// Планування без перетягування. Картку з беклогу у спринт тягнуть мишею — на
+// телефоні цього жесту немає взагалі (два списки стоять один під одним, і
+// довге натискання конкурує зі скролом), а на чотирьохстах завданнях він
+// повільний і на десктопі. Тому «+» у шапці спринта питає, що саме додати, і
+// другий варіант відкриває цей діалог. Дія одна для обох ширин: інакше в
+// продукті було б два різні способи зробити те саме.
+function AddExistingIssuesDialog({
+  sprint,
+  issues,
+  sprints,
+  members,
+  labels,
+  issueLinks,
+  projects,
+  closedStatusIds,
+  onClose,
+  onAdd,
+}) {
+  const [query, setQuery] = useState('');
+  const [picked, setPicked] = useState([]);
+  const [saving, setSaving] = useState(false);
+
+  const offered = sprintCandidateIssues(issues, {
+    sprintId: sprint.id,
+    query,
+    closedStatusIds,
+    pickedIds: picked,
+  });
+
+  const toggle = (issueId) => setPicked(current => (
+    current.includes(issueId)
+      ? current.filter(item => item !== issueId)
+      : [...current, issueId]
+  ));
+
+  return (
+    <Dialog
+      isOpen
+      onClose={onClose}
+      title="Додати існуюче завдання"
+      description={sprint.name}
+      size="lg"
+      footer={
+        <>
+          <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
+          <Button
+            style="primary"
+            size="md"
+            disabled={picked.length === 0 || saving}
+            loading={saving}
+            onClick={async () => {
+              setSaving(true);
+              try {
+                await onAdd(picked);
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            {picked.length > 0 ? `Додати (${picked.length})` : 'Додати'}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col">
+        {/* Поле лишається на місці, поки список під ним їде. Воно накриває
+            власний верхній відступ діалогу — тому йому нікуди зсуватись, і
+            між ним та першим рядком не зʼявляється щілина. */}
+        <div className="sticky top-0 z-10 -mx-5 -mt-5 bg-white px-5 pb-3 pt-5 sm:-mx-6 sm:px-6">
+          <Input
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            icon={Search}
+            placeholder="Пошук за назвою або номером"
+            aria-label="Пошук завдання"
+          />
+        </div>
+
+        {offered.length === 0 ? (
+          <p className="py-8 text-center text-[12px] text-faint">
+            {query.trim()
+              ? 'За цим запитом нічого не знайдено'
+              : 'Усі завдання вже розкладені по спринтах'}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-[8px]">
+            {offered.map(issue => (
+              <TaskRow
+                key={issue.id}
+                issue={issue}
+                allIssues={issues}
+                issueLinks={issueLinks}
+                members={members}
+                labels={labels}
+                sprints={sprints}
+                projectId={issue.projectId}
+                projectName={projects.find(project => project.id === issue.projectId)?.name || ''}
+                showProjectName
+                selected={picked.includes(issue.id)}
+                selectionActive
+                onSelect={toggle}
+              />
+            ))}
+          </div>
+        )}
+
+        {!query.trim() && offered.length > 0 && (
+          <p className="pt-3 text-center text-[11px] text-faint">
+            Показані останні незаплановані завдання. Решту знайдете пошуком — за номером або назвою.
+          </p>
+        )}
+      </div>
+    </Dialog>
+  );
+}
+
 export default function GlobalSprintsPage() {
   const router = useRouter();
   const { currentUser, projects, activeOrgId, orgRole } = useAppContext();
@@ -235,6 +354,8 @@ export default function GlobalSprintsPage() {
   // Який спринт відкрив діалог створення — «Додати завдання» у шапці спринта
   // одразу підставляє його, а «+» над беклогом лишає порожнім.
   const [createTaskSprintId, setCreateTaskSprintId] = useState(null);
+  // Спринт, для якого відкрито вибір уже наявних завдань.
+  const [addExistingSprint, setAddExistingSprint] = useState(null);
   const [showCreateSprintModal, setShowCreateSprintModal] = useState(false);
   const [showCompleteSprintModal, setShowCompleteSprintModal] = useState(null); // sprint object
   const [editingSprint, setEditingSprint] = useState(null);
@@ -328,6 +449,28 @@ export default function GlobalSprintsPage() {
       revertPatch([issueId]);
       console.error(err);
       showToast('Не вдалося перемістити завдання — відновлено попередній стан', 'error');
+    }
+  };
+
+  // Той самий контракт, що й у drop: оптимістичне накладення першим, запис
+  // другим, відкат при помилці.
+  const handleAddExistingIssues = async (sprintId, issueIds) => {
+    if (!issueIds.length) return;
+    applyPatch(Object.fromEntries(issueIds.map(id => [id, { sprintId }])));
+    setAddExistingSprint(null);
+
+    try {
+      await Promise.all(issueIds.map(id => updateDoc(doc(db, 'issues', id), {
+        sprintId,
+        updatedAt: serverTimestamp(),
+      })));
+      showToast(issueIds.length === 1
+        ? 'Завдання додано до спринта'
+        : `Додано ${issueIds.length} ${plural(issueIds.length, ['завдання', 'завдання', 'завдань'])} до спринта`);
+    } catch (err) {
+      revertPatch(issueIds);
+      console.error(err);
+      showToast('Не вдалося додати завдання — відновлено попередній стан', 'error');
     }
   };
 
@@ -462,43 +605,18 @@ export default function GlobalSprintsPage() {
     return sortDir === 'asc' ? <ChevronUp size={11} className="inline ml-1" /> : <ChevronDown size={11} className="inline ml-1" />;
   };
 
-  const renderIssueTable = (issueList, droppableId, isBacklogCol = false) => {
+  const renderIssueTable = (issueList, droppableId) => {
     const sorted = getSortedIssues(issueList);
     return (
       <Droppable droppableId={droppableId} isDropDisabled={selectionActive}>
         {(provided, snapshot) => (
-          <div 
-            className={`flex min-h-[60px] flex-col pb-4 pt-1 ${isBacklogCol ? 'px-[8px]' : 'px-2 sm:px-4'}`}
-            ref={provided.innerRef} 
+          <div
+            className="flex min-h-[60px] flex-col px-2 pb-4 pt-1 sm:px-4"
+            ref={provided.innerRef}
             {...provided.droppableProps}
           >
             {sorted.map((issue, index) => {
               const pName = projects.find(p => p.id === issue.projectId)?.name || '';
-              if (isBacklogCol) {
-                return (
-                  <IssueCard
-                    key={issue.id}
-                    className="mb-[8px]"
-                    issue={issue}
-                    // Every task on the page, not this one column: the parent a
-                    // subtask hangs under is usually in another sprint, and a
-                    // card handed only its own list cannot find it — the key
-                    // slot then falls back to the words «Батьківське завдання».
-                    allIssues={issues}
-                    sprints={sprints}
-                    members={members}
-                    labels={labels}
-                    index={index}
-                    projectId={issue.projectId}
-                    projectName={pName}
-                    showProjectName
-                    issueLinks={issueLinks}
-                    selected={activeSelectedIssueIds.has(issue.id)}
-                    selectionActive={selectionActive}
-                    onSelect={toggleIssueSelection}
-                  />
-                );
-              }
               return (
                 <Draggable key={issue.id} draggableId={issue.id} index={index} isDragDisabled={selectionActive}>
                   {(draggableProvided, draggableSnapshot) => (
@@ -536,9 +654,76 @@ export default function GlobalSprintsPage() {
             })}
             {issueList.length === 0 && (
               <div className="py-8 text-center text-[12px] text-faint">
-                {isBacklogCol
-                  ? 'Завдань без спринта не знайдено'
-                  : 'У цьому спринті ще немає задач — додайте їх кнопкою «+» у шапці спринта або перетягніть зі списку «Без спринта»'}
+                У цьому спринті ще немає задач — додайте їх кнопкою «+» у шапці спринта або перетягніть зі списку «Без спринта»
+              </div>
+            )}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    );
+  };
+
+  const renderBacklogCard = (issue, index, virtualProps = {}) => (
+    <IssueCard
+      key={issue.id}
+      className="mb-[8px]"
+      issue={issue}
+      // Every task on the page, not this one column: the parent a subtask
+      // hangs under is usually in another sprint, and a card handed only its
+      // own list cannot find it — the key slot then falls back to the words
+      // «Батьківське завдання».
+      allIssues={issues}
+      sprints={sprints}
+      members={members}
+      labels={labels}
+      index={index}
+      projectId={issue.projectId}
+      projectName={projects.find(project => project.id === issue.projectId)?.name || ''}
+      showProjectName
+      issueLinks={issueLinks}
+      selected={activeSelectedIssueIds.has(issue.id)}
+      selectionActive={selectionActive}
+      onSelect={toggleIssueSelection}
+      {...virtualProps}
+    />
+  );
+
+  // «Без спринта» — та сама довга колонка, що й на дошці, тільки тут вона
+  // збирає беклог усієї організації: чотири сотні карток монтувались разом, і
+  // кожна з них ще й перебирала весь список у пошуках батька та підзавдань.
+  // Механізм узятий з дошки без змін — у DOM живе лише вікно завширшки з
+  // екран, а завдання всі до одного лишаються і в скролі, і в drag-моделі.
+  // Скролером тепер є сам Droppable: вимірювати вікно може тільки той, хто
+  // ним володіє.
+  const renderBacklogList = () => {
+    const sorted = getSortedIssues(backlogIssues);
+    const listClass = 'flex-1 overflow-y-auto hide-scrollbar px-[8px] pb-4 pt-1';
+
+    if (sorted.length > COLUMN_VIRTUALIZATION_THRESHOLD) {
+      return (
+        <VirtualDroppableColumn
+          dropId="backlog"
+          issues={sorted}
+          isDropDisabled={selectionActive}
+          className={listClass}
+          renderCard={renderBacklogCard}
+        />
+      );
+    }
+
+    return (
+      <Droppable droppableId="backlog" isDropDisabled={selectionActive}>
+        {provided => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`${listClass} flex min-h-[60px] flex-col`}
+          >
+            {sorted.map((issue, index) => renderBacklogCard(issue, index))}
+            {sorted.length === 0 && (
+              <div className="py-8 text-center text-[12px] text-faint">
+                Завдань без спринта не знайдено
               </div>
             )}
             {provided.placeholder}
@@ -928,9 +1113,7 @@ export default function GlobalSprintsPage() {
                       />
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto hide-scrollbar">
-                    {renderIssueTable(backlogIssues, 'backlog', true)}
-                  </div>
+                  {renderBacklogList()}
                 </Surface>
               )}
 
@@ -979,6 +1162,22 @@ export default function GlobalSprintsPage() {
               showToast('Помилка оновлення спринта');
             }
           }}
+        />
+      )}
+
+      {/* Add Existing Issues Dialog */}
+      {addExistingSprint && (
+        <AddExistingIssuesDialog
+          sprint={addExistingSprint}
+          issues={issues}
+          sprints={sprints}
+          members={members}
+          labels={labels}
+          issueLinks={issueLinks}
+          projects={projects}
+          closedStatusIds={closedStatusIds}
+          onClose={() => setAddExistingSprint(null)}
+          onAdd={issueIds => handleAddExistingIssues(addExistingSprint.id, issueIds)}
         />
       )}
 
