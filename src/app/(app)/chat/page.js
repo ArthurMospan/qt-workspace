@@ -810,7 +810,7 @@ export default function ChatPage() {
         avatar: m.avatar,
         isActive: activeDMSet.has(id),
         statusEmoji: m.statusEmoji,
-        status: m.status,
+        statusText: m.statusText,
         unreadCount: Math.max(
           unreadDMNotifications.get(id) || 0,
           channelUnreadCount(
@@ -848,7 +848,7 @@ export default function ChatPage() {
         id: u.id,
         name: u.name,
         avatar: u.avatar,
-        status: u.status,
+        statusText: u.statusText,
         statusEmoji: u.statusEmoji,
       })), [dms]);
   useEffect(() => {
@@ -1298,7 +1298,7 @@ export default function ChatPage() {
                     user: { name: u.name, avatar: u.avatar },
                     online: u.online,
                     statusEmoji: u.statusEmoji,
-                    status: u.status,
+                    statusText: u.statusText,
                     unreadCount: u.unreadCount,
                   })),
               },
@@ -1329,7 +1329,7 @@ export default function ChatPage() {
                 })()
                 : (activeChannelData?.description || currentChannel?.description || '')}
               statusEmoji={activeChannel.type === 'dm' ? dms.find(d => d.id === activeChannel.id)?.statusEmoji : null}
-              statusTitle={dms.find(d => d.id === activeChannel.id)?.status}
+              statusTitle={dms.find(d => d.id === activeChannel.id)?.statusText}
               user={dms.find(d => d.id === activeChannel.id)}
               online={Boolean(dms.find(d => d.id === activeChannel.id)?.online)}
               pinnedCount={activeChannel.type === 'channel' ? messages.filter(m => m.isPinned).length : 0}

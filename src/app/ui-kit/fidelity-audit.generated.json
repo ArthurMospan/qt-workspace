@@ -8,20 +8,20 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 237,
-    "parsedFiles": 237,
+    "productFiles": 239,
+    "parsedFiles": 239,
     "parseErrors": 0,
-    "nativeControls": 19,
+    "nativeControls": 20,
     "structures": {
       "chat": 1,
       "analytics": 2,
       "qtplus": 1,
       "settings": 1,
-      "shell": 13,
+      "shell": 14,
       "other": 1
     },
-    "styledNativeControls": 12,
-    "reviewedNativeControls": 4,
+    "styledNativeControls": 13,
+    "reviewedNativeControls": 5,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 19,
+    "button": 20,
     "input": 0,
     "textarea": 0,
     "select": 0
@@ -159,6 +159,21 @@
       "resembles": "IconAction",
       "structure": "settings",
       "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/profile/ProfileView.jsx:57",
+      "className": "cursor-pointer truncate rounded-[4px] text-left text-[13px] font-medium leading-none text-ink outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ink",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Скопіювати: …",
+      "styled": true,
+      "reviewed": "profile-contact-value",
+      "resembles": "",
+      "structure": "shell",
+      "routes": [
+        "/team"
+      ]
     },
     {
       "tag": "button",
@@ -410,6 +425,10 @@
       "count": 1
     },
     {
+      "file": "src/components/profile/ProfileView.jsx",
+      "count": 1
+    },
+    {
       "file": "src/components/workspace/HoverCard.jsx",
       "count": 1
     },
@@ -428,6 +447,11 @@
       "location": "src/components/MobileNav.jsx:360",
       "tag": "button",
       "context": "navigation-sheet-row"
+    },
+    {
+      "location": "src/components/profile/ProfileView.jsx:57",
+      "tag": "button",
+      "context": "profile-contact-value"
     },
     {
       "location": "src/components/WorkspaceSidebar.jsx:278",
@@ -466,7 +490,7 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:127",
+      "location": "src/app/(app)/layout.js:133",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -481,22 +505,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:448",
+      "location": "src/app/(app)/settings/page.js:450",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:468",
+      "location": "src/app/(app)/settings/page.js:470",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:512",
+      "location": "src/app/(app)/settings/page.js:514",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:631",
+      "location": "src/app/(app)/settings/page.js:633",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -566,7 +590,7 @@
       "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:146",
+      "location": "src/components/profile/ProfileView.jsx:179",
       "tag": "div",
       "className": "absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]"
     },

@@ -39,6 +39,33 @@ const getRealProfileDetails = (member) => {
   };
 };
 
+// A phone number and an address are things people copy, not things they read
+// out. A click puts the value on the clipboard, and the underline on hover is
+// the affordance the Telegram handle beside them already had — so the three
+// contact values now behave alike, without any of them growing an icon.
+function CopyableContact({ value, label }) {
+  const copy = async () => {
+    const toast = useWorkspaceStore.getState().showToast;
+    try {
+      await navigator.clipboard.writeText(value);
+      toast(`${label} скопійовано`, 'success');
+    } catch {
+      toast('Не вдалося скопіювати', 'error');
+    }
+  };
+  return (
+    <button
+      type="button"
+      data-ui-control="profile-contact-value"
+      onClick={copy}
+      title={`Скопіювати: ${value}`}
+      className="cursor-pointer truncate rounded-[4px] text-left text-[13px] font-medium leading-none text-ink outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ink"
+    >
+      {value}
+    </button>
+  );
+}
+
 export default function ProfileView({ user, onClose }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -68,6 +95,9 @@ export default function ProfileView({ user, onClose }) {
   const isOnline = user.online === true || isPresenceOnline(user.lastActive, now);
   const presenceLabel = user.presenceLabel || formatLastSeenUk(user.lastActive, { now, online: isOnline });
   const details = getRealProfileDetails(user);
+  // The line the person wrote about themselves. `user.status` is the membership
+  // record and says «active» about everybody.
+  const statusText = user.statusText || null;
 
   const positionName = positions.find(p => p.id === user.positionId)?.label || user.positionId || user.title || user.email;
 
@@ -142,12 +172,15 @@ export default function ProfileView({ user, onClose }) {
           <div className="relative mb-2">
             <UserAvatar user={user} size="hero" />
             {isOnline && <PresenceDot size="hero" collar="white" className="bottom-[6px] right-[6px]" />}
-            {(user.status || user.statusEmoji) && (
+            {/* `statusText`, not `status`: the second one is the membership —
+                `active` — and this bubble used to read it out as the line the
+                person had written about themselves. */}
+            {(statusText || user.statusEmoji) && (
               <div data-ui-surface="local" className="absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]">
                 <span className="text-[18px] shrink-0">{user.statusEmoji}</span>
-                {user.status && (
+                {statusText && (
                   <span className="text-[13px] font-normal text-ink tracking-tight truncate">
-                    {user.status}
+                    {statusText}
                   </span>
                 )}
               </div>
@@ -289,7 +322,7 @@ export default function ProfileView({ user, onClose }) {
                   <div className="flex flex-col min-w-0">
                     <span className="text-[11px] font-bold text-muted leading-none mb-1">Телефон</span>
                     {details.phone ? (
-                      <span className="text-[13px] text-ink font-medium leading-none truncate">{details.phone}</span>
+                      <CopyableContact value={details.phone} label="Телефон" />
                     ) : (
                       <span className="text-[13px] text-faint leading-none">Не вказано</span>
                     )}
@@ -319,7 +352,7 @@ export default function ProfileView({ user, onClose }) {
                   <div className="flex flex-col min-w-0">
                     <span className="text-[11px] font-bold text-muted leading-none mb-1">Email</span>
                     {user.email ? (
-                      <span className="text-[13px] text-ink font-medium leading-none truncate">{user.email}</span>
+                      <CopyableContact value={user.email} label="Email" />
                     ) : (
                       <span className="text-[13px] text-faint leading-none">Не вказано</span>
                     )}
@@ -382,10 +415,6 @@ export default function ProfileView({ user, onClose }) {
 
         {activeTab === 'events' && (
           <div className="flex flex-col gap-3">
-            <div>
-              <h3 className="ui-type-column-title uppercase tracking-wider text-muted">Порядок денний</h3>
-              <p className="mt-1 text-[12px] text-muted">Найближчі події, мітинги, нотатки й важливі дати учасника.</p>
-            </div>
             {calendarLoading ? (
               <div className="flex min-h-[180px] items-center justify-center">
                 <LoadingSpinner size="md" />

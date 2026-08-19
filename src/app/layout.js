@@ -68,7 +68,12 @@ export const metadata = {
     title: 'QuickTeam',
     statusBarStyle: 'default',
   },
-  formatDetection: { telephone: false },
+  // A phone browser turns anything that looks like a phone number, an address
+  // or an email address into a link of its own — underlined, in its own blue,
+  // over whatever the page said that text should be. A profile's email was
+  // underlined on a phone and not on a desktop for exactly this reason. The app
+  // draws its own links; nothing here is meant to be guessed at.
+  formatDetection: { telephone: false, email: false, address: false },
   // An internal workspace has nothing to gain from being indexed, and every
   // authenticated URL leaks structure if it is.
   robots: { index: false, follow: false },

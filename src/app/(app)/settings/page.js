@@ -25,6 +25,8 @@ import {
   setIssueArchived,
 } from '@/lib/services/issues';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
+import { useAccountSessions } from '@/lib/hooks/useAccountSessions';
+import { describeSignInMethods } from '@/lib/utils/accountSessions.mjs';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -36,7 +38,7 @@ import {
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock,
-  UserCog, UserRoundX
+  UserRoundX, ShieldCheck, MonitorSmartphone, KeyRound
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -153,7 +155,7 @@ const NAV = [
   // Signing out, leaving an organization and deleting your account are things a
   // person does about themselves. They used to live inside «Видалення даних»,
   // which is `adminOnly` — so a plain member had no way to reach any of them.
-  { id: 'account',       label: 'Акаунт і доступ',  icon: UserCog,       group: 'Особисте' },
+  { id: 'account',       label: 'Безпека',          icon: ShieldCheck,   group: 'Особисте' },
   { id: 'workspace',     label: 'Загальні',         icon: Building,      group: 'Організація', adminOnly: true },
   { id: 'team',          label: 'Учасники команди', icon: Users,         group: 'Організація' },
   { id: 'billing',       label: 'Тарифний план',    icon: CreditCard,    group: 'Організація', adminOnly: true },
@@ -766,7 +768,7 @@ export default function SettingsPage() {
     [archiveScopedIssues],
   );
   const [deletedIssues, setDeletedIssues] = useState({ items: [], loading: false });
-  const { formatDate } = useLocalization();
+  const { formatDate, formatTime } = useLocalization();
   const projectNameById = useCallback(id => (
     (projects || []).find(project => project.id === id)?.name || 'Проєкт видалено'
   ), [projects]);
@@ -2384,6 +2386,15 @@ export default function SettingsPage() {
     }
   };
 
+  // Everything «Безпека» says about the account: which services can sign into
+  // it, when it was last signed into, and from which devices. Asked for only
+  // while the section is open — the devices are a document read, and no other
+  // screen in the product has any use for it.
+  const accountSecurity = useAccountSessions(
+    activeSection === 'account' ? (currentUser?.uid || currentUser?.id || null) : null,
+  );
+  const signInMethods = describeSignInMethods(accountSecurity.providerData);
+
   // The account section asks the server what deleting this account would touch,
   // so the confirmation can state it instead of saying "everything".
   useEffect(() => {
@@ -3847,8 +3858,113 @@ export default function SettingsPage() {
       );
 
       // ──────────────────────────────────────────────────────────────
-      case 'account': return (
-        <Section title="Акаунт і доступ" desc="Ваша сесія, ваше членство і ваші дані. Нікого іншого ці дії не стосуються.">
+      case 'account': {
+        const signInAt = accountSecurity.lastSignInAt ? new Date(accountSecurity.lastSignInAt) : null;
+        const accountCreatedAt = accountSecurity.createdAt ? new Date(accountSecurity.createdAt) : null;
+        const whenLabel = date => `${formatDate(date)}, ${formatTime(date)}`;
+        // Firebase can revoke an account's refresh tokens; it cannot revoke one
+        // device's. So the button says what it does — and it is the right thing
+        // to do when the row you do not recognise is somebody else's.
+        const endSession = async session => {
+          const confirmed = await confirmDialog({
+            title: session.isCurrent ? 'Завершити цей сеанс?' : 'Завершити сеанс?',
+            message: 'Вихід відбудеться на всіх пристроях, включно з цим — увійдіть ще раз там, де хочете лишитися.',
+            confirmText: 'Завершити',
+            danger: true,
+          });
+          if (!confirmed) return;
+          try {
+            await accountSecurity.endSession(session.id);
+            signOut();
+          } catch (error) {
+            showToast(userFacingErrorMessage(error, 'Не вдалося завершити сеанс'), 'error');
+          }
+        };
+        return (
+        <Section title="Безпека" desc="Як входять у цей обліковий запис, коли входили востаннє і з яких пристроїв.">
+          <Card preset="borderless" padding="lg">
+            <Row
+              label="Способи входу"
+              desc={signInMethods.length
+                ? `Зараз працюють: ${signInMethods.map(method => method.label).join(', ')}`
+                : 'Жодного зовнішнього сервісу не підключено'}
+            >
+              <Button
+                onClick={() => handleSectionChange('auth-methods')}
+                style="secondary"
+                size="lg"
+                icon={KeyRound}
+              >
+                Налаштувати
+              </Button>
+            </Row>
+
+            <Row
+              label="Останній вхід"
+              desc={accountCreatedAt
+                ? `Обліковий запис створено ${formatDate(accountCreatedAt)}`
+                : 'Час створення облікового запису невідомий'}
+            >
+              <p className="text-[13px] font-semibold text-ink">
+                {signInAt ? whenLabel(signInAt) : '—'}
+              </p>
+            </Row>
+          </Card>
+
+          {/* Звідки заходили. One row per browser the account has been opened
+              in, newest first, this one at the top. The place comes from the
+              request itself and is simply missing when the platform does not
+              report it — a session that cannot say where it came from must not
+              make one up. */}
+          <Card preset="borderless" padding="lg">
+            <Row label="Пристрої" desc="Браузери, у яких відкривали цей обліковий запис">
+              <p className="text-[13px] font-semibold text-ink">
+                {accountSecurity.loading ? '—' : accountSecurity.sessions.length}
+              </p>
+            </Row>
+            {accountSecurity.loading ? (
+              <div className="flex justify-center py-8"><LoadingSpinner size="md" /></div>
+            ) : accountSecurity.sessions.length === 0 ? (
+              <p className="py-3 text-[13px] text-muted">
+                Ще нічого не записано. Наступний вхід зʼявиться тут.
+              </p>
+            ) : (
+              <div className="flex flex-col divide-y divide-canvas -my-3">
+                {accountSecurity.sessions.map(session => (
+                  <div key={session.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <MonitorSmartphone size={16} className="shrink-0 text-muted" />
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="truncate text-[13px] font-semibold text-ink">{session.device}</p>
+                          {session.isCurrent && <Pill size="md" className="shrink-0">Цей пристрій</Pill>}
+                        </div>
+                        <p className="mt-0.5 truncate text-[12px] text-muted">
+                          {[
+                            session.place,
+                            session.lastSeenMillis
+                              ? `востаннє ${whenLabel(new Date(session.lastSeenMillis))}`
+                              : null,
+                          ].filter(Boolean).join(' · ') || 'Час останнього входу невідомий'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => endSession(session)}
+                      style="ghost"
+                      color="red"
+                      size="sm"
+                      loading={accountSecurity.busyId === session.id}
+                      disabled={Boolean(accountSecurity.busyId)}
+                    >
+                      Завершити
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
           <Card preset="borderless" padding="lg">
             <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
               <Button
@@ -3905,7 +4021,8 @@ export default function SettingsPage() {
             </Row>
           </Card>
         </Section>
-      );
+        );
+      }
 
       // ──────────────────────────────────────────────────────────────
       // One place for everything that is out of the way but not gone. Projects

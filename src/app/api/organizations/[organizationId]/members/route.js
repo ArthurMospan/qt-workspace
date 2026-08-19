@@ -7,8 +7,14 @@ import {
   MEMBERSHIP_COLLECTION,
 } from '@/lib/utils/orgMembership.mjs';
 
+// A person's own status — «🎧 У фокусі», the line they set for themselves — and
+// their membership status — `active` | `deactivated`, which decides whether they
+// can still be given work — were both called `status`, and the membership one is
+// written last. So every profile in the directory announced itself as "active".
+// `isActiveMember` and everything downstream of it reads `status`, so the name
+// stays with the membership and the personal line travels as `statusText`.
 const PUBLIC_PROFILE_FIELDS = [
-  'name', 'email', 'customAvatar', 'avatar', 'photoURL', 'phone', 'title', 'status', 'statusEmoji',
+  'name', 'email', 'customAvatar', 'avatar', 'photoURL', 'phone', 'title', 'statusEmoji',
   'bio', 'skills', 'telegram', 'location', 'timezone', 'birthday', 'lastActive',
 ];
 const NESTED_PROFILE_FIELDS = ['bio', 'skills', 'telegram', 'phone', 'location', 'timezone', 'birthday'];
@@ -73,6 +79,7 @@ export async function GET(request, context) {
       for (const field of PUBLIC_PROFILE_FIELDS) {
         if (profile[field] !== undefined) safeProfile[field] = serializeValue(profile[field]);
       }
+      if (profile.status !== undefined) safeProfile.statusText = serializeValue(profile.status);
       if (profile.profile && typeof profile.profile === 'object') {
         safeProfile.profile = Object.fromEntries(NESTED_PROFILE_FIELDS
           .filter(field => profile.profile[field] !== undefined)

@@ -83,7 +83,16 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     // the kit is that row: `ListRow` is a light divided-list row with its own
     // hover, and dressing it for a dark sheet would be the chrome override this
     // audit exists to prevent. Marked `data-ui-control="navigation-sheet-row"`.
-    nativeControls: 19,
+    //
+    // 19 → 20, on purpose: a profile's phone number and email address are now
+    // copied by clicking them. What that draws is a line of text in a
+    // two-column contact grid — the same 13px value the Telegram handle beside
+    // them has always been — and a `Button` there would put a control box
+    // where a value belongs and move every row of the grid on the desktop. The
+    // kit has no "a value you can click" component, and inventing one for two
+    // lines would be a component nothing else reaches for. Marked
+    // `data-ui-control="profile-contact-value"`.
+    nativeControls: 20,
   };
   for (const [category, maximum] of Object.entries(maximums)) {
     assert.ok(

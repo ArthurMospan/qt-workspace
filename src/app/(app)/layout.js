@@ -21,6 +21,7 @@ import FaviconBadge from '@/components/FaviconBadge';
 import WorkspaceCommandPalette from '@/components/WorkspaceCommandPalette';
 import { ConnectionBanner } from '@/components/ui';
 import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
+import { useRecordAccountSession } from '@/lib/hooks/useAccountSessions';
 import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
 import Button from '@/components/ui/Button';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
@@ -40,6 +41,11 @@ export default function WorkspaceLayout({ children }) {
   // to whether there is a bar.
   const keyboardOpen = useKeyboardOpen();
   const online = useOnlineStatus();
+  // «Безпека» in settings can only list the devices somebody signed in on if
+  // something records them, and the panel is the last place that should be
+  // doing the recording — a device nobody opened settings from is exactly the
+  // one worth seeing there.
+  useRecordAccountSession(currentUser?.id || currentUser?.uid || null);
 
   const pathname = usePathname();
   const isChat = pathname?.startsWith('/chat');
