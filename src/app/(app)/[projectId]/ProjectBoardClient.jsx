@@ -33,6 +33,7 @@ import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { useViewState } from '@/lib/hooks/useViewState';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { BOARD_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
 import { serializeTaskTableColumns, visibleTaskTableColumns } from '@/lib/utils/taskTable.mjs';
 
@@ -42,8 +43,11 @@ const PROJECT_TABS = [
 ];
 
 // One switcher, three readings of the same tasks. It is not a filter — nothing
-// is hidden by choosing one — which is why it sits outside `FilterBar` and
-// stays on screen when the filters move into the mobile dialog.
+// is hidden by choosing one — which is why it sits outside `FilterBar`.
+//
+// A desktop control. It used to be mirrored into the header's mobile slot so a
+// phone could still reach the list; below md there is now only the board, so
+// the mirror would offer two ways to a screen that no longer exists.
 const BOARD_VIEW_TABS = [
   { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
   { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
@@ -120,6 +124,17 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
     cols: tableColumns,
   } = boardViewState;
   const setBoardView = useCallback(value => setBoardViewState({ view: value }), [setBoardViewState]);
+  // Below md there is one view, so there is one switcher entry, so there is no
+  // switcher: the list and the table are both built around a track a phone does
+  // not have — the table scrolls sideways behind a pinned column, and the list
+  // is a board without the one thing a board is for.
+  //
+  // Read, never written. Somebody who chose «Таблиця» on a laptop and then
+  // opened the project on a phone would otherwise have that choice quietly
+  // overwritten with `kanban` by the very screen that cannot show it, and find
+  // the board waiting for them when they got back to the laptop.
+  const isMobile = useIsMobile();
+  const effectiveBoardView = isMobile === true ? 'kanban' : boardView;
   const setTableSort = useCallback(next => setBoardViewState(next), [setBoardViewState]);
   const visibleTableColumnIds = useMemo(
     () => visibleTaskTableColumns(tableColumns).map(column => column.id),
@@ -293,7 +308,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   // The kanban and the table both fill the screen and scroll inside themselves:
   // the table's header row and its identity column are pinned to its own scroll
   // container, and a page that scrolled instead would leave both behind.
-  const isBoard = activeTab === 'board' && (boardView === 'kanban' || boardView === 'table');
+  const isBoard = activeTab === 'board' && (effectiveBoardView === 'kanban' || effectiveBoardView === 'table');
   const isQtPlusWorkspace = activeTab === 'qtplus' && showQtPlusTab;
 
   if (!resourceContextReady || projectsLoading) {
@@ -345,15 +360,6 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
             {isArchived && <Pill tone="neutral" size="lg" shape="badge" uppercase>В архіві</Pill>}
           </div>
         }
-        // Дошка/список — не фільтр, і на телефоні рядок фільтрів цілком їде в
-        // модалку. Перемикач лишається на екрані.
-        mobileActions={activeTab === 'board' ? (
-          <Tabs
-            tabs={BOARD_VIEW_TABS}
-            activeTab={boardView}
-            onTabChange={setBoardView}
-          />
-        ) : null}
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -492,7 +498,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
             <LoadingSpinner size="md" />
             <span className="sr-only">Завантаження…</span>
           </div>
-        ) : boardView === 'kanban' ? (
+        ) : effectiveBoardView === 'kanban' ? (
           <div className="flex-1 min-h-[500px] flex flex-col">
             <AgileBoard
               issues={boardIssues}
@@ -511,7 +517,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               selectionScopeKey={selectionScopeKey}
             />
           </div>
-        ) : boardView === 'table' ? (
+        ) : effectiveBoardView === 'table' ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <TaskTableView
               issues={boardIssues}

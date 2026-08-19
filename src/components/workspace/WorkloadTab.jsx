@@ -231,9 +231,13 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
               header: 'Прогрес',
               width: '150px',
               cell: row => (
+                // What the bar is filled with, said in words: the bar draws
+                // done against everything assigned, and the figure beside it
+                // used to count the other half — «1 відкрито» against a bar
+                // that had moved because something was *finished*.
                 <Meter
                   value={row.done / Math.max(row.done + row.open, 1)}
-                  reading={`${row.open} відкрито`}
+                  reading={`Готово: ${row.done}/${row.done + row.open}`}
                   height={6}
                 />
               ),

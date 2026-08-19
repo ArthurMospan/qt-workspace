@@ -34,6 +34,7 @@ import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
 import { can } from '@/lib/utils/can';
 import { useViewState } from '@/lib/hooks/useViewState';
 import { MY_TASKS_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 
 
 
@@ -98,8 +99,17 @@ export default function MyTasksPage() {
   const [filters, setFilters] = useViewState(MY_TASKS_VIEW_SCHEMA, {
     storageKey: 'qt:view:my-tasks',
   });
-  const viewMode = filters.view;
+  const savedViewMode = filters.view;
   const setViewMode = useCallback(value => setFilters({ view: value }), [setFilters]);
+  // Below md the switcher is gone and so is the list: a list of tasks is a
+  // board with the columns taken out, and the board is the one of the two that
+  // was built for a narrow screen.
+  //
+  // Read, never written. Somebody who chose «Список» on a laptop would
+  // otherwise have that choice overwritten by a phone that cannot show it, and
+  // come back to the laptop to find the board.
+  const isMobile = useIsMobile();
+  const viewMode = isMobile === true ? 'kanban' : savedViewMode;
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   // ?new=1 is how anything outside this page asks for the composer — today the
   // command palette. Derived rather than copied into state on mount: the URL is
@@ -262,20 +272,6 @@ export default function MyTasksPage() {
               </Button>
             </div>
           }
-          // Дошка/список — це не фільтр. На вузькому екрані рядок фільтрів
-          // їде в модалку цілком, і перемикач вигляду разом із ним: щоб
-          // побачити список, доводилось відкривати «Фільтри». Тут він лишається
-          // на екрані, а в рядку фільтрів ховається нижче md.
-          mobileActions={(
-            <Tabs
-              tabs={[
-                { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
-                { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
-              ]}
-              activeTab={viewMode}
-              onTabChange={setViewMode}
-            />
-          )}
           filters={
             <div className="flex items-center justify-between w-full">
               <FilterBar>
@@ -330,13 +326,14 @@ export default function MyTasksPage() {
                 style="secondary"
                 title="Налаштування видимості колонок"
               />
+              {/* Тільки десктоп: нижче md вигляд один. */}
               <div className="max-md:hidden">
                 <Tabs
                   tabs={[
                     { id: 'kanban', icon: Kanban, title: 'Дошка', ariaLabel: 'Дошка' },
                     { id: 'list', icon: List, title: 'Список', ariaLabel: 'Список' },
                   ]}
-                  activeTab={viewMode}
+                  activeTab={savedViewMode}
                   onTabChange={setViewMode}
                 />
               </div>

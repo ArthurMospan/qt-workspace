@@ -165,6 +165,14 @@ export default function ChartsSection() {
           <Meter value={0.78} tone="warning" label="Наближається до межі" reading="78%" />
           <Meter value={0.96} tone="danger" label="Майже вичерпано" reading="96%" />
         </div>
+        {/* Без підпису — так смуга стоїть у колонці таблиці, де заголовок
+            колонки вже сказав, що вимірюється. Показник усе одно тримається
+            правого краю смуги, а не лівого. */}
+        <div className="mt-5 grid w-full grid-cols-1 gap-5 sm:grid-cols-3">
+          <Meter value={0} reading="Готово: 0/1" height={6} />
+          <Meter value={0.5} reading="Готово: 3/6" height={6} />
+          <Meter value={1} reading="Готово: 8/8" height={6} />
+        </div>
       </PreviewBlock>
 
       <PreviewBlock
@@ -195,7 +203,7 @@ export default function ChartsSection() {
                   id: 'progress',
                   header: 'Прогрес',
                   width: '160px',
-                  cell: row => <Meter value={row.done / (row.done + row.open)} reading={`${row.open} відкрито`} height={6} />,
+                  cell: row => <Meter value={row.done / (row.done + row.open)} reading={`Готово: ${row.done}/${row.done + row.open}`} height={6} />,
                 },
                 { id: 'done', header: 'Готово', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
                 { id: 'time', header: 'Час', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{Math.round(row.minutes / 60)}г</span> },

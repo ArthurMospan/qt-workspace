@@ -153,6 +153,174 @@ export default function TaskRow({
     }
   };
 
+  // ── The parts of a row, built once ──────────────────────────────────────────
+  //
+  // A row is arranged twice below: as one line for a desktop track wide enough
+  // to hold it, and as a small card for a phone that is not. The facts are
+  // assembled here so the two arrangements cannot drift apart — the phone used
+  // to get the desktop line with `flex-wrap` on it, which is not an adaptation,
+  // it is the same line folded until it fits.
+  //
+  // What differs between them is scale, and only where scale is the point: the
+  // meta figures are 9px on a desktop row because they share it with everything
+  // else, and nobody reads 9px on a phone held at arm's length.
+
+  const priorityMark = (
+    // The priority mark leads the row, because the selection checkbox takes its
+    // place and a checkbox belongs at the start of a row, not floating in the
+    // middle of the badges. The box is always drawn so a task with no priority
+    // does not shift the title left.
+    <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+      {selectionActive && onSelect ? (
+        <span
+          className="flex h-5 w-5 items-center justify-center"
+          onClick={event => event.stopPropagation()}
+          onMouseDown={event => event.stopPropagation()}
+          onTouchStart={event => event.stopPropagation()}
+        >
+          <Checkbox
+            checked={selected}
+            onChange={() => onSelect(task.id)}
+            size="sm"
+            ariaLabel={`Вибрати завдання ${task.issueKey || task.title}`}
+          />
+        </span>
+      ) : (
+        <PriorityIcon priority={priorityConfig} size="md" />
+      )}
+    </span>
+  );
+
+  // The same three counts, in the same order and the same shapes as on a board
+  // card. A count of messages is a quantity you read, not an identifier you
+  // retype — it was set in the same monospace as the task key, which is what
+  // made a bare number beside an icon look like a code fragment rather than
+  // "12 повідомлень".
+  const countersNode = (
+    <TaskCounters
+      mentions={mentionCount}
+      messages={msgCount}
+      unread={hasUnreadActivity || hasUnreadChat}
+      unreadLabel={hasUnreadChat && !hasUnreadActivity
+        ? 'Нове: повідомлення'
+        : unreadActivityLabel(task)}
+      size="sm"
+    />
+  );
+
+  const typeBadge = typeObj ? (
+    <TypeBadge
+      label={typeLabel}
+      color={typeObj.color || '#9a9a9a'}
+      icon={taskTypeIcon(typeObj)}
+    />
+  ) : null;
+
+  const statusBadge = statusObj ? (
+    <Pill
+      color={statusObj.color || '#9a9a9a'}
+      size="sm"
+      shape="badge"
+      weight="medium"
+      title={`Статус: ${statusObj.label}`}
+    >
+      {statusObj.label}
+    </Pill>
+  ) : null;
+
+  const blockedBadge = isBlocked ? (
+    <span
+      className="flex items-center gap-[4px] text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 bg-[#fef2f2] text-[#ef4444]"
+      title="Заблоковано іншою задачею"
+    >
+      <Lock size={10} />
+      Заблоковано
+    </span>
+  ) : null;
+
+  const sprintBadge = task.sprintId ? (
+    <span className="inline-flex items-center px-[6px] py-[1.5px] bg-[#f0f0f0] text-[#555555] rounded-[4px] text-[10px] font-medium shrink-0">
+      {sprints.find(s => s.id === task.sprintId)?.name || 'Спринт'}
+    </span>
+  ) : null;
+
+  const labelTags = (task.labelIds || []).map(id => {
+    const l = labels.find(lbl => lbl.id === id);
+    if (!l) return null;
+    return (
+      <Tag
+        key={id}
+        label={l.label}
+        color={l.color}
+        size="small"
+        className="shrink-0"
+      />
+    );
+  }).filter(Boolean);
+
+  // `dense` is the desktop line, where nine pixels buy the room the badges to
+  // the right of them need. The phone gets the readable scale instead.
+  const renderDue = dense => (due ? (
+    <div className={dense
+      ? `flex items-center gap-[3px] text-[9px] font-bold shrink-0 ml-1 ${isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'}`
+      : `flex items-center gap-[4px] text-[11px] font-semibold shrink-0 ${isOverdue ? 'text-[#ef4444]' : 'text-muted'}`}>
+      <CalendarIcon size={dense ? 10 : 12} strokeWidth={2} className="shrink-0" />
+      <span>{fmtDate(due, timeZone)}</span>
+      {isOverdue && (
+        <span className={dense ? 'font-bold uppercase text-[8px] ml-0.5' : 'font-bold uppercase text-[9px]'}>
+          • Прострочено
+        </span>
+      )}
+    </div>
+  ) : null);
+
+  const renderChildProgress = dense => (childAll > 0 ? (
+    <div className={dense
+      ? 'flex items-center gap-[4px] text-[9px] text-[#555555] font-bold shrink-0 ml-1'
+      : 'flex items-center gap-[5px] text-[11px] text-muted font-semibold shrink-0'}>
+      <span className="text-[#1a1a1a]">{childDone}/{childAll} підзавдань</span>
+      <div className="flex gap-[2px]">
+        {Array.from({ length: childAll }).map((_, idx) => (
+          <div
+            key={idx}
+            className={`${dense ? 'h-[1.5px] w-[6px]' : 'h-[2px] w-[8px]'} rounded-full transition-all duration-300 ${
+              idx < childDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  ) : null);
+
+  const renderChecklist = dense => (checklistAll > 0 ? (
+    <div className={dense
+      ? 'flex items-center gap-[3px] text-[9px] font-bold text-muted'
+      : 'flex items-center gap-[4px] text-[11px] font-semibold text-muted shrink-0'}>
+      <TaskIcon size={dense ? 9 : 11} />
+      <span>{checklistDone}/{checklistAll} чекліст</span>
+    </div>
+  ) : null);
+
+  const assigneeFaces = assignees.length > 0 ? (
+    <>
+      {assignees.slice(0, 3).map((m, idx) => (
+        <span key={idx} title={m.name || m.email?.split('@')[0]} className="relative">
+          <UserAvatar user={m} size="xs" className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all" />
+        </span>
+      ))}
+      {assignees.length > 3 && (
+        <Pill
+          tone="neutral"
+          size="md"
+          preset="avatar-counter"
+          title={assignees.slice(3).map(m => m.name || m.email?.split('@')[0]).join(', ')}
+        >
+          +{assignees.length - 3}
+        </Pill>
+      )}
+    </>
+  ) : null;
+
   return (
     <div
       onClick={handleRowClick}
@@ -170,32 +338,10 @@ export default function TaskRow({
       }}
       className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-[#f0f0f0] transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-[#fcfcfc] ${selected ? 'ring-2 ring-ink' : 'hover:!ring-4 hover:!ring-[#ECECEC]'} ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
     >
-      {/* Main Row Grid/Flex */}
-      <div className="flex items-center justify-between w-full flex-wrap md:flex-nowrap gap-[16px] min-w-0">
+      {/* ── One line, from md up ───────────────────────────────────────────── */}
+      <div className="hidden items-center justify-between w-full gap-[16px] min-w-0 md:flex">
 
-        {/* The priority mark leads the row, because the selection checkbox
-            takes its place and a checkbox belongs at the start of a row, not
-            floating in the middle of the badges. The box is always drawn so a
-            task with no priority does not shift the title left. */}
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center">
-          {selectionActive && onSelect ? (
-            <span
-              className="flex h-5 w-5 items-center justify-center"
-              onClick={event => event.stopPropagation()}
-              onMouseDown={event => event.stopPropagation()}
-              onTouchStart={event => event.stopPropagation()}
-            >
-              <Checkbox
-                checked={selected}
-                onChange={() => onSelect(task.id)}
-                size="sm"
-                ariaLabel={`Вибрати завдання ${task.issueKey || task.title}`}
-              />
-            </span>
-          ) : (
-            <PriorityIcon priority={priorityConfig} size="md" />
-          )}
-        </span>
+        {priorityMark}
 
         {/* Left Section: Title & ID (2 lines) */}
         <div className="flex flex-col gap-[2px] min-w-0 flex-1">
@@ -209,40 +355,9 @@ export default function TaskRow({
               className="max-w-full"
             />
 
-            {/* Due Date */}
-            {due && (
-              <div className={`flex items-center gap-[3px] text-[9px] font-bold shrink-0 ml-1 ${
-                isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'
-              }`}>
-                <CalendarIcon size={10} strokeWidth={2} className="shrink-0" />
-                <span>{fmtDate(due, timeZone)}</span>
-                {isOverdue && <span className="font-bold uppercase text-[8px] ml-0.5">• Прострочено</span>}
-              </div>
-            )}
-
-            {/* Real child issue progress */}
-            {childAll > 0 && (
-              <div className="flex items-center gap-[4px] text-[9px] text-[#555555] font-bold shrink-0 ml-1">
-                <span className="text-[#1a1a1a]">{childDone}/{childAll} підзавдань</span>
-                <div className="flex gap-[2px]">
-                  {Array.from({ length: childAll }).map((_, idx) => (
-                    <div 
-                      key={idx}
-                      className={`h-[1.5px] w-[6px] rounded-full transition-all duration-300 ${
-                        idx < childDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {checklistAll > 0 && (
-              <div className="flex items-center gap-[3px] text-[9px] font-bold text-muted">
-                <TaskIcon size={9} />
-                <span>{checklistDone}/{checklistAll} чекліст</span>
-              </div>
-            )}
+            {renderDue(true)}
+            {renderChildProgress(true)}
+            {renderChecklist(true)}
 
             {isTimerActive && (
               <span className="w-[5px] h-[5px] bg-ink rounded-full animate-pulse shrink-0" />
@@ -254,21 +369,7 @@ export default function TaskRow({
             <p className="text-[13px] font-bold text-[#1a1a1a] truncate" title={task.title}>
               {task.title}
             </p>
-
-            {/* The same three counts, in the same order and the same shapes as
-                on a board card. A count of messages is a quantity you read, not
-                an identifier you retype — it was set in the same monospace as
-                the task key, which is what made a bare number beside an icon
-                look like a code fragment rather than "12 повідомлень". */}
-            <TaskCounters
-              mentions={mentionCount}
-              messages={msgCount}
-              unread={hasUnreadActivity || hasUnreadChat}
-              unreadLabel={hasUnreadChat && !hasUnreadActivity
-                ? 'Нове: повідомлення'
-                : unreadActivityLabel(task)}
-              size="sm"
-            />
+            {countersNode}
           </div>
         </div>
 
@@ -278,98 +379,87 @@ export default function TaskRow({
             made a list of ten read as ten ragged lines. The badges keep their
             natural widths — giving them a fixed track too opened a wide hole in
             front of the avatars on every row without labels. */}
-        {/* `shrink-0` is a desktop instruction. Below md the row wraps, and a
-            cluster that refuses to shrink kept its full natural width on the
-            second line — wider than the card, which clips: the sprint chip and
-            the labels were simply cut off the right edge of every row on a
-            phone. Here it takes the whole second line and wraps inside it. */}
-        <div className="flex w-full flex-wrap items-center justify-end gap-x-[12px] gap-y-[6px] md:w-auto md:shrink-0 md:flex-nowrap">
+        <div className="flex w-auto shrink-0 flex-nowrap items-center justify-end gap-x-[12px] gap-y-[6px]">
           {/* Type Badge */}
           <span className="flex min-w-0 shrink-0 items-center">
-            {typeObj && (
-              <TypeBadge
-                label={typeLabel}
-                color={typeObj.color || '#9a9a9a'}
-                icon={taskTypeIcon(typeObj)}
-              />
-            )}
+            {typeBadge}
           </span>
 
           <span className="flex min-w-0 items-center gap-[8px] overflow-hidden">
-            {statusObj && (
-              <Pill
-                color={statusObj.color || '#9a9a9a'}
-                size="sm"
-                shape="badge"
-                weight="medium"
-                title={`Статус: ${statusObj.label}`}
-              >
-                {statusObj.label}
-              </Pill>
-            )}
-
-            {isBlocked && (
-              <span
-                className="flex items-center gap-[4px] text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 bg-[#fef2f2] text-[#ef4444]"
-                title="Заблоковано іншою задачею"
-              >
-                <Lock size={10} />
-                Заблоковано
-              </span>
-            )}
-
-            {/* Sprint Name */}
-            {task.sprintId && (
-              <span className="inline-flex items-center px-[6px] py-[1.5px] bg-[#f0f0f0] text-[#555555] rounded-[4px] text-[10px] font-medium shrink-0">
-                {sprints.find(s => s.id === task.sprintId)?.name || 'Спринт'}
-              </span>
-            )}
-
-            {/* Labels / Tags */}
-            {task.labelIds && task.labelIds.length > 0 && (
+            {statusBadge}
+            {blockedBadge}
+            {sprintBadge}
+            {labelTags.length > 0 && (
               <span className="flex items-center gap-[4px] overflow-hidden">
-                {task.labelIds.map(id => {
-                  const l = labels.find(lbl => lbl.id === id);
-                  if (!l) return null;
-                  return (
-                    <Tag
-                      key={id}
-                      label={l.label}
-                      color={l.color}
-                      size="small"
-                      className="shrink-0"
-                    />
-                  );
-                })}
+                {labelTags}
               </span>
             )}
           </span>
 
           {/* Assignees — a fixed box so three faces and none take the same room. */}
           <span className="flex w-[76px] shrink-0 items-center justify-end -space-x-[6px] overflow-visible">
-            {assignees.length > 0 ? (
-              <>
-                {assignees.slice(0, 3).map((m, idx) => (
-                  <span key={idx} title={m.name || m.email?.split('@')[0]} className="relative">
-                    <UserAvatar user={m} size="xs" className="ring-2 ring-white hover:scale-110 hover:z-20 transition-all" />
-                  </span>
-                ))}
-                {assignees.length > 3 && (
-                  <Pill
-                    tone="neutral"
-                    size="md"
-                    preset="avatar-counter"
-                    title={assignees.slice(3).map(m => m.name || m.email?.split('@')[0]).join(', ')}
-                  >
-                    +{assignees.length - 3}
-                  </Pill>
-                )}
-              </>
-            ) : (
-              <span className="text-[10px] text-faint italic">Н/В</span>
-            )}
+            {assigneeFaces || <span className="text-[10px] text-faint italic">Н/В</span>}
           </span>
 
+        </div>
+
+      </div>
+
+      {/* ── A small card, below md ──────────────────────────────────────────
+          Not the line above with `flex-wrap` on it. Folding one line whose left
+          half grows and whose right half is right-aligned gives two ragged
+          edges and a badge cluster clipped at the card border, which is what a
+          phone actually showed: the title squeezed into a third of the width,
+          the sprint chip and the labels cut off the right edge, and every
+          figure set at nine pixels.
+
+          Here the three things a task is — what it is called, what it says, and
+          what it carries — get a line each. Nothing is cut except the identity
+          line, the one fragment that can lose its tail without losing its
+          meaning; the title wraps to a second line instead of being clipped. */}
+      <div className="flex w-full min-w-0 flex-col gap-[8px] md:hidden">
+
+        <div className="flex min-w-0 items-center gap-[8px]">
+          {priorityMark}
+          <span className="flex min-w-0 flex-1 items-center gap-[6px]">
+            <TaskIdentity
+              issue={task}
+              projectName={projectName}
+              showProjectName={showProjectName}
+              parentIssue={parentIssueId ? (parentIssue || { issueKey: '' }) : null}
+              className="min-w-0 flex-1"
+            />
+            {isTimerActive && (
+              <span className="h-[6px] w-[6px] shrink-0 animate-pulse rounded-full bg-ink" />
+            )}
+          </span>
+          {countersNode}
+          {/* No «Н/В» placeholder here. On a desktop row the empty slot is what
+              keeps ten rows aligned down one edge; in a stack of cards it is a
+              label that says nothing, taking the place of the faces. */}
+          {assigneeFaces && (
+            <span className="flex shrink-0 items-center -space-x-[6px]">
+              {assigneeFaces}
+            </span>
+          )}
+        </div>
+
+        <p
+          className="line-clamp-2 text-[14px] font-bold leading-[19px] text-[#1a1a1a] [overflow-wrap:anywhere]"
+          title={task.title}
+        >
+          {task.title}
+        </p>
+
+        <div className="flex flex-wrap items-center gap-x-[8px] gap-y-[6px]">
+          {typeBadge}
+          {statusBadge}
+          {blockedBadge}
+          {sprintBadge}
+          {labelTags}
+          {renderDue(false)}
+          {renderChildProgress(false)}
+          {renderChecklist(false)}
         </div>
 
       </div>

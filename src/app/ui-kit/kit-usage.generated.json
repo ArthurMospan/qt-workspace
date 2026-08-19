@@ -2671,12 +2671,12 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/analytics/page.js:752",
             "src/app/(app)/layout.js:135",
-            "src/app/(app)/my/page.js:252",
-            "src/app/(app)/page.js:921",
+            "src/app/(app)/my/page.js:262",
+            "src/app/(app)/page.js:923",
             "src/app/(app)/settings/page.js:3463",
             "src/app/(app)/settings/page.js:3467",
             "src/app/(app)/settings/page.js:3672",
@@ -2711,9 +2711,9 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:382",
             "src/app/(app)/analytics/page.js:698",
-            "src/app/(app)/my/page.js:326",
+            "src/app/(app)/my/page.js:322",
             "src/components/workspace/IssueDetail.jsx:1201",
             "src/components/workspace/IssueDetail.jsx:1204",
             "src/components/workspace/calendar/CalendarEventPage.jsx:865",
@@ -2742,9 +2742,9 @@
             "src/components/WorkspaceHeader.jsx:322",
             "src/components/workspace/BillingTab.jsx:1295",
             "src/components/workspace/BillingTab.jsx:1306",
-            "src/components/workspace/WorkloadTab.jsx:267",
-            "src/components/workspace/WorkloadTab.jsx:496",
-            "src/components/workspace/WorkloadTab.jsx:498"
+            "src/components/workspace/WorkloadTab.jsx:271",
+            "src/components/workspace/WorkloadTab.jsx:500",
+            "src/components/workspace/WorkloadTab.jsx:502"
           ]
         },
         "sm": {
@@ -2766,8 +2766,8 @@
             "src/app/(app)/analytics/page.js:849",
             "src/app/(app)/calendar/page.js:590",
             "src/app/(app)/calendar/page.js:604",
-            "src/app/(app)/page.js:604",
-            "src/app/(app)/page.js:957",
+            "src/app/(app)/page.js:605",
+            "src/app/(app)/page.js:959",
             "src/app/(app)/settings/page.js:2502",
             "src/app/(app)/settings/page.js:2586",
             "src/app/(app)/settings/page.js:2587",
@@ -2807,7 +2807,7 @@
             "src/components/workspace/IssueDetail.jsx:2167",
             "src/components/workspace/IssueDetail.jsx:2177",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:497",
+            "src/components/workspace/WorkloadTab.jsx:501",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1108",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1277"
@@ -2880,11 +2880,11 @@
             "src/app/(app)/chat/page.js:1181",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
-            "src/app/(app)/my/page.js:457",
-            "src/app/(app)/page.js:578",
+            "src/app/(app)/my/page.js:454",
             "src/app/(app)/page.js:579",
-            "src/app/(app)/page.js:583",
+            "src/app/(app)/page.js:580",
             "src/app/(app)/page.js:584",
+            "src/app/(app)/page.js:585",
             "src/app/(app)/settings/page.js:3492",
             "src/app/(app)/sprints/page.js:140",
             "src/app/(app)/sprints/page.js:141",
@@ -2970,7 +2970,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
             "src/app/(app)/calendar/page.js:567",
             "src/app/(app)/chat/page.js:1181",
             "src/app/(app)/layout.js:135",
@@ -3005,7 +3005,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:382",
             "src/app/(app)/analytics/page.js:842",
             "src/app/(app)/analytics/page.js:849",
             "src/app/(app)/analytics/page.js:850",
@@ -3013,10 +3013,10 @@
             "src/app/(app)/calendar/page.js:604",
             "src/app/(app)/calendar/page.js:605",
             "src/app/(app)/chat/page.js:1173",
-            "src/app/(app)/my/page.js:326",
-            "src/app/(app)/page.js:579",
-            "src/app/(app)/page.js:583",
-            "src/app/(app)/page.js:957",
+            "src/app/(app)/my/page.js:322",
+            "src/app/(app)/page.js:580",
+            "src/app/(app)/page.js:584",
+            "src/app/(app)/page.js:959",
             "src/app/(app)/settings/page.js:2586",
             "src/app/(app)/settings/page.js:3055",
             "src/app/(app)/settings/page.js:3307",
@@ -3085,16 +3085,16 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/analytics/page.js:698",
             "src/app/(app)/analytics/page.js:752",
             "src/app/(app)/error.js:24",
-            "src/app/(app)/my/page.js:252",
-            "src/app/(app)/my/page.js:457",
-            "src/app/(app)/page.js:578",
-            "src/app/(app)/page.js:584",
-            "src/app/(app)/page.js:604",
-            "src/app/(app)/page.js:921",
+            "src/app/(app)/my/page.js:262",
+            "src/app/(app)/my/page.js:454",
+            "src/app/(app)/page.js:579",
+            "src/app/(app)/page.js:585",
+            "src/app/(app)/page.js:605",
+            "src/app/(app)/page.js:923",
             "src/app/(app)/settings/page.js:2587",
             "src/app/(app)/settings/page.js:3061",
             "src/app/(app)/settings/page.js:3467",
@@ -3207,10 +3207,10 @@
             "src/components/workspace/IssueDetail.jsx:2002",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/UnifiedTimeline.jsx:1027",
-            "src/components/workspace/WorkloadTab.jsx:267",
-            "src/components/workspace/WorkloadTab.jsx:496",
-            "src/components/workspace/WorkloadTab.jsx:497",
-            "src/components/workspace/WorkloadTab.jsx:498",
+            "src/components/workspace/WorkloadTab.jsx:271",
+            "src/components/workspace/WorkloadTab.jsx:500",
+            "src/components/workspace/WorkloadTab.jsx:501",
+            "src/components/workspace/WorkloadTab.jsx:502",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:604"
           ]
         },
@@ -3244,9 +3244,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:382",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/analytics/page.js:698",
             "src/app/(app)/analytics/page.js:746",
             "src/app/(app)/analytics/page.js:747",
@@ -3268,16 +3268,16 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
             "src/app/(app)/layout.js:135",
-            "src/app/(app)/my/page.js:252",
-            "src/app/(app)/my/page.js:326",
-            "src/app/(app)/my/page.js:457",
-            "src/app/(app)/page.js:578",
+            "src/app/(app)/my/page.js:262",
+            "src/app/(app)/my/page.js:322",
+            "src/app/(app)/my/page.js:454",
             "src/app/(app)/page.js:579",
-            "src/app/(app)/page.js:583",
+            "src/app/(app)/page.js:580",
             "src/app/(app)/page.js:584",
-            "src/app/(app)/page.js:604",
-            "src/app/(app)/page.js:921",
-            "src/app/(app)/page.js:957",
+            "src/app/(app)/page.js:585",
+            "src/app/(app)/page.js:605",
+            "src/app/(app)/page.js:923",
+            "src/app/(app)/page.js:959",
             "src/app/(app)/settings/page.js:2502",
             "src/app/(app)/settings/page.js:2586",
             "src/app/(app)/settings/page.js:2587",
@@ -3409,10 +3409,10 @@
             "src/components/workspace/TimesheetTab.jsx:480",
             "src/components/workspace/TimesheetTab.jsx:481",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:267",
-            "src/components/workspace/WorkloadTab.jsx:496",
-            "src/components/workspace/WorkloadTab.jsx:497",
-            "src/components/workspace/WorkloadTab.jsx:498",
+            "src/components/workspace/WorkloadTab.jsx:271",
+            "src/components/workspace/WorkloadTab.jsx:500",
+            "src/components/workspace/WorkloadTab.jsx:501",
+            "src/components/workspace/WorkloadTab.jsx:502",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
@@ -3471,9 +3471,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:382",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/analytics/page.js:698",
             "src/app/(app)/analytics/page.js:746",
             "src/app/(app)/analytics/page.js:747",
@@ -3495,16 +3495,16 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
             "src/app/(app)/layout.js:135",
-            "src/app/(app)/my/page.js:252",
-            "src/app/(app)/my/page.js:326",
-            "src/app/(app)/my/page.js:457",
-            "src/app/(app)/page.js:578",
+            "src/app/(app)/my/page.js:262",
+            "src/app/(app)/my/page.js:322",
+            "src/app/(app)/my/page.js:454",
             "src/app/(app)/page.js:579",
-            "src/app/(app)/page.js:583",
+            "src/app/(app)/page.js:580",
             "src/app/(app)/page.js:584",
-            "src/app/(app)/page.js:604",
-            "src/app/(app)/page.js:921",
-            "src/app/(app)/page.js:957",
+            "src/app/(app)/page.js:585",
+            "src/app/(app)/page.js:605",
+            "src/app/(app)/page.js:923",
+            "src/app/(app)/page.js:959",
             "src/app/(app)/settings/page.js:2502",
             "src/app/(app)/settings/page.js:2586",
             "src/app/(app)/settings/page.js:2587",
@@ -3638,10 +3638,10 @@
             "src/components/workspace/TimesheetTab.jsx:481",
             "src/components/workspace/UnifiedTimeline.jsx:1027",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:267",
-            "src/components/workspace/WorkloadTab.jsx:496",
-            "src/components/workspace/WorkloadTab.jsx:497",
-            "src/components/workspace/WorkloadTab.jsx:498",
+            "src/components/workspace/WorkloadTab.jsx:271",
+            "src/components/workspace/WorkloadTab.jsx:500",
+            "src/components/workspace/WorkloadTab.jsx:501",
+            "src/components/workspace/WorkloadTab.jsx:502",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
@@ -3689,9 +3689,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:382",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/analytics/page.js:698",
             "src/app/(app)/analytics/page.js:746",
             "src/app/(app)/analytics/page.js:747",
@@ -3713,13 +3713,13 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
             "src/app/(app)/layout.js:135",
-            "src/app/(app)/my/page.js:326",
-            "src/app/(app)/my/page.js:457",
-            "src/app/(app)/page.js:578",
+            "src/app/(app)/my/page.js:322",
+            "src/app/(app)/my/page.js:454",
             "src/app/(app)/page.js:579",
-            "src/app/(app)/page.js:583",
+            "src/app/(app)/page.js:580",
             "src/app/(app)/page.js:584",
-            "src/app/(app)/page.js:957",
+            "src/app/(app)/page.js:585",
+            "src/app/(app)/page.js:959",
             "src/app/(app)/settings/page.js:2502",
             "src/app/(app)/settings/page.js:2586",
             "src/app/(app)/settings/page.js:3055",
@@ -3841,10 +3841,10 @@
             "src/components/workspace/TimesheetTab.jsx:481",
             "src/components/workspace/UnifiedTimeline.jsx:1027",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:267",
-            "src/components/workspace/WorkloadTab.jsx:496",
-            "src/components/workspace/WorkloadTab.jsx:497",
-            "src/components/workspace/WorkloadTab.jsx:498",
+            "src/components/workspace/WorkloadTab.jsx:271",
+            "src/components/workspace/WorkloadTab.jsx:500",
+            "src/components/workspace/WorkloadTab.jsx:501",
+            "src/components/workspace/WorkloadTab.jsx:502",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
@@ -3871,8 +3871,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/my/page.js:252",
-            "src/app/(app)/page.js:921",
+            "src/app/(app)/my/page.js:262",
+            "src/app/(app)/page.js:923",
             "src/app/(app)/settings/page.js:2587"
           ]
         },
@@ -3888,7 +3888,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:604",
+            "src/app/(app)/page.js:605",
             "src/app/(app)/settings/page.js:3824",
             "src/app/(app)/settings/page.js:3837",
             "src/app/(app)/settings/page.js:3852",
@@ -3913,7 +3913,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:316",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
             "src/app/(app)/layout.js:135",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55"
           ]
@@ -3936,8 +3936,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:376",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:386",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:382",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/analytics/page.js:698",
             "src/app/(app)/analytics/page.js:746",
             "src/app/(app)/analytics/page.js:747",
@@ -3958,16 +3958,16 @@
             "src/app/(app)/chat/page.js:1250",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
-            "src/app/(app)/my/page.js:252",
-            "src/app/(app)/my/page.js:326",
-            "src/app/(app)/my/page.js:457",
-            "src/app/(app)/page.js:578",
+            "src/app/(app)/my/page.js:262",
+            "src/app/(app)/my/page.js:322",
+            "src/app/(app)/my/page.js:454",
             "src/app/(app)/page.js:579",
-            "src/app/(app)/page.js:583",
+            "src/app/(app)/page.js:580",
             "src/app/(app)/page.js:584",
-            "src/app/(app)/page.js:604",
-            "src/app/(app)/page.js:921",
-            "src/app/(app)/page.js:957",
+            "src/app/(app)/page.js:585",
+            "src/app/(app)/page.js:605",
+            "src/app/(app)/page.js:923",
+            "src/app/(app)/page.js:959",
             "src/app/(app)/settings/page.js:2502",
             "src/app/(app)/settings/page.js:2586",
             "src/app/(app)/settings/page.js:2587",
@@ -4088,10 +4088,10 @@
             "src/components/workspace/TimesheetTab.jsx:480",
             "src/components/workspace/TimesheetTab.jsx:481",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:267",
-            "src/components/workspace/WorkloadTab.jsx:496",
-            "src/components/workspace/WorkloadTab.jsx:497",
-            "src/components/workspace/WorkloadTab.jsx:498",
+            "src/components/workspace/WorkloadTab.jsx:271",
+            "src/components/workspace/WorkloadTab.jsx:500",
+            "src/components/workspace/WorkloadTab.jsx:501",
+            "src/components/workspace/WorkloadTab.jsx:502",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
@@ -4213,7 +4213,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:227",
+            "src/app/(app)/page.js:228",
             "src/components/AudioTaskPanel.jsx:263",
             "src/components/AuthLayout.jsx:56"
           ]
@@ -4296,7 +4296,7 @@
           "files": [
             "src/app/(app)/calendar/page.js:343",
             "src/app/(app)/chat/page.js:386",
-            "src/app/(app)/page.js:227",
+            "src/app/(app)/page.js:228",
             "src/components/MobileNav.jsx:299",
             "src/components/MobileNav.jsx:328",
             "src/components/workspace/UnifiedTimeline.jsx:867",
@@ -4440,7 +4440,7 @@
             "src/app/(app)/chat/page.js:317",
             "src/app/(app)/chat/page.js:326",
             "src/app/(app)/chat/page.js:386",
-            "src/app/(app)/page.js:227",
+            "src/app/(app)/page.js:228",
             "src/app/(app)/settings/page.js:280",
             "src/app/(app)/settings/page.js:281",
             "src/app/(app)/settings/page.js:307",
@@ -4510,7 +4510,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:343",
-            "src/app/(app)/page.js:227",
+            "src/app/(app)/page.js:228",
             "src/app/(app)/settings/page.js:280",
             "src/app/(app)/settings/page.js:281",
             "src/app/(app)/settings/page.js:307",
@@ -5012,12 +5012,12 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:415",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:426",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:409",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:421",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:432",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:443",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:465",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:475",
             "src/app/(app)/analytics/page.js:704",
             "src/app/(app)/analytics/page.js:716",
             "src/app/(app)/analytics/page.js:768",
@@ -5026,12 +5026,12 @@
             "src/app/(app)/analytics/page.js:820",
             "src/app/(app)/calendar/page.js:571",
             "src/app/(app)/calendar/page.js:581",
-            "src/app/(app)/my/page.js:291",
-            "src/app/(app)/my/page.js:301",
-            "src/app/(app)/my/page.js:311",
-            "src/app/(app)/page.js:936",
-            "src/app/(app)/page.js:937",
+            "src/app/(app)/my/page.js:287",
+            "src/app/(app)/my/page.js:297",
+            "src/app/(app)/my/page.js:307",
             "src/app/(app)/page.js:938",
+            "src/app/(app)/page.js:939",
+            "src/app/(app)/page.js:940",
             "src/app/(app)/settings/page.js:2854",
             "src/app/(app)/settings/page.js:2865",
             "src/app/(app)/settings/page.js:2877",
@@ -5101,12 +5101,12 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:415",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:426",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:409",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:421",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:432",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:443",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:465",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:475",
             "src/app/(app)/analytics/page.js:704",
             "src/app/(app)/analytics/page.js:716",
             "src/app/(app)/analytics/page.js:768",
@@ -5115,12 +5115,12 @@
             "src/app/(app)/analytics/page.js:820",
             "src/app/(app)/calendar/page.js:571",
             "src/app/(app)/calendar/page.js:581",
-            "src/app/(app)/my/page.js:291",
-            "src/app/(app)/my/page.js:301",
-            "src/app/(app)/my/page.js:311",
-            "src/app/(app)/page.js:936",
-            "src/app/(app)/page.js:937",
+            "src/app/(app)/my/page.js:287",
+            "src/app/(app)/my/page.js:297",
+            "src/app/(app)/my/page.js:307",
             "src/app/(app)/page.js:938",
+            "src/app/(app)/page.js:939",
+            "src/app/(app)/page.js:940",
             "src/app/(app)/sprints/page.js:590",
             "src/app/(app)/sprints/page.js:601",
             "src/app/(app)/sprints/page.js:611"
@@ -5195,8 +5195,8 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:403",
-            "src/app/(app)/my/page.js:311"
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:409",
+            "src/app/(app)/my/page.js:307"
           ]
         },
         "member": {
@@ -5209,12 +5209,12 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:415",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:421",
             "src/app/(app)/analytics/page.js:716",
             "src/app/(app)/analytics/page.js:768",
             "src/app/(app)/analytics/page.js:799",
             "src/app/(app)/calendar/page.js:581",
-            "src/app/(app)/page.js:936",
+            "src/app/(app)/page.js:938",
             "src/app/(app)/sprints/page.js:590"
           ]
         },
@@ -5227,10 +5227,10 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:426",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:459",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:432",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:465",
             "src/app/(app)/analytics/page.js:810",
-            "src/app/(app)/my/page.js:291",
+            "src/app/(app)/my/page.js:287",
             "src/app/(app)/sprints/page.js:601"
           ]
         },
@@ -5244,11 +5244,11 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:437",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:469",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:443",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:475",
             "src/app/(app)/analytics/page.js:820",
             "src/app/(app)/calendar/page.js:571",
-            "src/app/(app)/my/page.js:301",
+            "src/app/(app)/my/page.js:297",
             "src/app/(app)/sprints/page.js:611",
             "src/components/workspace/BillingTab.jsx:1219"
           ]
@@ -5268,7 +5268,7 @@
             "/"
           ],
           "files": [
-            "src/app/(app)/page.js:937"
+            "src/app/(app)/page.js:939"
           ]
         },
         "sort": {
@@ -5277,7 +5277,7 @@
             "/"
           ],
           "files": [
-            "src/app/(app)/page.js:938"
+            "src/app/(app)/page.js:940"
           ]
         },
         "(default)": {
@@ -5370,7 +5370,7 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:128",
             "src/app/(app)/calendar/page.js:572",
             "src/app/(app)/chat/page.js:1222",
-            "src/app/(app)/my/page.js:282",
+            "src/app/(app)/my/page.js:278",
             "src/app/(app)/sprints/page.js:581",
             "src/components/workspace/IssueDetail.jsx:1489",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:704",
@@ -5396,7 +5396,7 @@
             "src/app/(app)/analytics/page.js:790",
             "src/app/(app)/analytics/team/[memberId]/page.js:128",
             "src/app/(app)/calendar/page.js:572",
-            "src/app/(app)/my/page.js:282",
+            "src/app/(app)/my/page.js:278",
             "src/app/(app)/sprints/page.js:581"
           ]
         },
@@ -5435,7 +5435,7 @@
             "src/app/(app)/analytics/page.js:790",
             "src/app/(app)/analytics/team/[memberId]/page.js:128",
             "src/app/(app)/calendar/page.js:572",
-            "src/app/(app)/my/page.js:282",
+            "src/app/(app)/my/page.js:278",
             "src/app/(app)/sprints/page.js:581"
           ]
         },
@@ -5474,9 +5474,9 @@
             "src/app/(app)/analytics/page.js:856",
             "src/app/(app)/analytics/team/[memberId]/page.js:110",
             "src/app/(app)/calendar/page.js:609",
-            "src/app/(app)/page.js:970",
-            "src/app/(app)/page.js:977",
-            "src/app/(app)/page.js:992",
+            "src/app/(app)/page.js:972",
+            "src/app/(app)/page.js:979",
+            "src/app/(app)/page.js:994",
             "src/app/(app)/sprints/page.js:876"
           ]
         },
@@ -5538,8 +5538,8 @@
           "files": [
             "src/app/(app)/analytics/page.js:856",
             "src/app/(app)/analytics/team/[memberId]/page.js:110",
-            "src/app/(app)/page.js:970",
-            "src/app/(app)/page.js:992"
+            "src/app/(app)/page.js:972",
+            "src/app/(app)/page.js:994"
           ]
         },
         "sm": {
@@ -5563,7 +5563,7 @@
           ],
           "files": [
             "src/app/(app)/errors/page.js:104",
-            "src/app/(app)/page.js:977",
+            "src/app/(app)/page.js:979",
             "src/components/workspace/IssueDetail.jsx:1957"
           ]
         },
@@ -5597,7 +5597,7 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:856",
-            "src/app/(app)/page.js:970"
+            "src/app/(app)/page.js:972"
           ]
         },
         "member-chart-panel": {
@@ -5624,8 +5624,8 @@
           "files": [
             "src/app/(app)/calendar/page.js:609",
             "src/app/(app)/errors/page.js:104",
-            "src/app/(app)/page.js:977",
-            "src/app/(app)/page.js:992",
+            "src/app/(app)/page.js:979",
+            "src/app/(app)/page.js:994",
             "src/app/(app)/settings/page.js:3494",
             "src/app/(app)/team/page.js:132",
             "src/components/workspace/BillingTab.jsx:1147",
@@ -5663,8 +5663,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
-            "src/app/(app)/page.js:203",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
+            "src/app/(app)/page.js:204",
             "src/components/SearchModal.jsx:118",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/workspace/BillingTab.jsx:1287",
@@ -5831,7 +5831,7 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
             "src/app/(app)/settings/page.js:3514",
             "src/app/(app)/settings/page.js:3515",
             "src/app/(app)/settings/page.js:531",
@@ -5883,7 +5883,7 @@
             "/analytics"
           ],
           "files": [
-            "src/app/(app)/page.js:203",
+            "src/app/(app)/page.js:204",
             "src/components/workspace/BillingTab.jsx:1287"
           ]
         },
@@ -5980,7 +5980,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
             "src/app/(app)/settings/page.js:3422",
             "src/app/(app)/settings/page.js:3507",
             "src/app/(app)/settings/page.js:3508",
@@ -6013,7 +6013,7 @@
           ],
           "files": [
             "src/app/(app)/errors/page.js:107",
-            "src/app/(app)/page.js:203",
+            "src/app/(app)/page.js:204",
             "src/app/(app)/settings/page.js:3190",
             "src/app/(app)/settings/page.js:3514",
             "src/app/(app)/settings/page.js:3515",
@@ -6072,9 +6072,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
             "src/app/(app)/errors/page.js:107",
-            "src/app/(app)/page.js:203",
+            "src/app/(app)/page.js:204",
             "src/app/(app)/settings/page.js:3507",
             "src/app/(app)/settings/page.js:3508",
             "src/app/(app)/settings/page.js:3514",
@@ -6162,7 +6162,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
             "src/app/(app)/errors/page.js:107",
             "src/app/(app)/settings/page.js:3190",
             "src/app/(app)/settings/page.js:3422",
@@ -6229,7 +6229,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/page.js:203",
+            "src/app/(app)/page.js:204",
             "src/components/workspace/BillingTab.jsx:278",
             "src/components/workspace/IssueCard.jsx:383"
           ]
@@ -6254,9 +6254,9 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:345",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
             "src/app/(app)/errors/page.js:107",
-            "src/app/(app)/page.js:203",
+            "src/app/(app)/page.js:204",
             "src/app/(app)/settings/page.js:3190",
             "src/app/(app)/settings/page.js:3422",
             "src/app/(app)/settings/page.js:3507",
@@ -6353,9 +6353,9 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/page.js:195",
+            "src/app/(app)/page.js:196",
             "src/components/WorkspaceHeader.jsx:84",
-            "src/components/workspace/WorkloadTab.jsx:269"
+            "src/components/workspace/WorkloadTab.jsx:273"
           ]
         },
         "sm": {
@@ -6376,7 +6376,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/page.js:431",
+            "src/app/(app)/page.js:432",
             "src/components/workspace/AnalyticsTab.jsx:348",
             "src/components/workspace/IssueCard.jsx:375",
             "src/components/workspace/TimesheetTab.jsx:221",
@@ -6804,8 +6804,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:448",
-            "src/app/(app)/page.js:575",
+            "src/app/(app)/my/page.js:445",
+            "src/app/(app)/page.js:576",
             "src/app/(app)/sprints/page.js:133",
             "src/app/(app)/sprints/page.js:182",
             "src/app/(app)/sprints/page.js:73",
@@ -6860,7 +6860,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1166",
-            "src/app/(app)/page.js:575",
+            "src/app/(app)/page.js:576",
             "src/app/(app)/sprints/page.js:133",
             "src/app/(app)/sprints/page.js:182",
             "src/app/(app)/sprints/page.js:73",
@@ -6879,7 +6879,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:448",
+            "src/app/(app)/my/page.js:445",
             "src/components/UserStatusSetter.jsx:68"
           ]
         },
@@ -6939,7 +6939,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1166",
-            "src/app/(app)/page.js:575",
+            "src/app/(app)/page.js:576",
             "src/app/(app)/sprints/page.js:133",
             "src/app/(app)/sprints/page.js:182",
             "src/app/(app)/sprints/page.js:73",
@@ -6965,7 +6965,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/my/page.js:448",
+            "src/app/(app)/my/page.js:445",
             "src/components/WorkspaceInfoCenter.jsx:245",
             "src/components/workspace/IssueDetail.jsx:1738",
             "src/components/workspace/calendar/CalendarEventPage.jsx:205"
@@ -6998,7 +6998,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1166",
-            "src/app/(app)/page.js:575",
+            "src/app/(app)/page.js:576",
             "src/app/(app)/sprints/page.js:133",
             "src/app/(app)/sprints/page.js:73",
             "src/components/CreateTaskModal.jsx:278",
@@ -7021,7 +7021,7 @@
             "/my"
           ],
           "files": [
-            "src/app/(app)/my/page.js:448"
+            "src/app/(app)/my/page.js:445"
           ]
         },
         "dialog": {
@@ -7051,8 +7051,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:602",
-            "src/app/(app)/page.js:945",
+            "src/app/(app)/page.js:603",
+            "src/app/(app)/page.js:947",
             "src/components/CreateTaskModal.jsx:332",
             "src/components/workspace/VelocityTab.jsx:255"
           ]
@@ -7116,8 +7116,8 @@
             "src/components/profile/ProfileView.jsx:394",
             "src/components/workspace/TimesheetTab.jsx:665",
             "src/components/workspace/VelocityTab.jsx:218",
-            "src/components/workspace/WorkloadTab.jsx:742",
-            "src/components/workspace/WorkloadTab.jsx:754",
+            "src/components/workspace/WorkloadTab.jsx:746",
+            "src/components/workspace/WorkloadTab.jsx:758",
             "src/components/workspace/calendar/CalendarEventPage.jsx:753"
           ]
         },
@@ -7128,7 +7128,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/app/(app)/page.js:978",
+            "src/app/(app)/page.js:980",
             "src/components/workspace/AnalyticsTab.jsx:223"
           ]
         },
@@ -7192,7 +7192,7 @@
             "src/app/(app)/errors/page.js:67",
             "src/app/(app)/errors/page.js:94",
             "src/app/(app)/errors/page.js:96",
-            "src/app/(app)/page.js:978",
+            "src/app/(app)/page.js:980",
             "src/app/(app)/team/page.js:138",
             "src/components/WorkspaceInfoCenter.jsx:152",
             "src/components/WorkspaceInfoCenter.jsx:200",
@@ -7206,8 +7206,8 @@
             "src/components/workspace/TimesheetTab.jsx:665",
             "src/components/workspace/UnifiedTimeline.jsx:751",
             "src/components/workspace/VelocityTab.jsx:218",
-            "src/components/workspace/WorkloadTab.jsx:742",
-            "src/components/workspace/WorkloadTab.jsx:754",
+            "src/components/workspace/WorkloadTab.jsx:746",
+            "src/components/workspace/WorkloadTab.jsx:758",
             "src/components/workspace/calendar/CalendarEventPage.jsx:753"
           ]
         },
@@ -7246,15 +7246,15 @@
             "src/app/(app)/errors/page.js:67",
             "src/app/(app)/errors/page.js:94",
             "src/app/(app)/errors/page.js:96",
-            "src/app/(app)/page.js:978",
+            "src/app/(app)/page.js:980",
             "src/app/(app)/team/page.js:138",
             "src/components/profile/ProfileView.jsx:358",
             "src/components/profile/ProfileView.jsx:394",
             "src/components/workspace/TimesheetTab.jsx:665",
             "src/components/workspace/UnifiedTimeline.jsx:751",
             "src/components/workspace/VelocityTab.jsx:218",
-            "src/components/workspace/WorkloadTab.jsx:742",
-            "src/components/workspace/WorkloadTab.jsx:754",
+            "src/components/workspace/WorkloadTab.jsx:746",
+            "src/components/workspace/WorkloadTab.jsx:758",
             "src/components/workspace/calendar/CalendarEventPage.jsx:753",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:92"
           ]
@@ -7292,14 +7292,14 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:302",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:492",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:317",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:498",
             "src/app/(app)/analytics/page.js:271",
             "src/app/(app)/analytics/team/[memberId]/page.js:88",
             "src/app/(app)/calendar/page.js:612",
             "src/app/(app)/loading.js:28",
-            "src/app/(app)/my/page.js:352",
-            "src/app/(app)/page.js:972",
+            "src/app/(app)/my/page.js:349",
+            "src/app/(app)/page.js:974",
             "src/app/(app)/settings/page.js:3555",
             "src/app/(app)/settings/page.js:3653",
             "src/app/(app)/settings/page.js:3698",
@@ -7444,8 +7444,8 @@
             "src/app/(app)/analytics/page.js:831",
             "src/app/(app)/analytics/page.js:843",
             "src/app/(app)/analytics/team/[memberId]/page.js:138",
-            "src/components/workspace/WorkloadTab.jsx:448",
-            "src/components/workspace/WorkloadTab.jsx:487"
+            "src/components/workspace/WorkloadTab.jsx:452",
+            "src/components/workspace/WorkloadTab.jsx:491"
           ]
         },
         "canvas": {
@@ -7483,8 +7483,8 @@
             "src/app/(app)/settings/page.js:3925",
             "src/components/WorkspaceHeader.jsx:335",
             "src/components/workspace/BillingTab.jsx:303",
-            "src/components/workspace/WorkloadTab.jsx:448",
-            "src/components/workspace/WorkloadTab.jsx:487"
+            "src/components/workspace/WorkloadTab.jsx:452",
+            "src/components/workspace/WorkloadTab.jsx:491"
           ]
         },
         "dialog-tabs": {
@@ -7895,7 +7895,7 @@
     "Tabs": {
       "variant": {
         "(default)": {
-          "count": 9,
+          "count": 7,
           "routes": [
             "/",
             "/[projectId]",
@@ -7907,10 +7907,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:351",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:450",
-            "src/app/(app)/my/page.js:270",
-            "src/app/(app)/my/page.js:334",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:456",
+            "src/app/(app)/my/page.js:331",
             "src/components/CreateTaskModal.jsx:312",
             "src/components/InviteMemberDialog.jsx:119",
             "src/components/workspace/BillingTab.jsx:1110",
@@ -8225,7 +8223,7 @@
           "files": [
             "src/app/(app)/analytics/page.js:412",
             "src/components/workspace/AnalyticsTab.jsx:260",
-            "src/components/workspace/WorkloadTab.jsx:234"
+            "src/components/workspace/WorkloadTab.jsx:238"
           ]
         }
       }
@@ -8242,14 +8240,14 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:402",
-            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:458",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:408",
+            "src/app/(app)/[projectId]/ProjectBoardClient.jsx:464",
             "src/app/(app)/analytics/page.js:703",
             "src/app/(app)/analytics/page.js:714",
             "src/app/(app)/analytics/page.js:758",
             "src/app/(app)/analytics/page.js:789",
             "src/app/(app)/calendar/page.js:570",
-            "src/app/(app)/my/page.js:281",
+            "src/app/(app)/my/page.js:277",
             "src/app/(app)/sprints/page.js:580"
           ]
         },
@@ -8268,7 +8266,7 @@
             "/"
           ],
           "files": [
-            "src/app/(app)/page.js:935"
+            "src/app/(app)/page.js:937"
           ]
         }
       }
@@ -8403,8 +8401,8 @@
     "Скільки чого": "<div className=\"grid w-full grid-cols-1 gap-6 md:grid-cols-2\">\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={BarChart2} title=\"По статусах\">\n      <BarList\n        items={[\n          { id: 'todo', label: 'До виконання', value: 14, color: '#6b7280' },\n          { id: 'progress', label: 'У роботі', value: 9, color: '#2f6fb0' },\n          { id: 'review', label: 'На перевірці', value: 4, color: '#cf7a22' },\n          { id: 'done', label: 'Готово', value: 19, color: '#0e8f74' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={Flag} title=\"Куди пішов час\" meta=\"64г\">\n      <BarList\n        scale=\"total\"\n        format={minutes => `${Math.round(minutes / 60)}г`}\n        items={[\n          { id: 'tasks', label: 'Завдання', value: 2400 },\n          { id: 'meetings', label: 'Мітинги', value: 900, color: 'var(--color-chart-2)', meta: '6 подій' },\n          { id: 'focus', label: 'Фокус-час', value: 540, color: 'var(--color-chart-3)' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n</div>",
     "Кількість у часі": "<Card preset=\"borderless\" padding=\"lg\" className=\"w-full\">\n  <DetailSection icon={BarChart2} title=\"Активність\" meta=\"7 днів\">\n    <ColumnChart data={DEMO_DAYS} series={DEMO_FLOW} height={130} />\n  </DetailSection>\n</Card>",
     "Тренд із опорною лінією": "<Card preset=\"borderless\" padding=\"lg\" className=\"w-full\">\n  <DetailSection icon={TrendingDown} title=\"Скільки роботи лишилось\" meta=\"12 днів\">\n    <TrendChart data={DEMO_BURNDOWN} valueLabel=\"Фактично лишилось\" referenceLabel=\"Рівний темп\" height={140} />\n  </DetailSection>\n</Card>",
-    "Частка від межі": "<div className=\"grid w-full grid-cols-1 gap-5 sm:grid-cols-3\">\n  <Meter value={0.42} label=\"Бюджет у нормі\" reading=\"42%\" />\n  <Meter value={0.78} tone=\"warning\" label=\"Наближається до межі\" reading=\"78%\" />\n  <Meter value={0.96} tone=\"danger\" label=\"Майже вичерпано\" reading=\"96%\" />\n</div>",
-    "Таблиця показників": "<Card preset=\"borderless\" padding=\"lg\" className=\"w-full\">\n  <DetailSection icon={Users} title=\"Навантаження по виконавцях\" meta=\"3\">\n    <DataTable\n      rows={DEMO_MEMBERS}\n      rowKey={row => row.id}\n      columns={[\n        {\n          id: 'member',\n          header: 'Учасник',\n          lead: true,\n          cell: row => (\n            <span className=\"flex min-w-0 items-center gap-2\">\n              <UserAvatar user={{ id: row.id, name: row.name }} size=\"sm\" />\n              <span className=\"min-w-0 truncate text-[13px] font-semibold text-ink\">{row.name}</span>\n            </span>\n          ),\n        },\n        {\n          id: 'progress',\n          header: 'Прогрес',\n          width: '160px',\n          cell: row => <Meter value={row.done / (row.done + row.open)} reading={`${row.open} відкрито`} height={6} />,\n        },\n        { id: 'done', header: 'Готово', align: 'right', width: '92px', cell: row => <span className=\"ui-type-figure text-muted\">{row.done}</span> },\n        { id: 'time', header: 'Час', align: 'right', width: '92px', cell: row => <span className=\"ui-type-figure text-ink\">{Math.round(row.minutes / 60)}г</span> },\n      ]}\n    />\n  </DetailSection>\n</Card>",
+    "Частка від межі": "<div className=\"grid w-full grid-cols-1 gap-5 sm:grid-cols-3\">\n  <Meter value={0.42} label=\"Бюджет у нормі\" reading=\"42%\" />\n  <Meter value={0.78} tone=\"warning\" label=\"Наближається до межі\" reading=\"78%\" />\n  <Meter value={0.96} tone=\"danger\" label=\"Майже вичерпано\" reading=\"96%\" />\n</div>\n{/* Без підпису — так смуга стоїть у колонці таблиці, де заголовок\n    колонки вже сказав, що вимірюється. Показник усе одно тримається\n    правого краю смуги, а не лівого. */}\n<div className=\"mt-5 grid w-full grid-cols-1 gap-5 sm:grid-cols-3\">\n  <Meter value={0} reading=\"Готово: 0/1\" height={6} />\n  <Meter value={0.5} reading=\"Готово: 3/6\" height={6} />\n  <Meter value={1} reading=\"Готово: 8/8\" height={6} />\n</div>",
+    "Таблиця показників": "<Card preset=\"borderless\" padding=\"lg\" className=\"w-full\">\n  <DetailSection icon={Users} title=\"Навантаження по виконавцях\" meta=\"3\">\n    <DataTable\n      rows={DEMO_MEMBERS}\n      rowKey={row => row.id}\n      columns={[\n        {\n          id: 'member',\n          header: 'Учасник',\n          lead: true,\n          cell: row => (\n            <span className=\"flex min-w-0 items-center gap-2\">\n              <UserAvatar user={{ id: row.id, name: row.name }} size=\"sm\" />\n              <span className=\"min-w-0 truncate text-[13px] font-semibold text-ink\">{row.name}</span>\n            </span>\n          ),\n        },\n        {\n          id: 'progress',\n          header: 'Прогрес',\n          width: '160px',\n          cell: row => <Meter value={row.done / (row.done + row.open)} reading={`Готово: ${row.done}/${row.done + row.open}`} height={6} />,\n        },\n        { id: 'done', header: 'Готово', align: 'right', width: '92px', cell: row => <span className=\"ui-type-figure text-muted\">{row.done}</span> },\n        { id: 'time', header: 'Час', align: 'right', width: '92px', cell: row => <span className=\"ui-type-figure text-ink\">{Math.round(row.minutes / 60)}г</span> },\n      ]}\n    />\n  </DetailSection>\n</Card>",
     "Що потребує уваги": "<div className=\"grid w-full grid-cols-1 gap-6 md:grid-cols-2\">\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={AlertTriangle} title=\"Що потребує уваги\">\n      <SignalList\n        signals={[\n          { id: '1', tone: 'critical', count: 4, title: 'Завдання заблоковані залежностями', description: 'Їх стримують незавершені задачі' },\n          { id: '2', tone: 'critical', count: 3, title: 'Прострочені завдання', description: 'Дедлайн минув, робота відкрита' },\n          { id: '3', tone: 'warning', count: 2, title: 'Без виконавця', description: 'Ніхто не відповідає за результат' },\n          { id: '4', tone: 'info', count: 11, title: 'Без оцінки', description: 'Поза беклогом, але без плану за часом' },\n        ]}\n      />\n    </DetailSection>\n  </Card>\n  <Card preset=\"borderless\" padding=\"lg\">\n    <DetailSection icon={AlertTriangle} title=\"Що потребує уваги\">\n      <SignalList signals={[]} emptyText=\"Нічого термінового — усе під контролем\" />\n    </DetailSection>\n  </Card>\n</div>",
     "Alerts": "<div className=\"flex flex-col gap-[12px] max-w-[600px]\">\n  <Alert variant=\"success\" title=\"Операція успішна\">Проєкт успішно створено та додано до бази даних.</Alert>\n  <Alert variant=\"info\" title=\"Потребує уваги\">Будь ласка, перевірте правильність введених даних.</Alert>\n  <Alert variant=\"warning\" title=\"Попередження\">Термін виконання завдання спливає сьогодні.</Alert>\n  <Alert variant=\"error\" title=\"Не вдалося завантажити проєкти\">Спробуйте оновити сторінку.</Alert>\n</div>",
     "Loading Spinner": "<div className=\"flex items-center gap-[24px]\">\n  <LoadingSpinner size=\"sm\" />\n  <LoadingSpinner size=\"md\" />\n</div>",

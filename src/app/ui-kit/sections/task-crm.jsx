@@ -176,7 +176,12 @@ export default function TaskCRMSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock title="Task Row (List View)" description="Один shared row для project і cross-project контекстів; назву проєкту вмикає лише semantic prop showProjectName." fullWidth>
+      <PreviewBlock
+        title="Task Row (List View)"
+        description="Один shared row для project і cross-project контекстів; назву проєкту вмикає лише semantic prop showProjectName. Рядок має дві компоновки, і друга — не перша з flex-wrap: від md це один рядок, нижче md — маленька картка, де ім’я, назва й те, що задача несе, отримують по лінії. Звузьте вікно — назва перестане тиснутись у третину ширини, спринт і мітки перестануть обрізатись об край, а цифри піднімуться з 9px до читабельних 11px."
+        filePath="src/components/ui/TaskManagement/TaskRow.jsx"
+        fullWidth
+      >
         <div className="bg-[#f4f4f5] p-6 rounded-[16px] flex flex-col gap-[8px]">
           <p className="ui-type-eyebrow uppercase tracking-wider text-muted">Project context — назва проєкту прихована</p>
           <TaskRow

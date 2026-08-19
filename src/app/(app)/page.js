@@ -46,6 +46,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { isDueDateOverdue } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useSprints } from '@/lib/hooks/useSprints';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
 import { sendProjectInvitations } from '@/lib/services/projectInvitations';
@@ -653,6 +654,7 @@ export default function WorkspacePage() {
   const { members, loading: orgLoading } = useOrganization();
   const { labels, deliveredStatusIds, statuses } = useWorkflowConfig();
   const { sprints } = useSprints();
+  const isMobile = useIsMobile() === true;
   const searchParams = useSearchParams();
   const router       = useRouter();
   const [showNewProject, setShowNewProject] = useState(false);
@@ -1000,7 +1002,13 @@ export default function WorkspacePage() {
                     members={members}
                     allOrgMembers={members}
                     issues={issuesByProject[p.id] || []}
-                    isLarge={index === 0 && selectedMember === 'all' && dateFilter === 'all'}
+                    // The featured card is a desktop arrangement: it earns its
+                    // extra weight by spanning two columns of a grid, and below
+                    // md the grid is one column wide. All it did on a phone was
+                    // make the first project taller, wordier and differently
+                    // typeset than every project under it, for no reason a
+                    // reader could see.
+                    isLarge={!isMobile && index === 0 && selectedMember === 'all' && dateFilter === 'all'}
                     orgLoading={orgLoading}
                     now={now}
                   />

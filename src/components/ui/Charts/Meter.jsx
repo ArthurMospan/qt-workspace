@@ -52,7 +52,12 @@ export default function Meter({
       {(label || reading) && (
         <div className="flex items-baseline justify-between gap-3">
           {label && <span className="truncate text-[12px] font-semibold text-ink">{label}</span>}
-          {reading && <span className={`ui-type-figure shrink-0 ${level.text}`}>{reading}</span>}
+          {/* `ml-auto`, not `justify-between` alone. A meter that measures
+              something the caption above the column already names carries a
+              reading and no label — and a lone child of a `justify-between` row
+              sits at its *start*, so the one figure on the line was hugging the
+              left edge of a bar it belongs to the end of. */}
+          {reading && <span className={`ui-type-figure ml-auto shrink-0 ${level.text}`}>{reading}</span>}
         </div>
       )}
       <div
