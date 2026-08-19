@@ -19,6 +19,15 @@ import Sparkline from '@/components/ui/Charts/Sparkline';
 // And the label under it is sentence case. It was 11px bold uppercase with
 // letter-spacing — the eyebrow style — which meant the quietest text on the
 // card was set in the loudest available treatment, four times per row.
+//
+// On a phone the whole row is two columns wide, and the arithmetic stopped
+// working: a 151px tile minus 20px of padding on each side leaves 111px, and
+// «345 / 400» at 26px needs 121 — so the headline figure of an analytics screen
+// was reading «345 / …». With a sparkline on the same line there were 31px
+// left, and «18» became «1…». Below `md` the padding drops to 16px, the figure
+// steps down through the type scale, and the sparkline stands down: it is a
+// glyph worth 68px next to a figure that has 119, and every card that carries
+// one already says in its own sub-line which screen draws the full chart.
 
 /**
  * One number on an analytics screen: the figure, what it counts, how it moved,
@@ -44,7 +53,7 @@ export default function KpiCard({
   className = '',
 }) {
   const content = (
-    <div className={`rounded-[16px] border border-transparent bg-white p-5 transition-all duration-200 ${onClick ? 'cursor-pointer hover:ring-4 hover:ring-[#ECECEC]' : ''} ${className}`}>
+    <div className={`rounded-[16px] border border-transparent bg-white p-5 transition-all duration-200 max-md:p-4 ${onClick ? 'cursor-pointer hover:ring-4 hover:ring-[#ECECEC]' : ''} ${className}`}>
       <div className="mb-3 flex items-start justify-between gap-2">
         {Icon && (
           <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-canvas">
@@ -60,7 +69,7 @@ export default function KpiCard({
       </div>
       <div className="flex items-end justify-between gap-3">
         <p className="ui-type-metric-value min-w-0 truncate text-ink">{value}</p>
-        {series && series.length > 1 && <Sparkline values={series} className="mb-0.5" />}
+        {series && series.length > 1 && <Sparkline values={series} className="mb-0.5 max-md:hidden" />}
       </div>
       <p className="mt-1.5 text-[12px] font-semibold text-ink">{label}</p>
       {sub && <p className="mt-0.5 text-[11px] text-muted">{sub}</p>}

@@ -120,6 +120,10 @@
        figure on a stat tile, and every number that sits in a column under
        another number. */
     --ui-type-metric-value-size: 26px;
+    /* A stat tile is half a phone wide. The same figure at 26px overflowed the
+       tile it leads, so the scale has a phone step instead of every KPI row
+       inventing one. */
+    --ui-type-metric-value-mobile-size: 20px;
     --ui-type-figure-size: 13px;
   }
   body {
@@ -1238,6 +1242,11 @@
     font-variant-numeric: proportional-nums;
     letter-spacing: -0.02em;
     line-height: 1;
+  }
+  @media (max-width: 767px) {
+    .ui-type-metric-value {
+      font-size: var(--ui-type-metric-value-mobile-size) !important;
+    }
   }
   /* A number that sits under another number: a table cell, an axis tick, the
      value beside a bar. Here equal-width digits are the point — they are what

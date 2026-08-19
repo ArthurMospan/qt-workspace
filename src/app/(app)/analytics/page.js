@@ -409,6 +409,9 @@ function AnalyticsContent({
                 id: 'progress',
                 header: 'Прогрес',
                 width: '180px',
+                // A bar needs a width to be a bar: stacked on a phone it takes
+                // the row rather than half of one.
+                wide: true,
                 cell: row => <Meter value={row.pct / 100} reading={`${row.pct}%`} height={6} />,
               },
               { id: 'open', header: 'Відкрито', align: 'right', width: '96px', cell: row => <span className="ui-type-figure text-ink">{row.open}</span> },

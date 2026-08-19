@@ -1,5 +1,5 @@
 'use client';
-import React, { Children, cloneElement, isValidElement, useState } from 'react';
+import React, { Children, Fragment, isValidElement, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Filter } from 'lucide-react';
 import Tabs from '../Tabs';
@@ -52,15 +52,40 @@ export function PageHeader({
   // Inside the dialog every control spans the full width instead of keeping its
   // desktop fixed width. The filters slot is an arbitrary tree (fragment, flex
   // wrapper, …), so find the bar wherever it sits.
-  const stackFilters = node => Children.map(node, child => {
-    if (!isValidElement(child)) return child;
-    if (child.type?.isFilterBar) return <FilterBar {...child.props} context="stacked" />;
-    if (child.props?.children) {
-      return cloneElement(child, { children: stackFilters(child.props.children) });
-    }
-    return child;
-  });
-  const stackedFilters = stackFilters(filters);
+  //
+  // Reproducing that tree inside the sheet was the bug. It is authored as a
+  // desktop *row* — `flex items-center justify-between`, with a trailing group
+  // pushed out by `ml-auto` — and a row 358px wide does not fold on its own:
+  // «Мої завдання» put its column-visibility button half off the right edge of
+  // the sheet. So the sheet does not reproduce the row, it reads it. Every
+  // filter bar comes through stacked, anything the row itself hides on a phone
+  // stays hidden, and whatever is left is a control rather than a filter — it
+  // goes full width under the filters, which is where a thumb can reach it.
+  const sheetContent = node => {
+    const bars = [];
+    const controls = [];
+    const walk = children => Children.forEach(children, child => {
+      if (!isValidElement(child)) return;
+      // `hidden` / `max-md:hidden` is the row saying this is desktop furniture:
+      // a view switcher, a period stepper the screen re-renders under the
+      // header. Note that `md:hidden` is the opposite claim and is kept.
+      if (/(?:^|\s)(?:max-md:hidden|hidden)(?:\s|$)/.test(child.props?.className || '')) return;
+      if (child.type?.isFilterBar) {
+        bars.push(<FilterBar key={`bar-${bars.length}`} {...child.props} context="stacked" />);
+        return;
+      }
+      // A plain element is layout, not a control: walk through it. A component
+      // is the control itself.
+      if ((child.type === Fragment || typeof child.type === 'string') && child.props?.children) {
+        walk(child.props.children);
+        return;
+      }
+      controls.push(child);
+    });
+    walk(node);
+    return { bars, controls };
+  };
+  const { bars: stackedFilters, controls: sheetControls } = sheetContent(filters);
 
   // There used to be an `alt` variant here — a compact bar with the title on
   // the same line as the tabs. It had exactly one caller, the project portal at
@@ -179,6 +204,11 @@ export function PageHeader({
         >
           <div className="flex flex-col gap-[16px]">
             {stackedFilters}
+            {sheetControls.length > 0 && (
+              <div className="flex flex-col gap-[12px] [&>*]:w-full">
+                {sheetControls}
+              </div>
+            )}
           </div>
         </Dialog>,
         document.body,

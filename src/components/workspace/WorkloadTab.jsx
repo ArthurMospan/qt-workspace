@@ -211,6 +211,10 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
             {
               id: 'focus',
               header: 'Поточний фокус',
+              // A task title, a progress bar and a state chip are not figures:
+              // stacked on a phone each takes the row to itself instead of
+              // being folded into half a card.
+              wide: true,
               cell: row => (row.inProgressItems.length > 0 ? (
                 <span className="block min-w-0">
                   <span className="block truncate text-[12px] font-medium text-ink">
@@ -230,6 +234,7 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
               id: 'progress',
               header: 'Прогрес',
               width: '150px',
+              wide: true,
               cell: row => (
                 // What the bar is filled with, said in words: the bar draws
                 // done against everything assigned, and the figure beside it
@@ -245,7 +250,7 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
             { id: 'done', header: 'Готово', align: 'right', width: '88px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
             { id: 'inProgress', header: 'В роботі', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{row.inProgress}</span> },
             { id: 'time', header: 'Час', align: 'right', width: '96px', cell: row => <span className="ui-type-figure text-muted">{fmtH(row.minutes)}</span> },
-            { id: 'state', header: 'Стан', align: 'right', width: '150px', cell: row => <RiskPill stat={row} /> },
+            { id: 'state', header: 'Стан', align: 'right', width: '150px', wide: true, cell: row => <RiskPill stat={row} /> },
           ]}
         />
       </ChartCard>

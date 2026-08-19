@@ -8,6 +8,7 @@ import {
   DetailSection,
   KpiCard,
   Meter,
+  Pill,
   SignalList,
   Sparkline,
   TrendChart,
@@ -47,9 +48,9 @@ const DEMO_BURNDOWN = Array.from({ length: 12 }, (_, index) => ({
 }));
 
 const DEMO_MEMBERS = [
-  { id: 'a', name: 'Артур Моспан', done: 12, open: 4, minutes: 640 },
-  { id: 'b', name: 'Олена Коваль', done: 7, open: 9, minutes: 420 },
-  { id: 'c', name: 'Дмитро Гнатюк', done: 3, open: 2, minutes: 95 },
+  { id: 'a', name: 'Артур Моспан', done: 12, open: 4, minutes: 640, focus: 'Переписати імпорт клієнтських даних із YouTrack', state: 'Стабільно' },
+  { id: 'b', name: 'Олена Коваль', done: 7, open: 9, minutes: 420, focus: 'Аудит доступів до проєктних дощок', state: 'Високе навантаження' },
+  { id: 'c', name: 'Дмитро Гнатюк', done: 3, open: 2, minutes: 95, focus: '', state: 'Стабільно' },
 ];
 
 export default function ChartsSection() {
@@ -177,7 +178,7 @@ export default function ChartsSection() {
 
       <PreviewBlock
         title="Таблиця показників"
-        description="Аналітика мала три таблиці, і кожну писали з нуля: різні лінійки, різні кеглі заголовків, різні кольори чисел, а одна з них узагалі була шестиколонковою CSS-сіткою, продубльованою двічі. Це справжня <table>, тож скрінрідер отримує таблицю; нижче брейкпоінта кожен рядок згортається в підписаний стос, бо шість колонок на телефоні — це горизонтальний скрол, якого ніхто не знаходить."
+        description="Аналітика мала три таблиці, і кожну писали з нуля: різні лінійки, різні кеглі заголовків, різні кольори чисел, а одна з них узагалі була шестиколонковою CSS-сіткою, продубльованою двічі. Це справжня <table>, тож скрінрідер отримує таблицю; нижче брейкпоінта кожен рядок згортається в підписаний стос, бо шість колонок на телефоні — це горизонтальний скрол, якого ніхто не знаходить. Значення, яке не є короткою цифрою — назва, смуга, чіп — позначається `wide` і в стосі займає рядок цілком: інакше воно малювалось поверх сусідньої колонки, а власний підпис обрізало до нуля."
         filePath="src/components/ui/DataDisplay/DataTable.jsx"
         component="DataTable"
         fullWidth
@@ -200,13 +201,32 @@ export default function ChartsSection() {
                   ),
                 },
                 {
+                  id: 'focus',
+                  header: 'Поточний фокус',
+                  wide: true,
+                  cell: row => (row.focus
+                    ? <span className="block truncate text-[12px] font-medium text-ink">{row.focus}</span>
+                    : <span className="text-[12px] text-faint">Немає задач у роботі</span>),
+                },
+                {
                   id: 'progress',
                   header: 'Прогрес',
                   width: '160px',
+                  wide: true,
                   cell: row => <Meter value={row.done / (row.done + row.open)} reading={`Готово: ${row.done}/${row.done + row.open}`} height={6} />,
                 },
                 { id: 'done', header: 'Готово', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
                 { id: 'time', header: 'Час', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{Math.round(row.minutes / 60)}г</span> },
+                {
+                  id: 'state',
+                  header: 'Стан',
+                  align: 'right',
+                  width: '150px',
+                  wide: true,
+                  cell: row => (row.state === 'Стабільно'
+                    ? <Pill tone="success" size="md">{row.state}</Pill>
+                    : <Pill tone="warning" size="md">{row.state}</Pill>),
+                },
               ]}
             />
           </DetailSection>

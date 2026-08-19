@@ -771,6 +771,7 @@
     ],
     "Pill": [
       "badges",
+      "charts",
       "chat-elements",
       "detail-layout",
       "variant-matrix",

@@ -24,7 +24,7 @@ export default function PageHeadersSection() {
   return (
     <div className="flex flex-col gap-[32px]">
       {/* Варіант 1: Повний (Заголовок + Дії + Таби + Фільтри + Switcher) */}
-      <PreviewBlock title="1) Повний варіант (Full PageHeader)" description="Містить заголовок, кнопки дій, вкладки сторінки, фільтри та перемикач вигляду (як на сторінці Мої завдання). На екранах вужче 768px рядок фільтрів ховається: замість нього — іконка з лічильником активних фільтрів, яка відкриває їх у модалці (звузьте вікно, щоб перевірити)." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
+      <PreviewBlock title="1) Повний варіант (Full PageHeader)" description="Містить заголовок, кнопки дій, вкладки сторінки, фільтри та перемикач вигляду (як на сторінці Мої завдання). На екранах вужче 768px рядок фільтрів ховається: замість нього — іконка з лічильником активних фільтрів, яка відкриває їх у модалці (звузьте вікно, щоб перевірити). Шторка не відтворює десктопний рядок, а читає його: фільтри стають стосом, усе з `max-md:hidden` лишається схованим, а те, що не фільтр, стає рядком на всю ширину внизу." filePath="src/components/ui/Layout/PageHeader.jsx" fullWidth>
         <div className="border border-[#f0f0f0] rounded-[24px] overflow-hidden bg-white p-[24px] w-full">
           <PageHeader
             title="Мої завдання"
@@ -58,15 +58,28 @@ export default function PageHeadersSection() {
                   />
                 </FilterBar>
                 
-                <Tabs
-                  tabs={[
-                    { id: 'kanban', icon: Kanban },
-                    { id: 'list', icon: List }
-                  ]}
-                  activeTab={tab1}
-                  onTabChange={setTab1}
-                  className="ml-auto"
-                />
+                <div className="ml-auto max-md:hidden">
+                  <Tabs
+                    tabs={[
+                      { id: 'kanban', icon: Kanban },
+                      { id: 'list', icon: List }
+                    ]}
+                    activeTab={tab1}
+                    onTabChange={setTab1}
+                  />
+                </div>
+
+                {/* Дія, а не фільтр: нижче md вона їде у шторку фільтрів і
+                    стає рядком на всю ширину під ними. */}
+                <Button
+                  onClick={() => alert('Налаштування колонок')}
+                  icon={Settings2}
+                  size="lg"
+                  style="secondary"
+                  className="md:hidden"
+                >
+                  Налаштування колонок
+                </Button>
               </div>
             }
           />

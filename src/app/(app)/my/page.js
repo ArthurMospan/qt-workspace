@@ -318,7 +318,9 @@ export default function MyTasksPage() {
               />
             </FilterBar>
             
-            <div className="flex items-center gap-2 ml-auto">
+            {/* Десктопний хвіст рядка. Нижче md ця група не їде у шторку
+                фільтрів: там вона висіла збоку, наполовину за екраном. */}
+            <div className="flex items-center gap-2 ml-auto max-md:hidden">
               <Button
                 onClick={() => setShowSettingsModal(true)}
                 icon={Settings2}
@@ -338,6 +340,18 @@ export default function MyTasksPage() {
                 />
               </div>
             </div>
+
+            {/* Та сама дія на телефоні — на всю ширину під фільтрами у шторці,
+                з підписом: іконка сама по собі там нічого не пояснювала. */}
+            <Button
+              onClick={() => setShowSettingsModal(true)}
+              icon={Settings2}
+              size="lg"
+              style="secondary"
+              className="md:hidden"
+            >
+              Налаштування колонок
+            </Button>
           </div>
           }
         />
