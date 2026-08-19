@@ -1,7 +1,7 @@
 'use client';
 
 // src/lib/hooks/useWorkspaceChat.js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { collection, doc, query, orderBy, limit, onSnapshot, serverTimestamp, setDoc, where, deleteDoc, deleteField, updateDoc, getDoc, getDocs, arrayUnion, arrayRemove, increment, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -541,9 +541,17 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
       throw e;
     }
   };
-  const openThread = msgId => setActiveThreadId(msgId);
-  const closeThread = () => setActiveThreadId(null);
-  const loadOlderMessages = () => setMessageLimit(current => current + MESSAGE_PAGE_SIZE);
+  // Stable across renders, and deliberately so: a caller reads these in an
+  // effect's dependency list. A fresh function every render there re-runs the
+  // effect on every render, which is how the chat page used to spin forever the
+  // moment its URL carried a conversation to open — see the `dm`/`channel`
+  // /`thread` effect on the chat page.
+  const openThread = useCallback(msgId => setActiveThreadId(msgId), []);
+  const closeThread = useCallback(() => setActiveThreadId(null), []);
+  const loadOlderMessages = useCallback(
+    () => setMessageLimit(current => current + MESSAGE_PAGE_SIZE),
+    [],
+  );
 
   // Compute unread count for a channel
   const getUnreadCount = cId => {

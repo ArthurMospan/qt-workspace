@@ -512,7 +512,18 @@ export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState({ id: 'general', type: 'channel' });
   // Mobile single-pane mode: 'list' (channels) або 'chat' (розмова); md+ показує обидві панелі
   const [mobilePane, setMobilePane] = useState('list');
-  const openChannel = (ch) => { setActiveChannel(ch); setMobilePane('chat'); };
+  // Re-opening the conversation that is already open must write nothing. The
+  // object literal a caller passes is new every time, so an unconditional
+  // `setActiveChannel` always re-renders — and this is called from an effect
+  // that reads the URL, which is a render loop with no exit as soon as the URL
+  // carries a conversation. Opening a member's profile from a direct message
+  // does exactly that.
+  const openChannel = (ch) => {
+    setActiveChannel(current => (
+      current.id === ch.id && current.type === ch.type ? current : ch
+    ));
+    setMobilePane('chat');
+  };
   // Системний «назад» на телефоні повертає до списку чатів, а не виходить зі сторінки
   const requestPaneClose = useMobilePaneBack(mobilePane === 'chat', () => setMobilePane('list'));
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
