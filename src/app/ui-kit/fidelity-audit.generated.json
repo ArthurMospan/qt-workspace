@@ -8,20 +8,20 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 241,
-    "parsedFiles": 241,
+    "productFiles": 242,
+    "parsedFiles": 242,
     "parseErrors": 0,
-    "nativeControls": 20,
+    "nativeControls": 21,
     "structures": {
       "chat": 1,
       "analytics": 2,
       "qtplus": 1,
       "settings": 1,
-      "shell": 14,
+      "shell": 15,
       "other": 1
     },
     "styledNativeControls": 13,
-    "reviewedNativeControls": 5,
+    "reviewedNativeControls": 6,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 20,
+    "button": 21,
     "input": 0,
     "textarea": 0,
     "select": 0
@@ -56,7 +56,35 @@
   "nativeControls": [
     {
       "tag": "button",
-      "location": "src/components/AuthLayout.jsx:46",
+      "location": "src/components/AuthLayout.jsx:104",
+      "className": "w-full flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-red-400 hover:bg-white/5 transition-colors text-left",
+      "text": "Вийти",
+      "childElements": [
+        "LogOut"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "",
+      "resembles": "",
+      "structure": "shell",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/AuthLayout.jsx:131",
+      "className": "",
+      "text": "Підтримка",
+      "childElements": [],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "auth-footer-support",
+      "resembles": "",
+      "structure": "shell",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/AuthLayout.jsx:66",
       "className": "hidden md:flex items-center gap-2 text-white/70 hover:text-white transition-colors text-[13px] font-medium",
       "text": "Створити організацію",
       "childElements": [
@@ -71,25 +99,10 @@
     },
     {
       "tag": "button",
-      "location": "src/components/AuthLayout.jsx:67",
+      "location": "src/components/AuthLayout.jsx:87",
       "className": "w-8 h-8 rounded-full bg-[#2a2a2a] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 hover:border-white/30 transition-colors cursor-pointer",
       "text": "",
       "childElements": [],
-      "ariaLabel": "",
-      "styled": true,
-      "reviewed": "",
-      "resembles": "",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/AuthLayout.jsx:84",
-      "className": "w-full flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-red-400 hover:bg-white/5 transition-colors text-left",
-      "text": "Вийти",
-      "childElements": [
-        "LogOut"
-      ],
       "ariaLabel": "",
       "styled": true,
       "reviewed": "",
@@ -401,12 +414,12 @@
   },
   "nativeHotspots": [
     {
-      "file": "src/components/WorkspaceSidebar.jsx",
+      "file": "src/components/AuthLayout.jsx",
       "count": 4
     },
     {
-      "file": "src/components/AuthLayout.jsx",
-      "count": 3
+      "file": "src/components/WorkspaceSidebar.jsx",
+      "count": 4
     },
     {
       "file": "src/components/MobileNav.jsx",
@@ -443,6 +456,11 @@
   ],
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
+    {
+      "location": "src/components/AuthLayout.jsx:131",
+      "tag": "button",
+      "context": "auth-footer-support"
+    },
     {
       "location": "src/components/MobileNav.jsx:360",
       "tag": "button",

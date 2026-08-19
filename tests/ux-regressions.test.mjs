@@ -96,13 +96,16 @@ test('requested navigation and readability regressions stay fixed', async () => 
 });
 
 test('help, news and versions are read in place; contracts keep their own address', async () => {
-  const [menu, centre, shell, legal, helpExplorer, newsIndex, versions] = await Promise.all([
+  const [menu, centre, shell, legal, helpExplorer, newsIndex, support, authShell, login] = await Promise.all([
     read('src/components/WorkspaceHelpMenu.jsx'),
     read('src/components/WorkspaceInfoCenter.jsx'),
     read('src/app/(public)/layout.js'),
     read('src/app/(public)/_components/LegalDocumentPage.jsx'),
     read('src/app/(public)/help/HelpExplorer.jsx'),
     read('src/app/(public)/news/page.js'),
+    read('src/components/SupportDialog.jsx'),
+    read('src/components/AuthLayout.jsx'),
+    read('src/app/login/page.js'),
   ]);
   // The public routes are a document shell, not a second site: no logo lockup,
   // no navigation across sections, no "Увійти" — only the way back.
@@ -131,11 +134,38 @@ test('help, news and versions are read in place; contracts keep their own addres
   // written for whoever built the thing, not for somebody asking what changed.
   // The build number stays, because a support conversation asks for it.
   assert.doesNotMatch(menu, /setInfoPane\('versions'\)/);
-  assert.match(menu, /QuickTeam \{APP_VERSION\}/);
+  assert.match(support, /QuickTeam \{APP_VERSION\}/);
   // A contract needs an address that can be linked, printed and cited.
   for (const legalRoute of ['/terms', '/privacy', '/offer']) {
     assert.match(menu, new RegExp(`router\\.push\\('${legalRoute}'\\)`));
   }
+
+  // The sign-in shell is not a lesser place to be told any of this. It is the
+  // screen you land on before a workspace, between two of them, and after
+  // something has gone wrong — so it carries the same three documents, the
+  // published help, and the same support dialog the workspace opens, rather
+  // than a lone privacy link and its own private list of contacts.
+  for (const route of ['/help', '/terms', '/privacy', '/offer']) {
+    assert.match(authShell, new RegExp(`href: '${route}'`));
+  }
+  assert.match(authShell, /<SupportDialog isOpen=\{supportOpen\}/);
+  assert.match(menu, /<SupportDialog isOpen=\{supportOpen\}/);
+  // One list of channels, in one file: two copies would drift, and the copy
+  // that drifted would be the one a stranded person reads.
+  assert.match(support, /ONEB_SUPPORT_CONTACTS/);
+  for (const source of [menu, authShell]) {
+    assert.doesNotMatch(source, /ONEB_SUPPORT_CONTACTS/);
+  }
+
+  // Consent under the sign-in buttons covers the two documents a person can be
+  // said to have agreed to by signing in, and links both. The offer is a
+  // commercial contract, bound in by §1 of the terms and accepted when
+  // something is bought — asking for agreement to it at the door was asking
+  // for more than the door is for. It stays one line below, in the footer.
+  const consent = withoutComments(login).match(/Продовжуючи, ви погоджуєтеся з[\s\S]*?<\/p>/)?.[0] || '';
+  assert.match(consent, /href="\/terms"/);
+  assert.match(consent, /href="\/privacy"/);
+  assert.doesNotMatch(consent, /href="\/offer"/);
   assert.match(centre, /HELP_ARTICLES/);
   assert.match(centre, /NEWS_ARTICLES/);
 });

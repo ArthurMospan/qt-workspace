@@ -1177,10 +1177,10 @@
         "src/app/(app)/sprints/page.js",
         "src/components/CreateTaskModal.jsx",
         "src/components/InviteMemberDialog.jsx",
+        "src/components/SupportDialog.jsx",
         "src/components/TeamMemberSettingsDialog.jsx",
         "src/components/UserStatusSetter.jsx",
         "src/components/WorkspaceHeader.jsx",
-        "src/components/WorkspaceHelpMenu.jsx",
         "src/components/WorkspaceInfoCenter.jsx",
         "src/components/profile/ProfileModal.jsx",
         "src/components/workspace/BillingTab.jsx",
@@ -1541,7 +1541,7 @@
       "routes": [],
       "usedIn": [
         "src/components/SearchModal.jsx",
-        "src/components/WorkspaceHelpMenu.jsx"
+        "src/components/SupportDialog.jsx"
       ]
     },
     "LoadOlderButton": {
@@ -2845,7 +2845,7 @@
             "src/app/(app)/sprints/page.js:972",
             "src/app/(app)/sprints/page.js:981",
             "src/components/MobileNav.jsx:382",
-            "src/components/WorkspaceHelpMenu.jsx:154",
+            "src/components/WorkspaceHelpMenu.jsx:74",
             "src/components/profile/ProfileView.jsx:175",
             "src/components/workspace/IssueDetail.jsx:1311",
             "src/components/workspace/IssueDetail.jsx:1322",
@@ -3198,7 +3198,7 @@
             "src/components/UserStatusSetter.jsx:77",
             "src/components/WorkspaceHeader.jsx:319",
             "src/components/WorkspaceHeader.jsx:329",
-            "src/components/WorkspaceHelpMenu.jsx:154",
+            "src/components/WorkspaceHelpMenu.jsx:74",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/YouTrackImportCard.jsx:501",
             "src/components/integrations/YouTrackImportCard.jsx:699",
@@ -3364,7 +3364,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/UserStatusSetter.jsx:77",
-            "src/components/WorkspaceHelpMenu.jsx:154",
+            "src/components/WorkspaceHelpMenu.jsx:74",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
             "src/components/integrations/IntegrationCard.jsx:99",
@@ -3596,7 +3596,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/UserStatusSetter.jsx:77",
-            "src/components/WorkspaceHelpMenu.jsx:154",
+            "src/components/WorkspaceHelpMenu.jsx:74",
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
@@ -3806,7 +3806,7 @@
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceHeader.jsx:319",
             "src/components/WorkspaceHeader.jsx:329",
-            "src/components/WorkspaceHelpMenu.jsx:154",
+            "src/components/WorkspaceHelpMenu.jsx:74",
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
@@ -4171,7 +4171,7 @@
           "routes": [],
           "files": [
             "src/components/MobileNav.jsx:382",
-            "src/components/WorkspaceHelpMenu.jsx:154"
+            "src/components/WorkspaceHelpMenu.jsx:74"
           ]
         },
         "status-submit": {
@@ -4245,7 +4245,7 @@
           "files": [
             "src/app/(app)/page.js:230",
             "src/components/AudioTaskPanel.jsx:263",
-            "src/components/AuthLayout.jsx:56"
+            "src/components/AuthLayout.jsx:76"
           ]
         },
         "compact": {
@@ -4389,7 +4389,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/AuthLayout.jsx:56"
+            "src/components/AuthLayout.jsx:76"
           ]
         },
         "danger": {
@@ -4503,7 +4503,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/components/AuthLayout.jsx:56",
+            "src/components/AuthLayout.jsx:76",
             "src/components/profile/ProfileModal.jsx:41",
             "src/components/profile/ProfileModal.jsx:46",
             "src/components/workspace/QtPlusProjectTab.jsx:47",
@@ -4601,7 +4601,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/AuthLayout.jsx:56"
+            "src/components/AuthLayout.jsx:76"
           ]
         },
         "chat-composer-cancel": {
@@ -6848,8 +6848,8 @@
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
             "src/app/(app)/sprints/page.js:76",
+            "src/components/SupportDialog.jsx:48",
             "src/components/WorkspaceHeader.jsx:465",
-            "src/components/WorkspaceHelpMenu.jsx:85",
             "src/components/workspace/BoardConfigModal.jsx:200",
             "src/components/workspace/TimesheetTab.jsx:473"
           ]
@@ -6905,8 +6905,8 @@
             "src/app/(app)/sprints/page.js:185",
             "src/app/(app)/sprints/page.js:254",
             "src/app/(app)/sprints/page.js:76",
+            "src/components/SupportDialog.jsx:48",
             "src/components/TeamMemberSettingsDialog.jsx:48",
-            "src/components/WorkspaceHelpMenu.jsx:85",
             "src/components/workspace/BillingTab.jsx:434",
             "src/components/workspace/BoardConfigModal.jsx:200",
             "src/components/workspace/TimesheetTab.jsx:473",
@@ -6987,9 +6987,9 @@
             "src/app/(app)/sprints/page.js:76",
             "src/components/CreateTaskModal.jsx:278",
             "src/components/InviteMemberDialog.jsx:95",
+            "src/components/SupportDialog.jsx:48",
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/WorkspaceHeader.jsx:465",
-            "src/components/WorkspaceHelpMenu.jsx:85",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:434",
             "src/components/workspace/BoardConfigModal.jsx:200",
@@ -7074,8 +7074,8 @@
           ],
           "files": [
             "src/app/(app)/sprints/page.js:185",
+            "src/components/SupportDialog.jsx:48",
             "src/components/UserStatusSetter.jsx:68",
-            "src/components/WorkspaceHelpMenu.jsx:85",
             "src/components/WorkspaceInfoCenter.jsx:245"
           ]
         }
@@ -7807,7 +7807,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHelpMenu.jsx:99"
+            "src/components/SupportDialog.jsx:62"
           ]
         }
       }

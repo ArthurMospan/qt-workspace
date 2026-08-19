@@ -236,20 +236,24 @@ export default function LoginPage() {
           </p>
         )}
 
-        {/* The sentence named three documents and linked to none of them, so
-            the one screen where consent is actually given was the one place the
-            documents could not be read. Every service that asks for agreement
-            here links the agreements themselves — and QuickTeam has three: the
-            terms, the offer that is the contract under Ukrainian law, and the
-            privacy policy. */}
+        {/* Two documents, not three.
+
+            Consent given by pressing a sign-in button is consent to the rules
+            of using the service and to what happens to your data — that pair is
+            what every product asks for here, and it is what a person can
+            actually be said to have agreed to by signing in. The offer is a
+            commercial contract about paid access; §1 of the terms already binds
+            it in by reference, and it is accepted when somebody buys something,
+            not when they open the door. It stays one line below, in the footer,
+            reachable from every screen of this shell.
+
+            The links are the documents themselves. A sentence that names an
+            agreement without linking it asks for consent on the one screen
+            where the agreement cannot be read. */}
         <p className="mt-6 text-center text-xs leading-relaxed text-white/35">
           Продовжуючи, ви погоджуєтеся з{' '}
           <Link href="/terms" className="text-white/60 underline underline-offset-2 transition-colors hover:text-white">
             Умовами користування
-          </Link>
-          ,{' '}
-          <Link href="/offer" className="text-white/60 underline underline-offset-2 transition-colors hover:text-white">
-            Публічною офертою
           </Link>
           {' '}та{' '}
           <Link href="/privacy" className="text-white/60 underline underline-offset-2 transition-colors hover:text-white">

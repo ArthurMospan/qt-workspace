@@ -70,7 +70,7 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     sharedChromeOverrides: 0,
     localSharedNameCollisions: 0,
     localSurfaceExceptions: 68,
-    reviewedNativeControls: 18,
+    reviewedNativeControls: 19,
     // The one number that had no ceiling, which is why it reached 145: every
     // other category was pinned at zero, so new hand-written markup simply
     // landed here and the report grew without anything objecting. It may fall
@@ -92,7 +92,15 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     // kit has no "a value you can click" component, and inventing one for two
     // lines would be a component nothing else reaches for. Marked
     // `data-ui-control="profile-contact-value"`.
-    nativeControls: 20,
+    //
+    // 20 → 21, on purpose: the sign-in shell's footer can now open support.
+    // That footer is a row of quiet 12px links — the documents and the
+    // language — and support is one more word in it that happens to open a
+    // dialog instead of navigating. A `Button` there would put a control box
+    // in a line of text and make the loudest thing on the screen the footer,
+    // on a screen whose entire job is the three sign-in buttons above it.
+    // Marked `data-ui-control="auth-footer-support"`.
+    nativeControls: 21,
   };
   for (const [category, maximum] of Object.entries(maximums)) {
     assert.ok(

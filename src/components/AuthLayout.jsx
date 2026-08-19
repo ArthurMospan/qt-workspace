@@ -6,11 +6,31 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { Plus, X, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { IconAction } from '@/components/ui';
+import SupportDialog from '@/components/SupportDialog';
+
+// Everything QuickTeam owes a reader who is not inside a workspace yet: the
+// help it publishes, a way to reach a person, and the three documents.
+//
+// The footer used to carry one of them. The privacy policy alone is the
+// convention of a cookie banner, not of a product's front door — and this shell
+// is not only the front door: it is also the screen you land on between two
+// organizations, and the one you are left on when something has gone wrong,
+// which is exactly when «write to support» has to be on screen rather than
+// three clicks inside a workspace you cannot currently open.
+const AUTH_FOOTER_DOCUMENTS = [
+  { href: '/help', label: 'Довідка' },
+  { href: '/terms', label: 'Умови користування' },
+  { href: '/privacy', label: 'Конфіденційність' },
+  { href: '/offer', label: 'Публічна оферта' },
+];
+
+const AUTH_FOOTER_LINK_CLASS = 'text-white/30 hover:text-white/70 transition-colors text-[12px] font-medium';
 
 export default function AuthLayout({ children, hideCreateOrg = false, onClose }) {
   const { currentUser, signOut } = useAppContext();
   const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   const handleCreateOrg = () => {
     router.push('/onboarding?new=true');
@@ -100,17 +120,35 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
           {children}
         </div>
 
-        {/* Footer */}
-        <div className="w-full flex items-center gap-6 p-6 md:p-8 shrink-0 relative z-50">
-          <Link href="/privacy" className="text-white/30 hover:text-white/70 transition-colors text-[12px] font-medium">
-            Політика конфіденційності
-          </Link>
-          <span className="text-white/30 text-[12px] font-medium">
+        {/* Footer. Wraps rather than scrolls: on a phone this is five short
+            words on two lines, not a row that runs off the edge of the card. */}
+        <div className="w-full flex flex-wrap items-center gap-x-[20px] gap-y-[8px] p-6 md:p-8 shrink-0 relative z-50">
+          {/* A word in a row of words, and the only one that opens something
+              rather than navigating. A kit `Button` here would put a control
+              box in a line of quiet 12px links and make support the loudest
+              thing on a screen whose job is the sign-in buttons above it.
+              Marked `data-ui-control="auth-footer-support"`. */}
+          <button
+            type="button"
+            data-ui-control="auth-footer-support"
+            onClick={() => setSupportOpen(true)}
+            className={AUTH_FOOTER_LINK_CLASS}
+          >
+            Підтримка
+          </button>
+          {AUTH_FOOTER_DOCUMENTS.map(document => (
+            <Link key={document.href} href={document.href} className={AUTH_FOOTER_LINK_CLASS}>
+              {document.label}
+            </Link>
+          ))}
+          <span className="text-white/30 text-[12px] font-medium ml-auto">
             Українська
           </span>
         </div>
 
       </div>
+
+      <SupportDialog isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
     </div>
   );
 }
