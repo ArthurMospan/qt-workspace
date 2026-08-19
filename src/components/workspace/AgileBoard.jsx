@@ -329,10 +329,20 @@ export default function AgileBoard({
   // collapsing a column, resizing the window and dropping a card all change the
   // answer, and only the scroller itself knows all three.
   const boardScrollRef = useRef(null);
+  // With swimlanes the column titles are a second row above the scroller, and
+  // that row is not the scroller: it never moved, so every column past the
+  // right edge kept a header that stayed put over the wrong cards — and the
+  // chevron that folds and unfolds a column lives only in that header, which
+  // made a column you could not bring into view a column you could not unfold.
+  // The body scroller stays the one thing that scrolls; the header follows it.
+  const columnHeaderRef = useRef(null);
   const [boardOverflow, setBoardOverflow] = useState({ start: false, end: false });
   const measureBoardOverflow = useCallback(() => {
     const node = boardScrollRef.current;
     if (!node) return;
+    if (columnHeaderRef.current && columnHeaderRef.current.scrollLeft !== node.scrollLeft) {
+      columnHeaderRef.current.scrollLeft = node.scrollLeft;
+    }
     const maxScroll = node.scrollWidth - node.clientWidth;
     const next = {
       start: node.scrollLeft > 1,
@@ -602,7 +612,7 @@ export default function AgileBoard({
 
         {/* Column Headers (fixed at top only for swimlanes) */}
         {swimlanes.length > 1 && (
-          <div className="flex gap-4 pb-2 shrink-0 overflow-hidden bleed-gutter">
+          <div ref={columnHeaderRef} className="flex gap-4 pb-2 shrink-0 overflow-hidden bleed-gutter">
             {columns.map(col => {
               const isCollapsed = collapsedCols.includes(col.id);
               const colTotalIssues = columnCards(boardIssues, col);
@@ -713,7 +723,19 @@ export default function AgileBoard({
                     return (
                       <div
                         key={col.id}
-                        className={`flex flex-col w-[48px] shrink-0 bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`}
+                        // `snap-start`, and not merely "no snap point". Below md
+                        // the board snaps one column at a time, and a mandatory
+                        // scroller may only come to rest on a snap point: a
+                        // folded strip that declared none was simply not a place
+                        // the board could stop. Folding the first column threw
+                        // the scroll to the centre of the second one and pinned
+                        // it there, so the strip sat past the left edge of the
+                        // screen with no gesture that could bring it back — and
+                        // the strip is the only way to unfold the column again.
+                        // Its start edge lands on the gutter, so the whole
+                        // 48px reads. Above md the scroller does not snap at
+                        // all and this changes nothing.
+                        className={`flex flex-col w-[48px] shrink-0 snap-start bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`}
                         style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}
                         onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}
                         // Only the single-swimlane strip is clickable at all;
