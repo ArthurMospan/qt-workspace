@@ -239,7 +239,7 @@ export default function ProfileView({ user, onClose }) {
       </div>
 
       {/* BODY SECTION */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 w-full max-w-[800px] mx-auto">
+      <div className="qt-nav-scroll flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 w-full max-w-[800px] mx-auto">
         
         {activeTab === 'profile' && (
           <div className="flex flex-col gap-8">

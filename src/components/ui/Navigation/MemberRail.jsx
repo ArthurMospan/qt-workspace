@@ -60,7 +60,7 @@ export default function MemberRail({
         {action}
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-4 flex flex-col gap-1">
+      <div className="qt-nav-scroll flex-1 overflow-y-auto custom-scrollbar px-2 pb-4 flex flex-col gap-1">
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <LoadingSpinner size="sm" />

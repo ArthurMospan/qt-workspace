@@ -326,8 +326,8 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
       isBoard
         ? 'overflow-hidden'
         : isQtPlusWorkspace
-          ? 'overflow-y-auto overflow-x-hidden custom-scrollbar lg:overflow-hidden'
-          : 'overflow-y-auto overflow-x-hidden custom-scrollbar'
+          ? 'qt-nav-scroll overflow-y-auto overflow-x-hidden custom-scrollbar lg:overflow-hidden'
+          : 'qt-nav-scroll overflow-y-auto overflow-x-hidden custom-scrollbar'
     }`}>
       <div className={`workspace-page-layout ${
         isBoard

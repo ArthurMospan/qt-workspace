@@ -22,7 +22,7 @@ import Counter from '@/components/ui/DataDisplay/Counter';
  */
 export default function ChannelRail({ groups = [], activeId, onSelect = () => {} }) {
   return (
-    <aside className="flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
+    <aside className="qt-nav-scroll flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
       {groups.map((group, index) => (
         <div key={group.id} className={index < groups.length - 1 ? 'mb-[24px]' : undefined}>
           <div className="flex items-center justify-between px-3 pb-[8px] group">

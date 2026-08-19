@@ -685,7 +685,7 @@ export default function WorkspaceAnalyticsPage() {
   const periodOptions = [7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }));
 
   return (
-    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
+    <div className="qt-nav-scroll flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">
       <div className="workspace-page-layout min-h-full pb-[120px]">
 
         <PageHeader

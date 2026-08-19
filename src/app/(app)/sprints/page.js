@@ -555,7 +555,7 @@ export default function GlobalSprintsPage() {
     // is `lg:` and therefore absent on a phone. Everything past the first screen
     // was simply clipped, which is what made planning on a phone impossible
     // rather than merely cramped.
-    <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent lg:overflow-hidden">
+    <div className="qt-nav-scroll flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent lg:overflow-hidden">
       <div className="workspace-page-layout min-h-full pb-[24px] lg:h-full">
 
       <PageHeader

@@ -4077,7 +4077,7 @@ export default function SettingsPage() {
 
   return (
     <SidebarLayout context="settings" sidebar={sidebarContent} hasBorder={false} mobilePane={mobilePane}>
-      <main className="flex-1 overflow-y-auto custom-scrollbar bg-canvas relative">
+      <main className="qt-nav-scroll flex-1 overflow-y-auto custom-scrollbar bg-canvas relative">
         <div className="max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col">
           <div className="flex-1 pb-[100px]">
             <SectionBackContext.Provider value={mobileBack}>

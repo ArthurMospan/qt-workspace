@@ -607,7 +607,7 @@ export default function CalendarPage() {
 
         <div className="flex flex-col gap-[12px] min-h-0 flex-1">
           <Surface preset="panel" padding="sm" className="min-h-0 flex-1 overflow-hidden">
-            <div className="h-full bg-white rounded-[12px] overflow-auto custom-scrollbar">
+            <div className="qt-nav-scroll h-full bg-white rounded-[12px] overflow-auto custom-scrollbar">
               {loading ? (
                 <div className="h-full min-h-[320px] flex items-center justify-center"><LoadingSpinner size="md" /></div>
               ) : error ? (

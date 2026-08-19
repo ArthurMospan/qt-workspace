@@ -835,7 +835,7 @@ export default function AgileBoard({
                               dropId={dropId}
                               issues={colIssues}
                               isDropDisabled={col.isHiddenContainer || isArchived || selectionActive}
-                              className="flex-1 p-[8px] transition-colors hide-scrollbar rounded-b-[16px] overflow-y-auto"
+                              className="qt-nav-scroll flex-1 p-[8px] transition-colors hide-scrollbar rounded-b-[16px] overflow-y-auto"
                               renderCard={renderIssueCard}
                             />
                           );
@@ -847,7 +847,7 @@ export default function AgileBoard({
                               <div
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
-                                className={`flex-1 p-[8px] flex flex-col transition-colors hide-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
+                                className={`qt-nav-scroll flex-1 p-[8px] flex flex-col transition-colors hide-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
                                   snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
                                 }`}
                               >

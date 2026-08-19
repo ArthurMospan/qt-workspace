@@ -99,7 +99,7 @@ export default function ErrorReportsPage() {
           description="Нічого не зламалось, або ніхто ще не натиснув «Повідомити про помилку»."
         />
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto custom-scrollbar">
+        <div className="qt-nav-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto custom-scrollbar">
           {reports.map(report => (
             <Surface key={report.id} padding="md">
               <div className="mb-2 flex flex-wrap items-center gap-2">

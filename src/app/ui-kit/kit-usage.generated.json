@@ -2841,7 +2841,7 @@
             "src/app/(app)/settings/page.js:674",
             "src/app/(app)/sprints/page.js:787",
             "src/app/(app)/sprints/page.js:796",
-            "src/components/MobileNav.jsx:356",
+            "src/components/MobileNav.jsx:384",
             "src/components/WorkspaceHelpMenu.jsx:154",
             "src/components/profile/ProfileView.jsx:136",
             "src/components/workspace/IssueDetail.jsx:1247",
@@ -3184,7 +3184,7 @@
             "src/app/(app)/sprints/page.js:903",
             "src/app/(app)/sprints/page.js:921",
             "src/app/(app)/team/page.js:110",
-            "src/components/MobileNav.jsx:356",
+            "src/components/MobileNav.jsx:384",
             "src/components/UserStatusSetter.jsx:77",
             "src/components/WorkspaceHeader.jsx:312",
             "src/components/WorkspaceHeader.jsx:322",
@@ -3344,7 +3344,7 @@
             "src/components/CreateTaskModal.jsx:298",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:356",
+            "src/components/MobileNav.jsx:384",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
@@ -3571,7 +3571,7 @@
             "src/components/CreateTaskModal.jsx:298",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:356",
+            "src/components/MobileNav.jsx:384",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
@@ -3777,7 +3777,7 @@
             "src/components/CreateTaskModal.jsx:298",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:356",
+            "src/components/MobileNav.jsx:384",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/UserStatusSetter.jsx:120",
@@ -4140,7 +4140,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:356",
+            "src/components/MobileNav.jsx:384",
             "src/components/WorkspaceHelpMenu.jsx:154"
           ]
         },
@@ -4226,7 +4226,7 @@
           "files": [
             "src/app/(app)/settings/page.js:307",
             "src/app/(app)/settings/page.js:315",
-            "src/components/MobileNav.jsx:66"
+            "src/components/MobileNav.jsx:73"
           ]
         },
         "sm": {
@@ -4239,8 +4239,8 @@
           ],
           "files": [
             "src/components/AudioTaskPanel.jsx:205",
-            "src/components/MobileNav.jsx:271",
-            "src/components/MobileNav.jsx:300",
+            "src/components/MobileNav.jsx:299",
+            "src/components/MobileNav.jsx:328",
             "src/components/workspace/QtPlusProjectTab.jsx:47",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
             "src/components/workspace/qtplus/cards/FileCard.jsx:86"
@@ -4297,8 +4297,8 @@
             "src/app/(app)/calendar/page.js:343",
             "src/app/(app)/chat/page.js:386",
             "src/app/(app)/page.js:227",
-            "src/components/MobileNav.jsx:271",
-            "src/components/MobileNav.jsx:300",
+            "src/components/MobileNav.jsx:299",
+            "src/components/MobileNav.jsx:328",
             "src/components/workspace/UnifiedTimeline.jsx:867",
             "src/components/workspace/UnifiedTimeline.jsx:868",
             "src/components/workspace/UnifiedTimeline.jsx:960"
@@ -4366,7 +4366,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:66"
+            "src/components/MobileNav.jsx:73"
           ]
         },
         "surface": {
@@ -4447,8 +4447,8 @@
             "src/app/(app)/settings/page.js:315",
             "src/components/AudioTaskPanel.jsx:205",
             "src/components/AudioTaskPanel.jsx:263",
-            "src/components/MobileNav.jsx:271",
-            "src/components/MobileNav.jsx:300",
+            "src/components/MobileNav.jsx:299",
+            "src/components/MobileNav.jsx:328",
             "src/components/WorkspaceHeader.jsx:397",
             "src/components/WorkspaceHeader.jsx:408",
             "src/components/profile/ProfileView.jsx:184",
@@ -4464,7 +4464,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:453",
-            "src/components/MobileNav.jsx:66"
+            "src/components/MobileNav.jsx:73"
           ]
         },
         "circle": {
@@ -4517,9 +4517,9 @@
             "src/app/(app)/settings/page.js:315",
             "src/components/AudioTaskPanel.jsx:205",
             "src/components/AudioTaskPanel.jsx:263",
-            "src/components/MobileNav.jsx:271",
-            "src/components/MobileNav.jsx:300",
-            "src/components/MobileNav.jsx:66",
+            "src/components/MobileNav.jsx:299",
+            "src/components/MobileNav.jsx:328",
+            "src/components/MobileNav.jsx:73",
             "src/components/WorkspaceHeader.jsx:397",
             "src/components/WorkspaceHeader.jsx:408",
             "src/components/profile/ProfileModal.jsx:41",
@@ -6658,11 +6658,11 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:383",
-            "src/components/MobileNav.jsx:196",
-            "src/components/MobileNav.jsx:220",
-            "src/components/MobileNav.jsx:267",
-            "src/components/WorkspaceSidebar.jsx:338",
-            "src/components/WorkspaceSidebar.jsx:388"
+            "src/components/MobileNav.jsx:224",
+            "src/components/MobileNav.jsx:248",
+            "src/components/MobileNav.jsx:295",
+            "src/components/WorkspaceSidebar.jsx:344",
+            "src/components/WorkspaceSidebar.jsx:394"
           ]
         },
         "md": {
@@ -6689,11 +6689,11 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:383",
-            "src/components/MobileNav.jsx:196",
-            "src/components/MobileNav.jsx:220",
-            "src/components/MobileNav.jsx:267",
+            "src/components/MobileNav.jsx:224",
+            "src/components/MobileNav.jsx:248",
+            "src/components/MobileNav.jsx:295",
             "src/components/OrgSwitcherScreen.jsx:46",
-            "src/components/WorkspaceSidebar.jsx:338",
+            "src/components/WorkspaceSidebar.jsx:344",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6701,7 +6701,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:388"
+            "src/components/WorkspaceSidebar.jsx:394"
           ]
         }
       },
@@ -6724,17 +6724,17 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:196",
-            "src/components/WorkspaceSidebar.jsx:338"
+            "src/components/MobileNav.jsx:224",
+            "src/components/WorkspaceSidebar.jsx:344"
           ]
         },
         "info": {
           "count": 3,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:220",
-            "src/components/MobileNav.jsx:267",
-            "src/components/WorkspaceSidebar.jsx:388"
+            "src/components/MobileNav.jsx:248",
+            "src/components/MobileNav.jsx:295",
+            "src/components/WorkspaceSidebar.jsx:394"
           ]
         }
       },
@@ -6756,11 +6756,11 @@
             "/sprints"
           ],
           "files": [
-            "src/components/MobileNav.jsx:196",
-            "src/components/MobileNav.jsx:220",
-            "src/components/MobileNav.jsx:267",
-            "src/components/WorkspaceSidebar.jsx:338",
-            "src/components/WorkspaceSidebar.jsx:388",
+            "src/components/MobileNav.jsx:224",
+            "src/components/MobileNav.jsx:248",
+            "src/components/MobileNav.jsx:295",
+            "src/components/WorkspaceSidebar.jsx:344",
+            "src/components/WorkspaceSidebar.jsx:394",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -7338,15 +7338,15 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:168"
+            "src/components/WorkspaceSidebar.jsx:174"
           ]
         },
         "caption": {
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:174",
-            "src/components/WorkspaceSidebar.jsx:177"
+            "src/components/WorkspaceSidebar.jsx:180",
+            "src/components/WorkspaceSidebar.jsx:183"
           ]
         }
       },
@@ -7355,21 +7355,21 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:168"
+            "src/components/WorkspaceSidebar.jsx:174"
           ]
         },
         "wide": {
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:174"
+            "src/components/WorkspaceSidebar.jsx:180"
           ]
         },
         "half": {
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:177"
+            "src/components/WorkspaceSidebar.jsx:183"
           ]
         }
       },
@@ -7378,9 +7378,9 @@
           "count": 3,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:168",
             "src/components/WorkspaceSidebar.jsx:174",
-            "src/components/WorkspaceSidebar.jsx:177"
+            "src/components/WorkspaceSidebar.jsx:180",
+            "src/components/WorkspaceSidebar.jsx:183"
           ]
         }
       }

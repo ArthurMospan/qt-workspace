@@ -70,13 +70,24 @@
        read through `max()` below so the geometry stays correct if the fit ever
        changes; today those values resolve to 0 and the gap is what shows.
 
-       `--qt-nav-space` is the only number a screen needs: it is what the
-       content column reserves so the last row of a list is never parked under
-       the bar. */
+       `--qt-nav-space` is the only number a screen needs: it is the bar's whole
+       footprint. Nothing *reserves* it any more — the shell used to, and below
+       md the shell is white, so the reserve read as a dead band under the bar
+       that no page could reach into. A screen ends its own scroller with that
+       much room instead (`.qt-nav-scroll`), which lets the page run to the
+       bottom of the glass while its last row still comes out from under it. */
     --qt-nav-height: 58px;
     --qt-nav-gap: 10px;
     --qt-nav-inset: max(var(--qt-nav-gap), env(safe-area-inset-bottom));
     --qt-nav-space: calc(var(--qt-nav-height) + var(--qt-nav-inset) + var(--qt-nav-gap));
+    /* As round as a 58px bar can be: a capsule. Anything less is a rectangle
+       with the corners taken off, and this one is not holding a rectangle. */
+    --qt-nav-radius: calc(var(--qt-nav-height) / 2);
+    /* The page the bar floats over. Below md the shell, every content pane and
+       the settings canvas are all this, which is why the scrim can be one
+       colour rather than a per-screen decision. Channels, not a hex, because
+       the scrim needs the same colour at three different alphas. */
+    --qt-nav-veil-color: 255 255 255;
 
     /* UI Kit semantic contract.
        Components, authenticated workspace screens and /ui-kit consume these
@@ -213,6 +224,96 @@
   @media (max-width: 767px) {
     .ui-toast-layer {
       bottom: calc(var(--qt-nav-space) + 8px);
+    }
+  }
+
+  /* ── The bottom bar, and the page that runs under it ──────────────────
+
+     Glass, not paint. The bar is the organization's colour at
+     `--qt-nav-opacity` over a blur of whatever is scrolling beneath it, which
+     is what allows the page to end at the bottom of the screen instead of at a
+     reserved strip. `MobileNav` publishes both the colour and the opacity: the
+     opacity is decided per brand colour, because a mid-tone thinned too far
+     stops being able to carry its own label colour at AA.
+
+     Where `backdrop-filter` is missing the bar stays fully opaque. A
+     translucent panel with nothing blurred behind it is not glass, it is a
+     smear, and the text on it is the thing that pays. */
+  .qt-nav-bar {
+    border: 1px solid var(--sb-border);
+    border-radius: var(--qt-nav-radius);
+    background-color: var(--sb-bg);
+    box-shadow: 0 6px 16px -10px rgb(0 0 0 / 45%);
+  }
+  /* A bar the reader sees as light is a white pill on a white page: the blur
+     has nothing to separate, so the edge has to. A short dense shadow and a
+     firmer border, rather than the deep soft one that only reads on dark. */
+  .qt-nav-bar[data-nav-tone='light'] {
+    border-color: rgb(31 31 31 / 14%);
+    box-shadow:
+      0 1px 2px rgb(31 31 31 / 10%),
+      0 6px 14px -8px rgb(31 31 31 / 24%);
+  }
+  @supports (background-color: color-mix(in srgb, red 50%, transparent))
+        and ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+    .qt-nav-bar {
+      background-color: color-mix(in srgb, var(--sb-bg) var(--qt-nav-opacity, 88%), transparent);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      backdrop-filter: blur(20px) saturate(180%);
+    }
+  }
+
+  /* The page does not stop at the bar, it dissolves into it. Full width,
+     because the bar is inset from both sides and a list row was otherwise
+     still sharp in the 10px beside it, cut off flat at the screen edge. The
+     gradient is strongest at the very bottom and gone by the time it clears
+     the bar's top edge, so there is still something for the blur to blur.
+     Never a touch target: it covers the last of the content. */
+  .qt-nav-veil {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 39;
+    height: calc(var(--qt-nav-space) + 16px);
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      rgb(var(--qt-nav-veil-color) / 95%) 0%,
+      rgb(var(--qt-nav-veil-color) / 72%) 30%,
+      rgb(var(--qt-nav-veil-color) / 0%) 100%
+    );
+  }
+
+  @media (max-width: 767px) {
+    /* What a screen does instead of having room reserved for it: its own
+       scroller ends with the bar's footprint after the content.
+
+       A spacer rather than a padding, because several of these scrollers
+       already carry a padding-bottom of their own and the chat list is handed
+       one from JavaScript — a tail that *adds* to whatever is there cannot be
+       overwritten by any of them. `scroll-padding-bottom` makes the same
+       promise to `scrollIntoView` and to the focus ring following a keyboard. */
+    .qt-nav-scroll {
+      scroll-padding-bottom: var(--qt-nav-space);
+    }
+    .qt-nav-scroll::after {
+      content: '';
+      display: block;
+      flex: 0 0 auto;
+      height: var(--qt-nav-space);
+    }
+    /* An overlay covers the bar, so a scroller inside one has nothing to clear.
+       This is what lets the tail live in shared views — a profile, a task's
+       timeline, a rail — that are read both as a screen and inside a dialog. */
+    [role='dialog'] .qt-nav-scroll::after,
+    [data-ui-overlay] .qt-nav-scroll::after {
+      height: 0;
+    }
+    /* And a screen that ends in a dock rather than in a list clears the bar
+       with the dock itself: there is nothing to scroll past a composer. */
+    .qt-nav-dock {
+      margin-bottom: var(--qt-nav-space);
     }
   }
 
@@ -1211,7 +1312,9 @@
   }
   @media (max-width: 767px) {
     .ui-bulk-actions[data-ui-composition='bulk-actions'] {
-      bottom: calc(var(--qt-nav-bottom-height, 64px) + 16px);
+      /* `--qt-nav-bottom-height` was never declared anywhere, so this had been
+         silently falling back to 64px and clearing a 78px bar by guesswork. */
+      bottom: calc(var(--qt-nav-space) + 16px);
       max-width: calc(100vw - 16px);
     }
   }

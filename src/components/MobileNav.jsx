@@ -19,10 +19,17 @@ import {
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { useWorkspaceHelp } from '@/components/WorkspaceHelpMenu';
-import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
+import { computeSidebarTheme, computeTranslucentSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
+
+// The bar is glass: the organization's colour at this much opacity over a blur
+// of whatever is scrolling underneath. It is a request rather than a setting —
+// `computeTranslucentSidebarTheme` hands back the opacity the brand colour can
+// actually afford while its labels still clear AA, and that is the number the
+// bar is painted with.
+const NAV_OPACITY = 0.88;
 
 const TABS = [
   { href: '/',           icon: Folder,        label: 'Проєкти', exact: true },
@@ -121,6 +128,14 @@ export default function MobileNav() {
     return computeSidebarTheme(bgColor);
   }, [isBranded, orgBrand?.sidebarTheme, orgBrand?.sidebarColor, sidebarPreview]);
 
+  // The sheet is opaque and wears `theme`; the bar is glass and wears this.
+  // Same organization colour, tokens derived from what it looks like through
+  // the page rather than from what it is.
+  const barTheme = useMemo(
+    () => computeTranslucentSidebarTheme(theme.bg, { opacity: NAV_OPACITY }),
+    [theme.bg],
+  );
+
   // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня.
   useSidebarThemeBoot(theme, Boolean(activeOrg));
 
@@ -155,17 +170,29 @@ export default function MobileNav() {
 
   return (
     <>
+      {/* The last of the page, dissolving. The bar is glass and the content
+          runs underneath it, so what needed handling was the edge: a row cut
+          flat at the bottom of the screen, and the 10px beside the pill where
+          nothing covered it at all. Behind the bar, never in front of it, and
+          never in the way of a thumb. */}
+      <div
+        aria-hidden="true"
+        className={`qt-nav-veil transition-opacity duration-200 ${keyboardOpen ? 'opacity-0' : 'opacity-100'}`}
+      />
+
       {/* ── Bottom tab bar ─────────────────────────────────────────────
-          A floating pill rather than a strip welded to the bottom edge: inset
-          from all three sides, so the corner radius is real and the bar never
-          has to share an edge with the browser's own chrome. The geometry lives
-          in globals.css (--qt-nav-*) because the content column has to reserve
-          exactly the same amount of room. */}
+          A floating capsule rather than a strip welded to the bottom edge:
+          inset from all three sides, so the corner radius is real and the bar
+          never has to share an edge with the browser's own chrome. The
+          geometry, the glass and the two shadows live in globals.css
+          (--qt-nav-*, .qt-nav-bar); what this file supplies is the colour and
+          how much of it the page is allowed to show through. */}
       <nav
         data-app-sb
+        data-nav-tone={barTheme.isDark ? 'dark' : 'light'}
         aria-label="Основна навігація"
         aria-hidden={keyboardOpen}
-        className={`fixed z-40 flex items-stretch overflow-hidden rounded-[22px] border border-[var(--sb-border)] bg-[var(--sb-bg)] shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45)] transition-[transform,opacity] duration-200 ${
+        className={`qt-nav-bar fixed z-40 flex items-stretch overflow-hidden transition-[transform,opacity] duration-200 ${
           keyboardOpen ? 'pointer-events-none translate-y-[140%] opacity-0' : 'translate-y-0 opacity-100'
         }`}
         style={{
@@ -173,12 +200,13 @@ export default function MobileNav() {
           right: 'var(--qt-nav-gap)',
           bottom: 'var(--qt-nav-inset)',
           height: 'var(--qt-nav-height)',
-          '--sb-bg': theme.bg,
-          '--sb-text': theme.text,
-          '--sb-muted': theme.muted,
-          '--sb-hover': theme.hover,
-          '--sb-active': theme.active,
-          '--sb-border': theme.border,
+          '--qt-nav-opacity': `${barTheme.opacity * 100}%`,
+          '--sb-bg': barTheme.bg,
+          '--sb-text': barTheme.text,
+          '--sb-muted': barTheme.muted,
+          '--sb-hover': barTheme.hover,
+          '--sb-active': barTheme.active,
+          '--sb-border': barTheme.border,
         }}
       >
         {TABS.map(({ href, icon: Icon, label, exact }) => {

@@ -198,11 +198,9 @@ export default function WorkspaceLayout({ children }) {
     <Suspense fallback={<div className="w-full h-full bg-[#f5f5f5]" />}>
     <WorkspaceOrganizationRouteGuard>
     {/* The grey is the gutter *between* the floating panels, and on a phone
-        there are no floating panels: the content fills the width edge to edge
-        and the only grey left was the strip the bottom bar reserves, which read
-        as a mystery band under the navigation. Below md the shell is the same
-        white as the pane, so the bar floats over the page instead of over a
-        wall of its own. */}
+        there are no floating panels: the content fills the width edge to edge.
+        Below md the shell is the same white as the pane, so the bar floats over
+        the page instead of over a wall of its own. */}
     <div className="w-full h-full flex overflow-hidden bg-white md:bg-[#f5f5f5]">
       {/* The first stop for Tab, invisible until it is focused. */}
       <a href="#qt-main" className="qt-skip-link rounded-[10px] bg-ink px-[14px] py-[8px] text-[13px] font-bold text-white">
@@ -219,10 +217,14 @@ export default function WorkspaceLayout({ children }) {
       )}
 
       {/* Right column: absolute header + content floating panel */}
-      {/* The bottom bar floats over this column, so the column reserves exactly
-          the bar's footprint — one number, declared next to the bar's geometry
-          in globals.css, instead of a hardcoded 56px that drifted from it. */}
-      <div className="flex flex-col flex-1 overflow-hidden w-full p-0 pb-[var(--qt-nav-space)] md:p-[12px] md:pl-[6px] md:pb-[12px]">
+      {/* The column reserves nothing for the bottom bar. It used to reserve the
+          bar's whole footprint, and below md that strip was shell — white,
+          untouchable, and visibly not part of the page, so every screen ended
+          in a dead band instead of ending under the navigation. The page runs
+          the full height now; the room the last row needs is added by the
+          screen's own scroller (`.qt-nav-scroll`), which is the only element
+          that knows where its content actually ends. */}
+      <div className="flex flex-col flex-1 overflow-hidden w-full p-0 md:p-[12px] md:pl-[6px] md:pb-[12px]">
         <div className="flex flex-col flex-1 bg-white rounded-none md:rounded-[24px] overflow-hidden relative">
           {!hideHeader && (
             <div className="print:hidden absolute top-0 left-0 right-0 z-30">

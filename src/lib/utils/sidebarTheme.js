@@ -126,3 +126,57 @@ export function computeSidebarTheme(bgHex) {
     isDark: false,
   };
 }
+
+/**
+ * The colour a translucent surface actually shows: its own colour laid over
+ * whatever is behind it at `alpha`.
+ */
+function compositeOver(frontHex, backdropHex, alpha) {
+  return rgbToHex(blendColors(hexToRgb(backdropHex), hexToRgb(frontHex), alpha));
+}
+
+/**
+ * The same theme, for a surface that is glass rather than paint.
+ *
+ * A translucent panel does not have the contrast its own colour promises. At
+ * 88% over a white page the dark preset is *seen* as #353535, and `muted` —
+ * derived to clear 4.5:1 against #1f1f1f — lands at 3.2:1 against what the
+ * reader is actually looking at. So every token here is derived from the
+ * perceived colour, and only `bg` stays the organization's own: that is the
+ * colour being painted, at the returned `opacity`.
+ *
+ * Transparency is therefore a budget rather than a constant, and a brand colour
+ * that cannot afford all of it gets less. A mid-tone blue thinned to 88% falls
+ * into the band where black reads better than white, and the bar's labels would
+ * have flipped colour while the sheet the same bar opens kept them white. The
+ * tone is the organization's decision; the opacity is what gives way, one point
+ * at a time, until the panel can carry that decision at AA.
+ *
+ * `over` is the page behind the surface. Below md the workspace shell and every
+ * content pane are `--color-surface`, and the scrim under the bar keeps them so.
+ *
+ * @param {string} bgHex Background HEX colour of the surface itself.
+ * @param {{opacity?: number, over?: string, minimumContrast?: number}} options Requested opacity, the page behind it, and the floor the text must hold.
+ * @returns {{ bg, perceived, opacity, text, muted, hover, active, border, isDark }} `bg` is painted at `opacity`; `perceived` is what that produces, and the colour every token here answers to.
+ */
+export function computeTranslucentSidebarTheme(bgHex, {
+  opacity = 0.88,
+  over = '#ffffff',
+  minimumContrast = 4.5,
+} = {}) {
+  const solid = computeSidebarTheme(bgHex);
+  let alpha = opacity;
+  let seen = compositeOver(solid.bg, over, alpha);
+  let perceived = computeSidebarTheme(seen);
+
+  while (
+    alpha < 1
+    && (perceived.isDark !== solid.isDark || contrastRatio(solid.text, seen) < minimumContrast)
+  ) {
+    alpha = Math.min(1, alpha + 0.01);
+    seen = compositeOver(solid.bg, over, alpha);
+    perceived = computeSidebarTheme(seen);
+  }
+
+  return { ...perceived, bg: solid.bg, perceived: seen, opacity: alpha };
+}

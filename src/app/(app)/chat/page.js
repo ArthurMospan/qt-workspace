@@ -1376,7 +1376,7 @@ export default function ChatPage() {
             />
 
             {/* Input */}
-            <ChatComposerDock ref={composerRef} scrollRef={chatScrollRef}>
+            <ChatComposerDock ref={composerRef} scrollRef={chatScrollRef} className="qt-nav-dock">
               <MessageInput
                 onSend={handleSendMessage}
                 onTyping={handleMainTyping}

@@ -137,7 +137,13 @@ export default function WorkspaceSidebar() {
       data-app-sb
       style={{
         width: collapsed ? 68 : 260,
-        backgroundColor: theme.bg,
+        // Painted from the variable, not from the value. The boot script in
+        // src/app/layout.js overrides `--sb-bg` with `!important` before the
+        // first frame, and an important stylesheet declaration beats a normal
+        // inline one — which is what keeps the branded rail from flashing dark
+        // now that the script no longer writes `background-color` itself.
+        backgroundColor: 'var(--sb-bg)',
+        '--sb-bg': theme.bg,
         '--sb-text': theme.text,
         '--sb-muted': theme.muted,
         '--sb-hover': theme.hover,

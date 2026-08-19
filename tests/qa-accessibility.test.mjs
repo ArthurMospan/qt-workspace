@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { auditA11y } from '../scripts/kit-a11y.mjs';
-import { computeSidebarTheme, contrastRatio } from '../src/lib/utils/sidebarTheme.js';
+import { computeSidebarTheme, computeTranslucentSidebarTheme, contrastRatio } from '../src/lib/utils/sidebarTheme.js';
 import { createUkrainianDndAnnouncements } from '../src/lib/utils/dndAnnouncements.mjs';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -19,6 +19,31 @@ test('quiet text tokens and generated sidebar themes keep AA contrast', () => {
         contrastRatio(theme[token], theme.bg) >= 4.5,
         `${token} must pass on custom sidebar ${hex}`,
       );
+    }
+  }
+});
+
+test('the glass tab bar keeps AA against the colour it is actually seen as', () => {
+  // The bar is painted translucent, so a token that clears 4.5:1 against the
+  // organization's colour can still fail against the lighter thing the reader
+  // looks at. Every token here answers to `perceived`, and the tone the
+  // organization chose never flips: a colour that cannot carry it at this
+  // opacity is given less transparency instead of different labels.
+  for (let red = 0; red <= 255; red += 51) {
+    for (let green = 0; green <= 255; green += 51) {
+      for (let blue = 0; blue <= 255; blue += 51) {
+        const hex = `#${[red, green, blue].map(c => c.toString(16).padStart(2, '0')).join('')}`;
+        const glass = computeTranslucentSidebarTheme(hex);
+        assert.equal(glass.isDark, computeSidebarTheme(hex).isDark, `tone must hold on ${hex}`);
+        assert.ok(glass.opacity >= 0.88 && glass.opacity <= 1, `opacity budget on ${hex}`);
+        assert.equal(glass.bg, computeSidebarTheme(hex).bg, `the painted colour stays the brand on ${hex}`);
+        for (const token of ['text', 'muted', 'mutedProject', 'mutedHeader']) {
+          assert.ok(
+            contrastRatio(glass[token], glass.perceived) >= 4.5,
+            `${token} must pass on the glass bar over ${hex}`,
+          );
+        }
+      }
     }
   }
 });
