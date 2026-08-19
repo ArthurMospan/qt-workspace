@@ -10,11 +10,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useKeyboardOpen } from '@/lib/hooks/useKeyboardOpen';
-import { Counter, IconAction } from '@/components/ui';
+import { Button, Counter, IconAction } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import {
   Folder, PieChart, Menu, X,
-  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown,
+  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown, CircleHelp,
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
@@ -81,6 +81,7 @@ export default function MobileNav() {
   const router = useRouter();
   const { projects, activeOrg, activeOrgId, orgRole } = useAppContext();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const moreDialogRef = useModalFocus({ isOpen: moreOpen, onClose: () => setMoreOpen(false) });
   // Довідка, підтримка, новини та правові документи — той самий список, що
@@ -200,7 +201,10 @@ export default function MobileNav() {
         })}
         <button
           type="button"
-          onClick={() => setMoreOpen(o => !o)}
+          // The help list is closed every time the sheet is opened: it is the
+          // answer to a question somebody asked once, not a section that stays
+          // expanded behind them.
+          onClick={() => { setHelpOpen(false); setMoreOpen(o => !o); }}
           aria-expanded={moreOpen}
           aria-haspopup="dialog"
           className={`relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${
@@ -324,26 +328,41 @@ export default function MobileNav() {
                 телефоні рейки немає, тож підтримка, довідка, новини й правові
                 документи не мали жодного входу взагалі. */}
             <div className="mx-[16px] border-t border-white/[0.08] my-[10px]" />
-            <p className="px-[20px] pb-[8px] text-[11px] font-bold text-[#666666] uppercase tracking-wider">
-              Довідка
-            </p>
-            <div className="flex flex-col gap-[2px] px-[8px]">
-              {helpItems.filter(item => !item.isDivider).map(({ label, icon: Icon, onClick }) => (
-                <button
-                  key={label}
-                  type="button"
-                  // The sheet's own row, wearing the sidebar theme variables the
-                  // two lists above it wear. Those are `Link`s because they go
-                  // somewhere; these open a dialog in place, which is the one
-                  // difference — so the element differs and nothing else does.
-                  data-ui-control="navigation-sheet-row"
-                  onClick={() => { setMoreOpen(false); onClick(); }}
-                  className="flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]"
-                >
-                  <Icon size={17} className="shrink-0" />
-                  <span className="text-[13px] font-medium truncate">{label}</span>
-                </button>
-              ))}
+            {helpOpen && (
+              <div className="flex flex-col gap-[2px] px-[8px] pb-[6px]">
+                {helpItems.filter(item => !item.isDivider).map(({ label, icon: Icon, onClick }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    // The sheet's own row, wearing the sidebar theme variables the
+                    // two lists above it wear. Those are `Link`s because they go
+                    // somewhere; these open a dialog in place, which is the one
+                    // difference — so the element differs and nothing else does.
+                    data-ui-control="navigation-sheet-row"
+                    onClick={() => { setMoreOpen(false); onClick(); }}
+                    className="flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]"
+                  >
+                    <Icon size={17} className="shrink-0" />
+                    <span className="text-[13px] font-medium truncate">{label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* The same quiet circle the rail carries, in the same place: last,
+                small, and closed until it is asked. Seven legal-and-support
+                rows printed under «Проєкти» made the sheet's longest section
+                the one nobody opened it for. */}
+            <div className="flex items-center px-[13px]">
+              <Button
+                style="ghost"
+                size="icon"
+                icon={CircleHelp}
+                composition="sidebar-help-action"
+                onClick={() => setHelpOpen(open => !open)}
+                aria-expanded={helpOpen}
+                aria-label="Допомога та інформація"
+                title="Допомога та інформація"
+              />
             </div>
           </div>
         </div>

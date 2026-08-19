@@ -129,6 +129,13 @@
     --qt-nav-space: 0px;
   }
 
+  /* And on the two screens that do without the bar entirely — a task, an event
+     — nothing should reserve room for it either. Set from the workspace layout,
+     which is the one place that knows which route is on screen. */
+  body[data-mobile-nav='hidden'] {
+    --qt-nav-space: 0px;
+  }
+
   /* A hand on anything that can be pressed.
      Tailwind v4 dropped `cursor: pointer` from its button reset, so every
      control in the product has been an arrow ever since unless somebody
@@ -197,6 +204,16 @@
   }
   .ui-toast {
     animation: qt-toast-slide-up 200ms ease-out;
+  }
+
+  /* On a phone the bottom of the screen already belongs to the tab bar. The
+     toast clears it rather than landing on it; with the keyboard open
+     `--qt-nav-space` is 0 and the toast drops back to the bottom edge, which is
+     where there is room. */
+  @media (max-width: 767px) {
+    .ui-toast-layer {
+      bottom: calc(var(--qt-nav-space) + 8px);
+    }
   }
 
   /* Named geometry: the same contract is used by Button/Input/Select and by
@@ -1320,11 +1337,15 @@
 }
 
 /* Button's own colour utilities live in Tailwind's last layer, so this
-   composition has to be written after them to win. A 32px square that stays
-   quiet until it is pointed at — the placement is in `WorkspaceHelpMenu`. */
+   composition has to be written after them to win. A 32px circle that stays
+   quiet until it is pointed at — the placement is in `WorkspaceHelpMenu`.
+   Round, not a squircle: the glyph inside it is a circled question mark, and a
+   rounded square around a circle reads as two shapes disagreeing. It is also
+   the one control in the rail that is not a destination, and the shape is what
+   says so before the colour does. */
 .ui-button[data-ui-composition='sidebar-help-action'] {
   width: 32px;
-  border-radius: 10px;
+  border-radius: 9999px;
   color: var(--sb-muted, var(--color-muted)) !important;
   background: transparent !important;
   opacity: 0.75;

@@ -83,7 +83,8 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   // Pinch-zoom stays available: disabling it is an accessibility regression,
-  // and the app has real 11px type in places.
+  // and the app has real 11px type in places. On iOS this is narrowed to 1 at
+  // runtime — see IOS_FOCUS_ZOOM_SCRIPT, which explains why that costs nothing.
   maximumScale: 5,
   // Paints the browser's own chrome to match the page, which is what makes the
   // top of the screen read as one surface rather than a site inside a browser.
@@ -96,12 +97,27 @@ export const viewport = {
 // ДО першого кадру: бере останню застосовану тему з localStorage (пише її
 // useSidebarThemeBoot) і через <style> з !important фарбує [data-app-sb]
 // одразу. Коли приїжджають живі дані організації — стиль прибирається.
+// Safari on iOS zooms the whole page in whenever a form control smaller than
+// 16px takes focus, and it never zooms back out — which is why every screenshot
+// taken after tapping a search field shows a page shoved sideways with its
+// header cut off. The product's type scale is deliberate and is not going to be
+// rewritten to please one browser, so the fix belongs to the viewport.
+//
+// `maximum-scale=1` is the switch that turns the auto-zoom off, and on iOS it
+// costs nothing: since iOS 10 Safari honours it for the automatic zoom but
+// ignores it for a pinch, so the reader can still zoom by hand. Android Chrome
+// is the opposite — it obeys the cap for pinch and never auto-zooms on focus —
+// so the cap is applied on iOS only and every other browser keeps the 5×
+// declared above.
+const IOS_FOCUS_ZOOM_SCRIPT = `(function(){try{var ua=navigator.userAgent;var iOS=/iP(hone|ad|od)/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);if(!iOS)return;var m=document.querySelector('meta[name="viewport"]');if(!m)return;m.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1')}catch(e){}})();`;
+
 const SIDEBAR_BOOT_SCRIPT = `(function(){try{var t=JSON.parse(localStorage.getItem('qt_sidebar_theme')||'null');if(!t)return;var ok=function(v){return typeof v==='string'&&/^(#[0-9a-fA-F]{3,8}|rgba?\\([0-9.,%\\s]+\\))$/.test(v)};if(!ok(t.bg))return;var map={text:'--sb-text',muted:'--sb-muted',hover:'--sb-hover',active:'--sb-active',border:'--sb-border',mutedProject:'--sb-muted-project',mutedHeader:'--sb-muted-header'};var css='background-color:'+t.bg+' !important;--sb-bg:'+t.bg+' !important;';for(var k in map){if(ok(t[k]))css+=map[k]+':'+t[k]+' !important;'}var s=document.createElement('style');s.id='sb-boot-theme';s.textContent='[data-app-sb]{'+css+'}';document.head.appendChild(s)}catch(e){}})();`;
 
 export default function RootLayout({ children }) {
   return (
     <html lang="uk" className={`${inter.variable} ${robotoCondensed.variable}`}>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: IOS_FOCUS_ZOOM_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: SIDEBAR_BOOT_SCRIPT }} />
         <AppProvider>
           <AutoFix />

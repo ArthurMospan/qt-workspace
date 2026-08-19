@@ -38,6 +38,24 @@ export default function WorkspaceLayout({ children }) {
   const isSettings = pathname?.startsWith('/settings');
   const hideHeader = isSettings;
 
+  // A task and an event are the two screens you open *into* rather than
+  // navigate between: they carry their own breadcrumb back to the project, they
+  // have their own tabs, and on a phone a task's chat is a place people sit and
+  // type. The tab bar there costs 78px of a 660px screen for a destination
+  // nobody is heading to mid-conversation, so those two do without it. Every
+  // other screen keeps it.
+  const isFocusedRoute = Boolean(pathname) && (
+    /^\/[^/]+\/issue\/[^/]+/.test(pathname) || pathname.startsWith('/calendar/event/')
+  );
+
+  // Published on <body> so the CSS that reserves room for the bar can stop
+  // reserving it, the same way the on-screen keyboard already does.
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    document.body.dataset.mobileNav = isFocusedRoute ? 'hidden' : 'shown';
+    return () => { delete document.body.dataset.mobileNav; };
+  }, [isFocusedRoute]);
+
   useEffect(() => {
     if (!authLoading && !currentUser) {
       const currentLocation = `${window.location.pathname}${window.location.search}`;
@@ -218,7 +236,7 @@ export default function WorkspaceLayout({ children }) {
       </div>
 
       {/* Mobile bottom navigation */}
-      {isMobile === true && (
+      {isMobile === true && !isFocusedRoute && (
         <div className="print:hidden md:hidden">
           <MobileNav />
         </div>

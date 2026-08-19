@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AnimatedLogo from '@/components/AnimatedLogo';
 import AuthLayout from '@/components/AuthLayout';
@@ -235,8 +236,26 @@ export default function LoginPage() {
           </p>
         )}
 
-        <p className="mt-6 text-center text-xs text-white/35">
-          Продовжуючи, ви погоджуєтеся з умовами використання.
+        {/* The sentence named three documents and linked to none of them, so
+            the one screen where consent is actually given was the one place the
+            documents could not be read. Every service that asks for agreement
+            here links the agreements themselves — and QuickTeam has three: the
+            terms, the offer that is the contract under Ukrainian law, and the
+            privacy policy. */}
+        <p className="mt-6 text-center text-xs leading-relaxed text-white/35">
+          Продовжуючи, ви погоджуєтеся з{' '}
+          <Link href="/terms" className="text-white/60 underline underline-offset-2 transition-colors hover:text-white">
+            Умовами користування
+          </Link>
+          ,{' '}
+          <Link href="/offer" className="text-white/60 underline underline-offset-2 transition-colors hover:text-white">
+            Публічною офертою
+          </Link>
+          {' '}та{' '}
+          <Link href="/privacy" className="text-white/60 underline underline-offset-2 transition-colors hover:text-white">
+            Політикою конфіденційності
+          </Link>
+          .
         </p>
       </div>
     </AuthLayout>

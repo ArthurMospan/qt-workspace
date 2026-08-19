@@ -1,6 +1,6 @@
 'use client';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Children, createContext, isValidElement, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
@@ -194,14 +194,25 @@ function remainingTrashTime(purgeAfterMs) {
   return `зникає за ${minutes} ${plural(minutes, ['хвилину', 'хвилини', 'хвилин'])}`;
 }
 
+// A settings row stacks its control under the label on a phone, because a
+// select or an input needs the whole width to be usable. A switch does not: it
+// is 44px wide at its largest, it fits beside any label on any screen, and
+// giving it a line of its own is what made every toggle in Settings jump to the
+// left margin under its own caption. So the row asks what it is holding — the
+// same static-marker trick PageHeader uses to find a FilterBar — and keeps a
+// switch on the right where it reads as an on/off for the line beside it.
 function Row({ label, desc, children, danger = false }) {
+  const switchOnly = Children.toArray(children).length > 0
+    && Children.toArray(children).every(child => isValidElement(child) && child.type?.isSwitch);
   return (
-    <div className="flex flex-col items-stretch justify-between gap-3 py-[12px] sm:flex-row sm:items-center sm:gap-6">
+    <div className={`flex justify-between gap-3 py-[12px] sm:flex-row sm:items-center sm:gap-6 ${
+      switchOnly ? 'flex-row items-center' : 'flex-col items-stretch'
+    }`}>
       <div className="min-w-0 flex-1">
         <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-red-600' : 'text-ink'}`}>{label}</p>
         {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-red-400' : 'text-muted'}`}>{desc}</p>}
       </div>
-      <div className="w-full sm:w-auto sm:shrink-0">{children}</div>
+      <div className={switchOnly ? 'shrink-0' : 'w-full sm:w-auto sm:shrink-0'}>{children}</div>
     </div>
   );
 }
@@ -357,8 +368,11 @@ function LoginMethodItem({
   // account with no way back in. Same rule the disconnect button carried.
   const locked = staticMethod || soon || primary || Boolean(loading) || Boolean(disabled);
 
+  // One line at every width. The switch is the smallest control in the product;
+  // stacking it under the method it belongs to only made the row twice as tall
+  // and left the toggle floating on the left margin.
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-[14px]">
+    <div className="flex flex-row items-center justify-between gap-3 py-[14px] sm:gap-4">
       <div className="flex items-center gap-3 min-w-0">
         <div data-ui-surface="local" className="w-[36px] h-[36px] rounded-[10px] bg-canvas flex items-center justify-center shrink-0 text-ink">
           {icon}

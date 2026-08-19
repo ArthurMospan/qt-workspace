@@ -53,7 +53,13 @@ export function Toast({
       data-qt-global-notification-layer
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
-      className="pointer-events-none fixed bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center"
+      // Full width, centred by the flex box — not `left-1/2` with a transform.
+      // A shrink-to-fit fixed box anchored at the halfway mark can only be as
+      // wide as the half of the screen it starts on, so on a phone «1 хв
+      // зафіксовано» plus its × was over budget at 195px and the × wrapped onto
+      // a line of its own. The layer now spans the viewport and the toast sizes
+      // to its own content up to the ceiling below.
+      className="ui-toast-layer pointer-events-none fixed bottom-6 left-0 right-0 flex flex-col items-center"
       style={{ zIndex: GLOBAL_NOTIFICATION_Z_INDEX }}
     >
       <div 

@@ -99,7 +99,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:201",
+      "location": "src/components/MobileNav.jsx:202",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -115,7 +115,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:258",
+      "location": "src/components/MobileNav.jsx:262",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -131,7 +131,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:332",
+      "location": "src/components/MobileNav.jsx:334",
       "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
       "text": "",
       "childElements": [
@@ -425,7 +425,7 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/MobileNav.jsx:332",
+      "location": "src/components/MobileNav.jsx:334",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
@@ -466,7 +466,7 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:101",
+      "location": "src/app/(app)/layout.js:119",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -481,22 +481,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:424",
+      "location": "src/app/(app)/settings/page.js:438",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:444",
+      "location": "src/app/(app)/settings/page.js:458",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:488",
+      "location": "src/app/(app)/settings/page.js:502",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:607",
+      "location": "src/app/(app)/settings/page.js:621",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },

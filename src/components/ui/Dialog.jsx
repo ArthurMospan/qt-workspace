@@ -1,5 +1,6 @@
 'use client';
 import { useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from './Button';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
@@ -94,7 +95,17 @@ export default function Dialog({
     flush: 'p-0',
   }[bodyPadding] || 'px-6 py-5';
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  // Rendered into the body, like every other overlay in the kit — the menu, the
+  // select, the popover, the date picker, the toast. Dialog was the one that
+  // stayed where it was written, and `z-50` only ever means "above" inside the
+  // stacking context it is written in. The workspace header lives in a `z-30`
+  // layer, so every dialog opened from it — notifications, the status sheet,
+  // the profile — was pinned below the `z-40` mobile tab bar and had its last
+  // rows covered by it. PageHeader had already worked around this by portalling
+  // its own filters dialog by hand; now it does not have to.
+  return createPortal(
     <div
       // The click-away. It is the same element that centres the dialog, so it
       // cannot be hidden from the accessibility tree — that would hide the
@@ -128,7 +139,14 @@ export default function Dialog({
           pb-[env(safe-area-inset-bottom)] sm:pb-0
           ${isSheet
             ? 'max-h-[94dvh] rounded-t-[24px] sm:h-full sm:max-h-none sm:rounded-none'
-            : 'max-h-[92vh] rounded-t-[24px] sm:max-h-[90vh] sm:rounded-[24px]'}
+            // dvh, not vh. A phone anchors this variant to the bottom edge, and
+            // `vh` is measured against the *large* viewport — the one with the
+            // browser's toolbars hidden. So 92vh was routinely taller than the
+            // screen actually showing, and the overflow went off the top: the
+            // Довідковий центр opened with no header and no × to close it, and
+            // «Ваш статус» lost the row you type a status into. On a desktop
+            // the two units are the same number, so nothing there moves.
+            : 'max-h-[92dvh] rounded-t-[24px] sm:max-h-[90dvh] sm:rounded-[24px]'}
           ${sizeClasses[size]}
           ${className}
         `}
@@ -164,6 +182,7 @@ export default function Dialog({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -96,7 +96,14 @@ export function PageHeader({
           {title}
         </h1>
 
-        <div className="flex min-w-0 items-center justify-end gap-[8px] overflow-x-auto hide-scrollbar">
+        {/* The vertical padding is what keeps the filters badge whole. A box
+            that scrolls on one axis clips on both — `overflow-x: auto` turns the
+            visible y axis into `auto` too — so the counter pinned to the corner
+            of the filters button had its top slice cut off by this row's own
+            edge. The padding gives the badge somewhere to be; the matching
+            negative margin means the row still occupies exactly the height it
+            did before, on every width. */}
+        <div className="flex min-w-0 items-center justify-end gap-[8px] overflow-x-auto hide-scrollbar py-[6px] -my-[6px]">
           {tabs?.length > 0 && (
             <div className="hidden md:block">
               <Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
@@ -117,7 +124,11 @@ export function PageHeader({
                 <Counter
                   value={activeFilterCount}
                   size="sm"
-                  className="pointer-events-none absolute -right-1 -top-1"
+                  // Flush with the button's right edge rather than hanging past
+                  // it: the badge on the last control in a scrolling row is the
+                  // one thing that can give the row a few pixels of horizontal
+                  // scroll with nothing in them.
+                  className="pointer-events-none absolute right-0 -top-1"
                 />
               )}
             </div>

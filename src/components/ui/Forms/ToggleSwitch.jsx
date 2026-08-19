@@ -72,3 +72,9 @@ export default function ToggleSwitch({
     </div>
   );
 }
+
+// A static marker rather than `type.name`, which minification rewrites: a
+// settings row uses it to tell "a switch, which fits beside its label" from
+// "a control that needs the width of the screen". Same convention as
+// `FilterBar.isFilterBar`.
+ToggleSwitch.isSwitch = true;
