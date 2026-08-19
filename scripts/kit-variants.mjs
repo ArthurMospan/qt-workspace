@@ -145,7 +145,10 @@ const SOURCES = {
   ColorSwatch: { size: { literal: ['choice', 'theme', 'trigger'] } },
   ListRow: { density: { literal: ['compact', 'roomy'] } },
   CalendarDayNumber: { state: { literal: ['default', 'outside', 'today'] } },
-  CalendarDayCell: { state: { literal: ['default', 'outside', 'today', 'weekend'] } },
+  CalendarDayCell: {
+    state: { map: ['Calendar/CalendarDayCell.jsx', 'STATES'] },
+    density: { map: ['Calendar/CalendarDayCell.jsx', 'DENSITIES'] },
+  },
   ResponseChoice: {
     size: { literal: ['md', 'sm', 'tile'] },
     surface: { literal: ['canvas', 'surface'] },

@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 113,
-    "props": 840,
-    "documentedProps": 840,
+    "props": 841,
+    "documentedProps": 841,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -676,6 +676,16 @@
           "description": "Placement in the parent only."
         },
         {
+          "name": "density",
+          "default": "'roomy'",
+          "type": "'roomy'|'compact'",
+          "values": [
+            "compact",
+            "roomy"
+          ],
+          "description": "How much room the tile takes: the timesheet's summary, or a phone's month picker."
+        },
+        {
           "name": "onClick",
           "default": "",
           "type": "(event) => void",
@@ -685,14 +695,15 @@
         {
           "name": "state",
           "default": "'default'",
-          "type": "'default'|'today'|'weekend'|'outside'",
+          "type": "'default'|'today'|'weekend'|'outside'|'selected'",
           "values": [
             "default",
             "outside",
+            "selected",
             "today",
             "weekend"
           ],
-          "description": "Which day this is relative to today, the week and the month on screen."
+          "description": "Which day this is relative to today, the week, the month on screen and the day being read."
         }
       ]
     },

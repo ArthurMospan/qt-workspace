@@ -119,9 +119,15 @@ test('the variant matrix renders every component that can stand alone', () => {
 // `FileThumb density="md"` — which no call site passes and none should, for the
 // same reason `Skeleton preset="text"` does not: a default is the value you get
 // by writing nothing.
+// Raised 109 → 111 by the calendar's phone month. `CalendarDayCell` gained
+// `state="selected"` — the day whose entries are open under the grid — and a
+// second geometry, whose `roomy` is the default the timesheet gets by writing
+// nothing. Neither can ever be counted: `state` is not a variant prop name the
+// scan reads, so every state of both calendar components has always lived in
+// this list, and a default has no call site by definition.
 test('promoting a component to the kit does not orphan the variants it used', () => {
   assert.ok(
-    committed.totals.declaredUnused <= 109,
+    committed.totals.declaredUnused <= 111,
     `declaredUnused grew to ${committed.totals.declaredUnused}: a call site that evidenced a variant has gone out of the scan's view`,
   );
   for (const key of ['Input.composition.status-entry', 'Button.composition.status-submit', 'Dialog.size.status']) {

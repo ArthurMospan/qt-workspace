@@ -75,7 +75,7 @@ const VARIANT_BASE = {
   ),
   CalendarDayNumber: (props) => <CalendarDayNumber aria-label="Відкрити 14 число" {...props}>14</CalendarDayNumber>,
   CalendarDayCell: (props) => (
-    <CalendarDayCell className="!min-h-[62px] w-[92px]" {...props}>
+    <CalendarDayCell className="w-[92px]" {...props}>
       <span className="text-[12px] font-bold text-ink">14</span>
       <span className="text-[10px] text-muted">3 завд.</span>
     </CalendarDayCell>

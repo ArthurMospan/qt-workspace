@@ -25,8 +25,10 @@ import { fromDateInput, toLocalDateInput } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import {
   Button,
+  CalendarDayCell,
   CalendarDayNumber,
   CalendarEntry,
   CalendarHourSlot,
@@ -105,9 +107,26 @@ function shortTime(value) {
   return new Date(value).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 }
 
+function titleCase(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 function monthTitle(date) {
-  const result = date.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
-  return result.charAt(0).toUpperCase() + result.slice(1);
+  return titleCase(date.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }));
+}
+
+// Everything one day holds, in the order it happens. The month grid, the phone
+// picker and the day list all ask the same question, so they ask it once.
+function dayItems(day, events, deadlines, timeZone) {
+  const key = toLocalDateInput(day);
+  return [
+    ...events
+      .filter(event => isCalendarEventOnDay(event, day))
+      .map(item => ({ kind: 'event', item, time: new Date(item.startAt).getTime() })),
+    ...deadlines
+      .filter(deadline => deadlineDayKey(deadline, timeZone) === key)
+      .map(item => ({ kind: 'deadline', item, time: deadlineLocalDate(item, timeZone)?.getTime() || 0 })),
+  ].sort((a, b) => a.time - b.time);
 }
 
 function periodTitle(anchor, view) {
@@ -165,6 +184,29 @@ function DeadlineCard({ deadline, compact = false, onClick }) {
         onClick(deadline);
       }}
     />
+  );
+}
+
+// One day's entries, as a list. The «Порядок денний» view is built from these
+// per day, and on a phone the month, the week and the day views all end in the
+// same list — there is one shape for «what is on that day», not three.
+function DayEntryList({ items, onEventClick, onDeadlineClick }) {
+  return (
+    <div className="space-y-[7px]">
+      {items.map(({ kind, item }) => (
+        kind === 'event' ? (
+          <div key={`e-${item.id}`} className="flex items-center gap-[10px]">
+            <span className="w-[70px] text-[11px] font-semibold text-muted shrink-0">{eventTimeLabel(item)}</span>
+            <EventCard event={item} onClick={onEventClick} />
+          </div>
+        ) : (
+          <div key={`d-${item.id}`} className="flex items-center gap-[10px]">
+            <span className="w-[70px] text-[11px] font-semibold text-muted shrink-0">Дедлайн</span>
+            <DeadlineCard deadline={item} onClick={onDeadlineClick} />
+          </div>
+        )
+      ))}
+    </div>
   );
 }
 
@@ -308,18 +350,7 @@ function MonthView({ anchor, events, deadlines, timeZone, onEventClick, onDeadli
       </div>
       <div className="grid grid-cols-7">
         {days.map(day => {
-          const dayEvents = events.filter(event => isCalendarEventOnDay(event, day));
-          const dayDeadlines = deadlines.filter(deadline => (
-            deadlineDayKey(deadline, timeZone) === toLocalDateInput(day)
-          ));
-          const items = [
-            ...dayEvents.map(item => ({ kind: 'event', item, time: new Date(item.startAt).getTime() })),
-            ...dayDeadlines.map(item => ({
-              kind: 'deadline',
-              item,
-              time: deadlineLocalDate(item, timeZone)?.getTime() || 0,
-            })),
-          ].sort((a, b) => a.time - b.time);
+          const items = dayItems(day, events, deadlines, timeZone);
           return (
             <div
               key={dateKey(day)}
@@ -410,23 +441,148 @@ function AgendaView({ anchor, events, deadlines, timeZone, onEventClick, onDeadl
             </p>
             <p className="text-[11px] text-muted mt-0.5">{group.date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}</p>
           </div>
-          <div className="space-y-[7px]">
-            {group.items.sort((a, b) => a.time - b.time).map(({ kind, item }) => (
-              kind === 'event' ? (
-                <div key={`e-${item.id}`} className="flex items-center gap-[10px]">
-                  <span className="w-[70px] text-[11px] font-semibold text-muted shrink-0">{eventTimeLabel(item)}</span>
-                  <EventCard event={item} onClick={onEventClick} />
-                </div>
-              ) : (
-                <div key={`d-${item.id}`} className="flex items-center gap-[10px]">
-                  <span className="w-[70px] text-[11px] font-semibold text-muted shrink-0">Дедлайн</span>
-                  <DeadlineCard deadline={item} onClick={onDeadlineClick} />
-                </div>
-              )
-            ))}
-          </div>
+          <DayEntryList
+            items={group.items.sort((a, b) => a.time - b.time)}
+            onEventClick={onEventClick}
+            onDeadlineClick={onDeadlineClick}
+          />
         </section>
       ))}
+    </div>
+  );
+}
+
+// ─── Телефон ────────────────────────────────────────────────────────────────
+// Місячна сітка на телефоні — не зменшений десктоп. У 44 пікселях ширини
+// вміщується число і кілька крапок, а не назви подій, тому сітка тут стає
+// вибиралкою дня: тап відкриває день, а день читається тим самим списком, що
+// й «Порядок денний». Тижневий вигляд — та сама вибиралка на один рядок,
+// денний — сам список. Годинна сітка лишається десктопу: сім колонок по
+// 120 пікселів у долоню не влазять ніяк.
+
+// Скільки крапок вміщується під числом, перш ніж вони перестануть читатись.
+const DAY_DOT_LIMIT = 3;
+
+function entryDotColor(entry) {
+  if (entry.kind === 'deadline') return '#ef4444';
+  return (TYPE_CONFIG[entry.item.type] || TYPE_CONFIG.event).color;
+}
+
+function MobileDayTile({ day, items, selected, isToday, outside, onSelect }) {
+  const weekend = day.getDay() === 0 || day.getDay() === 6;
+  const state = selected
+    ? 'selected'
+    : outside ? 'outside' : isToday ? 'today' : weekend ? 'weekend' : 'default';
+  return (
+    <CalendarDayCell
+      density="compact"
+      state={state}
+      onClick={() => onSelect(day)}
+      aria-label={`${day.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}${
+        items.length ? `, записів: ${items.length}` : ', нічого не заплановано'
+      }`}
+    >
+      <span className={`text-[13px] font-bold leading-none ${
+        selected ? 'text-white' : outside ? 'text-faint' : 'text-ink'
+      }`}>{day.getDate()}</span>
+      <span className="flex h-[5px] items-center justify-center gap-[3px]">
+        {items.slice(0, DAY_DOT_LIMIT).map((entry, index) => (
+          <span
+            key={index}
+            className="h-[5px] w-[5px] rounded-full"
+            style={{ backgroundColor: selected ? 'rgba(255,255,255,0.92)' : entryDotColor(entry) }}
+          />
+        ))}
+      </span>
+    </CalendarDayCell>
+  );
+}
+
+function MobileCalendar({
+  anchor,
+  view,
+  events,
+  deadlines,
+  timeZone,
+  onSelectDay,
+  onEventClick,
+  onDeadlineClick,
+  onCreate,
+}) {
+  const today = new Date();
+  const selected = startOfDay(anchor);
+  const rootRef = useRef(null);
+  const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  const gridDays = view === 'month'
+    ? Array.from({ length: 42 }, (_, index) => addDays(startOfWeek(monthStart), index))
+    : view === 'week'
+      ? Array.from({ length: 7 }, (_, index) => addDays(startOfWeek(anchor), index))
+      : [];
+  const selectedItems = dayItems(selected, events, deadlines, timeZone);
+
+  // `useIsMobile` answers null on the first client render, so the hour grid
+  // mounts for one frame before this does — and its opening scroll to the start
+  // of the working day is left behind in the shared scroller. The phone layout
+  // starts at its own top.
+  useEffect(() => {
+    const scroller = rootRef.current?.closest('.overflow-auto');
+    if (scroller) scroller.scrollTop = 0;
+  }, []);
+
+  return (
+    <div ref={rootRef} className="flex flex-col">
+      {gridDays.length > 0 && (
+        <div className="border-b border-line px-[6px] py-[10px]">
+          <div className="mb-[6px] grid grid-cols-7 gap-[3px]">
+            {DAY_NAMES.map(name => (
+              <span key={name} className="text-center text-[10px] font-bold uppercase text-muted">{name}</span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-[3px]">
+            {gridDays.map(day => (
+              <MobileDayTile
+                key={dateKey(day)}
+                day={day}
+                items={dayItems(day, events, deadlines, timeZone)}
+                selected={sameDay(day, selected)}
+                isToday={sameDay(day, today)}
+                outside={view === 'month' && day.getMonth() !== anchor.getMonth()}
+                onSelect={onSelectDay}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <section className="px-[10px] pb-[12px] pt-[14px]">
+        <div className="mb-[10px] flex items-center justify-between gap-[8px]">
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-bold text-ink">
+              {sameDay(selected, today)
+                ? 'Сьогодні'
+                : titleCase(selected.toLocaleDateString('uk-UA', { weekday: 'long' }))}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted">
+              {selected.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}
+            </p>
+          </div>
+          <Button style="secondary" size="sm" icon={Plus} onClick={() => onCreate(selected)}>Подія</Button>
+        </div>
+        {selectedItems.length > 0 ? (
+          <DayEntryList
+            items={selectedItems}
+            onEventClick={onEventClick}
+            onDeadlineClick={onDeadlineClick}
+          />
+        ) : (
+          <EmptyState
+            icon={CalendarIcon}
+            density="compact"
+            title="Цього дня нічого немає"
+            description="Ні подій, ні дедлайнів задач."
+          />
+        )}
+      </section>
     </div>
   );
 }
@@ -444,6 +600,7 @@ export default function CalendarPage() {
     refresh,
     createEvent,
   } = useCalendarEvents();
+  const isMobile = useIsMobile();
   const showToast = useWorkspaceStore(state => state.showToast);
   const openEventQuickView = useWorkspaceStore(state => state.openEventQuickView);
   const calendarSearch = useWorkspaceStore(state => state.calendarSearch);
@@ -495,11 +652,6 @@ export default function CalendarPage() {
   );
 
   useEffect(() => {
-    if (!window.matchMedia('(max-width: 639px)').matches) return;
-    queueMicrotask(() => setView(current => current === 'week' ? 'agenda' : current));
-  }, []);
-
-  useEffect(() => {
     if (!events.length) return;
     const eventId = new URLSearchParams(window.location.search).get('event');
     if (!eventId) return;
@@ -527,6 +679,9 @@ export default function CalendarPage() {
   // panel opens over the grid, and carries «на повній сторінці» for the times
   // the answer is «now edit the series».
   const openEvent = event => openEventQuickView(event);
+  const openDeadline = deadline => router.push(
+    issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId),
+  );
 
   const handleSave = async data => {
     await createEvent(data);
@@ -618,6 +773,18 @@ export default function CalendarPage() {
                   action="Спробувати ще раз"
                   onAction={refresh}
                 />
+              ) : isMobile === true && view !== 'agenda' ? (
+                <MobileCalendar
+                  anchor={anchor}
+                  view={view}
+                  events={filteredEvents}
+                  deadlines={filteredDeadlines}
+                  timeZone={timeZone}
+                  onSelectDay={setAnchor}
+                  onEventClick={openEvent}
+                  onDeadlineClick={openDeadline}
+                  onCreate={openCreate}
+                />
               ) : view === 'month' ? (
                 <MonthView
                   anchor={anchor}
@@ -625,7 +792,7 @@ export default function CalendarPage() {
                   deadlines={filteredDeadlines}
                   timeZone={timeZone}
                   onEventClick={openEvent}
-                  onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
+                  onDeadlineClick={openDeadline}
                   onCreate={openCreate}
                   onSelectDay={day => { setAnchor(day); setView('day'); }}
                 />
@@ -636,7 +803,7 @@ export default function CalendarPage() {
                   deadlines={filteredDeadlines}
                   timeZone={timeZone}
                   onEventClick={openEvent}
-                  onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
+                  onDeadlineClick={openDeadline}
                   onCreate={openCreate}
                 />
               ) : (
@@ -647,7 +814,7 @@ export default function CalendarPage() {
                   deadlines={filteredDeadlines}
                   timeZone={timeZone}
                   onEventClick={openEvent}
-                  onDeadlineClick={deadline => router.push(issuePath(deadline, projects.find(project => project.id === deadline.projectId) || deadline.projectId))}
+                  onDeadlineClick={openDeadline}
                   onCreate={openCreate}
                 />
               )}

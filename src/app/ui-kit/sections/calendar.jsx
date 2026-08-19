@@ -8,6 +8,23 @@ const EVENT_TINTS = {
   reminder: { color: '#0891b2', bg: '#ecfeff', icon: CalendarClock },
 };
 
+// Два тижні серпня так, як їх бачить телефон: крапки — типи подій, червона —
+// дедлайн задачі.
+const DEADLINE_DOT = '#ef4444';
+const PHONE_MONTH = [
+  { date: 28, state: 'outside' }, { date: 29, state: 'outside' }, { date: 30, state: 'outside' },
+  { date: 31, state: 'outside' },
+  { date: 1, state: 'default', dots: [EVENT_TINTS.meeting.color] },
+  { date: 2, state: 'weekend' }, { date: 3, state: 'weekend' },
+  { date: 4, state: 'default' },
+  { date: 5, state: 'default', dots: [EVENT_TINTS.meeting.color, DEADLINE_DOT] },
+  { date: 6, state: 'default' },
+  { date: 7, state: 'selected', dots: [EVENT_TINTS.meeting.color, EVENT_TINTS.reminder.color, DEADLINE_DOT] },
+  { date: 8, state: 'today', dots: [EVENT_TINTS.reminder.color] },
+  { date: 9, state: 'weekend' },
+  { date: 10, state: 'weekend', dots: [EVENT_TINTS.reminder.color] },
+];
+
 export default function CalendarSection() {
   return (
     <div className="flex flex-col gap-[32px]">
@@ -96,7 +113,7 @@ export default function CalendarSection() {
       <PreviewBlock
         title="Комірка дня"
         component="CalendarDayCell"
-        description="Цілий день як натискна плитка — місячна сітка табеля, де день підсумовує зафіксовані на нього години. У самому календарі комірка не кнопка, бо ціль там записи всередині неї; тут ціллю є день. Сьогодні тримає мʼяке зелене кільце, а не чорнильну заливку числа: заповнена чорним плитка перекричала б цифри всередині себе."
+        description="Цілий день як натискна плитка. У roomy день підсумовує зафіксовані на нього години — це місячна сітка табеля. У compact від дня лишається число і кілька крапок: так місяць вміщується в сім колонок телефона. Сьогодні тримає мʼяке кільце, а не чорнильну заливку числа: заповнена чорним плитка перекричала б цифри всередині себе — тому заливка дісталась обраному дню, тому що на телефоні саме він мусить вигравати."
         filePath="src/components/ui/Calendar/CalendarDayCell.jsx"
         fullWidth
       >
@@ -109,6 +126,39 @@ export default function CalendarSection() {
           ))}
         </div>
       </PreviewBlock>
+      <PreviewBlock
+        title="Місяць у долоні"
+        component="CalendarDayCell"
+        description="Місячна сітка на телефоні — не зменшений десктоп: у 44 пікселях ширини вміщується число і до трьох крапок за кольорами типів подій, а не назви. Сітка стає вибиралкою — тап відкриває день, і його події показує той самий список, що й «Порядок денний». Обраний день залитий чорнилом, крапки на ньому стають білими."
+        filePath="src/app/(app)/calendar/page.js"
+      >
+        <div className="w-[300px]">
+          <div className="mb-[6px] grid grid-cols-7 gap-[3px]">
+            {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'].map(name => (
+              <span key={name} className="text-center text-[10px] font-bold uppercase text-muted">{name}</span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-[3px]">
+            {PHONE_MONTH.map(day => (
+              <CalendarDayCell key={day.date} density="compact" state={day.state}>
+                <span className={`text-[13px] font-bold leading-none ${
+                  day.state === 'selected' ? 'text-white' : day.state === 'outside' ? 'text-faint' : 'text-ink'
+                }`}>{day.date}</span>
+                <span className="flex h-[5px] items-center justify-center gap-[3px]">
+                  {(day.dots || []).map((color, index) => (
+                    <span
+                      key={index}
+                      className="h-[5px] w-[5px] rounded-full"
+                      style={{ backgroundColor: day.state === 'selected' ? 'rgba(255,255,255,0.92)' : color }}
+                    />
+                  ))}
+                </span>
+              </CalendarDayCell>
+            ))}
+          </div>
+        </div>
+      </PreviewBlock>
+
       <PreviewBlock
         title="Годинний слот"
         component="CalendarHourSlot"
