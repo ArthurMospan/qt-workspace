@@ -104,8 +104,8 @@ function StatusEmoji({ member }) {
   return (
     <span
       className="cursor-help"
-      title={member.status || 'Статус користувача'}
-      aria-label={member.status || 'Статус користувача'}
+      title={member.statusText || 'Статус користувача'}
+      aria-label={member.statusText || 'Статус користувача'}
     >
       {member.statusEmoji}
     </span>

@@ -69,7 +69,7 @@ export default function ChannelRail({ groups = [], activeId, onSelect = () => {}
                   >
                     {item.name}
                     {item.statusEmoji && (
-                      <span className="cursor-help" title={item.status || 'Статус користувача'}>
+                      <span className="cursor-help" title={item.statusText || 'Статус користувача'}>
                         {item.statusEmoji}
                       </span>
                     )}
