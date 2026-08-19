@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 import { CakeSlice, Clock3, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import { Surface, Card, Badge, StatusBadge, Button, IconAction, PresenceDot, Tabs, ContextMenu, EmptyState, LoadingSpinner, Tooltip } from '@/components/ui';
@@ -122,6 +123,14 @@ export default function ProfileView({ user, onClose }) {
   // answer «what is this one».
   const handleTaskClick = task => openIssueQuickView(task);
 
+  // Leaving the profile for somewhere else is two navigations: the modal gives
+  // its history entry back, and the router goes. Issued together they race, and
+  // one of them is lost. `navigateAfterOverlayClose` orders them.
+  const leaveFor = href => {
+    if (onClose) onClose();
+    navigateAfterOverlayClose(() => router.push(href));
+  };
+
   const handleEmergencyCall = async () => {
     try {
       const emergencyText = `🆘 ЕКСТРЕННИЙ ВИКЛИК від ${currentUser?.name || 'Учасника'}!`;
@@ -154,8 +163,8 @@ export default function ProfileView({ user, onClose }) {
     { label: 'Екстрений виклик', icon: Zap, isDanger: true, onClick: handleEmergencyCall },
     ...(isAdminOrOwner ? [
       { isDivider: true },
-      { label: 'Керування доступом', icon: Shield, onClick: () => { if(onClose) onClose(); router.push(`/settings?section=team&user=${uid}`); } },
-      { label: 'Аналітика учасника', icon: BarChart2, onClick: () => { if(onClose) onClose(); router.push(`/analytics?tab=workload&teamMember=${uid}`); } },
+      { label: 'Керування доступом', icon: Shield, onClick: () => leaveFor(`/settings?section=team&user=${uid}`) },
+      { label: 'Аналітика учасника', icon: BarChart2, onClick: () => leaveFor(`/analytics?tab=workload&teamMember=${uid}`) },
     ] : []),
   ];
 
@@ -219,10 +228,7 @@ export default function ProfileView({ user, onClose }) {
                   icon={ChatIcon}
                   size="xl"
                   appearance="contrast"
-                  onClick={() => {
-                    if (onClose) onClose();
-                    router.push(`/chat?dm=${encodeURIComponent(uid)}`);
-                  }}
+                  onClick={() => leaveFor(`/chat?dm=${encodeURIComponent(uid)}`)}
                 />
               </Tooltip>
               <Tooltip content="Створити завдання">
@@ -231,10 +237,7 @@ export default function ProfileView({ user, onClose }) {
                   icon={TaskIcon}
                   size="xl"
                   appearance="contrast"
-                  onClick={() => {
-                    if (onClose) onClose();
-                    router.push(`/my?new=1&assignee=${encodeURIComponent(uid)}`);
-                  }}
+                  onClick={() => leaveFor(`/my?new=1&assignee=${encodeURIComponent(uid)}`)}
                 />
               </Tooltip>
               <Tooltip content="Створити подію">
@@ -243,10 +246,7 @@ export default function ProfileView({ user, onClose }) {
                   icon={CalendarIcon}
                   size="xl"
                   appearance="contrast"
-                  onClick={() => {
-                    if (onClose) onClose();
-                    router.push(`/calendar?new=1&with=${encodeURIComponent(uid)}`);
-                  }}
+                  onClick={() => leaveFor(`/calendar?new=1&with=${encodeURIComponent(uid)}`)}
                 />
               </Tooltip>
               {/* The tooltip goes around the menu, not around its trigger:

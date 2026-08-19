@@ -12,7 +12,10 @@ export const APPEARANCES = {
   contrast: '!bg-[#f1f1f1] !text-ink hover:!bg-[#e4e4e4]',
   surface: '!border !border-line !bg-white !text-muted hover:!bg-canvas hover:!text-ink',
   primary: '!bg-ink !text-white hover:!bg-ink/90',
-  'surface-danger': '!border !border-line !bg-white !text-muted shadow-sm hover:!text-red-500',
+  // The same disc as `surface`, and only its hover differs. It used to carry a
+  // shadow as well, which is why the two of them side by side — the notification
+  // row's «прочитано» and «видалити» — read as two different controls.
+  'surface-danger': '!border !border-line !bg-white !text-muted hover:!bg-red-50 hover:!text-red-500',
   'surface-plain': '!bg-white !text-faint hover:!text-ink',
   overlay: '!bg-black/50 !text-white hover:!bg-black/70',
   inverse: '!bg-white/10 !text-white hover:!bg-white/20',

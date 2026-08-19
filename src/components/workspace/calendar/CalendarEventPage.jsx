@@ -88,6 +88,7 @@ import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
+import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 
 const VISIBILITY_OPTIONS = [
   { value: 'team', label: 'Уся команда' },
@@ -895,7 +896,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                           style="secondary"
                           size="icon-lg"
                           icon={Maximize2}
-                          onClick={() => { onClose(); router.push(calendarEventHref(event)); }}
+                          onClick={() => { onClose(); navigateAfterOverlayClose(() => router.push(calendarEventHref(event))); }}
                           aria-label="Відкрити на повній сторінці"
                           title="Відкрити на повній сторінці"
                         />

@@ -50,6 +50,7 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
 import { sendProjectInvitations } from '@/lib/services/projectInvitations';
+import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 import {
   failedInvitesMessage,
   malformedEmailsMessage,
@@ -576,7 +577,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
     <Dialog isOpen={true} onClose={onClose} title="Новий проєкт" size="sm" footer={
       limitReached ? (
         <div className="flex flex-col gap-2 w-full">
-          <Button onClick={() => { onClose(); router.push('/settings#billing'); }} style="primary" size="md" className="w-full">Перейти на PRO →</Button>
+          <Button onClick={() => { onClose(); navigateAfterOverlayClose(() => router.push('/settings#billing')); }} style="primary" size="md" className="w-full">Перейти на PRO →</Button>
           <Button onClick={onClose} style="secondary" size="md" className="w-full">Закрити</Button>
         </div>
       ) : (
@@ -607,7 +608,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
                   color="red"
                   size="sm"
                   className="mt-1"
-                  onClick={() => { onClose(); router.push('/settings#billing'); }}
+                  onClick={() => { onClose(); navigateAfterOverlayClose(() => router.push('/settings#billing')); }}
                 >
                   Перейти на PRO →
                 </Button>

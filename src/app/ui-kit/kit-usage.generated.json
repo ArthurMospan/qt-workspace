@@ -2679,7 +2679,7 @@
             "src/app/(app)/layout.js:149",
             "src/app/(app)/my/page.js:262",
             "src/app/(app)/my/page.js:346",
-            "src/app/(app)/page.js:923",
+            "src/app/(app)/page.js:924",
             "src/app/(app)/settings/page.js:3476",
             "src/app/(app)/settings/page.js:3480",
             "src/app/(app)/settings/page.js:3685",
@@ -2718,12 +2718,12 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:382",
             "src/app/(app)/analytics/page.js:701",
             "src/app/(app)/my/page.js:324",
-            "src/components/workspace/IssueDetail.jsx:1233",
-            "src/components/workspace/IssueDetail.jsx:1236",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:863",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:874",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:894",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:902"
+            "src/components/workspace/IssueDetail.jsx:1234",
+            "src/components/workspace/IssueDetail.jsx:1237",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:864",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:875",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:903"
           ]
         },
         "icon-sm": {
@@ -2742,8 +2742,8 @@
             "src/app/(app)/settings/page.js:3342",
             "src/app/(app)/settings/page.js:3407",
             "src/app/(app)/settings/page.js:3413",
-            "src/components/WorkspaceHeader.jsx:312",
-            "src/components/WorkspaceHeader.jsx:322",
+            "src/components/WorkspaceHeader.jsx:319",
+            "src/components/WorkspaceHeader.jsx:329",
             "src/components/workspace/BillingTab.jsx:1295",
             "src/components/workspace/BillingTab.jsx:1306",
             "src/components/workspace/WorkloadTab.jsx:276",
@@ -2771,8 +2771,8 @@
             "src/app/(app)/calendar/page.js:569",
             "src/app/(app)/calendar/page.js:745",
             "src/app/(app)/calendar/page.js:759",
-            "src/app/(app)/page.js:605",
-            "src/app/(app)/page.js:959",
+            "src/app/(app)/page.js:606",
+            "src/app/(app)/page.js:960",
             "src/app/(app)/settings/page.js:2523",
             "src/app/(app)/settings/page.js:2607",
             "src/app/(app)/settings/page.js:2608",
@@ -2800,21 +2800,21 @@
             "src/components/workspace/AgileBoard.jsx:67",
             "src/components/workspace/BillingTab.jsx:1372",
             "src/components/workspace/BillingTab.jsx:1375",
-            "src/components/workspace/IssueDetail.jsx:1385",
-            "src/components/workspace/IssueDetail.jsx:1883",
-            "src/components/workspace/IssueDetail.jsx:2011",
+            "src/components/workspace/IssueDetail.jsx:1386",
+            "src/components/workspace/IssueDetail.jsx:1884",
             "src/components/workspace/IssueDetail.jsx:2012",
-            "src/components/workspace/IssueDetail.jsx:2037",
-            "src/components/workspace/IssueDetail.jsx:2140",
+            "src/components/workspace/IssueDetail.jsx:2013",
+            "src/components/workspace/IssueDetail.jsx:2038",
             "src/components/workspace/IssueDetail.jsx:2141",
-            "src/components/workspace/IssueDetail.jsx:2174",
-            "src/components/workspace/IssueDetail.jsx:2202",
-            "src/components/workspace/IssueDetail.jsx:2212",
+            "src/components/workspace/IssueDetail.jsx:2142",
+            "src/components/workspace/IssueDetail.jsx:2175",
+            "src/components/workspace/IssueDetail.jsx:2203",
+            "src/components/workspace/IssueDetail.jsx:2213",
             "src/components/workspace/UnifiedTimeline.jsx:920",
             "src/components/workspace/WorkloadTab.jsx:506",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1106",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1276"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1107",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1277"
           ]
         },
         "icon": {
@@ -2847,9 +2847,9 @@
             "src/app/(app)/sprints/page.js:981",
             "src/components/MobileNav.jsx:382",
             "src/components/WorkspaceHelpMenu.jsx:154",
-            "src/components/profile/ProfileView.jsx:166",
-            "src/components/workspace/IssueDetail.jsx:1279",
-            "src/components/workspace/IssueDetail.jsx:1290",
+            "src/components/profile/ProfileView.jsx:175",
+            "src/components/workspace/IssueDetail.jsx:1280",
+            "src/components/workspace/IssueDetail.jsx:1291",
             "src/components/workspace/UnifiedTimeline.jsx:1027"
           ]
         },
@@ -2885,10 +2885,10 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
             "src/app/(app)/my/page.js:468",
-            "src/app/(app)/page.js:579",
             "src/app/(app)/page.js:580",
-            "src/app/(app)/page.js:584",
+            "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:585",
+            "src/app/(app)/page.js:586",
             "src/app/(app)/settings/page.js:3505",
             "src/app/(app)/sprints/page.js:143",
             "src/app/(app)/sprints/page.js:144",
@@ -2915,10 +2915,10 @@
             "src/components/workspace/BoardConfigModal.jsx:190",
             "src/components/workspace/BoardConfigModal.jsx:207",
             "src/components/workspace/BoardConfigModal.jsx:210",
-            "src/components/workspace/IssueDetail.jsx:1228",
             "src/components/workspace/IssueDetail.jsx:1229",
-            "src/components/workspace/IssueDetail.jsx:1851",
+            "src/components/workspace/IssueDetail.jsx:1230",
             "src/components/workspace/IssueDetail.jsx:1852",
+            "src/components/workspace/IssueDetail.jsx:1853",
             "src/components/workspace/TimesheetTab.jsx:480",
             "src/components/workspace/TimesheetTab.jsx:481",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
@@ -2927,10 +2927,10 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:616",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:627",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:632",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:262",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:266",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:857",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:858"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:263",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:267",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:858",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:859"
           ]
         },
         "icon-xs": {
@@ -2960,7 +2960,7 @@
             "src/components/workspace/AgileBoard.jsx:603",
             "src/components/workspace/AgileBoard.jsx:629",
             "src/components/workspace/AgileBoard.jsx:644",
-            "src/components/workspace/IssueDetail.jsx:1347"
+            "src/components/workspace/IssueDetail.jsx:1348"
           ]
         }
       },
@@ -2988,10 +2988,10 @@
             "src/components/workspace/BillingTab.jsx:1372",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:627",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1106",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1276",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:262",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:858"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1107",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1277",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:263",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:859"
           ]
         },
         "secondary": {
@@ -3022,9 +3022,9 @@
             "src/app/(app)/chat/page.js:1189",
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/my/page.js:346",
-            "src/app/(app)/page.js:580",
-            "src/app/(app)/page.js:584",
-            "src/app/(app)/page.js:959",
+            "src/app/(app)/page.js:581",
+            "src/app/(app)/page.js:585",
+            "src/app/(app)/page.js:960",
             "src/app/(app)/settings/page.js:2607",
             "src/app/(app)/settings/page.js:3076",
             "src/app/(app)/settings/page.js:3320",
@@ -3046,7 +3046,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:473",
             "src/components/integrations/YouTrackImportCard.jsx:498",
             "src/components/integrations/YouTrackImportCard.jsx:649",
-            "src/components/profile/ProfileView.jsx:166",
+            "src/components/profile/ProfileView.jsx:175",
             "src/components/workspace/BillingTab.jsx:1451",
             "src/components/workspace/BillingTab.jsx:442",
             "src/components/workspace/BillingTab.jsx:453",
@@ -3054,31 +3054,31 @@
             "src/components/workspace/BoardConfigModal.jsx:178",
             "src/components/workspace/BoardConfigModal.jsx:190",
             "src/components/workspace/BoardConfigModal.jsx:207",
-            "src/components/workspace/IssueDetail.jsx:1228",
-            "src/components/workspace/IssueDetail.jsx:1233",
-            "src/components/workspace/IssueDetail.jsx:1236",
-            "src/components/workspace/IssueDetail.jsx:1279",
-            "src/components/workspace/IssueDetail.jsx:1290",
-            "src/components/workspace/IssueDetail.jsx:1385",
-            "src/components/workspace/IssueDetail.jsx:1851",
-            "src/components/workspace/IssueDetail.jsx:1883",
-            "src/components/workspace/IssueDetail.jsx:2011",
-            "src/components/workspace/IssueDetail.jsx:2140",
-            "src/components/workspace/IssueDetail.jsx:2174",
-            "src/components/workspace/IssueDetail.jsx:2202",
-            "src/components/workspace/IssueDetail.jsx:2212",
+            "src/components/workspace/IssueDetail.jsx:1229",
+            "src/components/workspace/IssueDetail.jsx:1234",
+            "src/components/workspace/IssueDetail.jsx:1237",
+            "src/components/workspace/IssueDetail.jsx:1280",
+            "src/components/workspace/IssueDetail.jsx:1291",
+            "src/components/workspace/IssueDetail.jsx:1386",
+            "src/components/workspace/IssueDetail.jsx:1852",
+            "src/components/workspace/IssueDetail.jsx:1884",
+            "src/components/workspace/IssueDetail.jsx:2012",
+            "src/components/workspace/IssueDetail.jsx:2141",
+            "src/components/workspace/IssueDetail.jsx:2175",
+            "src/components/workspace/IssueDetail.jsx:2203",
+            "src/components/workspace/IssueDetail.jsx:2213",
             "src/components/workspace/QtPlusProjectTab.jsx:213",
             "src/components/workspace/TimesheetTab.jsx:480",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:616",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:632",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:266",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:857",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:863",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:874",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:894",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:902"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:267",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:858",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:864",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:875",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:903"
           ]
         },
         "primary": {
@@ -3101,10 +3101,10 @@
             "src/app/(app)/error.js:24",
             "src/app/(app)/my/page.js:262",
             "src/app/(app)/my/page.js:468",
-            "src/app/(app)/page.js:579",
-            "src/app/(app)/page.js:585",
-            "src/app/(app)/page.js:605",
-            "src/app/(app)/page.js:923",
+            "src/app/(app)/page.js:580",
+            "src/app/(app)/page.js:586",
+            "src/app/(app)/page.js:606",
+            "src/app/(app)/page.js:924",
             "src/app/(app)/settings/page.js:2608",
             "src/app/(app)/settings/page.js:3082",
             "src/app/(app)/settings/page.js:3480",
@@ -3126,10 +3126,10 @@
             "src/components/workspace/BillingTab.jsx:1437",
             "src/components/workspace/BillingTab.jsx:450",
             "src/components/workspace/BoardConfigModal.jsx:210",
-            "src/components/workspace/IssueDetail.jsx:1229",
-            "src/components/workspace/IssueDetail.jsx:1852",
-            "src/components/workspace/IssueDetail.jsx:2012",
-            "src/components/workspace/IssueDetail.jsx:2141",
+            "src/components/workspace/IssueDetail.jsx:1230",
+            "src/components/workspace/IssueDetail.jsx:1853",
+            "src/components/workspace/IssueDetail.jsx:2013",
+            "src/components/workspace/IssueDetail.jsx:2142",
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:481",
             "src/components/workspace/UnifiedTimeline.jsx:920"
@@ -3196,8 +3196,8 @@
             "src/app/(app)/team/page.js:110",
             "src/components/MobileNav.jsx:382",
             "src/components/UserStatusSetter.jsx:77",
-            "src/components/WorkspaceHeader.jsx:312",
-            "src/components/WorkspaceHeader.jsx:322",
+            "src/components/WorkspaceHeader.jsx:319",
+            "src/components/WorkspaceHeader.jsx:329",
             "src/components/WorkspaceHelpMenu.jsx:154",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/YouTrackImportCard.jsx:501",
@@ -3213,8 +3213,8 @@
             "src/components/workspace/BillingTab.jsx:1295",
             "src/components/workspace/BillingTab.jsx:1306",
             "src/components/workspace/BillingTab.jsx:1375",
-            "src/components/workspace/IssueDetail.jsx:1347",
-            "src/components/workspace/IssueDetail.jsx:2037",
+            "src/components/workspace/IssueDetail.jsx:1348",
+            "src/components/workspace/IssueDetail.jsx:2038",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/UnifiedTimeline.jsx:1027",
             "src/components/workspace/WorkloadTab.jsx:276",
@@ -3283,13 +3283,13 @@
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/my/page.js:346",
             "src/app/(app)/my/page.js:468",
-            "src/app/(app)/page.js:579",
             "src/app/(app)/page.js:580",
-            "src/app/(app)/page.js:584",
+            "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:585",
-            "src/app/(app)/page.js:605",
-            "src/app/(app)/page.js:923",
-            "src/app/(app)/page.js:959",
+            "src/app/(app)/page.js:586",
+            "src/app/(app)/page.js:606",
+            "src/app/(app)/page.js:924",
+            "src/app/(app)/page.js:960",
             "src/app/(app)/settings/page.js:2523",
             "src/app/(app)/settings/page.js:2607",
             "src/app/(app)/settings/page.js:2608",
@@ -3374,7 +3374,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/profile/ProfileView.jsx:166",
+            "src/components/profile/ProfileView.jsx:175",
             "src/components/workspace/AgileBoard.jsx:412",
             "src/components/workspace/AgileBoard.jsx:493",
             "src/components/workspace/AgileBoard.jsx:509",
@@ -3398,25 +3398,25 @@
             "src/components/workspace/BoardConfigModal.jsx:190",
             "src/components/workspace/BoardConfigModal.jsx:207",
             "src/components/workspace/BoardConfigModal.jsx:210",
-            "src/components/workspace/IssueDetail.jsx:1228",
             "src/components/workspace/IssueDetail.jsx:1229",
-            "src/components/workspace/IssueDetail.jsx:1233",
-            "src/components/workspace/IssueDetail.jsx:1236",
-            "src/components/workspace/IssueDetail.jsx:1279",
-            "src/components/workspace/IssueDetail.jsx:1290",
-            "src/components/workspace/IssueDetail.jsx:1347",
-            "src/components/workspace/IssueDetail.jsx:1385",
-            "src/components/workspace/IssueDetail.jsx:1851",
+            "src/components/workspace/IssueDetail.jsx:1230",
+            "src/components/workspace/IssueDetail.jsx:1234",
+            "src/components/workspace/IssueDetail.jsx:1237",
+            "src/components/workspace/IssueDetail.jsx:1280",
+            "src/components/workspace/IssueDetail.jsx:1291",
+            "src/components/workspace/IssueDetail.jsx:1348",
+            "src/components/workspace/IssueDetail.jsx:1386",
             "src/components/workspace/IssueDetail.jsx:1852",
-            "src/components/workspace/IssueDetail.jsx:1883",
-            "src/components/workspace/IssueDetail.jsx:2011",
+            "src/components/workspace/IssueDetail.jsx:1853",
+            "src/components/workspace/IssueDetail.jsx:1884",
             "src/components/workspace/IssueDetail.jsx:2012",
-            "src/components/workspace/IssueDetail.jsx:2037",
-            "src/components/workspace/IssueDetail.jsx:2140",
+            "src/components/workspace/IssueDetail.jsx:2013",
+            "src/components/workspace/IssueDetail.jsx:2038",
             "src/components/workspace/IssueDetail.jsx:2141",
-            "src/components/workspace/IssueDetail.jsx:2174",
-            "src/components/workspace/IssueDetail.jsx:2202",
-            "src/components/workspace/IssueDetail.jsx:2212",
+            "src/components/workspace/IssueDetail.jsx:2142",
+            "src/components/workspace/IssueDetail.jsx:2175",
+            "src/components/workspace/IssueDetail.jsx:2203",
+            "src/components/workspace/IssueDetail.jsx:2213",
             "src/components/workspace/QtPlusProjectTab.jsx:213",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/QtPlusProjectTab.jsx:294",
@@ -3434,24 +3434,24 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:616",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:627",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:632",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1106",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1276",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:262",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:266",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:857",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1107",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1277",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:263",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:267",
             "src/components/workspace/calendar/CalendarEventPage.jsx:858",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:863",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:874",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:894",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:902"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:859",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:864",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:875",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:903"
           ]
         },
         "compact": {
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:312",
-            "src/components/WorkspaceHeader.jsx:322"
+            "src/components/WorkspaceHeader.jsx:319",
+            "src/components/WorkspaceHeader.jsx:329"
           ]
         },
         "circle": {
@@ -3514,13 +3514,13 @@
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/my/page.js:346",
             "src/app/(app)/my/page.js:468",
-            "src/app/(app)/page.js:579",
             "src/app/(app)/page.js:580",
-            "src/app/(app)/page.js:584",
+            "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:585",
-            "src/app/(app)/page.js:605",
-            "src/app/(app)/page.js:923",
-            "src/app/(app)/page.js:959",
+            "src/app/(app)/page.js:586",
+            "src/app/(app)/page.js:606",
+            "src/app/(app)/page.js:924",
+            "src/app/(app)/page.js:960",
             "src/app/(app)/settings/page.js:2523",
             "src/app/(app)/settings/page.js:2607",
             "src/app/(app)/settings/page.js:2608",
@@ -3606,7 +3606,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/profile/ProfileView.jsx:166",
+            "src/components/profile/ProfileView.jsx:175",
             "src/components/workspace/AgileBoard.jsx:412",
             "src/components/workspace/AgileBoard.jsx:493",
             "src/components/workspace/AgileBoard.jsx:509",
@@ -3630,25 +3630,25 @@
             "src/components/workspace/BoardConfigModal.jsx:190",
             "src/components/workspace/BoardConfigModal.jsx:207",
             "src/components/workspace/BoardConfigModal.jsx:210",
-            "src/components/workspace/IssueDetail.jsx:1228",
             "src/components/workspace/IssueDetail.jsx:1229",
-            "src/components/workspace/IssueDetail.jsx:1233",
-            "src/components/workspace/IssueDetail.jsx:1236",
-            "src/components/workspace/IssueDetail.jsx:1279",
-            "src/components/workspace/IssueDetail.jsx:1290",
-            "src/components/workspace/IssueDetail.jsx:1347",
-            "src/components/workspace/IssueDetail.jsx:1385",
-            "src/components/workspace/IssueDetail.jsx:1851",
+            "src/components/workspace/IssueDetail.jsx:1230",
+            "src/components/workspace/IssueDetail.jsx:1234",
+            "src/components/workspace/IssueDetail.jsx:1237",
+            "src/components/workspace/IssueDetail.jsx:1280",
+            "src/components/workspace/IssueDetail.jsx:1291",
+            "src/components/workspace/IssueDetail.jsx:1348",
+            "src/components/workspace/IssueDetail.jsx:1386",
             "src/components/workspace/IssueDetail.jsx:1852",
-            "src/components/workspace/IssueDetail.jsx:1883",
-            "src/components/workspace/IssueDetail.jsx:2011",
+            "src/components/workspace/IssueDetail.jsx:1853",
+            "src/components/workspace/IssueDetail.jsx:1884",
             "src/components/workspace/IssueDetail.jsx:2012",
-            "src/components/workspace/IssueDetail.jsx:2037",
-            "src/components/workspace/IssueDetail.jsx:2140",
+            "src/components/workspace/IssueDetail.jsx:2013",
+            "src/components/workspace/IssueDetail.jsx:2038",
             "src/components/workspace/IssueDetail.jsx:2141",
-            "src/components/workspace/IssueDetail.jsx:2174",
-            "src/components/workspace/IssueDetail.jsx:2202",
-            "src/components/workspace/IssueDetail.jsx:2212",
+            "src/components/workspace/IssueDetail.jsx:2142",
+            "src/components/workspace/IssueDetail.jsx:2175",
+            "src/components/workspace/IssueDetail.jsx:2203",
+            "src/components/workspace/IssueDetail.jsx:2213",
             "src/components/workspace/QtPlusProjectTab.jsx:213",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/QtPlusProjectTab.jsx:294",
@@ -3667,24 +3667,24 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:616",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:627",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:632",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1106",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1276",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:262",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:266",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:857",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1107",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1277",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:263",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:267",
             "src/components/workspace/calendar/CalendarEventPage.jsx:858",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:863",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:874",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:894",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:902"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:859",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:864",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:875",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:903"
           ]
         },
         "canvas": {
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:312",
-            "src/components/WorkspaceHeader.jsx:322"
+            "src/components/WorkspaceHeader.jsx:319",
+            "src/components/WorkspaceHeader.jsx:329"
           ]
         }
       },
@@ -3735,11 +3735,11 @@
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/my/page.js:346",
             "src/app/(app)/my/page.js:468",
-            "src/app/(app)/page.js:579",
             "src/app/(app)/page.js:580",
-            "src/app/(app)/page.js:584",
+            "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:585",
-            "src/app/(app)/page.js:959",
+            "src/app/(app)/page.js:586",
+            "src/app/(app)/page.js:960",
             "src/app/(app)/settings/page.js:2523",
             "src/app/(app)/settings/page.js:2607",
             "src/app/(app)/settings/page.js:3076",
@@ -3802,8 +3802,8 @@
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/UserStatusSetter.jsx:120",
-            "src/components/WorkspaceHeader.jsx:312",
-            "src/components/WorkspaceHeader.jsx:322",
+            "src/components/WorkspaceHeader.jsx:319",
+            "src/components/WorkspaceHeader.jsx:329",
             "src/components/WorkspaceHelpMenu.jsx:154",
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceInfoCenter.jsx:87",
@@ -3814,7 +3814,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:501",
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
-            "src/components/profile/ProfileView.jsx:166",
+            "src/components/profile/ProfileView.jsx:175",
             "src/components/workspace/AgileBoard.jsx:412",
             "src/components/workspace/AgileBoard.jsx:493",
             "src/components/workspace/AgileBoard.jsx:509",
@@ -3836,25 +3836,25 @@
             "src/components/workspace/BoardConfigModal.jsx:178",
             "src/components/workspace/BoardConfigModal.jsx:207",
             "src/components/workspace/BoardConfigModal.jsx:210",
-            "src/components/workspace/IssueDetail.jsx:1228",
             "src/components/workspace/IssueDetail.jsx:1229",
-            "src/components/workspace/IssueDetail.jsx:1233",
-            "src/components/workspace/IssueDetail.jsx:1236",
-            "src/components/workspace/IssueDetail.jsx:1279",
-            "src/components/workspace/IssueDetail.jsx:1290",
-            "src/components/workspace/IssueDetail.jsx:1347",
-            "src/components/workspace/IssueDetail.jsx:1385",
-            "src/components/workspace/IssueDetail.jsx:1851",
+            "src/components/workspace/IssueDetail.jsx:1230",
+            "src/components/workspace/IssueDetail.jsx:1234",
+            "src/components/workspace/IssueDetail.jsx:1237",
+            "src/components/workspace/IssueDetail.jsx:1280",
+            "src/components/workspace/IssueDetail.jsx:1291",
+            "src/components/workspace/IssueDetail.jsx:1348",
+            "src/components/workspace/IssueDetail.jsx:1386",
             "src/components/workspace/IssueDetail.jsx:1852",
-            "src/components/workspace/IssueDetail.jsx:1883",
-            "src/components/workspace/IssueDetail.jsx:2011",
+            "src/components/workspace/IssueDetail.jsx:1853",
+            "src/components/workspace/IssueDetail.jsx:1884",
             "src/components/workspace/IssueDetail.jsx:2012",
-            "src/components/workspace/IssueDetail.jsx:2037",
-            "src/components/workspace/IssueDetail.jsx:2140",
+            "src/components/workspace/IssueDetail.jsx:2013",
+            "src/components/workspace/IssueDetail.jsx:2038",
             "src/components/workspace/IssueDetail.jsx:2141",
-            "src/components/workspace/IssueDetail.jsx:2174",
-            "src/components/workspace/IssueDetail.jsx:2202",
-            "src/components/workspace/IssueDetail.jsx:2212",
+            "src/components/workspace/IssueDetail.jsx:2142",
+            "src/components/workspace/IssueDetail.jsx:2175",
+            "src/components/workspace/IssueDetail.jsx:2203",
+            "src/components/workspace/IssueDetail.jsx:2213",
             "src/components/workspace/QtPlusProjectTab.jsx:213",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/QtPlusProjectTab.jsx:294",
@@ -3872,16 +3872,16 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:616",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:627",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:632",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1106",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1276",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:262",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:266",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:857",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1107",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1277",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:263",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:267",
             "src/components/workspace/calendar/CalendarEventPage.jsx:858",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:863",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:874",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:894",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:902"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:859",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:864",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:875",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:903"
           ]
         },
         "dark": {
@@ -3893,7 +3893,7 @@
           ],
           "files": [
             "src/app/(app)/my/page.js:262",
-            "src/app/(app)/page.js:923",
+            "src/app/(app)/page.js:924",
             "src/app/(app)/settings/page.js:2608"
           ]
         },
@@ -3909,7 +3909,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:605",
+            "src/app/(app)/page.js:606",
             "src/app/(app)/settings/page.js:3837",
             "src/app/(app)/settings/page.js:3850",
             "src/app/(app)/settings/page.js:3952",
@@ -3985,13 +3985,13 @@
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/my/page.js:346",
             "src/app/(app)/my/page.js:468",
-            "src/app/(app)/page.js:579",
             "src/app/(app)/page.js:580",
-            "src/app/(app)/page.js:584",
+            "src/app/(app)/page.js:581",
             "src/app/(app)/page.js:585",
-            "src/app/(app)/page.js:605",
-            "src/app/(app)/page.js:923",
-            "src/app/(app)/page.js:959",
+            "src/app/(app)/page.js:586",
+            "src/app/(app)/page.js:606",
+            "src/app/(app)/page.js:924",
+            "src/app/(app)/page.js:960",
             "src/app/(app)/settings/page.js:2523",
             "src/app/(app)/settings/page.js:2607",
             "src/app/(app)/settings/page.js:2608",
@@ -4058,8 +4058,8 @@
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/UserStatusSetter.jsx:77",
-            "src/components/WorkspaceHeader.jsx:312",
-            "src/components/WorkspaceHeader.jsx:322",
+            "src/components/WorkspaceHeader.jsx:319",
+            "src/components/WorkspaceHeader.jsx:329",
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/IntegrationCard.jsx:99",
@@ -4069,7 +4069,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:649",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:699",
-            "src/components/profile/ProfileView.jsx:166",
+            "src/components/profile/ProfileView.jsx:175",
             "src/components/workspace/AgileBoard.jsx:493",
             "src/components/workspace/AgileBoard.jsx:509",
             "src/components/workspace/AgileBoard.jsx:524",
@@ -4092,22 +4092,22 @@
             "src/components/workspace/BoardConfigModal.jsx:190",
             "src/components/workspace/BoardConfigModal.jsx:207",
             "src/components/workspace/BoardConfigModal.jsx:210",
-            "src/components/workspace/IssueDetail.jsx:1228",
             "src/components/workspace/IssueDetail.jsx:1229",
-            "src/components/workspace/IssueDetail.jsx:1233",
-            "src/components/workspace/IssueDetail.jsx:1236",
-            "src/components/workspace/IssueDetail.jsx:1279",
-            "src/components/workspace/IssueDetail.jsx:1290",
-            "src/components/workspace/IssueDetail.jsx:1347",
-            "src/components/workspace/IssueDetail.jsx:1385",
-            "src/components/workspace/IssueDetail.jsx:1851",
+            "src/components/workspace/IssueDetail.jsx:1230",
+            "src/components/workspace/IssueDetail.jsx:1234",
+            "src/components/workspace/IssueDetail.jsx:1237",
+            "src/components/workspace/IssueDetail.jsx:1280",
+            "src/components/workspace/IssueDetail.jsx:1291",
+            "src/components/workspace/IssueDetail.jsx:1348",
+            "src/components/workspace/IssueDetail.jsx:1386",
             "src/components/workspace/IssueDetail.jsx:1852",
-            "src/components/workspace/IssueDetail.jsx:1883",
-            "src/components/workspace/IssueDetail.jsx:2011",
+            "src/components/workspace/IssueDetail.jsx:1853",
+            "src/components/workspace/IssueDetail.jsx:1884",
             "src/components/workspace/IssueDetail.jsx:2012",
-            "src/components/workspace/IssueDetail.jsx:2037",
-            "src/components/workspace/IssueDetail.jsx:2140",
+            "src/components/workspace/IssueDetail.jsx:2013",
+            "src/components/workspace/IssueDetail.jsx:2038",
             "src/components/workspace/IssueDetail.jsx:2141",
+            "src/components/workspace/IssueDetail.jsx:2142",
             "src/components/workspace/QtPlusProjectTab.jsx:213",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/QtPlusProjectTab.jsx:294",
@@ -4125,16 +4125,16 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:616",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:627",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:632",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1106",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1276",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:262",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:266",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:857",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1107",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1277",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:263",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:267",
             "src/components/workspace/calendar/CalendarEventPage.jsx:858",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:863",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:874",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:894",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:902"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:859",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:864",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:875",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:895",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:903"
           ]
         },
         "settings-row-action": {
@@ -4184,9 +4184,9 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:2174",
-            "src/components/workspace/IssueDetail.jsx:2202",
-            "src/components/workspace/IssueDetail.jsx:2212"
+            "src/components/workspace/IssueDetail.jsx:2175",
+            "src/components/workspace/IssueDetail.jsx:2203",
+            "src/components/workspace/IssueDetail.jsx:2213"
           ]
         },
         "chat-composer-action": {
@@ -4215,8 +4215,8 @@
             "src/app/(app)/chat/page.js:458",
             "src/app/(app)/settings/page.js:292",
             "src/app/(app)/settings/page.js:293",
-            "src/components/WorkspaceHeader.jsx:397",
-            "src/components/WorkspaceHeader.jsx:408"
+            "src/components/WorkspaceHeader.jsx:410",
+            "src/components/WorkspaceHeader.jsx:421"
           ]
         },
         "(default)": {
@@ -4239,7 +4239,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:228",
+            "src/app/(app)/page.js:229",
             "src/components/AudioTaskPanel.jsx:263",
             "src/components/AuthLayout.jsx:56"
           ]
@@ -4289,9 +4289,9 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:217",
-            "src/components/profile/ProfileView.jsx:229",
-            "src/components/profile/ProfileView.jsx:241",
+            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:235",
+            "src/components/profile/ProfileView.jsx:244",
             "src/components/profile/ProfileView.jsx:259"
           ]
         },
@@ -4322,7 +4322,7 @@
           "files": [
             "src/app/(app)/calendar/page.js:374",
             "src/app/(app)/chat/page.js:391",
-            "src/app/(app)/page.js:228",
+            "src/app/(app)/page.js:229",
             "src/components/MobileNav.jsx:297",
             "src/components/MobileNav.jsx:326",
             "src/components/workspace/UnifiedTimeline.jsx:867",
@@ -4399,14 +4399,14 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:397"
+            "src/components/WorkspaceHeader.jsx:410"
           ]
         },
         "surface-danger": {
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:408"
+            "src/components/WorkspaceHeader.jsx:421"
           ]
         },
         "surface-plain": {
@@ -4423,9 +4423,9 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:217",
-            "src/components/profile/ProfileView.jsx:229",
-            "src/components/profile/ProfileView.jsx:241",
+            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:235",
+            "src/components/profile/ProfileView.jsx:244",
             "src/components/profile/ProfileView.jsx:259"
           ]
         },
@@ -4466,7 +4466,7 @@
             "src/app/(app)/chat/page.js:317",
             "src/app/(app)/chat/page.js:326",
             "src/app/(app)/chat/page.js:391",
-            "src/app/(app)/page.js:228",
+            "src/app/(app)/page.js:229",
             "src/app/(app)/settings/page.js:292",
             "src/app/(app)/settings/page.js:293",
             "src/app/(app)/settings/page.js:319",
@@ -4475,11 +4475,11 @@
             "src/components/AudioTaskPanel.jsx:263",
             "src/components/MobileNav.jsx:297",
             "src/components/MobileNav.jsx:326",
-            "src/components/WorkspaceHeader.jsx:397",
-            "src/components/WorkspaceHeader.jsx:408",
-            "src/components/profile/ProfileView.jsx:217",
-            "src/components/profile/ProfileView.jsx:229",
-            "src/components/profile/ProfileView.jsx:241",
+            "src/components/WorkspaceHeader.jsx:410",
+            "src/components/WorkspaceHeader.jsx:421",
+            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:235",
+            "src/components/profile/ProfileView.jsx:244",
             "src/components/profile/ProfileView.jsx:259"
           ]
         },
@@ -4536,7 +4536,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:374",
-            "src/app/(app)/page.js:228",
+            "src/app/(app)/page.js:229",
             "src/app/(app)/settings/page.js:292",
             "src/app/(app)/settings/page.js:293",
             "src/app/(app)/settings/page.js:319",
@@ -4546,13 +4546,13 @@
             "src/components/MobileNav.jsx:297",
             "src/components/MobileNav.jsx:326",
             "src/components/MobileNav.jsx:72",
-            "src/components/WorkspaceHeader.jsx:397",
-            "src/components/WorkspaceHeader.jsx:408",
+            "src/components/WorkspaceHeader.jsx:410",
+            "src/components/WorkspaceHeader.jsx:421",
             "src/components/profile/ProfileModal.jsx:41",
             "src/components/profile/ProfileModal.jsx:46",
-            "src/components/profile/ProfileView.jsx:217",
-            "src/components/profile/ProfileView.jsx:229",
-            "src/components/profile/ProfileView.jsx:241",
+            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:235",
+            "src/components/profile/ProfileView.jsx:244",
             "src/components/profile/ProfileView.jsx:259",
             "src/components/workspace/QtPlusProjectTab.jsx:47",
             "src/components/workspace/qtplus/MediaLightbox.jsx:29",
@@ -4653,17 +4653,17 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:691",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:835",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:839",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1069",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1076",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1087",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1094",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1238",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1247",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1323",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1333",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1347",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:222",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:234"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1070",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1077",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1088",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1095",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1239",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1248",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1324",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1334",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1348",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:223",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:235"
           ]
         },
         "sm": {
@@ -4691,7 +4691,7 @@
             "src/app/(app)/settings/page.js:3059",
             "src/components/workspace/BillingTab.jsx:133",
             "src/components/workspace/BillingTab.jsx:317",
-            "src/components/workspace/IssueDetail.jsx:1993"
+            "src/components/workspace/IssueDetail.jsx:1994"
           ]
         },
         "lg": {
@@ -4705,11 +4705,11 @@
           "files": [
             "src/components/InviteMemberDialog.jsx:137",
             "src/components/WorkspaceInfoCenter.jsx:127",
-            "src/components/workspace/IssueDetail.jsx:1799",
-            "src/components/workspace/IssueDetail.jsx:1807",
-            "src/components/workspace/IssueDetail.jsx:1823",
-            "src/components/workspace/IssueDetail.jsx:1831",
-            "src/components/workspace/IssueDetail.jsx:1846"
+            "src/components/workspace/IssueDetail.jsx:1800",
+            "src/components/workspace/IssueDetail.jsx:1808",
+            "src/components/workspace/IssueDetail.jsx:1824",
+            "src/components/workspace/IssueDetail.jsx:1832",
+            "src/components/workspace/IssueDetail.jsx:1847"
           ]
         }
       },
@@ -4753,7 +4753,7 @@
             "src/components/workspace/BillingTab.jsx:1343",
             "src/components/workspace/BillingTab.jsx:1361",
             "src/components/workspace/BillingTab.jsx:317",
-            "src/components/workspace/IssueDetail.jsx:1993",
+            "src/components/workspace/IssueDetail.jsx:1994",
             "src/components/workspace/TimesheetTab.jsx:524",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:376",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:377",
@@ -4761,15 +4761,15 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:691",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:835",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:839",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1069",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1076",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1087",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1094",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1238",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1247",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1323",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1333",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1347"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1070",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1077",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1088",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1095",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1239",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1248",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1324",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1334",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1348"
           ]
         },
         "color-hex": {
@@ -4796,9 +4796,9 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1799",
-            "src/components/workspace/IssueDetail.jsx:1823",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:222"
+            "src/components/workspace/IssueDetail.jsx:1800",
+            "src/components/workspace/IssueDetail.jsx:1824",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:223"
           ]
         },
         "duration-minutes": {
@@ -4809,9 +4809,9 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1807",
-            "src/components/workspace/IssueDetail.jsx:1831",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:234"
+            "src/components/workspace/IssueDetail.jsx:1808",
+            "src/components/workspace/IssueDetail.jsx:1832",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:235"
           ]
         },
         "metric-text": {
@@ -4821,7 +4821,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1846"
+            "src/components/workspace/IssueDetail.jsx:1847"
           ]
         },
         "duration-compact-hours": {
@@ -4885,12 +4885,12 @@
             "src/components/workspace/BillingTab.jsx:1339",
             "src/components/workspace/BillingTab.jsx:1343",
             "src/components/workspace/BillingTab.jsx:1361",
-            "src/components/workspace/IssueDetail.jsx:1799",
-            "src/components/workspace/IssueDetail.jsx:1807",
-            "src/components/workspace/IssueDetail.jsx:1823",
-            "src/components/workspace/IssueDetail.jsx:1831",
-            "src/components/workspace/IssueDetail.jsx:1846",
-            "src/components/workspace/IssueDetail.jsx:1993",
+            "src/components/workspace/IssueDetail.jsx:1800",
+            "src/components/workspace/IssueDetail.jsx:1808",
+            "src/components/workspace/IssueDetail.jsx:1824",
+            "src/components/workspace/IssueDetail.jsx:1832",
+            "src/components/workspace/IssueDetail.jsx:1847",
+            "src/components/workspace/IssueDetail.jsx:1994",
             "src/components/workspace/TimesheetTab.jsx:513",
             "src/components/workspace/TimesheetTab.jsx:517",
             "src/components/workspace/TimesheetTab.jsx:524",
@@ -4900,17 +4900,17 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:691",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:835",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:839",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1069",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1076",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1087",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1094",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1238",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1247",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1323",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1333",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1347",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:222",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:234"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1070",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1077",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1088",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1095",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1239",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1248",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1324",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1334",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1348",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:223",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:235"
           ]
         },
         "money": {
@@ -4949,7 +4949,7 @@
             "src/components/workspace/BillingTab.jsx:1134",
             "src/components/workspace/BillingTab.jsx:1139",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:846",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:251"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:252"
           ]
         },
         "settings-note": {
@@ -4979,7 +4979,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1306"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1307"
           ]
         }
       },
@@ -5008,8 +5008,8 @@
             "src/components/workspace/BillingTab.jsx:1134",
             "src/components/workspace/BillingTab.jsx:1139",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:846",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1306",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:251"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1307",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:252"
           ]
         },
         "white": {
@@ -5058,9 +5058,9 @@
             "src/app/(app)/my/page.js:287",
             "src/app/(app)/my/page.js:297",
             "src/app/(app)/my/page.js:307",
-            "src/app/(app)/page.js:938",
             "src/app/(app)/page.js:939",
             "src/app/(app)/page.js:940",
+            "src/app/(app)/page.js:941",
             "src/app/(app)/settings/page.js:2875",
             "src/app/(app)/settings/page.js:2886",
             "src/app/(app)/settings/page.js:2898",
@@ -5085,14 +5085,14 @@
             "src/components/workspace/BillingTab.jsx:1209",
             "src/components/workspace/BillingTab.jsx:1219",
             "src/components/workspace/BillingTab.jsx:1332",
-            "src/components/workspace/IssueDetail.jsx:1516",
-            "src/components/workspace/IssueDetail.jsx:1541",
-            "src/components/workspace/IssueDetail.jsx:1642",
-            "src/components/workspace/IssueDetail.jsx:1669",
-            "src/components/workspace/IssueDetail.jsx:1681",
-            "src/components/workspace/IssueDetail.jsx:1693",
-            "src/components/workspace/IssueDetail.jsx:2116",
-            "src/components/workspace/IssueDetail.jsx:2124",
+            "src/components/workspace/IssueDetail.jsx:1517",
+            "src/components/workspace/IssueDetail.jsx:1542",
+            "src/components/workspace/IssueDetail.jsx:1643",
+            "src/components/workspace/IssueDetail.jsx:1670",
+            "src/components/workspace/IssueDetail.jsx:1682",
+            "src/components/workspace/IssueDetail.jsx:1694",
+            "src/components/workspace/IssueDetail.jsx:2117",
+            "src/components/workspace/IssueDetail.jsx:2125",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:488",
@@ -5101,11 +5101,11 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:675",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:688",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:851",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1221",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1230",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:940",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:965",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:991"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1222",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1231",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:941",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:966",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:992"
           ]
         },
         "md": {
@@ -5147,9 +5147,9 @@
             "src/app/(app)/my/page.js:287",
             "src/app/(app)/my/page.js:297",
             "src/app/(app)/my/page.js:307",
-            "src/app/(app)/page.js:938",
             "src/app/(app)/page.js:939",
             "src/app/(app)/page.js:940",
+            "src/app/(app)/page.js:941",
             "src/app/(app)/sprints/page.js:775",
             "src/app/(app)/sprints/page.js:786",
             "src/app/(app)/sprints/page.js:796"
@@ -5192,14 +5192,14 @@
             "src/components/workspace/BillingTab.jsx:1209",
             "src/components/workspace/BillingTab.jsx:1219",
             "src/components/workspace/BillingTab.jsx:1332",
-            "src/components/workspace/IssueDetail.jsx:1516",
-            "src/components/workspace/IssueDetail.jsx:1541",
-            "src/components/workspace/IssueDetail.jsx:1642",
-            "src/components/workspace/IssueDetail.jsx:1669",
-            "src/components/workspace/IssueDetail.jsx:1681",
-            "src/components/workspace/IssueDetail.jsx:1693",
-            "src/components/workspace/IssueDetail.jsx:2116",
-            "src/components/workspace/IssueDetail.jsx:2124",
+            "src/components/workspace/IssueDetail.jsx:1517",
+            "src/components/workspace/IssueDetail.jsx:1542",
+            "src/components/workspace/IssueDetail.jsx:1643",
+            "src/components/workspace/IssueDetail.jsx:1670",
+            "src/components/workspace/IssueDetail.jsx:1682",
+            "src/components/workspace/IssueDetail.jsx:1694",
+            "src/components/workspace/IssueDetail.jsx:2117",
+            "src/components/workspace/IssueDetail.jsx:2125",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:488",
@@ -5208,11 +5208,11 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:675",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:688",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:851",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1221",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1230",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:940",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:965",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:991"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1222",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1231",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:941",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:966",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:992"
           ]
         }
       },
@@ -5243,7 +5243,7 @@
             "src/app/(app)/analytics/page.js:771",
             "src/app/(app)/analytics/page.js:802",
             "src/app/(app)/calendar/page.js:736",
-            "src/app/(app)/page.js:938",
+            "src/app/(app)/page.js:939",
             "src/app/(app)/sprints/page.js:775"
           ]
         },
@@ -5297,7 +5297,7 @@
             "/"
           ],
           "files": [
-            "src/app/(app)/page.js:939"
+            "src/app/(app)/page.js:940"
           ]
         },
         "sort": {
@@ -5306,7 +5306,7 @@
             "/"
           ],
           "files": [
-            "src/app/(app)/page.js:940"
+            "src/app/(app)/page.js:941"
           ]
         },
         "(default)": {
@@ -5344,14 +5344,14 @@
             "src/components/integrations/YouTrackImportCard.jsx:633",
             "src/components/workspace/BillingTab.jsx:111",
             "src/components/workspace/BillingTab.jsx:1332",
-            "src/components/workspace/IssueDetail.jsx:1516",
-            "src/components/workspace/IssueDetail.jsx:1541",
-            "src/components/workspace/IssueDetail.jsx:1642",
-            "src/components/workspace/IssueDetail.jsx:1669",
-            "src/components/workspace/IssueDetail.jsx:1681",
-            "src/components/workspace/IssueDetail.jsx:1693",
-            "src/components/workspace/IssueDetail.jsx:2116",
-            "src/components/workspace/IssueDetail.jsx:2124",
+            "src/components/workspace/IssueDetail.jsx:1517",
+            "src/components/workspace/IssueDetail.jsx:1542",
+            "src/components/workspace/IssueDetail.jsx:1643",
+            "src/components/workspace/IssueDetail.jsx:1670",
+            "src/components/workspace/IssueDetail.jsx:1682",
+            "src/components/workspace/IssueDetail.jsx:1694",
+            "src/components/workspace/IssueDetail.jsx:2117",
+            "src/components/workspace/IssueDetail.jsx:2125",
             "src/components/workspace/QtPlusProjectTab.jsx:206",
             "src/components/workspace/QtPlusProjectTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:488",
@@ -5360,11 +5360,11 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:675",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:688",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:851",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1221",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1230",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:940",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:965",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:991"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1222",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1231",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:941",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:966",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:992"
           ]
         },
         "status": {
@@ -5401,11 +5401,11 @@
             "src/app/(app)/chat/page.js:1238",
             "src/app/(app)/my/page.js:278",
             "src/app/(app)/sprints/page.js:766",
-            "src/components/workspace/IssueDetail.jsx:1523",
+            "src/components/workspace/IssueDetail.jsx:1524",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:704",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:802",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1141",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1261"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1142",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1262"
           ]
         }
       },
@@ -5440,11 +5440,11 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1238",
-            "src/components/workspace/IssueDetail.jsx:1523",
+            "src/components/workspace/IssueDetail.jsx:1524",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:704",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:802",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1141",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1261"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1142",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1262"
           ]
         }
       },
@@ -5479,11 +5479,11 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1238",
-            "src/components/workspace/IssueDetail.jsx:1523",
+            "src/components/workspace/IssueDetail.jsx:1524",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:704",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:802",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1141",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1261"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1142",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1262"
           ]
         }
       }
@@ -5503,9 +5503,9 @@
             "src/app/(app)/analytics/page.js:859",
             "src/app/(app)/analytics/team/[memberId]/page.js:110",
             "src/app/(app)/calendar/page.js:764",
-            "src/app/(app)/page.js:972",
-            "src/app/(app)/page.js:979",
-            "src/app/(app)/page.js:994",
+            "src/app/(app)/page.js:973",
+            "src/app/(app)/page.js:980",
+            "src/app/(app)/page.js:995",
             "src/app/(app)/sprints/page.js:1061"
           ]
         },
@@ -5552,7 +5552,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1992"
+            "src/components/workspace/IssueDetail.jsx:1993"
           ]
         }
       },
@@ -5567,8 +5567,8 @@
           "files": [
             "src/app/(app)/analytics/page.js:859",
             "src/app/(app)/analytics/team/[memberId]/page.js:110",
-            "src/app/(app)/page.js:972",
-            "src/app/(app)/page.js:994"
+            "src/app/(app)/page.js:973",
+            "src/app/(app)/page.js:995"
           ]
         },
         "sm": {
@@ -5592,8 +5592,8 @@
           ],
           "files": [
             "src/app/(app)/errors/page.js:104",
-            "src/app/(app)/page.js:979",
-            "src/components/workspace/IssueDetail.jsx:1992"
+            "src/app/(app)/page.js:980",
+            "src/components/workspace/IssueDetail.jsx:1993"
           ]
         },
         "none": {
@@ -5626,7 +5626,7 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:859",
-            "src/app/(app)/page.js:972"
+            "src/app/(app)/page.js:973"
           ]
         },
         "member-chart-panel": {
@@ -5653,12 +5653,12 @@
           "files": [
             "src/app/(app)/calendar/page.js:764",
             "src/app/(app)/errors/page.js:104",
-            "src/app/(app)/page.js:979",
-            "src/app/(app)/page.js:994",
+            "src/app/(app)/page.js:980",
+            "src/app/(app)/page.js:995",
             "src/app/(app)/settings/page.js:3507",
             "src/app/(app)/team/page.js:132",
             "src/components/workspace/BillingTab.jsx:1147",
-            "src/components/workspace/IssueDetail.jsx:1992"
+            "src/components/workspace/IssueDetail.jsx:1993"
           ]
         },
         "scroll-pane": {
@@ -5693,7 +5693,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
-            "src/app/(app)/page.js:204",
+            "src/app/(app)/page.js:205",
             "src/components/SearchModal.jsx:118",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/workspace/BillingTab.jsx:1287",
@@ -5750,7 +5750,7 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:3528",
-            "src/components/WorkspaceHeader.jsx:489"
+            "src/components/WorkspaceHeader.jsx:502"
           ]
         },
         "count": {
@@ -5818,7 +5818,7 @@
           ],
           "files": [
             "src/components/workspace/IssueCard.jsx:313",
-            "src/components/workspace/IssueDetail.jsx:1488",
+            "src/components/workspace/IssueDetail.jsx:1489",
             "src/components/workspace/WorkloadTab.jsx:128"
           ]
         },
@@ -5848,7 +5848,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1381"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1382"
           ]
         }
       },
@@ -5868,7 +5868,7 @@
             "src/app/(app)/settings/page.js:558",
             "src/components/TeamMemberSettingsDialog.jsx:56",
             "src/components/migrations/DataMigrationSettings.jsx:102",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1381"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1382"
           ]
         },
         "sm": {
@@ -5893,7 +5893,7 @@
             "src/app/(app)/settings/page.js:3520",
             "src/app/(app)/settings/page.js:3521",
             "src/components/SearchModal.jsx:118",
-            "src/components/WorkspaceHeader.jsx:489",
+            "src/components/WorkspaceHeader.jsx:502",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/workspace/BillingTab.jsx:248",
@@ -5903,7 +5903,7 @@
             "src/components/workspace/IssueCard.jsx:301",
             "src/components/workspace/IssueCard.jsx:313",
             "src/components/workspace/IssueCard.jsx:327",
-            "src/components/workspace/IssueDetail.jsx:1488"
+            "src/components/workspace/IssueDetail.jsx:1489"
           ]
         },
         "(default)": {
@@ -5913,7 +5913,7 @@
             "/analytics"
           ],
           "files": [
-            "src/app/(app)/page.js:204",
+            "src/app/(app)/page.js:205",
             "src/components/workspace/BillingTab.jsx:1287"
           ]
         },
@@ -6044,7 +6044,7 @@
           ],
           "files": [
             "src/app/(app)/errors/page.js:107",
-            "src/app/(app)/page.js:204",
+            "src/app/(app)/page.js:205",
             "src/app/(app)/settings/page.js:3207",
             "src/app/(app)/settings/page.js:3527",
             "src/app/(app)/settings/page.js:3528",
@@ -6055,7 +6055,7 @@
             "src/app/(app)/sprints/page.js:1083",
             "src/components/SearchModal.jsx:118",
             "src/components/TeamMemberSettingsDialog.jsx:56",
-            "src/components/WorkspaceHeader.jsx:489",
+            "src/components/WorkspaceHeader.jsx:502",
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/migrations/DataMigrationSettings.jsx:181",
@@ -6069,7 +6069,7 @@
             "src/components/workspace/BillingTab.jsx:481",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/IssueCard.jsx:383",
-            "src/components/workspace/IssueDetail.jsx:1488",
+            "src/components/workspace/IssueDetail.jsx:1489",
             "src/components/workspace/UnifiedTimeline.jsx:161",
             "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/WorkloadTab.jsx:129",
@@ -6080,7 +6080,7 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:281",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:369",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1381",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1382",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:18"
           ]
         }
@@ -6106,7 +6106,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
             "src/app/(app)/errors/page.js:107",
-            "src/app/(app)/page.js:204",
+            "src/app/(app)/page.js:205",
             "src/app/(app)/settings/page.js:3520",
             "src/app/(app)/settings/page.js:3521",
             "src/app/(app)/settings/page.js:3527",
@@ -6120,7 +6120,7 @@
             "src/app/(app)/sprints/page.js:1083",
             "src/components/SearchModal.jsx:118",
             "src/components/TeamMemberSettingsDialog.jsx:56",
-            "src/components/WorkspaceHeader.jsx:489",
+            "src/components/WorkspaceHeader.jsx:502",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/workspace/AgileBoard.jsx:502",
@@ -6138,7 +6138,7 @@
             "src/components/workspace/IssueCard.jsx:313",
             "src/components/workspace/IssueCard.jsx:327",
             "src/components/workspace/IssueCard.jsx:383",
-            "src/components/workspace/IssueDetail.jsx:1488",
+            "src/components/workspace/IssueDetail.jsx:1489",
             "src/components/workspace/UnifiedTimeline.jsx:161",
             "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/WorkloadTab.jsx:129",
@@ -6147,7 +6147,7 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:277",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:369",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1381",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1382",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:18"
           ]
         },
@@ -6212,7 +6212,7 @@
             "src/app/(app)/sprints/page.js:1083",
             "src/components/SearchModal.jsx:118",
             "src/components/TeamMemberSettingsDialog.jsx:56",
-            "src/components/WorkspaceHeader.jsx:489",
+            "src/components/WorkspaceHeader.jsx:502",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
@@ -6230,7 +6230,7 @@
             "src/components/workspace/IssueCard.jsx:301",
             "src/components/workspace/IssueCard.jsx:313",
             "src/components/workspace/IssueCard.jsx:327",
-            "src/components/workspace/IssueDetail.jsx:1488",
+            "src/components/workspace/IssueDetail.jsx:1489",
             "src/components/workspace/UnifiedTimeline.jsx:161",
             "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/WorkloadTab.jsx:129",
@@ -6241,7 +6241,7 @@
             "src/components/workspace/calendar/CalendarEventDialog.jsx:281",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:369",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1381",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1382",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:18"
           ]
         },
@@ -6263,7 +6263,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/page.js:204",
+            "src/app/(app)/page.js:205",
             "src/components/workspace/BillingTab.jsx:278",
             "src/components/workspace/IssueCard.jsx:383"
           ]
@@ -6290,7 +6290,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:360",
             "src/app/(app)/errors/page.js:107",
-            "src/app/(app)/page.js:204",
+            "src/app/(app)/page.js:205",
             "src/app/(app)/settings/page.js:3207",
             "src/app/(app)/settings/page.js:3435",
             "src/app/(app)/settings/page.js:3520",
@@ -6303,7 +6303,7 @@
             "src/app/(app)/sprints/page.js:1058",
             "src/app/(app)/sprints/page.js:1083",
             "src/components/TeamMemberSettingsDialog.jsx:56",
-            "src/components/WorkspaceHeader.jsx:489",
+            "src/components/WorkspaceHeader.jsx:502",
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:181",
             "src/components/workspace/AgileBoard.jsx:502",
@@ -6318,7 +6318,7 @@
             "src/components/workspace/BillingTab.jsx:481",
             "src/components/workspace/BillingTab.jsx:483",
             "src/components/workspace/IssueCard.jsx:383",
-            "src/components/workspace/IssueDetail.jsx:1488",
+            "src/components/workspace/IssueDetail.jsx:1489",
             "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/WorkloadTab.jsx:129",
             "src/components/workspace/WorkloadTab.jsx:130",
@@ -6358,7 +6358,7 @@
             "src/components/workspace/IssueCard.jsx:327",
             "src/components/workspace/UnifiedTimeline.jsx:161",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1381"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1382"
           ]
         }
       }
@@ -6388,8 +6388,8 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/app/(app)/page.js:196",
-            "src/components/WorkspaceHeader.jsx:84",
+            "src/app/(app)/page.js:197",
+            "src/components/WorkspaceHeader.jsx:85",
             "src/components/workspace/WorkloadTab.jsx:278"
           ]
         },
@@ -6411,7 +6411,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/page.js:432",
+            "src/app/(app)/page.js:433",
             "src/components/workspace/AnalyticsTab.jsx:348",
             "src/components/workspace/IssueCard.jsx:375",
             "src/components/workspace/TimesheetTab.jsx:221",
@@ -6463,7 +6463,7 @@
             "src/components/CreateTaskModal.jsx:466",
             "src/components/workspace/BillingTab.jsx:270",
             "src/components/workspace/HoverCard.jsx:171",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1382"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1383"
           ]
         },
         "xl": {
@@ -6481,7 +6481,7 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:173"
+            "src/components/profile/ProfileView.jsx:182"
           ]
         },
         "chat-mention": {
@@ -6533,7 +6533,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/WorkspaceHeader.jsx:426",
+            "src/components/WorkspaceHeader.jsx:439",
             "src/components/workspace/qtplus/chat/ChatMessage.jsx:74"
           ]
         },
@@ -6544,7 +6544,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:698"
+            "src/components/workspace/IssueDetail.jsx:699"
           ]
         },
         "danger": {
@@ -6582,7 +6582,7 @@
           ],
           "files": [
             "src/components/InviteLinkSection.jsx:126",
-            "src/components/WorkspaceHeader.jsx:426"
+            "src/components/WorkspaceHeader.jsx:439"
           ]
         },
         "lg": {
@@ -6592,7 +6592,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:698"
+            "src/components/workspace/IssueDetail.jsx:699"
           ]
         }
       }
@@ -6634,7 +6634,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1924"
+            "src/components/workspace/IssueDetail.jsx:1925"
           ]
         }
       }
@@ -6824,8 +6824,8 @@
             "src/app/(app)/chat/page.js:1182",
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/workspace/BillingTab.jsx:434",
-            "src/components/workspace/IssueDetail.jsx:1773",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:205"
+            "src/components/workspace/IssueDetail.jsx:1774",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:206"
           ]
         },
         "sm": {
@@ -6840,11 +6840,11 @@
           ],
           "files": [
             "src/app/(app)/my/page.js:459",
-            "src/app/(app)/page.js:576",
+            "src/app/(app)/page.js:577",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
             "src/app/(app)/sprints/page.js:76",
-            "src/components/WorkspaceHeader.jsx:452",
+            "src/components/WorkspaceHeader.jsx:465",
             "src/components/WorkspaceHelpMenu.jsx:85",
             "src/components/workspace/BoardConfigModal.jsx:200",
             "src/components/workspace/TimesheetTab.jsx:473"
@@ -6896,7 +6896,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1182",
-            "src/app/(app)/page.js:576",
+            "src/app/(app)/page.js:577",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
             "src/app/(app)/sprints/page.js:254",
@@ -6930,7 +6930,7 @@
           ],
           "files": [
             "src/components/CreateTaskModal.jsx:278",
-            "src/components/WorkspaceHeader.jsx:452",
+            "src/components/WorkspaceHeader.jsx:465",
             "src/components/profile/ProfileModal.jsx:28"
           ]
         },
@@ -6953,8 +6953,8 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:245",
-            "src/components/workspace/IssueDetail.jsx:1773",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:205"
+            "src/components/workspace/IssueDetail.jsx:1774",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:206"
           ]
         }
       },
@@ -6976,7 +6976,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1182",
-            "src/app/(app)/page.js:576",
+            "src/app/(app)/page.js:577",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:185",
             "src/app/(app)/sprints/page.js:254",
@@ -6984,7 +6984,7 @@
             "src/components/CreateTaskModal.jsx:278",
             "src/components/InviteMemberDialog.jsx:95",
             "src/components/TeamMemberSettingsDialog.jsx:48",
-            "src/components/WorkspaceHeader.jsx:452",
+            "src/components/WorkspaceHeader.jsx:465",
             "src/components/WorkspaceHelpMenu.jsx:85",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:434",
@@ -7005,8 +7005,8 @@
           "files": [
             "src/app/(app)/my/page.js:459",
             "src/components/WorkspaceInfoCenter.jsx:245",
-            "src/components/workspace/IssueDetail.jsx:1773",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:205"
+            "src/components/workspace/IssueDetail.jsx:1774",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:206"
           ]
         },
         "eyebrow": {
@@ -7036,22 +7036,22 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:1182",
-            "src/app/(app)/page.js:576",
+            "src/app/(app)/page.js:577",
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:254",
             "src/app/(app)/sprints/page.js:76",
             "src/components/CreateTaskModal.jsx:278",
             "src/components/InviteMemberDialog.jsx:95",
             "src/components/TeamMemberSettingsDialog.jsx:48",
-            "src/components/WorkspaceHeader.jsx:452",
+            "src/components/WorkspaceHeader.jsx:465",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:434",
             "src/components/workspace/BoardConfigModal.jsx:200",
-            "src/components/workspace/IssueDetail.jsx:1773",
+            "src/components/workspace/IssueDetail.jsx:1774",
             "src/components/workspace/TimesheetTab.jsx:473",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:566",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:636",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:205"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:206"
           ]
         },
         "sheet": {
@@ -7090,8 +7090,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/page.js:603",
-            "src/app/(app)/page.js:947",
+            "src/app/(app)/page.js:604",
+            "src/app/(app)/page.js:948",
             "src/components/CreateTaskModal.jsx:332",
             "src/components/workspace/VelocityTab.jsx:255"
           ]
@@ -7125,7 +7125,7 @@
           "files": [
             "src/components/integrations/YouTrackImportCard.jsx:523",
             "src/components/workspace/BillingTab.jsx:458",
-            "src/components/workspace/IssueDetail.jsx:1381"
+            "src/components/workspace/IssueDetail.jsx:1382"
           ]
         }
       }
@@ -7158,7 +7158,7 @@
             "src/components/workspace/VelocityTab.jsx:218",
             "src/components/workspace/WorkloadTab.jsx:751",
             "src/components/workspace/WorkloadTab.jsx:763",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:751"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:752"
           ]
         },
         "page": {
@@ -7168,7 +7168,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/app/(app)/page.js:980",
+            "src/app/(app)/page.js:981",
             "src/components/workspace/AnalyticsTab.jsx:223"
           ]
         },
@@ -7232,7 +7232,7 @@
             "src/app/(app)/errors/page.js:67",
             "src/app/(app)/errors/page.js:94",
             "src/app/(app)/errors/page.js:96",
-            "src/app/(app)/page.js:980",
+            "src/app/(app)/page.js:981",
             "src/app/(app)/team/page.js:138",
             "src/components/WorkspaceInfoCenter.jsx:152",
             "src/components/WorkspaceInfoCenter.jsx:200",
@@ -7248,7 +7248,7 @@
             "src/components/workspace/VelocityTab.jsx:218",
             "src/components/workspace/WorkloadTab.jsx:751",
             "src/components/workspace/WorkloadTab.jsx:763",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:751"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:752"
           ]
         },
         "compact": {
@@ -7289,7 +7289,7 @@
             "src/app/(app)/errors/page.js:67",
             "src/app/(app)/errors/page.js:94",
             "src/app/(app)/errors/page.js:96",
-            "src/app/(app)/page.js:980",
+            "src/app/(app)/page.js:981",
             "src/app/(app)/team/page.js:138",
             "src/components/profile/ProfileView.jsx:391",
             "src/components/profile/ProfileView.jsx:423",
@@ -7298,7 +7298,7 @@
             "src/components/workspace/VelocityTab.jsx:218",
             "src/components/workspace/WorkloadTab.jsx:751",
             "src/components/workspace/WorkloadTab.jsx:763",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:751",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:752",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:92"
           ]
         },
@@ -7342,7 +7342,7 @@
             "src/app/(app)/calendar/page.js:767",
             "src/app/(app)/loading.js:28",
             "src/app/(app)/my/page.js:363",
-            "src/app/(app)/page.js:974",
+            "src/app/(app)/page.js:975",
             "src/app/(app)/settings/page.js:3568",
             "src/app/(app)/settings/page.js:3666",
             "src/app/(app)/settings/page.js:3711",
@@ -7353,7 +7353,7 @@
             "src/app/(app)/settings/page.js:4127",
             "src/components/profile/ProfileView.jsx:420",
             "src/components/workspace/BillingTab.jsx:1238",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:743"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:744"
           ]
         },
         "(default)": {
@@ -7371,7 +7371,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:287"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:288"
           ]
         }
       }
@@ -7459,7 +7459,7 @@
             "src/app/(app)/settings/page.js:2741",
             "src/components/CreateTaskModal.jsx:288",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:729",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1056"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1057"
           ]
         },
         "md": {
@@ -7502,11 +7502,11 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:4044",
-            "src/components/WorkspaceHeader.jsx:335",
+            "src/components/WorkspaceHeader.jsx:345",
             "src/components/WorkspaceInfoCenter.jsx:255",
             "src/components/workspace/BillingTab.jsx:1196",
             "src/components/workspace/BillingTab.jsx:303",
-            "src/components/workspace/IssueDetail.jsx:1782"
+            "src/components/workspace/IssueDetail.jsx:1783"
           ]
         }
       },
@@ -7525,7 +7525,7 @@
             "src/app/(app)/analytics/page.js:846",
             "src/app/(app)/analytics/team/[memberId]/page.js:138",
             "src/app/(app)/settings/page.js:4044",
-            "src/components/WorkspaceHeader.jsx:335",
+            "src/components/WorkspaceHeader.jsx:345",
             "src/components/workspace/BillingTab.jsx:303",
             "src/components/workspace/WorkloadTab.jsx:457",
             "src/components/workspace/WorkloadTab.jsx:496"
@@ -7539,7 +7539,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:255",
-            "src/components/workspace/IssueDetail.jsx:1782"
+            "src/components/workspace/IssueDetail.jsx:1783"
           ]
         },
         "billing-selection": {
@@ -7713,7 +7713,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1626"
+            "src/components/workspace/IssueDetail.jsx:1627"
           ]
         },
         "cell": {
@@ -7722,8 +7722,8 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1035",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1130"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1036",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1131"
           ]
         },
         "details": {
@@ -7732,7 +7732,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1204"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1205"
           ]
         }
       }
@@ -7864,7 +7864,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceHeader.jsx:111"
+            "src/components/WorkspaceHeader.jsx:118"
           ]
         },
         "tile": {
@@ -7883,7 +7883,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1396"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1397"
           ]
         }
       },
@@ -7895,7 +7895,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/WorkspaceHeader.jsx:111",
+            "src/components/WorkspaceHeader.jsx:118",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:344"
           ]
         },
@@ -7905,7 +7905,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1396"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1397"
           ]
         }
       }
@@ -7983,8 +7983,8 @@
             "src/components/CreateTaskModal.jsx:312",
             "src/components/InviteMemberDialog.jsx:119",
             "src/components/workspace/BillingTab.jsx:1110",
-            "src/components/workspace/IssueDetail.jsx:1316",
-            "src/components/workspace/IssueDetail.jsx:1730"
+            "src/components/workspace/IssueDetail.jsx:1317",
+            "src/components/workspace/IssueDetail.jsx:1731"
           ]
         },
         "raised": {
@@ -8024,7 +8024,7 @@
             "src/components/InviteMemberDialog.jsx:119",
             "src/components/profile/ProfileView.jsx:270",
             "src/components/workspace/BillingTab.jsx:1110",
-            "src/components/workspace/IssueDetail.jsx:1730",
+            "src/components/workspace/IssueDetail.jsx:1731",
             "src/components/workspace/qtplus/StageStepper.jsx:44"
           ]
         },
@@ -8039,7 +8039,7 @@
           ],
           "files": [
             "src/components/CreateTaskModal.jsx:312",
-            "src/components/workspace/IssueDetail.jsx:1316"
+            "src/components/workspace/IssueDetail.jsx:1317"
           ]
         }
       }
@@ -8137,7 +8137,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1944"
+            "src/components/workspace/IssueDetail.jsx:1945"
           ]
         }
       }
@@ -8211,7 +8211,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1500"
+            "src/components/workspace/IssueDetail.jsx:1501"
           ]
         },
         "calendar": {
@@ -8220,7 +8220,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:918"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:919"
           ]
         }
       }
@@ -8280,7 +8280,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1304"
+            "src/components/workspace/IssueDetail.jsx:1305"
           ]
         },
         "event": {
@@ -8289,7 +8289,7 @@
             "/calendar/event/[eventId]"
           ],
           "files": [
-            "src/components/workspace/calendar/CalendarEventPage.jsx:791"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:792"
           ]
         }
       }
@@ -8309,13 +8309,13 @@
           "files": [
             "src/app/(app)/analytics/page.js:75",
             "src/components/workspace/AnalyticsTab.jsx:41",
-            "src/components/workspace/IssueDetail.jsx:1891",
+            "src/components/workspace/IssueDetail.jsx:1892",
             "src/components/workspace/VelocityTab.jsx:33",
             "src/components/workspace/WorkloadTab.jsx:141",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1304",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1321",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1345",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1373"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1305",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1322",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1346",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1374"
           ]
         },
         "group": {
@@ -8325,11 +8325,11 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1941",
-            "src/components/workspace/IssueDetail.jsx:1957",
-            "src/components/workspace/IssueDetail.jsx:2030",
-            "src/components/workspace/IssueDetail.jsx:2076",
-            "src/components/workspace/IssueDetail.jsx:216"
+            "src/components/workspace/IssueDetail.jsx:1942",
+            "src/components/workspace/IssueDetail.jsx:1958",
+            "src/components/workspace/IssueDetail.jsx:2031",
+            "src/components/workspace/IssueDetail.jsx:2077",
+            "src/components/workspace/IssueDetail.jsx:217"
           ]
         }
       }
@@ -8389,7 +8389,7 @@
             "/"
           ],
           "files": [
-            "src/app/(app)/page.js:937"
+            "src/app/(app)/page.js:938"
           ]
         }
       }
@@ -8406,11 +8406,11 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:3041",
-            "src/components/workspace/IssueDetail.jsx:1611",
+            "src/components/workspace/IssueDetail.jsx:1612",
             "src/components/workspace/UnifiedTimeline.jsx:795",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1027",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1125",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1195"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1028",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1126",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1196"
           ]
         },
         "start": {
@@ -8420,7 +8420,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1407"
+            "src/components/workspace/IssueDetail.jsx:1408"
           ]
         }
       },
@@ -8435,11 +8435,11 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:3041",
-            "src/components/workspace/IssueDetail.jsx:1611",
+            "src/components/workspace/IssueDetail.jsx:1612",
             "src/components/workspace/UnifiedTimeline.jsx:795",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1027",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1125",
-            "src/components/workspace/calendar/CalendarEventPage.jsx:1195"
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1028",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1126",
+            "src/components/workspace/calendar/CalendarEventPage.jsx:1196"
           ]
         },
         "default": {
@@ -8449,7 +8449,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/IssueDetail.jsx:1407"
+            "src/components/workspace/IssueDetail.jsx:1408"
           ]
         }
       }

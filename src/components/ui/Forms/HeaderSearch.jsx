@@ -77,7 +77,7 @@ export const HeaderSearch = forwardRef(({
         }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="h-full min-w-0 w-full bg-transparent pl-[24px] pr-[76px] text-[13px] text-ink outline-none placeholder:text-[#a3a3a3]"
+        className="h-full min-w-0 w-full bg-transparent pl-[24px] pr-[76px] text-[13px] text-ink outline-none placeholder:text-[#a3a3a3] max-md:pr-[28px]"
         {...props}
       />
       {value && (
@@ -87,7 +87,7 @@ export const HeaderSearch = forwardRef(({
             onClear?.();
           }}
           aria-label="Очистити пошук"
-          className="absolute right-[42px] p-1 text-faint transition-colors hover:text-muted"
+          className="absolute right-[42px] p-1 text-faint transition-colors hover:text-muted max-md:right-0"
         >
           <X size={13} />
         </button>
@@ -95,14 +95,18 @@ export const HeaderSearch = forwardRef(({
       <button
         type="button"
         onClick={openWorkspaceSearch}
-        aria-label="Відкрити пошук у задачах і проєктах"
+        aria-label="Відкрити розширений пошук у робочому просторі"
         aria-haspopup="dialog"
         // A hint, not a control, and a hint nobody needs while they are looking
         // at something else: it appears when the cursor reaches the field or
         // the field takes focus, and is invisible the rest of the time. It
         // keeps its box in the layout either way, so the placeholder does not
         // shift when it fades in.
-        className="pointer-events-none absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-[#9a9a9a] opacity-0 transition-opacity group-hover/search:pointer-events-auto group-hover/search:opacity-100 group-focus-within/search:pointer-events-auto group-focus-within/search:opacity-100"
+        //
+        // And it is not drawn at all on a phone. A keyboard shortcut printed
+        // beside a field nobody can press it on is a piece of chrome that only
+        // takes width away from what is being typed.
+        className="pointer-events-none absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-[#9a9a9a] opacity-0 transition-opacity group-hover/search:pointer-events-auto group-hover/search:opacity-100 group-focus-within/search:pointer-events-auto group-focus-within/search:opacity-100 max-md:hidden"
       >
         {paletteKeys}
       </button>
@@ -130,8 +134,12 @@ export const HeaderSearch = forwardRef(({
               escalationActive ? 'bg-canvas text-ink' : 'bg-white text-muted hover:bg-canvas hover:text-ink'
             }`}
           >
-            <span className="min-w-0 truncate">Шукати «{escalation.term}» у задачах і проєктах</span>
-            <span className="ml-2 shrink-0 text-[10px] text-faint">{paletteKeys}</span>
+            {/* The extended search is the command palette, and it answers with
+                tasks, projects, people and events — plus actions and places to
+                go. «у задачах і проєктах» named two of six, so the row promised
+                less than it does. */}
+            <span className="min-w-0 truncate">Шукати «{escalation.term}» у всьому робочому просторі</span>
+            <span className="ml-2 shrink-0 text-[10px] text-faint max-md:hidden">{paletteKeys}</span>
           </button>
         </div>
       )}

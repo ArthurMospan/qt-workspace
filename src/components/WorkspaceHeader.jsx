@@ -32,6 +32,7 @@ import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { auth, db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { reportLoadError } from '@/lib/utils/errors';
+import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 import {
   countWorkspaceSearchMatches,
   createProjectSearchScope,
@@ -82,11 +83,17 @@ function NotifIcon({ n, size = 28 }) {
     return (
       <div className="relative shrink-0 mt-[1px]">
         <UserAvatar user={{ name: n.actorName, avatar: n.actorAvatar }} size={size} />
+        {/* What kind of notification this is, on the face of who caused it. It
+            used to be a 7px glyph inside 10px of colour — the mark was there,
+            but nobody could tell a comment from a deadline from it. Half of a
+            14px badge is its white collar, so the badge grew rather than the
+            collar shrinking, and the glyph is drawn heavier: at this size a
+            hairline stroke is what disappears first. */}
         <span
-          className="absolute -bottom-[3px] -right-[3px] w-[14px] h-[14px] rounded-full flex items-center justify-center border-2 border-white"
+          className="absolute -bottom-[3px] -right-[3px] flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white"
           style={{ background: cfg.color }}
         >
-          <Icon size={7} className="text-white" />
+          <Icon size={11} strokeWidth={2.5} className="text-white" />
         </span>
       </div>
     );
@@ -320,7 +327,10 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         />
       )}
       <Button
-        onClick={() => { setBellOpen(false); router.push('/settings?section=notifications'); }}
+        onClick={() => {
+          setBellOpen(false);
+          navigateAfterOverlayClose(() => router.push('/settings?section=notifications'));
+        }}
         title="Налаштування сповіщень"
         style="ghost"
         size="icon-sm"
@@ -372,8 +382,11 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
             n.type === 'emergency' && !n.read ? 'bg-red-50' : !n.read ? 'bg-[#f5f7ff]' : ''
           }`}>
           <NotifIcon n={n} />
-          <div className="flex-1 min-w-0">
-            <p className={`text-[12px] leading-snug pr-4 ${!n.read ? 'font-semibold text-ink' : 'text-[#4a4a4a]'}`}>
+          {/* The two row actions are pinned to the right edge — always visible
+              on a phone, on hover on a desktop — so the text column reserves
+              their width instead of running underneath them. */}
+          <div className="flex-1 min-w-0 pr-[48px]">
+            <p className={`text-[12px] leading-snug ${!n.read ? 'font-semibold text-ink' : 'text-[#4a4a4a]'}`}>
               {n.title}
             </p>
             {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}

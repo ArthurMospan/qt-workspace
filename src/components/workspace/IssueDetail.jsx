@@ -84,6 +84,7 @@ import {
   issueRouteIdentifier,
 } from '@/lib/utils/issueKeys.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
+import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -1145,7 +1146,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       }, actor);
       showToast('Копію завдання створено');
       if (isModal && onClose) onClose();
-      router.push(issuePath(created, project || projectId));
+      navigateAfterOverlayClose(() => router.push(issuePath(created, project || projectId)));
     } catch (error) {
       showToast(error.message || 'Не вдалося дублювати завдання', 'error');
     }
@@ -1282,7 +1283,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             icon={Maximize2}
             onClick={() => {
               onClose();
-              router.push(canonicalIssuePath);
+              navigateAfterOverlayClose(() => router.push(canonicalIssuePath));
             }}
             aria-label="Відкрити на повній сторінці"
             title="Відкрити на повній сторінці"

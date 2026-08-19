@@ -10,7 +10,7 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 350,
+    "files": 351,
     "elements": 4354,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
@@ -58,7 +58,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/profile/ProfileView.jsx:57",
+      "location": "src/components/profile/ProfileView.jsx:58",
       "attributes": [
         "title"
       ]
@@ -323,7 +323,7 @@
     },
     {
       "element": "IconAction",
-      "location": "src/components/WorkspaceHeader.jsx:397",
+      "location": "src/components/WorkspaceHeader.jsx:410",
       "attributes": [
         "label"
       ]

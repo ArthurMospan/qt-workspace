@@ -63,7 +63,7 @@ test('the local field and palette are wired through one launch request', async (
     read('../src/components/WorkspaceCommandPalette.jsx'),
     read('../src/components/ui/Navigation/CommandPalette.jsx'),
   ]);
-  assert.match(field, /Шукати «\{escalation\.term\}» у задачах і проєктах/);
+  assert.match(field, /Шукати «\{escalation\.term\}» у всьому робочому просторі/);
   assert.match(field, /event\.key === 'ArrowDown'/);
   assert.match(header, /openCommandPalette\(\{ query, scope: searchScope \}\)/);
   assert.match(host, /initialQuery=\{paletteRequest\.query\}/);
