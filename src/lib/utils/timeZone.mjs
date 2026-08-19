@@ -2,7 +2,17 @@ export const DEFAULT_ORGANIZATION_TIME_ZONE = 'Europe/Kyiv';
 
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-function asDate(value) {
+/**
+ * Anything a date can arrive as, as a `Date` — or `null` when it is not one.
+ *
+ * A Firestore `Timestamp` is not a `Date` and has no `getTime`, so every reader
+ * that takes a stored field and calls a `Date` method on it directly throws.
+ * That is not a hypothetical: «Архів» → «Завдання» handed `archivedAt` straight
+ * to the date formatter and took the whole settings screen down with
+ * `getTime is not a function`. One coercion, exported, so a reader never has to
+ * know which of the three shapes it was handed.
+ */
+export function asDate(value) {
   if (!value) return null;
   const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
   return Number.isFinite(date.getTime()) ? date : null;

@@ -61,8 +61,8 @@ import {
   Label,
   Pill,
   PriorityBadge,
-  Segmented,
   Surface,
+  Tabs,
   useConfirm,
   Popover
 } from '@/components/ui';
@@ -4031,19 +4031,28 @@ export default function SettingsPage() {
       // was a banner inside the task while it was still open.
       case 'archives': {
         const archivedProjects = (projects || []).filter(p => p.status === 'archived');
-        const segments = [
-          { value: 'projects', label: `Проєкти${archivedProjects.length ? ` · ${archivedProjects.length}` : ''}` },
-          { value: 'issues', label: `Завдання${archivedIssueList.length ? ` · ${archivedIssueList.length}` : ''}` },
-          { value: 'deleted', label: `Нещодавно видалене${deletedIssues.items.length ? ` · ${deletedIssues.items.length}` : ''}` },
+        // A count belongs in a `Counter`, not appended to the label with a dot:
+        // three lists whose names already differ in length turned the strip into
+        // a wall of text. The stepper shape also gives «Нещодавно видалене» the
+        // width it needs instead of squeezing it into a section header.
+        const archiveTabs = [
+          { id: 'projects', label: 'Проєкти', count: archivedProjects.length },
+          { id: 'issues', label: 'Завдання', count: archivedIssueList.length },
+          { id: 'deleted', label: 'Нещодавно видалене', count: deletedIssues.items.length },
         ];
         return (
           <Section
             title="Архів"
             desc="Те, що прибрано з роботи, але не втрачено: архівовані проєкти й завдання лежать тут без строку, а видалене — доки не спливе доба"
-            rightAction={(
-              <Segmented value={archiveTab} onChange={setArchiveTab} options={segments} surface="canvas" />
-            )}
           >
+            <div className="w-full overflow-x-auto">
+              <Tabs
+                variant="underline"
+                tabs={archiveTabs}
+                activeTab={archiveTab}
+                onTabChange={setArchiveTab}
+              />
+            </div>
             <Card preset="borderless" padding="lg">
               {archiveTab === 'projects' && (
                 archivedProjects.length === 0 ? (

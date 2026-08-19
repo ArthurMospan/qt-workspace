@@ -1155,7 +1155,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const handleArchive = async (archived) => {
     if (archived && !(await confirmDialog({
       title: `Архівувати ${issue.issueKey}?`,
-      message: 'Завдання зникне з дошки, списків і звітів, але лишиться в «Архіві» — без строку і без втрати даних. Повернути можна будь-коли.',
+      message: 'Завдання зникне з дошки, списків і підрахунку відкритої роботи, але лишиться в «Архіві» — без строку і без втрати даних. Записаний час нікуди не дінеться: він і далі буде в таймшиті та в рахунках. Повернути можна будь-коли.',
       confirmText: 'Архівувати',
     }))) return;
     try {

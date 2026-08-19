@@ -1,5 +1,6 @@
 'use client';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { asDate } from '@/lib/utils/timeZone.mjs';
 
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -34,8 +35,10 @@ export function useLocalization() {
         default: return `${year}-${month}-${day}`;
       }
     }
-    const d = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(d.getTime())) return '';
+    // Not `date` itself: a caller may hand over a Firestore Timestamp, and it
+    // answers none of the `Date` methods below.
+    const d = asDate(date);
+    if (!d) return '';
 
     let year = String(d.getFullYear());
     let month = String(d.getMonth() + 1).padStart(2, '0');
