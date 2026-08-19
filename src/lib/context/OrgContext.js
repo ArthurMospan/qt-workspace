@@ -7,10 +7,11 @@ import {
   collection, query, where, getDocs,
   doc, getDoc, onSnapshot,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import {
+  organizationLoadErrorKind,
   organizationLoadRetryDelay,
   shouldRetryOrganizationLoad,
 } from '@/lib/utils/organizationLoadErrors.mjs';
@@ -153,6 +154,13 @@ export function OrgProvider({ user, children }) {
         retryAttempt += 1;
         setOrgError(null);
         setOrgLoading(true);
+        // Repeating a rejected read with the credential that was rejected only
+        // gets it rejected again. A denial straight after a sign-in is a token
+        // that belongs to the previous session, so the retry is handed a fresh
+        // one before it goes back out.
+        if (organizationLoadErrorKind(err) === 'permission-denied') {
+          auth.currentUser?.getIdToken(true).catch(() => {});
+        }
         retryTimer = window.setTimeout(subscribe, organizationLoadRetryDelay(retryAttempt));
         return;
       }

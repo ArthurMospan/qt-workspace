@@ -47,12 +47,19 @@ test('project and issue routes derive organization scope from the project resour
   assert.match(projectClient, /if \(!project\)/);
 });
 
-test('access failures are terminal while network failures retry with backoff', async () => {
+test('a denied read is retried before it is called a loss of access', async () => {
   assert.equal(organizationLoadErrorKind({ code: 'permission-denied' }), 'permission-denied');
   assert.equal(organizationLoadErrorKind({ code: 'not-found' }), 'not-found');
   assert.equal(organizationLoadErrorKind({ code: 'unavailable' }), 'retryable');
-  assert.equal(shouldRetryOrganizationLoad({ code: 'permission-denied' }), false);
+  // Signing out and back in swaps the credential under listeners that are
+  // already attached, and the first snapshot across that swap comes back
+  // denied. Believing it on sight put a person who had just logged in on
+  // «Немає доступу до організації», so the denial is retried on the same
+  // bounded budget as a network failure. An organization that is genuinely
+  // gone is still terminal — nothing is going to make it reappear.
+  assert.equal(shouldRetryOrganizationLoad({ code: 'permission-denied' }), true);
   assert.equal(shouldRetryOrganizationLoad({ code: 'unavailable' }), true);
+  assert.equal(shouldRetryOrganizationLoad({ code: 'not-found' }), false);
   assert.deepEqual([1, 2, 3].map(organizationLoadRetryDelay), [250, 750, 1_500]);
 
   const [context, layout, issueDetail] = await Promise.all([
@@ -62,6 +69,10 @@ test('access failures are terminal while network failures retry with backoff', a
   ]);
   assert.match(context, /retryAttempt < ORG_LOAD_RETRY_LIMIT/);
   assert.match(context, /window\.setTimeout\(subscribe, organizationLoadRetryDelay\(retryAttempt\)\)/);
-  assert.match(layout, /!accessFailure && \([\s\S]*Спробувати ще раз/);
+  // The retry goes back out with a token that belongs to the account that is
+  // signed in now, not the one that was rejected.
+  assert.match(context, /auth\.currentUser\?\.getIdToken\(true\)/);
+  // And the card that survives all of that still offers a way off itself.
+  assert.match(layout, /accessFailure \? \([\s\S]*Увійти іншим акаунтом/);
   assert.match(issueDetail, /!issueAccessFailure && \([\s\S]*Спробувати ще раз/);
 });

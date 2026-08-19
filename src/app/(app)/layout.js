@@ -138,14 +138,30 @@ export default function WorkspaceLayout({ children }) {
                 ? 'Організацію не знайдено'
                 : 'QuickTeam тимчасово недоступний'}
           </h1>
-          <p className={`text-[13px] text-muted ${accessFailure ? '' : 'mb-5'}`}>
+          {/* Google, GitHub and OneB are three separate accounts unless they
+              have been linked in settings, so «no access» is far more often
+              «signed in as somebody else» than «removed from the team». The
+              sentence says so, because the reader is the only one who knows
+              which button they pressed. */}
+          <p className="text-[13px] text-muted mb-5">
             {errorKind === 'permission-denied'
-              ? 'Ваш обліковий запис більше не має доступу до цієї організації.'
+              ? 'Ваш обліковий запис не має доступу до цієї організації. Якщо ви входили іншим способом — Google, GitHub чи OneB — це інший акаунт, і дані організації на місці.'
               : errorKind === 'not-found'
                 ? 'Організацію видалено або посилання застаріло.'
                 : 'Не вдалося прочитати дані організації. Ваші дані не видалені.'}
           </p>
-          {!accessFailure && (
+          {/* Nobody is left on a dead end. The access card used to carry no
+              action at all, so a person who had simply signed in with the
+              wrong button had a sentence, a white box and no way out of it. */}
+          {accessFailure ? (
+            <Button
+              onClick={async () => { await signOut(); router.replace('/login'); }}
+              size="lg"
+              composition="workspace-guard"
+            >
+              Увійти іншим акаунтом
+            </Button>
+          ) : (
             <Button onClick={() => window.location.reload()} size="lg" composition="workspace-guard">Спробувати ще раз</Button>
           )}
         </div>

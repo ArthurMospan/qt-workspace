@@ -19,7 +19,20 @@ export function organizationLoadErrorKind(error) {
 }
 
 export function shouldRetryOrganizationLoad(error) {
-  return organizationLoadErrorKind(error) === 'retryable';
+  const kind = organizationLoadErrorKind(error);
+  // A permission denial is retried, not believed on sight.
+  //
+  // Signing out and signing back in swaps the Firestore credential underneath
+  // listeners that are already attached, and the first snapshot to arrive
+  // across that swap is routinely rejected: the reader has not lost anything,
+  // the listener is simply a moment older than the account holding it. Taking
+  // that first rejection at face value is how an ordinary re-login ends on
+  // «Ваш обліковий запис більше не має доступу до цієї організації» — a
+  // terminal sentence about data that is sitting there intact.
+  //
+  // The retry budget bounds it: an account that really has been removed says
+  // so a couple of hundred milliseconds later, and says it once it is true.
+  return kind === 'retryable' || kind === 'permission-denied';
 }
 
 export function organizationLoadRetryDelay(attempt) {

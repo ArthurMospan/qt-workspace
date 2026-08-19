@@ -2660,7 +2660,7 @@
     "Button": {
       "size": {
         "lg": {
-          "count": 28,
+          "count": 29,
           "routes": [
             "/",
             "/[projectId]",
@@ -2674,7 +2674,8 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/analytics/page.js:756",
-            "src/app/(app)/layout.js:149",
+            "src/app/(app)/layout.js:157",
+            "src/app/(app)/layout.js:165",
             "src/app/(app)/my/page.js:262",
             "src/app/(app)/my/page.js:346",
             "src/app/(app)/page.js:928",
@@ -2964,7 +2965,7 @@
       },
       "style": {
         "(default)": {
-          "count": 16,
+          "count": 17,
           "routes": [
             "/[projectId]",
             "/analytics",
@@ -2977,7 +2978,8 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
             "src/app/(app)/calendar/page.js:722",
             "src/app/(app)/chat/page.js:1197",
-            "src/app/(app)/layout.js:149",
+            "src/app/(app)/layout.js:157",
+            "src/app/(app)/layout.js:165",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
@@ -3235,7 +3237,7 @@
       },
       "shape": {
         "(default)": {
-          "count": 190,
+          "count": 191,
           "routes": [
             "/",
             "/[projectId]",
@@ -3276,7 +3278,8 @@
             "src/app/(app)/chat/page.js:1266",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
-            "src/app/(app)/layout.js:149",
+            "src/app/(app)/layout.js:157",
+            "src/app/(app)/layout.js:165",
             "src/app/(app)/my/page.js:262",
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/my/page.js:346",
@@ -3466,7 +3469,7 @@
       },
       "surface": {
         "(default)": {
-          "count": 192,
+          "count": 193,
           "routes": [
             "/",
             "/[projectId]",
@@ -3507,7 +3510,8 @@
             "src/app/(app)/chat/page.js:1266",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
-            "src/app/(app)/layout.js:149",
+            "src/app/(app)/layout.js:157",
+            "src/app/(app)/layout.js:165",
             "src/app/(app)/my/page.js:262",
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/my/page.js:346",
@@ -3688,7 +3692,7 @@
       },
       "color": {
         "(default)": {
-          "count": 175,
+          "count": 176,
           "routes": [
             "/",
             "/[projectId]",
@@ -3729,7 +3733,8 @@
             "src/app/(app)/chat/page.js:1266",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
-            "src/app/(app)/layout.js:149",
+            "src/app/(app)/layout.js:157",
+            "src/app/(app)/layout.js:165",
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/my/page.js:346",
             "src/app/(app)/my/page.js:468",
@@ -3928,13 +3933,14 @@
       },
       "composition": {
         "workspace-guard": {
-          "count": 3,
+          "count": 4,
           "routes": [
             "/[projectId]"
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
-            "src/app/(app)/layout.js:149",
+            "src/app/(app)/layout.js:157",
+            "src/app/(app)/layout.js:165",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55"
           ]
         },
