@@ -156,8 +156,9 @@ test('the page does not opt into viewport-fit=cover', async () => {
   assert.doesNotMatch(layout, /userScalable: false/);
 });
 
-test('the keyboard is the one piece of chrome the bar has to handle itself', async () => {
+test('the keyboard is watched by the shell, and the bar reacts to it', async () => {
   const hook = await read('../src/lib/hooks/useKeyboardOpen.js');
+  const layout = await read('../src/app/(app)/layout.js');
   const nav = await read('../src/components/MobileNav.jsx');
   const css = await read('../src/app/globals.css');
 
@@ -166,8 +167,18 @@ test('the keyboard is the one piece of chrome the bar has to handle itself', asy
   // and is not tripped by a collapsing URL bar.
   assert.match(hook, /KEYBOARD_FRACTION = 0\.3/);
   assert.match(hook, /document\.body\.dataset\.keyboard/);
+  // And how much of the viewport it covers, which is what keeps a composer
+  // above the keys on a platform that covers the layout viewport instead of
+  // shortening it.
+  assert.match(hook, /--qt-keyboard-inset/);
+  assert.match(css, /height: calc\(100dvh - var\(--qt-keyboard-inset, 0px\)\)/);
 
-  assert.match(nav, /const keyboardOpen = useKeyboardOpen\(\)/);
+  // The watching belongs to the shell, not to the bar. A task and an event
+  // render no bar at all, and they are the two screens with the most typing on
+  // them; while the hook lived in MobileNav those two went unmeasured.
+  assert.match(layout, /const keyboardOpen = useKeyboardOpen\(\)/);
+  assert.match(layout, /<MobileNav keyboardOpen=\{keyboardOpen\} \/>/);
+  assert.doesNotMatch(nav, /useKeyboardOpen/);
   assert.match(nav, /keyboardOpen \? 'pointer-events-none translate-y-\[140%\] opacity-0'/);
   assert.match(nav, /aria-hidden=\{keyboardOpen\}/);
   // And the space it reserved collapses with it, so the composer gains the room.

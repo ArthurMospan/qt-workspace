@@ -7,6 +7,7 @@ import WorkspaceSidebar from '@/components/WorkspaceSidebar';
 import WorkspaceHeader  from '@/components/WorkspaceHeader';
 import MobileNav from '@/components/MobileNav';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
+import { useKeyboardOpen } from '@/lib/hooks/useKeyboardOpen';
 import WorkspaceToastHost from '@/components/WorkspaceToastHost';
 import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
@@ -31,6 +32,13 @@ export default function WorkspaceLayout({ children }) {
   // null on first render, then the matching nav is mounted. This prevents the
   // hidden nav variant from briefly opening its own Firestore subscriptions.
   const isMobile = useIsMobile();
+  // Watched here rather than inside the tab bar, because the bar is the one
+  // thing on a phone that is sometimes not mounted: a task and an event do
+  // without it, and those are the two screens with the most typing on them.
+  // What the observation publishes — how much of the viewport the keyboard is
+  // covering — is what keeps a composer above the keys, and it cannot be tied
+  // to whether there is a bar.
+  const keyboardOpen = useKeyboardOpen();
   const online = useOnlineStatus();
 
   const pathname = usePathname();
@@ -240,7 +248,7 @@ export default function WorkspaceLayout({ children }) {
       {/* Mobile bottom navigation */}
       {isMobile === true && !isFocusedRoute && (
         <div className="print:hidden md:hidden">
-          <MobileNav />
+          <MobileNav keyboardOpen={keyboardOpen} />
         </div>
       )}
 

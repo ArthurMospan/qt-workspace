@@ -124,7 +124,12 @@ export default function ChannelInfoPanel({
   };
 
   return (
-    <div data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
+    // A pane that fills the screen is `position: fixed`, and a fixed box is laid
+    // out against the layout viewport — which the keyboard covers rather than
+    // shortens. The app shell subtracts the overlap from its own height and this
+    // pane is not inside that box, so it subtracts it too; otherwise its
+    // composer sits under the keys with nothing able to scroll to it.
+    <div data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 max-md:bottom-[var(--qt-keyboard-inset,0px)] md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 h-[56px] shrink-0 border-b border-line/70">
         <div className="flex items-center gap-2">

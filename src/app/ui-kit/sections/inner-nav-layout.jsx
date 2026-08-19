@@ -21,6 +21,7 @@ import { CHAT_DEMO_MEMBERS, CHAT_DEMO_MESSAGES } from '../demo-data';
 export default function NavMenuSection() {
   const [active, setActive] = useState('profile');
   const [teamPane, setTeamPane] = useState('sidebar');
+  const [chatPane, setChatPane] = useState('content');
   const NAV = [
     { id: 'profile',       label: 'Особистий профіль', icon: User,     group: 'Особисте' },
     { id: 'notifications', label: 'Сповіщення',        icon: Bell,     group: 'Особисте' },
@@ -110,7 +111,7 @@ export default function NavMenuSection() {
 
       <PreviewBlock
         title="SidebarLayout context=&quot;chat&quot;"
-        description="Той самий каркас, але чат подає дві панелі поруч — розмову й гілку — тому лейаут не загортає контент у власну білу зону. Це єдина справжня відмінність чату; жолоб, ширина рейки та відступ під хедером тепер спільні."
+        description="Той самий каркас, але чат подає дві панелі поруч — розмову й гілку — тому лейаут не загортає контент у власну білу зону. Це єдина справжня відмінність чату; жолоб, ширина рейки та відступ під хедером тепер спільні. Нижче md уся ця збірка переходить у телефонну форму: рейка з рядками під палець, нижча шапка розмови, композер в один рядок, а дії повідомлення відкриває дотик, бо hover на телефоні не існує."
         filePath="src/app/(app)/chat/page.js"
         fullWidth
       >
@@ -118,6 +119,7 @@ export default function NavMenuSection() {
           <SidebarLayout
             context="chat"
             className="!pt-[12px]"
+            mobilePane={chatPane}
             sidebar={(
               <ChannelRail
                 activeId="general"
@@ -144,7 +146,10 @@ export default function NavMenuSection() {
               />
             )}
           >
-            <div className="flex flex-1 gap-3 min-w-0 overflow-hidden">
+            {/* Below md the shell shows one pane, and which one is the page's
+                own state — so the catalogue carries it too, or the phone form
+                of the whole conversation could not be looked at here at all. */}
+            <div className={`${chatPane === 'sidebar' ? 'hidden' : 'flex'} md:flex flex-1 gap-3 min-w-0 overflow-hidden`}>
               {/* Conversation pane — the product's own chrome: canvas surface,
                   64px translucent header, composer docked at the bottom. */}
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas">
@@ -158,6 +163,7 @@ export default function NavMenuSection() {
                   subtitle="Загальний канал для всієї команди"
                   pinnedCount={1}
                   infoLabel="Про канал"
+                  onBack={() => setChatPane('sidebar')}
                 />
                 {/* `canModerate` is what an owner or admin sees in a group
                     channel: a delete action on someone else's message, and no
@@ -203,6 +209,10 @@ export default function NavMenuSection() {
             </div>
           </SidebarLayout>
         </div>
+        <button type="button" onClick={() => setChatPane(chatPane === 'sidebar' ? 'content' : 'sidebar')}
+          className="mx-auto mt-[12px] block rounded-[8px] bg-canvas px-3 py-1.5 text-[11px] font-bold text-muted">
+          mobilePane: {chatPane} (клац, щоб перемкнути)
+        </button>
       </PreviewBlock>
 
       <PreviewBlock

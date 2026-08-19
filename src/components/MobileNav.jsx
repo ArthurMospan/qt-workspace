@@ -9,7 +9,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
-import { useKeyboardOpen } from '@/lib/hooks/useKeyboardOpen';
 import { Button, Counter, IconAction } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import {
@@ -83,7 +82,13 @@ function SheetTimerCapsule({ onNavigate, onStop }) {
   );
 }
 
-export default function MobileNav() {
+/**
+ * @param {boolean} props.keyboardOpen The on-screen keyboard is covering part of
+ *   the viewport, so there is neither room for a tab bar nor a reason for one —
+ *   the reader is typing, not navigating. Measured by the workspace layout,
+ *   which watches for it on every route, including the two that render no bar.
+ */
+export default function MobileNav({ keyboardOpen = false }) {
   const pathname = usePathname();
   const router = useRouter();
   const { projects, activeOrg, activeOrgId, orgRole } = useAppContext();
@@ -141,13 +146,6 @@ export default function MobileNav() {
 
   useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
 
-  // The on-screen keyboard is the one piece of browser chrome the layout
-  // viewport does not account for. Without this the bar either hides behind the
-  // keyboard (iOS, Android default) or floats on top of it, and either way it
-  // eats the bottom of a chat while you are typing into it. visualViewport
-  // reports the real visible box; a shrink of more than a third is a keyboard,
-  // not a collapsing URL bar.
-  const keyboardOpen = useKeyboardOpen();
 
   const isActive = (href, exact) => (exact ? pathname === href : pathname.startsWith(href));
   // «Ще» is highlighted when the current page lives in the sheet

@@ -99,7 +99,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:230",
+      "location": "src/components/MobileNav.jsx:228",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -115,7 +115,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:290",
+      "location": "src/components/MobileNav.jsx:288",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -131,7 +131,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:362",
+      "location": "src/components/MobileNav.jsx:360",
       "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
       "text": "",
       "childElements": [
@@ -425,7 +425,7 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/MobileNav.jsx:362",
+      "location": "src/components/MobileNav.jsx:360",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
@@ -456,7 +456,7 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/chat/page.js:378",
+      "location": "src/app/(app)/chat/page.js:383",
       "tag": "div",
       "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },
@@ -466,7 +466,7 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:119",
+      "location": "src/app/(app)/layout.js:127",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },

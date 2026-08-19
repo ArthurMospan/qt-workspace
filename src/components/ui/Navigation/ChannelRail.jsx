@@ -21,8 +21,11 @@ import Counter from '@/components/ui/DataDisplay/Counter';
  * @param {(id: string) => void} props.onSelect Opens one.
  */
 export default function ChannelRail({ groups = [], activeId, onSelect = () => {} }) {
+  // `RAIL_INSET`'s 32px of air above the first group is what makes a rail read
+  // as a rail beside a pane. On a phone the rail *is* the screen, and that air
+  // is four channels' worth of nothing above the first one you came to open.
   return (
-    <aside className="qt-nav-scroll flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px]">
+    <aside className="qt-nav-scroll flex-1 overflow-y-auto custom-scrollbar px-[16px] py-[32px] max-md:px-[10px] max-md:pt-[12px] max-md:pb-[8px]">
       {groups.map((group, index) => (
         <div key={group.id} className={index < groups.length - 1 ? 'mb-[24px]' : undefined}>
           <div className="flex items-center justify-between px-3 pb-[8px] group">
@@ -60,7 +63,7 @@ export default function ChannelRail({ groups = [], activeId, onSelect = () => {}
                   )}
 
                   <span
-                    className={`text-[13px] flex-1 truncate flex items-center gap-1 ${
+                    className={`text-[13px] max-md:text-[14px] flex-1 truncate flex items-center gap-1 ${
                       hasUnread ? 'font-bold text-ink' : ''
                     }`}
                   >

@@ -253,14 +253,14 @@ function MessageInput({
   const canSend = (text.trim() || attachments.length > 0) && !uploading;
 
   return (
-    <div className="relative px-4 pb-4">
+    <div className="relative px-4 pb-4 max-md:px-2 max-md:pb-2">
       {/* Mention dropdown */}
       {mentionType === 'user' && (
         <MentionMenu
           density="composer"
           members={filteredMembers}
           onSelect={insertMention}
-          className="absolute bottom-full left-4 right-4 mb-2 z-30"
+          className="absolute bottom-full left-4 right-4 mb-2 z-30 max-md:left-2 max-md:right-2"
         />
       )}
       {mentionType === 'issue' && mentionQuery.trim().length >= 1 && (
@@ -269,7 +269,7 @@ function MessageInput({
           projects={projects}
           loading={issueSearchLoading}
           onSelect={insertIssue}
-          className="absolute bottom-full left-4 right-4 z-30 mb-2"
+          className="absolute bottom-full left-4 right-4 z-30 mb-2 max-md:left-2 max-md:right-2"
         />
       )}
 
@@ -369,7 +369,12 @@ function ThreadSidebar({
   if (!parentMsg) return null;
 
   return (
-    <div data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
+    // A pane that fills the screen is `position: fixed`, and a fixed box is laid
+    // out against the layout viewport — which the keyboard covers rather than
+    // shortens. The app shell subtracts the overlap from its own height and this
+    // pane is not inside that box, so it subtracts it too; otherwise its
+    // composer sits under the keys with nothing able to scroll to it.
+    <div data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 max-md:bottom-[var(--qt-keyboard-inset,0px)] md:static md:z-auto md:w-[360px] md:rounded-[16px] shrink-0 bg-canvas flex flex-col overflow-hidden">
       {/* Header. `md:rounded-t-*` is the same repair `ChatConversationHeader`
           carries and for the same reason: Chromium does not apply an ancestor's
           rounded clip to a descendant that paints a `backdrop-filter`, so this

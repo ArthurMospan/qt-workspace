@@ -15,7 +15,7 @@ export default function ChatComposerSection() {
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock
         title="Workspace Chat Composer"
-        description="Точна композиція основного workspace-чату: той самий canvas, textarea, toolbar, attachment/emoji controls і send state. ChatComposerDock відповідає лише за overlap."
+        description="Точна композиція основного workspace-чату: той самий canvas, textarea, toolbar, attachment/emoji controls і send state. ChatComposerDock відповідає лише за overlap. Нижче md композер стає одним рядком — контроли, поле, кругла кнопка надсилання — і поле росте до 120px замість 200. Затверджено як канон; звузь вікно, щоб побачити перемикання."
         filePath="src/app/(app)/chat/page.js"
         fullWidth
       >
@@ -76,7 +76,7 @@ export default function ChatComposerSection() {
 
       <PreviewBlock
         title="Task Timeline & QuickTeam+ composers"
-        description="Спільне ядро ChatComposerCore з двома продуктовими оболонками: timeline має attachment-control, QuickTeam+ — компактну shell без нього."
+        description="Спільне ядро ChatComposerCore з двома продуктовими оболонками: timeline має attachment-control, QuickTeam+ — компактну shell без нього. Межу росту поля кожна оболонка оголошує своїм max-height у класі, а не константою в модулі — інакше її не змінила б жодна медіазапит."
         filePath="src/components/workspace/UnifiedTimeline.jsx"
         fullWidth
       >

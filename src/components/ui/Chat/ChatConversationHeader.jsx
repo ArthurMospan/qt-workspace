@@ -55,7 +55,11 @@ export default function ChatConversationHeader({
     // other browser clips it, which is why the header looked square in Chrome
     // and correct in Firefox. Giving the bar the pane's own radius makes its
     // box the thing being rounded, so no ancestor clip is needed.
-    <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 rounded-t-[var(--ui-radius-surface)] border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl">
+    // Below md this bar is the second one on the screen — the workspace header
+    // is already fixed 56px above it — so it gives back what it can: eight
+    // pixels of height and eight of side padding, all of which the title and
+    // the two controls beside it were short of on a 390px screen.
+    <div className="relative z-10 flex min-h-[64px] shrink-0 items-center gap-2 rounded-t-[var(--ui-radius-surface)] border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur-xl max-md:min-h-[56px] max-md:gap-1.5 max-md:px-2 max-md:py-2">
       {/* Settings and Team have adopted this arrow, so it is shared now — see
           the note that used to stand here. */}
       <MobilePaneBack onClick={onBack} label="До списку чатів" />

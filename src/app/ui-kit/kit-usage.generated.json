@@ -2674,7 +2674,7 @@
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/analytics/page.js:752",
-            "src/app/(app)/layout.js:135",
+            "src/app/(app)/layout.js:143",
             "src/app/(app)/my/page.js:262",
             "src/app/(app)/page.js:923",
             "src/app/(app)/settings/page.js:3463",
@@ -2841,7 +2841,7 @@
             "src/app/(app)/settings/page.js:674",
             "src/app/(app)/sprints/page.js:787",
             "src/app/(app)/sprints/page.js:796",
-            "src/components/MobileNav.jsx:384",
+            "src/components/MobileNav.jsx:382",
             "src/components/WorkspaceHelpMenu.jsx:154",
             "src/components/profile/ProfileView.jsx:136",
             "src/components/workspace/IssueDetail.jsx:1247",
@@ -2876,8 +2876,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1173",
-            "src/app/(app)/chat/page.js:1181",
+            "src/app/(app)/chat/page.js:1178",
+            "src/app/(app)/chat/page.js:1186",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
             "src/app/(app)/my/page.js:454",
@@ -2938,7 +2938,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1250",
+            "src/app/(app)/chat/page.js:1255",
             "src/app/(app)/sprints/page.js:677",
             "src/app/(app)/sprints/page.js:713",
             "src/app/(app)/sprints/page.js:724",
@@ -2972,8 +2972,8 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
             "src/app/(app)/calendar/page.js:567",
-            "src/app/(app)/chat/page.js:1181",
-            "src/app/(app)/layout.js:135",
+            "src/app/(app)/chat/page.js:1186",
+            "src/app/(app)/layout.js:143",
             "src/components/UserStatusSetter.jsx:120",
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
@@ -3012,7 +3012,7 @@
             "src/app/(app)/calendar/page.js:602",
             "src/app/(app)/calendar/page.js:604",
             "src/app/(app)/calendar/page.js:605",
-            "src/app/(app)/chat/page.js:1173",
+            "src/app/(app)/chat/page.js:1178",
             "src/app/(app)/my/page.js:322",
             "src/app/(app)/page.js:580",
             "src/app/(app)/page.js:584",
@@ -3147,7 +3147,7 @@
             "src/app/(app)/calendar/page.js:589",
             "src/app/(app)/calendar/page.js:590",
             "src/app/(app)/calendar/page.js:591",
-            "src/app/(app)/chat/page.js:1250",
+            "src/app/(app)/chat/page.js:1255",
             "src/app/(app)/errors/page.js:81",
             "src/app/(app)/settings/page.js:2502",
             "src/app/(app)/settings/page.js:3096",
@@ -3184,7 +3184,7 @@
             "src/app/(app)/sprints/page.js:903",
             "src/app/(app)/sprints/page.js:921",
             "src/app/(app)/team/page.js:110",
-            "src/components/MobileNav.jsx:384",
+            "src/components/MobileNav.jsx:382",
             "src/components/UserStatusSetter.jsx:77",
             "src/components/WorkspaceHeader.jsx:312",
             "src/components/WorkspaceHeader.jsx:322",
@@ -3262,12 +3262,12 @@
             "src/app/(app)/calendar/page.js:602",
             "src/app/(app)/calendar/page.js:604",
             "src/app/(app)/calendar/page.js:605",
-            "src/app/(app)/chat/page.js:1173",
-            "src/app/(app)/chat/page.js:1181",
-            "src/app/(app)/chat/page.js:1250",
+            "src/app/(app)/chat/page.js:1178",
+            "src/app/(app)/chat/page.js:1186",
+            "src/app/(app)/chat/page.js:1255",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
-            "src/app/(app)/layout.js:135",
+            "src/app/(app)/layout.js:143",
             "src/app/(app)/my/page.js:262",
             "src/app/(app)/my/page.js:322",
             "src/app/(app)/my/page.js:454",
@@ -3344,7 +3344,7 @@
             "src/components/CreateTaskModal.jsx:298",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:384",
+            "src/components/MobileNav.jsx:382",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
@@ -3489,12 +3489,12 @@
             "src/app/(app)/calendar/page.js:602",
             "src/app/(app)/calendar/page.js:604",
             "src/app/(app)/calendar/page.js:605",
-            "src/app/(app)/chat/page.js:1173",
-            "src/app/(app)/chat/page.js:1181",
-            "src/app/(app)/chat/page.js:1250",
+            "src/app/(app)/chat/page.js:1178",
+            "src/app/(app)/chat/page.js:1186",
+            "src/app/(app)/chat/page.js:1255",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
-            "src/app/(app)/layout.js:135",
+            "src/app/(app)/layout.js:143",
             "src/app/(app)/my/page.js:262",
             "src/app/(app)/my/page.js:322",
             "src/app/(app)/my/page.js:454",
@@ -3571,7 +3571,7 @@
             "src/components/CreateTaskModal.jsx:298",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:384",
+            "src/components/MobileNav.jsx:382",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
@@ -3707,12 +3707,12 @@
             "src/app/(app)/calendar/page.js:602",
             "src/app/(app)/calendar/page.js:604",
             "src/app/(app)/calendar/page.js:605",
-            "src/app/(app)/chat/page.js:1173",
-            "src/app/(app)/chat/page.js:1181",
-            "src/app/(app)/chat/page.js:1250",
+            "src/app/(app)/chat/page.js:1178",
+            "src/app/(app)/chat/page.js:1186",
+            "src/app/(app)/chat/page.js:1255",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
-            "src/app/(app)/layout.js:135",
+            "src/app/(app)/layout.js:143",
             "src/app/(app)/my/page.js:322",
             "src/app/(app)/my/page.js:454",
             "src/app/(app)/page.js:579",
@@ -3777,7 +3777,7 @@
             "src/components/CreateTaskModal.jsx:298",
             "src/components/InviteLinkSection.jsx:102",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:384",
+            "src/components/MobileNav.jsx:382",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/UserStatusSetter.jsx:120",
@@ -3914,7 +3914,7 @@
           ],
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:331",
-            "src/app/(app)/layout.js:135",
+            "src/app/(app)/layout.js:143",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55"
           ]
         },
@@ -3953,9 +3953,9 @@
             "src/app/(app)/calendar/page.js:602",
             "src/app/(app)/calendar/page.js:604",
             "src/app/(app)/calendar/page.js:605",
-            "src/app/(app)/chat/page.js:1173",
-            "src/app/(app)/chat/page.js:1181",
-            "src/app/(app)/chat/page.js:1250",
+            "src/app/(app)/chat/page.js:1178",
+            "src/app/(app)/chat/page.js:1186",
+            "src/app/(app)/chat/page.js:1255",
             "src/app/(app)/error.js:24",
             "src/app/(app)/errors/page.js:81",
             "src/app/(app)/my/page.js:262",
@@ -4140,7 +4140,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:384",
+            "src/components/MobileNav.jsx:382",
             "src/components/WorkspaceHelpMenu.jsx:154"
           ]
         },
@@ -4186,7 +4186,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:343",
-            "src/app/(app)/chat/page.js:453",
+            "src/app/(app)/chat/page.js:458",
             "src/app/(app)/settings/page.js:280",
             "src/app/(app)/settings/page.js:281",
             "src/components/WorkspaceHeader.jsx:397",
@@ -4201,7 +4201,7 @@
           "files": [
             "src/app/(app)/chat/page.js:317",
             "src/app/(app)/chat/page.js:326",
-            "src/app/(app)/chat/page.js:386"
+            "src/app/(app)/chat/page.js:391"
           ]
         },
         "md": {
@@ -4226,7 +4226,7 @@
           "files": [
             "src/app/(app)/settings/page.js:307",
             "src/app/(app)/settings/page.js:315",
-            "src/components/MobileNav.jsx:73"
+            "src/components/MobileNav.jsx:72"
           ]
         },
         "sm": {
@@ -4239,8 +4239,8 @@
           ],
           "files": [
             "src/components/AudioTaskPanel.jsx:205",
-            "src/components/MobileNav.jsx:299",
-            "src/components/MobileNav.jsx:328",
+            "src/components/MobileNav.jsx:297",
+            "src/components/MobileNav.jsx:326",
             "src/components/workspace/QtPlusProjectTab.jsx:47",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
             "src/components/workspace/qtplus/cards/FileCard.jsx:86"
@@ -4295,10 +4295,10 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:343",
-            "src/app/(app)/chat/page.js:386",
+            "src/app/(app)/chat/page.js:391",
             "src/app/(app)/page.js:228",
-            "src/components/MobileNav.jsx:299",
-            "src/components/MobileNav.jsx:328",
+            "src/components/MobileNav.jsx:297",
+            "src/components/MobileNav.jsx:326",
             "src/components/workspace/UnifiedTimeline.jsx:867",
             "src/components/workspace/UnifiedTimeline.jsx:868",
             "src/components/workspace/UnifiedTimeline.jsx:960"
@@ -4325,7 +4325,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:453",
+            "src/app/(app)/chat/page.js:458",
             "src/components/workspace/UnifiedTimeline.jsx:869"
           ]
         },
@@ -4366,7 +4366,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:73"
+            "src/components/MobileNav.jsx:72"
           ]
         },
         "surface": {
@@ -4439,7 +4439,7 @@
             "src/app/(app)/calendar/page.js:343",
             "src/app/(app)/chat/page.js:317",
             "src/app/(app)/chat/page.js:326",
-            "src/app/(app)/chat/page.js:386",
+            "src/app/(app)/chat/page.js:391",
             "src/app/(app)/page.js:228",
             "src/app/(app)/settings/page.js:280",
             "src/app/(app)/settings/page.js:281",
@@ -4447,8 +4447,8 @@
             "src/app/(app)/settings/page.js:315",
             "src/components/AudioTaskPanel.jsx:205",
             "src/components/AudioTaskPanel.jsx:263",
-            "src/components/MobileNav.jsx:299",
-            "src/components/MobileNav.jsx:328",
+            "src/components/MobileNav.jsx:297",
+            "src/components/MobileNav.jsx:326",
             "src/components/WorkspaceHeader.jsx:397",
             "src/components/WorkspaceHeader.jsx:408",
             "src/components/profile/ProfileView.jsx:184",
@@ -4463,8 +4463,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:453",
-            "src/components/MobileNav.jsx:73"
+            "src/app/(app)/chat/page.js:458",
+            "src/components/MobileNav.jsx:72"
           ]
         },
         "circle": {
@@ -4517,9 +4517,9 @@
             "src/app/(app)/settings/page.js:315",
             "src/components/AudioTaskPanel.jsx:205",
             "src/components/AudioTaskPanel.jsx:263",
-            "src/components/MobileNav.jsx:299",
-            "src/components/MobileNav.jsx:328",
-            "src/components/MobileNav.jsx:73",
+            "src/components/MobileNav.jsx:297",
+            "src/components/MobileNav.jsx:326",
+            "src/components/MobileNav.jsx:72",
             "src/components/WorkspaceHeader.jsx:397",
             "src/components/WorkspaceHeader.jsx:408",
             "src/components/profile/ProfileModal.jsx:41",
@@ -4550,7 +4550,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:386"
+            "src/app/(app)/chat/page.js:391"
           ]
         },
         "chat-micro-action": {
@@ -4561,7 +4561,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:453",
+            "src/app/(app)/chat/page.js:458",
             "src/components/workspace/UnifiedTimeline.jsx:867",
             "src/components/workspace/UnifiedTimeline.jsx:868",
             "src/components/workspace/UnifiedTimeline.jsx:869"
@@ -4603,7 +4603,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1194",
+            "src/app/(app)/chat/page.js:1199",
             "src/app/(app)/settings/page.js:267",
             "src/app/(app)/sprints/page.js:147",
             "src/app/(app)/sprints/page.js:87",
@@ -4704,7 +4704,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1194",
+            "src/app/(app)/chat/page.js:1199",
             "src/app/(app)/settings/page.js:267",
             "src/app/(app)/settings/page.js:483",
             "src/app/(app)/settings/page.js:624",
@@ -4835,7 +4835,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1194",
+            "src/app/(app)/chat/page.js:1199",
             "src/app/(app)/settings/page.js:267",
             "src/app/(app)/settings/page.js:3038",
             "src/app/(app)/settings/page.js:483",
@@ -4911,7 +4911,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1210",
+            "src/app/(app)/chat/page.js:1215",
             "src/app/(app)/sprints/page.js:156",
             "src/app/(app)/sprints/page.js:95",
             "src/components/AudioTaskPanel.jsx:293",
@@ -4969,7 +4969,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1210",
+            "src/app/(app)/chat/page.js:1215",
             "src/app/(app)/settings/page.js:2578",
             "src/app/(app)/sprints/page.js:156",
             "src/app/(app)/sprints/page.js:95",
@@ -5369,7 +5369,7 @@
             "src/app/(app)/analytics/page.js:790",
             "src/app/(app)/analytics/team/[memberId]/page.js:128",
             "src/app/(app)/calendar/page.js:572",
-            "src/app/(app)/chat/page.js:1222",
+            "src/app/(app)/chat/page.js:1227",
             "src/app/(app)/my/page.js:278",
             "src/app/(app)/sprints/page.js:581",
             "src/components/workspace/IssueDetail.jsx:1489",
@@ -5410,7 +5410,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1222",
+            "src/app/(app)/chat/page.js:1227",
             "src/components/workspace/IssueDetail.jsx:1489",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:704",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:802",
@@ -5449,7 +5449,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1222",
+            "src/app/(app)/chat/page.js:1227",
             "src/components/workspace/IssueDetail.jsx:1489",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:704",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:802",
@@ -6339,8 +6339,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:399",
-            "src/app/(app)/chat/page.js:430",
+            "src/app/(app)/chat/page.js:404",
+            "src/app/(app)/chat/page.js:435",
             "src/components/workspace/BillingTab.jsx:100",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:326"
           ]
@@ -6657,10 +6657,10 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:383",
-            "src/components/MobileNav.jsx:224",
-            "src/components/MobileNav.jsx:248",
-            "src/components/MobileNav.jsx:295",
+            "src/app/(app)/chat/page.js:388",
+            "src/components/MobileNav.jsx:222",
+            "src/components/MobileNav.jsx:246",
+            "src/components/MobileNav.jsx:293",
             "src/components/WorkspaceSidebar.jsx:344",
             "src/components/WorkspaceSidebar.jsx:394"
           ]
@@ -6688,10 +6688,10 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:383",
-            "src/components/MobileNav.jsx:224",
-            "src/components/MobileNav.jsx:248",
-            "src/components/MobileNav.jsx:295",
+            "src/app/(app)/chat/page.js:388",
+            "src/components/MobileNav.jsx:222",
+            "src/components/MobileNav.jsx:246",
+            "src/components/MobileNav.jsx:293",
             "src/components/OrgSwitcherScreen.jsx:46",
             "src/components/WorkspaceSidebar.jsx:344",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
@@ -6715,7 +6715,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:383",
+            "src/app/(app)/chat/page.js:388",
             "src/components/OrgSwitcherScreen.jsx:46",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
@@ -6724,7 +6724,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:224",
+            "src/components/MobileNav.jsx:222",
             "src/components/WorkspaceSidebar.jsx:344"
           ]
         },
@@ -6732,8 +6732,8 @@
           "count": 3,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:248",
-            "src/components/MobileNav.jsx:295",
+            "src/components/MobileNav.jsx:246",
+            "src/components/MobileNav.jsx:293",
             "src/components/WorkspaceSidebar.jsx:394"
           ]
         }
@@ -6745,7 +6745,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:383"
+            "src/app/(app)/chat/page.js:388"
           ]
         },
         "(default)": {
@@ -6756,9 +6756,9 @@
             "/sprints"
           ],
           "files": [
-            "src/components/MobileNav.jsx:224",
-            "src/components/MobileNav.jsx:248",
-            "src/components/MobileNav.jsx:295",
+            "src/components/MobileNav.jsx:222",
+            "src/components/MobileNav.jsx:246",
+            "src/components/MobileNav.jsx:293",
             "src/components/WorkspaceSidebar.jsx:344",
             "src/components/WorkspaceSidebar.jsx:394",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
@@ -6786,7 +6786,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1166",
+            "src/app/(app)/chat/page.js:1171",
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/workspace/BillingTab.jsx:434",
             "src/components/workspace/IssueDetail.jsx:1738",
@@ -6859,7 +6859,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1166",
+            "src/app/(app)/chat/page.js:1171",
             "src/app/(app)/page.js:576",
             "src/app/(app)/sprints/page.js:133",
             "src/app/(app)/sprints/page.js:182",
@@ -6938,7 +6938,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1166",
+            "src/app/(app)/chat/page.js:1171",
             "src/app/(app)/page.js:576",
             "src/app/(app)/sprints/page.js:133",
             "src/app/(app)/sprints/page.js:182",
@@ -6997,7 +6997,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1166",
+            "src/app/(app)/chat/page.js:1171",
             "src/app/(app)/page.js:576",
             "src/app/(app)/sprints/page.js:133",
             "src/app/(app)/sprints/page.js:73",
@@ -7853,7 +7853,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1193",
+            "src/app/(app)/chat/page.js:1198",
             "src/app/(app)/sprints/page.js:101",
             "src/app/(app)/sprints/page.js:146",
             "src/app/(app)/sprints/page.js:155",
@@ -7953,8 +7953,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1209",
-            "src/app/(app)/chat/page.js:1221",
+            "src/app/(app)/chat/page.js:1214",
+            "src/app/(app)/chat/page.js:1226",
             "src/components/CreateTaskModal.jsx:366",
             "src/components/CreateTaskModal.jsx:379",
             "src/components/CreateTaskModal.jsx:388",
@@ -8076,8 +8076,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1379",
-            "src/app/(app)/chat/page.js:480"
+            "src/app/(app)/chat/page.js:1384",
+            "src/app/(app)/chat/page.js:485"
           ]
         },
         "timeline-composer": {
@@ -8125,7 +8125,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1238"
+            "src/app/(app)/chat/page.js:1243"
           ]
         },
         "settings": {
@@ -8472,7 +8472,7 @@
     "Workspace Layout Shell (Сайдбар + Мейн Контент)": "<div className=\"h-[550px] rounded-[24px] overflow-hidden flex bg-[#f5f5f5] w-full p-[12px] relative\">\n  {/* Left: Sidebar wrapper with exact layout.js paddings */}\n  <div className=\"shrink-0 h-full flex pr-[6px]\">\n    <div className=\"h-full rounded-[24px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex bg-[#1f1f1f]\">\n      <WorkspaceSidebar />\n    </div>\n  </div>\n\n  {/* Right: Main content panel with header and child page area */}\n  <div className=\"flex-1 h-full flex flex-col pl-[6px] overflow-hidden\">\n    <div className=\"flex flex-col flex-1 bg-white rounded-[24px] overflow-hidden relative\">\n      {/* Header inside the container */}\n      <div className=\"border-b border-[#f0f0f0] bg-white z-10 shrink-0\">\n        <WorkspaceHeader />\n      </div>\n      \n      {/* Main Content Area */}\n      <div className=\"flex-1 p-[24px] overflow-y-auto bg-white flex flex-col gap-4\">\n        <div className=\"h-full border-2 border-dashed border-[#f0f0f0] rounded-[16px] flex items-center justify-center bg-[#fbfbfb]\">\n          <span className=\"text-[#cfcfcf] font-bold text-[13px]\">Main Work Area (Контентна зона)</span>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>",
     "SidebarLayout context=\"settings\"": "<div className=\"h-[420px] w-full overflow-hidden rounded-[24px] border border-line bg-white\">\n  <SidebarLayout\n    context=\"settings\"\n    sidebar={<InnerNavigation items={NAV} activeId={active} onChange={setActive} />}\n    hasBorder={false}\n  >\n    <main className=\"flex-1 overflow-y-auto custom-scrollbar bg-canvas relative\">\n      <div className=\"max-w-[760px] mx-auto px-[16px] py-[24px] md:px-[32px] md:py-[48px] min-h-full flex flex-col\">\n        <div className=\"flex-1 pb-[100px]\">\n          <h2 className=\"text-[22px] font-bold text-ink\">Особистий профіль</h2>\n          <p className=\"mt-1 text-[13px] text-muted\">Керуйте особистими даними та налаштуваннями профілю.</p>\n          <Surface preset=\"card\" padding=\"lg\" className=\"mt-6\">\n            <div className=\"h-[180px]\" />\n          </Surface>\n        </div>\n      </div>\n    </main>\n  </SidebarLayout>\n</div>",
     "SidebarLayout context=\"team\"": "<div className=\"h-[420px] w-full overflow-hidden rounded-[24px] border border-line bg-white\">\n  <SidebarLayout\n    context=\"team\"\n    mobilePane={teamPane}\n    className=\"!pt-[12px]\"\n    sidebar={(\n      <MemberRail\n        members={[\n          { id: 'arthur', name: 'Артур Моспан', positionName: 'Власник організації', online: true },\n          { id: 'olena', name: 'Олена Коваль', positionName: 'Frontend Developer', online: true },\n          { id: 'petro', name: 'Петро Іванчук', positionName: 'Designer' },\n          { id: 'anna', name: 'Анна Мельник', positionName: 'QA Engineer' },\n        ]}\n        activeId=\"arthur\"\n        action={<Button style=\"ghost\" size=\"icon-xs\" icon={Plus} className=\"hover:!bg-white\" title=\"Запросити\" />}\n      />\n    )}\n  >\n    <Surface preset=\"panel\" padding=\"sm\" className=\"flex flex-1 flex-col overflow-hidden\">\n      <div className=\"flex flex-col items-center gap-2 py-8\">\n        <UserAvatar user={demoUser} size=\"hero\" />\n        <h3 className=\"text-[18px] font-bold text-ink\">Артур Моспан</h3>\n        <StatusPill label=\"Онлайн\" tone=\"success\" />\n      </div>\n      <button type=\"button\" onClick={() => setTeamPane(teamPane === 'sidebar' ? 'content' : 'sidebar')}\n        className=\"mx-auto rounded-[8px] bg-canvas px-3 py-1.5 text-[11px] font-bold text-muted\">\n        mobilePane: {teamPane} (клац, щоб перемкнути)\n      </button>\n    </Surface>\n  </SidebarLayout>\n</div>",
-    "SidebarLayout context=\"chat\"": "<div className=\"h-[420px] w-full overflow-hidden rounded-[24px] border border-line bg-canvas\">\n  <SidebarLayout\n    context=\"chat\"\n    className=\"!pt-[12px]\"\n    sidebar={(\n      <ChannelRail\n        activeId=\"general\"\n        groups={[\n          {\n            id: 'channels',\n            label: 'Канали',\n            action: <Button style=\"ghost\" size=\"icon-xs\" icon={Plus} className=\"hover:!bg-white\" title=\"Новий канал\" />,\n            items: [\n              { id: 'general', kind: 'channel', name: 'general' },\n              { id: 'design', kind: 'channel', name: 'design', unreadCount: 3 },\n              { id: 'releases', kind: 'channel', name: 'releases' },\n            ],\n          },\n          {\n            id: 'dms',\n            label: 'Особисті',\n            items: [\n              { id: 'olena', kind: 'dm', name: 'Олена Коваль', user: { name: 'Олена Коваль' }, online: true, unreadCount: 1 },\n              { id: 'petro', kind: 'dm', name: 'Петро Іванчук', user: { name: 'Петро Іванчук' } },\n            ],\n          },\n        ]}\n      />\n    )}\n  >\n    <div className=\"flex flex-1 gap-3 min-w-0 overflow-hidden\">\n      {/* Conversation pane — the product's own chrome: canvas surface,\n          64px translucent header, composer docked at the bottom. */}\n      <div className=\"relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas\">\n        {/* The header and the list are the product's own components.\n            This preview used to retype both, and the copy was already\n            wrong twice over: a bare <Info> glyph where /chat has a\n            toggle, and no pinned counter at all. */}\n        <ChatConversationHeader\n          type=\"channel\"\n          title=\"general\"\n          subtitle=\"Загальний канал для всієї команди\"\n          pinnedCount={1}\n          infoLabel=\"Про канал\"\n        />\n        {/* `canModerate` is what an owner or admin sees in a group\n            channel: a delete action on someone else's message, and no\n            edit action — an edited message would still carry its\n            author's name. Never set in a direct room. */}\n        <ChatMessageList\n          canModerate\n          messages={CHAT_DEMO_MESSAGES}\n          myUid=\"kit-arthur\"\n          members={CHAT_DEMO_MEMBERS}\n          typingUsers={['Олена Коваль']}\n          unreadCount={2}\n          hasMore\n          onLoadMore={() => {}}\n          onReact={() => {}}\n          onEdit={() => {}}\n          onDelete={() => {}}\n          onThread={() => {}}\n          onPin={() => {}}\n          onOpenAttachment={() => {}}\n        />\n        <ChatComposerDock>\n          <div className=\"relative px-4 pb-4\">\n            <ChatComposerCore variant=\"workspace\" value=\"\" onChange={() => {}} onSubmit={() => {}} placeholder=\"Написати в #general...\" canSubmit={false} />\n          </div>\n        </ChatComposerDock>\n      </div>\n      {/* Thread rail — the second pane, and the only reason chat opts\n          out of the shell drawing a single content pane. */}\n      <div data-ui-overlay=\"responsive-pane\" className=\"hidden shrink-0 flex-col overflow-hidden rounded-[16px] bg-canvas md:flex md:w-[280px]\">\n        {/* `rounded-t-*`: a bar that paints a `backdrop-filter` is not\n            clipped by its pane's rounded corners in Chromium, so it\n            filled them square — the same repair the real thread pane\n            and `ChatConversationHeader` both carry. */}\n        <div className=\"relative z-10 flex h-[56px] shrink-0 items-center justify-between rounded-t-[var(--ui-radius-surface)] border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl\">\n          <div className=\"flex items-center gap-2\">\n            <ChatIcon size={16} className=\"text-muted\" />\n            <h3 className=\"ui-type-card-title text-ink\">Гілка</h3>\n          </div>\n          <IconAction label=\"Закрити гілку\" icon={X} size=\"md\" appearance=\"quiet\" composition=\"chat-panel-action\" />\n        </div>\n      </div>\n    </div>\n  </SidebarLayout>\n</div>",
+    "SidebarLayout context=\"chat\"": "<div className=\"h-[420px] w-full overflow-hidden rounded-[24px] border border-line bg-canvas\">\n  <SidebarLayout\n    context=\"chat\"\n    className=\"!pt-[12px]\"\n    mobilePane={chatPane}\n    sidebar={(\n      <ChannelRail\n        activeId=\"general\"\n        groups={[\n          {\n            id: 'channels',\n            label: 'Канали',\n            action: <Button style=\"ghost\" size=\"icon-xs\" icon={Plus} className=\"hover:!bg-white\" title=\"Новий канал\" />,\n            items: [\n              { id: 'general', kind: 'channel', name: 'general' },\n              { id: 'design', kind: 'channel', name: 'design', unreadCount: 3 },\n              { id: 'releases', kind: 'channel', name: 'releases' },\n            ],\n          },\n          {\n            id: 'dms',\n            label: 'Особисті',\n            items: [\n              { id: 'olena', kind: 'dm', name: 'Олена Коваль', user: { name: 'Олена Коваль' }, online: true, unreadCount: 1 },\n              { id: 'petro', kind: 'dm', name: 'Петро Іванчук', user: { name: 'Петро Іванчук' } },\n            ],\n          },\n        ]}\n      />\n    )}\n  >\n    {/* Below md the shell shows one pane, and which one is the page's\n        own state — so the catalogue carries it too, or the phone form\n        of the whole conversation could not be looked at here at all. */}\n    <div className={`${chatPane === 'sidebar' ? 'hidden' : 'flex'} md:flex flex-1 gap-3 min-w-0 overflow-hidden`}>\n      {/* Conversation pane — the product's own chrome: canvas surface,\n          64px translucent header, composer docked at the bottom. */}\n      <div className=\"relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] bg-canvas\">\n        {/* The header and the list are the product's own components.\n            This preview used to retype both, and the copy was already\n            wrong twice over: a bare <Info> glyph where /chat has a\n            toggle, and no pinned counter at all. */}\n        <ChatConversationHeader\n          type=\"channel\"\n          title=\"general\"\n          subtitle=\"Загальний канал для всієї команди\"\n          pinnedCount={1}\n          infoLabel=\"Про канал\"\n          onBack={() => setChatPane('sidebar')}\n        />\n        {/* `canModerate` is what an owner or admin sees in a group\n            channel: a delete action on someone else's message, and no\n            edit action — an edited message would still carry its\n            author's name. Never set in a direct room. */}\n        <ChatMessageList\n          canModerate\n          messages={CHAT_DEMO_MESSAGES}\n          myUid=\"kit-arthur\"\n          members={CHAT_DEMO_MEMBERS}\n          typingUsers={['Олена Коваль']}\n          unreadCount={2}\n          hasMore\n          onLoadMore={() => {}}\n          onReact={() => {}}\n          onEdit={() => {}}\n          onDelete={() => {}}\n          onThread={() => {}}\n          onPin={() => {}}\n          onOpenAttachment={() => {}}\n        />\n        <ChatComposerDock>\n          <div className=\"relative px-4 pb-4\">\n            <ChatComposerCore variant=\"workspace\" value=\"\" onChange={() => {}} onSubmit={() => {}} placeholder=\"Написати в #general...\" canSubmit={false} />\n          </div>\n        </ChatComposerDock>\n      </div>\n      {/* Thread rail — the second pane, and the only reason chat opts\n          out of the shell drawing a single content pane. */}\n      <div data-ui-overlay=\"responsive-pane\" className=\"hidden shrink-0 flex-col overflow-hidden rounded-[16px] bg-canvas md:flex md:w-[280px]\">\n        {/* `rounded-t-*`: a bar that paints a `backdrop-filter` is not\n            clipped by its pane's rounded corners in Chromium, so it\n            filled them square — the same repair the real thread pane\n            and `ChatConversationHeader` both carry. */}\n        <div className=\"relative z-10 flex h-[56px] shrink-0 items-center justify-between rounded-t-[var(--ui-radius-surface)] border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl\">\n          <div className=\"flex items-center gap-2\">\n            <ChatIcon size={16} className=\"text-muted\" />\n            <h3 className=\"ui-type-card-title text-ink\">Гілка</h3>\n          </div>\n          <IconAction label=\"Закрити гілку\" icon={X} size=\"md\" appearance=\"quiet\" composition=\"chat-panel-action\" />\n        </div>\n      </div>\n    </div>\n  </SidebarLayout>\n</div>\n<button type=\"button\" onClick={() => setChatPane(chatPane === 'sidebar' ? 'content' : 'sidebar')}\n  className=\"mx-auto mt-[12px] block rounded-[8px] bg-canvas px-3 py-1.5 text-[11px] font-bold text-muted\">\n  mobilePane: {chatPane} (клац, щоб перемкнути)\n</button>",
     "Вихід із панелі на мобільному": "<div className=\"flex items-center gap-4 rounded-[12px] bg-white p-[16px] [&_button]:!flex\">\n  <MobilePaneBack label=\"До списку команди\" onClick={() => {}} />\n  <MobilePaneBack label=\"Всі налаштування\" onClick={() => {}} />\n  <MobilePaneBack label=\"До списку чатів\" onClick={() => {}} />\n</div>",
     "DetailLayout context=\"event\"": "<div className=\"h-[320px] overflow-hidden rounded-[12px] border border-line bg-white\">\n  <DetailLayout\n    context=\"event\"\n    standalone={false}\n    header={(\n      <div className=\"pb-[12px] pt-[12px]\">\n        <h1 className=\"ui-type-page-title leading-tight tracking-tight text-ink\">Планерка команди</h1>\n        <p className=\"mt-1 text-[12px] font-medium text-muted\">Організатор: Артур Моспан · створили сьогодні</p>\n      </div>\n    )}\n    attributes={(\n      <div className=\"flex flex-wrap items-center gap-2 rounded-[12px] bg-canvas px-3 py-2\">\n        <Pill tone=\"neutral\" size=\"md\">14:00–15:00</Pill>\n        <Pill tone=\"neutral\" size=\"md\">Мітинг</Pill>\n        <Pill tone=\"neutral\" size=\"md\">Уся команда</Pill>\n      </div>\n    )}\n  >\n    <DetailSection icon={AlignLeft} title=\"Опис\">\n      <div data-ui-surface=\"panel\" data-ui-padding=\"wide\" className=\"ui-surface text-[13px] leading-relaxed text-ink\">\n        Порядок денний, рішення й наступні кроки.\n      </div>\n    </DetailSection>\n    <DetailSection icon={MapPin} title=\"Місце\">\n      <div data-ui-surface=\"panel\" data-ui-padding=\"wide\" className=\"ui-surface text-[13px] text-ink\">\n        Кімната 2\n      </div>\n    </DetailSection>\n    <DetailSection icon={Users} title=\"Учасники\" count={2}>\n      <div data-ui-surface=\"panel\" data-ui-padding=\"wide\" className=\"ui-surface flex flex-wrap gap-2\">\n        <Pill tone=\"surface-ink\" size=\"lg\" weight=\"medium\">\n          <UserAvatar user={demoUser} size=\"xs\" />\n          <span className=\"font-semibold\">Артур Моспан</span>\n        </Pill>\n      </div>\n    </DetailSection>\n  </DetailLayout>\n</div>",
     "DetailLayout context=\"task\"": "<div className=\"h-[320px] overflow-hidden rounded-[12px] border border-line bg-white\">\n  <DetailLayout\n    context=\"task\"\n    standalone={false}\n    header={(\n      <div className=\"pb-[12px] pt-[12px]\">\n        <h1 className=\"ui-type-page-title leading-tight tracking-tight text-ink\">Переробити онбординг</h1>\n        <p className=\"mt-1 text-[12px] font-medium text-muted\">Автор: Артур Моспан · оновили щойно</p>\n      </div>\n    )}\n    attributes={(\n      <div className=\"flex flex-wrap items-center gap-2 rounded-[12px] bg-canvas px-3 py-2\">\n        <Pill tone=\"neutral\" size=\"md\">У роботі</Pill>\n        <Pill tone=\"neutral\" size=\"md\">Артур</Pill>\n        <Pill tone=\"neutral\" size=\"md\">Спринт 12</Pill>\n      </div>\n    )}\n    aside={(\n      <div className=\"flex h-full flex-col items-center justify-center rounded-[16px] bg-canvas text-[11px] font-semibold text-muted\">\n        Чат задачі\n      </div>\n    )}\n  >\n    <DetailSection icon={AlignLeft} title=\"Опис\">\n      <div data-ui-surface=\"panel\" data-ui-padding=\"wide\" className=\"ui-surface flex flex-col gap-4\">\n        <p className=\"text-[13px] leading-relaxed text-ink\">Перший екран лишаємо, другий переробляємо.</p>\n        <DetailSection density=\"group\" icon={Paperclip} title=\"Вкладення\" count={2}>\n          <p className=\"text-[12px] text-muted\">Список файлів</p>\n        </DetailSection>\n        <DetailSection density=\"group\" icon={TaskIcon} title=\"Підзавдання\" count={3} meta=\"1/3 · 2 ще в роботі\">\n          <p className=\"text-[12px] text-muted\">Рядки підзавдань</p>\n        </DetailSection>\n        <DetailSection density=\"group\" icon={Link2} title=\"Зв’язки\" count={1}>\n          <p className=\"text-[12px] text-muted\">Рядки зв’язків</p>\n        </DetailSection>\n      </div>\n    </DetailSection>\n  </DetailLayout>\n</div>"

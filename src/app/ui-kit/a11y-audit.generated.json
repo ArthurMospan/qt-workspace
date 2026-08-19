@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 345,
-    "elements": 4289,
+    "elements": 4290,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -86,42 +86,42 @@
     },
     {
       "element": "IconAction",
-      "location": "src/components/ui/Chat/ChatConversationHeader.jsx:98",
+      "location": "src/components/ui/Chat/ChatConversationHeader.jsx:102",
       "attributes": [
         "label"
       ]
     },
     {
       "element": "Button",
-      "location": "src/components/ui/Chat/MessageBubble.jsx:341",
+      "location": "src/components/ui/Chat/MessageBubble.jsx:367",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "Button",
-      "location": "src/components/ui/Chat/MessageBubble.jsx:360",
+      "location": "src/components/ui/Chat/MessageBubble.jsx:386",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:129",
+      "location": "src/components/ui/ChatComposerCore.jsx:188",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:155",
+      "location": "src/components/ui/ChatComposerCore.jsx:215",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:172",
+      "location": "src/components/ui/ChatComposerCore.jsx:232",
       "attributes": [
         "aria-label"
       ]

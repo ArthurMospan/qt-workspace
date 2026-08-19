@@ -53,6 +53,7 @@ export default function MessageBubble({
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(msg.text || '');
   const editFieldRef = useRef(null);
+  const rowRef = useRef(null);
   const emojiButtonRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const emojiPickerPosition = useFloatingOverlay({
@@ -122,6 +123,22 @@ export default function MessageBubble({
     return () => document.removeEventListener('mousedown', handler);
   }, [showEmoji]);
 
+  // A phone has no hover, and the whole of what a message can do lived behind
+  // one: reacting, replying in a thread, pinning, editing, deleting. On touch
+  // the row is tapped open instead — and tapped shut again by the next tap
+  // anywhere else, which is the half a toggle needs to not accumulate. Only
+  // touch pointers are listened for, so nothing about a mouse changes.
+  useEffect(() => {
+    if (!showActions || showEmoji) return undefined;
+    const handler = (event) => {
+      if (event.pointerType !== 'touch') return;
+      if (rowRef.current?.contains(event.target)) return;
+      setShowActions(false);
+    };
+    document.addEventListener('pointerdown', handler, true);
+    return () => document.removeEventListener('pointerdown', handler, true);
+  }, [showActions, showEmoji]);
+
   if (msg.isSystem) {
     return (
       <div className="flex justify-center my-3">
@@ -134,10 +151,19 @@ export default function MessageBubble({
 
   return (
     <div
-      className={`relative flex gap-3 px-4 py-1 group hover:bg-black/[0.02] transition-colors rounded-xl -mx-2 ${showHeader ? 'mt-4' : 'mt-0.5'}`}
+      ref={rowRef}
+      className={`relative flex gap-3 px-4 py-1 group hover:bg-black/[0.02] transition-colors rounded-xl -mx-2 max-md:gap-2 max-md:-mx-1 max-md:px-2 ${showHeader ? 'mt-4' : 'mt-0.5'}`}
       tabIndex={0}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => { if (!showEmoji) setShowActions(false); }}
+      onPointerUp={(event) => {
+        // The tap that opens the actions, and the one that closes them again.
+        // Anything already pressable inside the row — a mention, an avatar, an
+        // attachment, a reaction — keeps its own tap.
+        if (event.pointerType !== 'touch' || editing) return;
+        if (event.target.closest?.('button, a, input, textarea, [role="button"]')) return;
+        setShowActions(previous => !previous);
+      }}
       onFocusCapture={() => setShowActions(true)}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget) && !showEmoji) {
@@ -292,7 +318,7 @@ export default function MessageBubble({
 
       {/* Action toolbar */}
       {(showActions || showEmoji) && !editing && (
-        <div data-ui-surface="local" className="absolute right-4 -top-4 bg-white border border-line rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] flex items-center p-1 gap-0.5 z-20">
+        <div data-ui-surface="local" className="absolute right-4 -top-4 max-md:right-1 max-md:-top-3 bg-white border border-line rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] flex items-center p-1 gap-0.5 z-20">
           {/* Emoji */}
           <div className="relative">
             <IconAction

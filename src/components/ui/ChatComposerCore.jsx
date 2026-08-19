@@ -9,8 +9,15 @@ const VARIANTS = {
     // same box. The task-page composer below already solved this with one ring
     // that thickens; the workspace chat now wears exactly that, keeping only
     // its own corner radius and textarea geometry.
-    shell: 'overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.04] transition-all hover:ring-black/10 focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]',
-    textarea: 'w-full px-4 py-3.5 text-[14px] text-ink placeholder-[#b0b0b0] bg-transparent outline-none resize-none max-h-[200px] leading-relaxed',
+    // The mobile variants are appended, never woven in: `kit-usage.test.mjs`
+    // holds the desktop geometry of all three shells as a literal substring, so
+    // the phone's corner radius has to sit after it rather than inside it.
+    shell: 'overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.04] transition-all hover:ring-black/10 focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)] max-md:rounded-[22px]',
+    // Below md the field shares its line with the controls, so it stops being a
+    // full-width block and becomes the part of the row that stretches. It also
+    // stops growing at 120px rather than 200: a composer half the height of the
+    // screen is not a composer, it is a page with a conversation behind it.
+    textarea: 'w-full px-4 py-3.5 text-[14px] text-ink placeholder-[#b0b0b0] bg-transparent outline-none resize-none max-h-[200px] leading-relaxed max-md:w-auto max-md:min-w-0 max-md:flex-1 max-md:max-h-[120px] max-md:px-2 max-md:py-[7px] max-md:text-[15px]',
   },
   timeline: {
     shell: 'overflow-hidden rounded-[24px] bg-white ring-1 ring-black/[0.04] transition-all hover:ring-black/10 focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]',
@@ -24,10 +31,39 @@ const VARIANTS = {
 
 const ROUND_SEND_CLASS = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform hover:scale-105 disabled:bg-[#cfcfcf] disabled:hover:scale-100';
 
-// How tall the field may grow before it starts scrolling instead, per variant.
-// It is the one number the growth needs and the only thing the three chats
-// disagreed about.
-const MAX_HEIGHT = { workspace: 200, timeline: 120, qtplus: 120 };
+// How tall the field may grow before it starts scrolling instead. It used to be
+// a table here, one number per variant; it is read off the field's own
+// `max-height` now — the same number, written where the rest of the field's
+// geometry already is, and in the only form that can differ between a phone and
+// a desk, because a media query cannot reach a constant in a module.
+const FALLBACK_MAX_HEIGHT = 200;
+
+// What the field tells the platform about itself, so the on-screen keyboard
+// arrives as a keyboard rather than as a filling assistant.
+//
+// iOS draws an AutoFill row above the keys — «Паролі», «Карти», sometimes an
+// address — whenever it believes the focused field is one it could fill, and it
+// decides that from the field's own attributes plus whatever password managers
+// claim about it. A message composer can be filled from nothing, so it says so:
+// `autocomplete="off"`, a name that reads as prose rather than as a credential,
+// and the four opt-out attributes 1Password, LastPass, Dashlane and Bitwarden
+// each look for. What stays is ordinary typing help — capitalisation,
+// correction, spelling — because this is a field for sentences.
+//
+// The predictive-text strip itself (three suggested words) belongs to the
+// system keyboard, not to the page; no web attribute removes it.
+const COMPOSER_INPUT_ATTRS = {
+  name: 'message',
+  autoComplete: 'off',
+  autoCorrect: 'on',
+  autoCapitalize: 'sentences',
+  spellCheck: true,
+  enterKeyHint: 'send',
+  'data-1p-ignore': '',
+  'data-lpignore': 'true',
+  'data-form-type': 'other',
+  'data-bwignore': '',
+};
 
 const Spinner = ({ className = '' }) => (
   <span className={`h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white ${className}`} />
@@ -97,14 +133,23 @@ export default function ChatComposerCore({
   useLayoutEffect(() => {
     const field = innerRef.current;
     if (!field) return;
-    const max = MAX_HEIGHT[variant] || MAX_HEIGHT.workspace;
+    const declared = Number.parseFloat(window.getComputedStyle(field).maxHeight);
+    const max = Number.isFinite(declared) ? declared : FALLBACK_MAX_HEIGHT;
     field.style.height = 'auto';
+    field.style.overflowY = 'hidden';
+    // An empty field is one row, and it is the browser that knows how tall one
+    // row is. Chrome counts the wrapped placeholder in `scrollHeight`, so an
+    // empty composer measured itself against «Написати в #general...» — on a
+    // desk that line fits and nothing showed, on a phone it wraps and the
+    // composer opened two rows tall around no text at all.
+    if (!field.value) return;
     field.style.height = `${Math.min(field.scrollHeight, max)}px`;
     field.style.overflowY = field.scrollHeight > max ? 'auto' : 'hidden';
   }, [value, variant]);
 
   const textarea = (
     <textarea
+      {...COMPOSER_INPUT_ATTRS}
       ref={setTextareaRef}
       value={value}
       onChange={onChange}
@@ -123,23 +168,38 @@ export default function ChatComposerCore({
     return (
       <div className={composer.shell}>
         {attachments}
-        {textarea}
-        <div className="flex items-center justify-between border-t border-[#f0f0f0] px-3 pb-3 pt-2">
-          <div className="flex items-center gap-1">{toolbar}</div>
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={sendDisabled}
-            aria-label={sendAriaLabel}
-            className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-[13px] font-semibold transition-all ${
-              sendDisabled
-                ? 'cursor-not-allowed bg-[#f0f0f0] text-[#b0b0b0]'
-                : 'bg-ink text-white shadow-sm hover:bg-[#333] active:scale-95'
-            }`}
-          >
-            {sending ? <Spinner /> : <Send size={14} />}
-            <span>{sending ? 'Надсилання…' : sendLabel}</span>
-          </button>
+        {/* Two shapes, one field.
+            At md and up the composer is a block: a full-width field with a
+            toolbar strip beneath it, ending in a labelled «Надіслати». On a
+            phone that strip is a second row of chrome stacked above the
+            keyboard, and the label is a word nobody reads — between the two, the
+            field itself was left with about forty pixels of the screen. Below md
+            the same three parts sit on one line: attach and emoji, the field,
+            and a round send.
+            `contents` is what lets that happen without a second copy of the
+            textarea — the strip stops being a box and its children become items
+            of the row. Duplicating the field the way a list row duplicates its
+            layout is not open here: two DOM nodes would be fighting over one
+            ref, one caret and one selection. */}
+        <div className="max-md:flex max-md:items-end max-md:gap-1 max-md:p-1">
+          {textarea}
+          <div className="flex items-center justify-between border-t border-[#f0f0f0] px-3 pb-3 pt-2 max-md:contents">
+            <div className="flex items-center gap-1 max-md:order-first">{toolbar}</div>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={sendDisabled}
+              aria-label={sendAriaLabel}
+              className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-[13px] font-semibold transition-all max-md:h-9 max-md:w-9 max-md:shrink-0 max-md:justify-center max-md:gap-0 max-md:rounded-full max-md:px-0 max-md:py-0 ${
+                sendDisabled
+                  ? 'cursor-not-allowed bg-[#f0f0f0] text-[#b0b0b0]'
+                  : 'bg-ink text-white shadow-sm hover:bg-[#333] active:scale-95'
+              }`}
+            >
+              {sending ? <Spinner /> : <Send size={14} />}
+              <span className="max-md:hidden">{sending ? 'Надсилання…' : sendLabel}</span>
+            </button>
+          </div>
         </div>
       </div>
     );
