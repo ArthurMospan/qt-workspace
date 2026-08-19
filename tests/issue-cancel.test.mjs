@@ -113,6 +113,33 @@ test('a cancelled task leaves every set the numbers are built from', async () =>
   assert.match(analytics, /const issues = useMemo\(\(\) => withoutArchivedIssues\(record\)/);
 });
 
+test('the hours follow the task out, and calendar time stays put', async () => {
+  const analytics = await read('../src/lib/hooks/useWorkspaceAnalytics.js');
+  // Time logs arrive on their own subscription and the timesheet reads them
+  // straight, without joining back to the issue list. Filtering the issues
+  // alone would leave a cancelled task's hours in every total while the task
+  // itself had left every chart above them.
+  assert.match(analytics, /timeLogs\.filter\(log => !log\?\.issueId \|\| !cancelledIssueIds\.has\(log\.issueId\)\)/);
+  assert.match(analytics, /timeLogs: recordTimeLogs/);
+  // A calendar entry has no `issueId` and belongs to nobody's task, so the
+  // filter has to let it through rather than drop everything unmatched.
+  assert.match(analytics, /!log\?\.issueId \|\|/);
+});
+
+test('«Скасувати» does not have to argue with the button that dismisses it', async () => {
+  const [detail, bar] = await Promise.all([
+    read('../src/components/workspace/IssueDetail.jsx'),
+    read('../src/components/ui/TaskManagement/BulkActionBar.jsx'),
+  ]);
+  // Every confirm dialog dismisses with «Скасувати». On this one that is also
+  // the name of the action, so the two buttons read the same and one of them
+  // has to give the word up.
+  for (const source of [detail, bar]) {
+    assert.match(source, /confirmText: 'Так, скасувати'/);
+    assert.match(source, /cancelText: 'Ні, лишити'/);
+  }
+});
+
 test('«Архів» lists the cancelled ones and hands them back', async () => {
   const settings = await read('../src/app/(app)/settings/page.js');
   assert.match(settings, /\{ id: 'cancelled', label: 'Скасовані', count: cancelledIssueList\.length \}/);

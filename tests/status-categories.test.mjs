@@ -9,11 +9,10 @@ import {
   closedStatusIds,
   deliveredStatusIds,
   entryStatusId,
-  activeStatusIds,
+  categoryStatusIds,
   inProgressStatusIds,
   isClosingCategory,
   isDeliveringCategory,
-  reviewStatusIds,
   resolveCategoryStatusId,
   statusCategoryColumns,
   statusCategoryMap,
@@ -192,11 +191,9 @@ test('category columns are the same five for everyone, in one fixed order', () =
 
 test('«в роботі» and «беклог» are answers from the data, not positions in a list', () => {
   assert.deepEqual(inProgressStatusIds(legacyWorkflow), ['s-1700000000']);
-  assert.deepEqual(reviewStatusIds(legacyWorkflow), ['code-review']);
-  // Both together are "started and not finished" — the loose «в роботі» a chart
-  // means. Kept apart at the source so a reviewer's queue never counts as
-  // somebody's workload.
-  assert.deepEqual(activeStatusIds(legacyWorkflow), ['s-1700000000', 'code-review']);
+  // «Код-ревʼю» is no longer among them, and that is the point: a task waiting
+  // on a reviewer is open work, but it is not what its assignee is loaded with.
+  assert.deepEqual(categoryStatusIds('review', legacyWorkflow), ['code-review']);
   assert.deepEqual(backlogStatusIds(legacyWorkflow), ['backlog']);
   // The old rule was `statuses.slice(1)` minus terminal ones, which counted
   // «До виконання» as work in progress.

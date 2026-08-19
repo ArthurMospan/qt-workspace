@@ -126,7 +126,10 @@ export default function BulkActionBar({
     const accepted = await confirm({
       title: `Скасувати ${count} завдань?`,
       message: 'Скасування означає, що цієї роботи не буде. Завдання зникнуть не лише з дошки й списків, а й з усього обліку: з прогресу, зі звітів, з навантаження, з рахунків і з дедлайнів. Лежатимуть в «Архіві» → «Скасовані» без строку, повернути можна будь-коли. Якщо робота відбулася — архівуйте, тоді вона лишиться у звітах.',
-      confirmText: 'Скасувати завдання',
+      confirmText: 'Так, скасувати',
+      // See IssueDetail: «Скасувати» is the dismiss label on every dialog, and
+      // here it is also the action, so the two buttons would have read the same.
+      cancelText: 'Ні, лишити',
     });
     if (accepted) await apply('cancel');
   };

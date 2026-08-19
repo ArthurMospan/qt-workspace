@@ -77,7 +77,7 @@ test('archived tasks leave the working lists but keep their own link', async () 
   // record for what was done, and the cancelled ones for the one screen that
   // lists them.
   assert.match(analytics, /const issues = useMemo\(\(\) => withoutArchivedIssues\(record\)/);
-  assert.match(analytics, /return \{ issues, allIssues: record, cancelledIssues, timeLogs, issueLinks, loading \};/);
+  assert.match(analytics, /allIssues: record,\s*\n\s*cancelledIssues,\s*\n\s*timeLogs: recordTimeLogs,/);
 });
 
 test('an archived task keeps its hours in the timesheet and on the invoice', async () => {

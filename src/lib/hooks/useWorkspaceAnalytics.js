@@ -201,6 +201,28 @@ export function useWorkspaceAnalytics(projectIds = [], {
   const record = useMemo(() => withoutCancelledIssues(allIssues), [allIssues]);
   const issues = useMemo(() => withoutArchivedIssues(record), [record]);
   const cancelledIssues = useMemo(() => cancelledIssuesOf(allIssues), [allIssues]);
+  // The hours follow the task out. Time logs arrive on their own subscription
+  // and are read straight — the timesheet and the period totals do not join
+  // them back to the issue list — so a cancelled task's hours would go on being
+  // counted while the task itself had left every chart above them. Calendar
+  // logs carry no `issueId` and are untouched.
+  const cancelledIssueIds = useMemo(
+    () => new Set(cancelledIssues.map(issue => issue.id)),
+    [cancelledIssues],
+  );
+  const recordTimeLogs = useMemo(
+    () => (cancelledIssueIds.size
+      ? timeLogs.filter(log => !log?.issueId || !cancelledIssueIds.has(log.issueId))
+      : timeLogs),
+    [cancelledIssueIds, timeLogs],
+  );
 
-  return { issues, allIssues: record, cancelledIssues, timeLogs, issueLinks, loading };
+  return {
+    issues,
+    allIssues: record,
+    cancelledIssues,
+    timeLogs: recordTimeLogs,
+    issueLinks,
+    loading,
+  };
 }

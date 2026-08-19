@@ -28,11 +28,22 @@ test('a device is named by the most specific claim its user agent makes', () => 
 test('a session with no reported origin claims none', () => {
   assert.equal(describePlace({}), null);
   assert.equal(describePlace({ city: '', country: '  ' }), null);
-  assert.equal(describePlace({ city: 'Kyiv', country: 'UA' }), 'Kyiv, UA');
-  // Vercel percent-encodes city names, and a city that repeats the region must
-  // not be printed twice.
-  assert.equal(describePlace({ city: '%D0%9A%D0%B8%D1%97%D0%B2', country: 'UA' }), 'Київ, UA');
-  assert.equal(describePlace({ city: 'Kyiv', region: 'Kyiv', country: 'UA' }), 'Kyiv, UA');
+  // The country is spelled out. «UA» is an identifier for a machine, and the
+  // row it sits in is read by a person deciding whether they recognise a login.
+  assert.equal(describePlace({ city: 'Kyiv', country: 'UA' }), 'Kyiv, Україна');
+  // Vercel percent-encodes city names.
+  assert.equal(describePlace({ city: '%D0%9A%D0%B8%D1%97%D0%B2', country: 'UA' }), 'Київ, Україна');
+  // The region arrives as a code — «32» is Kyiv oblast — and a number in the
+  // middle of an address tells nobody anything. The city already said where.
+  assert.equal(
+    describePlace({ city: 'Sofiivska Borschahivka', region: '32', country: 'UA' }),
+    'Sofiivska Borschahivka, Україна',
+  );
+  assert.equal(describePlace({ city: 'Kyiv', region: 'Kyiv', country: 'UA' }), 'Kyiv, Україна');
+  // With no city, a region that is an actual name still answers «звідки».
+  assert.equal(describePlace({ region: 'Kyiv City', country: 'UA' }), 'Kyiv City, Україна');
+  // A code nothing recognises is repeated, never invented.
+  assert.equal(describePlace({ country: 'QQ' }), 'QQ');
 });
 
 test('the device you are reading on comes first, then the most recent', () => {

@@ -53,14 +53,48 @@ export function describeDevice(userAgent) {
   return browser || platform || 'Невідомий пристрій';
 }
 
+function cleaned(value) {
+  return typeof value === 'string' ? decodeURIComponent(value).trim() : '';
+}
+
+/**
+ * The country as a person would name it, from the two-letter code the platform
+ * sends. `Intl.DisplayNames` knows every one of them, so no table is kept here
+ * and none of it can go stale; a code it does not recognise is returned as it
+ * came rather than dropped.
+ */
+function countryName(code) {
+  if (!/^[A-Za-z]{2}$/.test(code)) return code;
+  try {
+    // `fallback: 'none'` so a code ICU has never heard of comes back as
+    // itself instead of as an empty string. (`ZZ` is not that case: it is a
+    // real code meaning «unknown region», and is named as one.)
+    const named = new Intl.DisplayNames(['uk'], { type: 'region', fallback: 'none' });
+    return named.of(code.toUpperCase()) || code;
+  } catch {
+    return code;
+  }
+}
+
 /**
  * The place the request came from, as the hosting platform reports it. Absent
  * locally and behind proxies that strip it, and absent is what it then says —
  * a session with no known origin must not claim one.
+ *
+ * Two things are deliberately not shown. The region arrives as a code — «32»
+ * for Kyiv oblast — which reads as a number in the middle of an address and
+ * tells nobody anything; and the country arrives as «UA», which is a code too.
+ * The city already answers «звідки», so the region is dropped unless it is an
+ * actual name, and the country is spelled out.
  */
 export function describePlace({ city, region, country } = {}) {
-  const parts = [city, region && region !== city ? region : null, country]
-    .map(part => (typeof part === 'string' ? decodeURIComponent(part).trim() : ''))
+  const cityName = cleaned(city);
+  const regionValue = cleaned(region);
+  // A name, not a code: two letters or digits are an identifier for a machine.
+  const regionName = /[^\d]/.test(regionValue) && regionValue.length > 3 && regionValue !== cityName
+    ? regionValue
+    : '';
+  const parts = [cityName, cityName ? '' : regionName, countryName(cleaned(country))]
     .filter(Boolean);
   if (parts.length === 0) return null;
   return [...new Set(parts)].join(', ');

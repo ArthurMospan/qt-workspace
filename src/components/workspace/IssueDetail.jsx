@@ -1176,7 +1176,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     if (cancelled && !(await confirmDialog({
       title: `Скасувати ${issue.issueKey}?`,
       message: 'Скасування означає, що цієї роботи не буде. Завдання зникне не лише з дошки й списків, а й з усього обліку: з прогресу проєкту, зі звітів, з навантаження, з рахунків і з дедлайнів — так, ніби його не планували. Дані лишаються, воно чекає в «Архіві» → «Скасовані», і повернути можна будь-коли. Якщо робота відбулася і просто завершена — архівуйте, тоді вона лишиться у звітах.',
-      confirmText: 'Скасувати завдання',
+      confirmText: 'Так, скасувати',
+      // The dismiss button is «Скасувати» everywhere else, and here that is the
+      // name of the action itself — two buttons side by side, one meaning "do
+      // it" and one meaning "don't". This is the only dialog where the word
+      // has to be taken away from the one that closes it.
+      cancelText: 'Ні, лишити',
     }))) return;
     try {
       await setIssueCancelled(issueId, cancelled);

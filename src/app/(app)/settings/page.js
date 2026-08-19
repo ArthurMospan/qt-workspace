@@ -36,10 +36,10 @@ import {
   Shapes, Check, Plus, Trash2, Edit2, X, Save,
   Building, LogOut, Download, RefreshCw, Mail,
   Copy, ExternalLink, ChevronRight, AlertTriangle,
-  Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
+  PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock,
-  UserRoundX, ShieldCheck, MonitorSmartphone, KeyRound, Undo2
+  UserRoundX, ShieldCheck, MonitorSmartphone, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -147,7 +147,11 @@ const DEFAULT_WORKFLOW_SETTINGS = Object.freeze({
 
 const NAV = [
   { id: 'profile',       label: 'Особистий профіль',icon: User,          group: 'Особисте' },
-  { id: 'auth-methods',  label: 'Способи входу',     icon: Link2,        group: 'Особисте' },
+  // «Способи входу» is not a section of its own any more. It answers half of
+  // «хто може зайти в мій акаунт», and the other half — who already did, and
+  // from where — was on «Безпека», with a row on one linking to the other.
+  // `?section=auth-methods` still resolves, so every OAuth callback keeps
+  // landing where it always did.
   // No personal QuickTeam+ entry here on purpose. Connecting the account only
   // ever served linking a project, so that action lives in the project's
   // QuickTeam+ tab; the org-level switch stays under "Інтеграції".
@@ -810,7 +814,7 @@ export default function SettingsPage() {
     [archiveScopedIssues],
   );
   const [deletedIssues, setDeletedIssues] = useState({ items: [], loading: false });
-  const { formatDate, formatTime } = useLocalization();
+  const { formatDate, timeFormat: savedTimeFormat } = useLocalization();
   const projectNameById = useCallback(id => (
     (projects || []).find(project => project.id === id)?.name || 'Проєкт видалено'
   ), [projects]);
@@ -867,7 +871,11 @@ export default function SettingsPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
-      const sec = searchParams.get('section');
+      // Sections that were merged into another one. An old link, a bookmark and
+      // every OAuth callback still name them.
+      const MERGED_SECTIONS = { 'auth-methods': 'account' };
+      const rawSection = searchParams.get('section');
+      const sec = MERGED_SECTIONS[rawSection] || rawSection;
       const authSuccess = searchParams.get('auth');
       const authError = searchParams.get('authError');
       if (sec) {
@@ -2664,63 +2672,6 @@ export default function SettingsPage() {
         </Section>
       );
 
-      case 'auth-methods': return (
-        <Section title="Способи входу" desc="Керуйте сервісами, через які можна входити у QuickTeam">
-          <Card preset="borderless" padding="lg">
-            <div className="divide-y divide-canvas">
-              <LoginMethodItem
-                icon={<GitHubLogo size={18} />}
-                title="GitHub"
-                detail={hasGithubAuth ? 'Підключено до поточного акаунта' : 'Вхід через GitHub OAuth'}
-                connected={hasGithubAuth}
-                primary={isPrimaryGitHub}
-                loading={authMethodLoading === 'github-connect' || authMethodLoading === 'github-disconnect'}
-                disabled={Boolean(authMethodLoading)}
-                onConnect={handleConnectGitHub}
-                onDisconnect={handleDisconnectGitHub}
-              />
-              <LoginMethodItem
-                icon={<GoogleLogo size={18} />}
-                title="Google"
-                detail={hasGoogleAuth ? 'Підключено до поточного акаунта' : 'Вхід через Google OAuth'}
-                connected={hasGoogleAuth}
-                primary={isPrimaryGoogle}
-                loading={authMethodLoading === 'google-connect' || authMethodLoading === 'google-disconnect'}
-                disabled={Boolean(authMethodLoading)}
-                onConnect={handleConnectGoogle}
-                onDisconnect={handleDisconnectGoogle}
-              />
-              <LoginMethodItem
-                icon={<OneBMark />}
-                title="OneB"
-                detail={hasOneBAuth
-                  ? (currentUser?.onebAlias || currentUser?.onebWorkspace || 'Підключено до екосистеми OneB')
-                  : 'Вхід через OneB OAuth'}
-                connected={hasOneBAuth}
-                primary={isPrimaryOneB}
-                loading={authMethodLoading === 'oneb-connect' || authMethodLoading === 'oneb-disconnect'}
-                disabled={Boolean(authMethodLoading)}
-                onConnect={handleConnectOneB}
-                onDisconnect={handleDisconnectOneB}
-              />
-              <LoginMethodItem
-                icon={<Mail size={18} />}
-                title="Email"
-                detail="Вхід по email-коду тимчасово вимкнений"
-                connected={false}
-                primary={isPrimaryEmail}
-                soon
-                loading={false}
-                disabled
-                staticMethod
-                onConnect={() => {}}
-                onDisconnect={() => {}}
-              />
-            </div>
-          </Card>
-        </Section>
-      );
-
       // ──────────────────────────────────────────────────────────────
       case 'notifications': {
         // Split by channel, one card each, because that is the question people
@@ -3912,7 +3863,16 @@ export default function SettingsPage() {
       case 'account': {
         const signInAt = accountSecurity.lastSignInAt ? new Date(accountSecurity.lastSignInAt) : null;
         const accountCreatedAt = accountSecurity.createdAt ? new Date(accountSecurity.createdAt) : null;
-        const whenLabel = date => `${formatDate(date)}, ${formatTime(date)}`;
+        // `formatTime` formats an "HH:MM" string off a form. Handed a Date it
+        // returned the Date, and a settings row printed «Wed Aug 19 2026
+        // 13:27:08 GMT+0300 (за східноєвропейським літнім часом)» — the line
+        // that looked broken was this.
+        const clockLabel = date => new Intl.DateTimeFormat('uk-UA', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: savedTimeFormat === '12h',
+        }).format(date);
+        const whenLabel = date => `${formatDate(date)}, ${clockLabel(date)}`;
         // Firebase can revoke an account's refresh tokens; it cannot revoke one
         // device's. So the button says what it does — and it is the right thing
         // to do when the row you do not recognise is somebody else's.
@@ -3932,41 +3892,18 @@ export default function SettingsPage() {
           }
         };
         return (
-        <Section title="Безпека" desc="Як входять у цей обліковий запис, коли входили востаннє і з яких пристроїв.">
-          <Card preset="borderless" padding="lg">
-            <Row
-              label="Способи входу"
-              desc={signInMethods.length
-                ? `Зараз працюють: ${signInMethods.map(method => method.label).join(', ')}`
-                : 'Жодного зовнішнього сервісу не підключено'}
-            >
-              <Button
-                onClick={() => handleSectionChange('auth-methods')}
-                style="secondary"
-                size="lg"
-                icon={KeyRound}
-              >
-                Налаштувати
-              </Button>
-            </Row>
-
-            <Row
-              label="Останній вхід"
-              desc={accountCreatedAt
-                ? `Обліковий запис створено ${formatDate(accountCreatedAt)}`
-                : 'Час створення облікового запису невідомий'}
-            >
-              <p className="text-[13px] font-semibold text-ink">
-                {signInAt ? whenLabel(signInAt) : '—'}
-              </p>
-            </Row>
-          </Card>
-
-          {/* Звідки заходили. One row per browser the account has been opened
-              in, newest first, this one at the top. The place comes from the
-              request itself and is simply missing when the platform does not
-              report it — a session that cannot say where it came from must not
-              make one up. */}
+        // One question, asked in the order somebody worried about their account
+        // asks it: who has been in here, when was that, and how can anybody get
+        // in at all. The screen used to open with a link to another screen.
+        <Section
+          title="Безпека"
+          desc="Хто заходив у цей обліковий запис і звідки. Якщо якийсь пристрій вам незнайомий — завершіть його сеанс і перевірте, через які сервіси сюди можна увійти."
+        >
+          {/* Звідки заходили — first, because it is the answer. One row per
+              browser the account has been opened in, newest first, this one at
+              the top. The place comes from the request itself and is simply
+              missing when the platform does not report it — a session that
+              cannot say where it came from must not make one up. */}
           <Card preset="borderless" padding="lg">
             <Row label="Пристрої" desc="Браузери, у яких відкривали цей обліковий запис">
               <p className="text-[13px] font-semibold text-ink">
@@ -4016,8 +3953,87 @@ export default function SettingsPage() {
             )}
           </Card>
 
+          {/* Two dates, said plainly. The last sign-in used to carry the
+              account's creation date in its description, which is a different
+              fact about a different day. */}
           <Card preset="borderless" padding="lg">
-            <Row label="Вийти з акаунту" desc="Завершити сесію на цьому пристрої">
+            <Row label="Останній вхід" desc="Коли цим обліковим записом користувалися востаннє">
+              <p className="text-[13px] font-semibold text-ink">
+                {signInAt ? whenLabel(signInAt) : '—'}
+              </p>
+            </Row>
+            <Row label="Обліковий запис створено" desc="Відколи він існує">
+              <p className="text-[13px] font-semibold text-ink">
+                {accountCreatedAt ? formatDate(accountCreatedAt) : '—'}
+              </p>
+            </Row>
+          </Card>
+
+          {/* «Способи входу» lives here now rather than in a section of its
+              own. Which services can open this account is the other half of
+              «хто може сюди зайти», and the two halves were on two screens with
+              a button on one pointing at the other. */}
+          <Card preset="borderless" padding="lg">
+            <Row
+              label="Способи входу"
+              desc={signInMethods.length
+                ? `Через ці сервіси можна увійти в цей акаунт: ${signInMethods.map(method => method.label).join(', ')}`
+                : 'Жодного сервісу не підключено'}
+            />
+            <div className="divide-y divide-canvas">
+              <LoginMethodItem
+                icon={<GitHubLogo size={18} />}
+                title="GitHub"
+                detail={hasGithubAuth ? 'Підключено до поточного акаунта' : 'Вхід через GitHub OAuth'}
+                connected={hasGithubAuth}
+                primary={isPrimaryGitHub}
+                loading={authMethodLoading === 'github-connect' || authMethodLoading === 'github-disconnect'}
+                disabled={Boolean(authMethodLoading)}
+                onConnect={handleConnectGitHub}
+                onDisconnect={handleDisconnectGitHub}
+              />
+              <LoginMethodItem
+                icon={<GoogleLogo size={18} />}
+                title="Google"
+                detail={hasGoogleAuth ? 'Підключено до поточного акаунта' : 'Вхід через Google OAuth'}
+                connected={hasGoogleAuth}
+                primary={isPrimaryGoogle}
+                loading={authMethodLoading === 'google-connect' || authMethodLoading === 'google-disconnect'}
+                disabled={Boolean(authMethodLoading)}
+                onConnect={handleConnectGoogle}
+                onDisconnect={handleDisconnectGoogle}
+              />
+              <LoginMethodItem
+                icon={<OneBMark />}
+                title="OneB"
+                detail={hasOneBAuth
+                  ? (currentUser?.onebAlias || currentUser?.onebWorkspace || 'Підключено до екосистеми OneB')
+                  : 'Вхід через OneB OAuth'}
+                connected={hasOneBAuth}
+                primary={isPrimaryOneB}
+                loading={authMethodLoading === 'oneb-connect' || authMethodLoading === 'oneb-disconnect'}
+                disabled={Boolean(authMethodLoading)}
+                onConnect={handleConnectOneB}
+                onDisconnect={handleDisconnectOneB}
+              />
+              <LoginMethodItem
+                icon={<Mail size={18} />}
+                title="Email"
+                detail="Вхід по email-коду тимчасово вимкнений"
+                connected={false}
+                primary={isPrimaryEmail}
+                soon
+                loading={false}
+                disabled
+                staticMethod
+                onConnect={() => {}}
+                onDisconnect={() => {}}
+              />
+            </div>
+          </Card>
+
+          <Card preset="borderless" padding="lg">
+            <Row label="Вийти з акаунта" desc="Завершити сесію на цьому пристрої">
               <Button
                 onClick={async () => {
                   if (await confirmDialog({ title: 'Вийти з акаунта?', confirmText: 'Вийти', danger: true })) signOut();

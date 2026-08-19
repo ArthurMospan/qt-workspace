@@ -301,24 +301,11 @@ export function inProgressStatusIds(statuses) {
   return categoryStatusIds('in-progress', statuses);
 }
 
-/**
- * Statuses whose category is `review` — handed over and waiting on somebody
- * else. Deliberately not folded into `inProgressStatusIds`: "who is loaded with
- * this task" and "is this task moving" are different questions here, and a
- * caller that wants both says so by asking for both.
- */
-export function reviewStatusIds(statuses) {
-  return categoryStatusIds('review', statuses);
-}
-
-/**
- * Statuses of a task that has been started and is not finished — `in-progress`
- * and `review` together. This is «в роботі» in the loose sense a chart means
- * it: everything between the plan and the result.
- */
-export function activeStatusIds(statuses) {
-  return [...inProgressStatusIds(statuses), ...reviewStatusIds(statuses)];
-}
+// There is deliberately no `reviewStatusIds`. Nothing asks that question yet:
+// «в роботі» on a workload table means "loaded with this right now", and a task
+// waiting on a reviewer is not that, while everything counting open work reads
+// the closed set and already includes it. `categoryStatusIds('review', …)` is
+// there for the first caller that genuinely needs the list.
 
 /** Statuses whose category is `backlog` — work that is collected, not planned. */
 export function backlogStatusIds(statuses) {
