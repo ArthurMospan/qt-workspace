@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
-import { claimActivityHeartbeat } from '@/lib/utils/activity';
+import { activityHeartbeatDue, markActivityHeartbeat } from '@/lib/utils/activity';
 import { reportLoadError } from '@/lib/utils/errors';
 import { listSessions } from '@/lib/utils/accountSessions.mjs';
 
@@ -43,17 +43,29 @@ export function deviceSessionId() {
  */
 export function useRecordAccountSession(userId) {
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) return undefined;
     const sessionId = deviceSessionId();
-    if (!sessionId) return;
-    if (!claimActivityHeartbeat(`account-session:${userId}`, RECORD_INTERVAL_MS)) return;
+    if (!sessionId) return undefined;
+    const key = `account-session:${userId}`;
+    if (!activityHeartbeatDue(key, RECORD_INTERVAL_MS)) return undefined;
+
+    let cancelled = false;
+    // Deliberately not `claimActivityHeartbeat`: that one refuses a tab that is
+    // not visible, and it books the interval before the request is sent. Both
+    // are wrong here. A workspace restored into a background tab is still a
+    // sign-in worth recording, and a failed write must not leave the panel
+    // empty for twelve hours — the mark is made only once the write lands, so
+    // the next mount tries again.
     authenticatedRequest('/api/account/sessions', {
       method: 'POST',
       body: JSON.stringify({ sessionId }),
-    }, 'Не вдалося зберегти сеанс').catch(() => {
-      // A security panel that is one device short is worth less than a workspace
-      // that refuses to open, so this stays silent.
-    });
+    }, 'Не вдалося зберегти сеанс')
+      .then(() => { if (!cancelled) markActivityHeartbeat(key); })
+      .catch(() => {
+        // A security panel that is one device short is worth less than a
+        // workspace that refuses to open, so this stays silent.
+      });
+    return () => { cancelled = true; };
   }, [userId]);
 }
 
