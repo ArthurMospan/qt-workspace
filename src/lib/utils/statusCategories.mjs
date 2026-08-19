@@ -18,6 +18,12 @@
 // Two guesses also die here. "Which status means finished" used to be read from
 // a position in the list, and "which means in progress" was `statuses.slice(1)`.
 // Both are now a direct question to the data.
+//
+// Cancelling is deliberately not one of these categories. A cancelled task is
+// not a task in a particular column — it is a task that should stop counting
+// anywhere at all, including in the record of what was done, and that is a
+// property of the task, not of its place in the workflow. It lives on the issue
+// as `cancelledAt`; see `src/lib/utils/issueCancel.mjs`.
 
 // Canonical order. Category columns are the same for every member of every
 // organization, so their order is fixed here rather than taken from the
@@ -26,20 +32,24 @@ export const STATUS_CATEGORY_IDS = Object.freeze([
   'backlog',
   'todo',
   'in-progress',
+  'review',
   'done',
-  'cancelled',
 ]);
 
-// Two flags, because "finished" is two different questions and answering both
-// with one word is how a cancelled task ends up counted as delivered work.
+// Two flags, because "finished" is two different questions. Today one category
+// answers both — «Готово» is the only end a status has — and the split is kept
+// because the callers are not asking the same thing:
 //
 // `closes` — there is no work left here. Overdue, blockers, a parent waiting on
-// its children, reminders and `completedAt` all read this, and both closing
-// categories count: a cancelled task must stop being overdue and must stop
-// blocking whatever it blocked.
+// its children, reminders and `completedAt` all read this.
 // `delivers` — something was actually produced. Completion percentage, velocity,
-// "closed in this period" and the invoice preset read this, and only «Готово»
-// counts: a sprint where half the work was dropped is not a finished sprint.
+// "closed in this period" and the invoice preset read this.
+//
+// «На перевірці» carries neither. Work handed over for review is not finished
+// and has produced nothing yet: a task sitting there is still open, still
+// blocks whatever it blocked, and can still run past its deadline. That is the
+// reason it is its own category rather than a shade of «У роботі» — the two are
+// the same question to a board and different ones to a person's workload.
 export const STATUS_CATEGORIES = Object.freeze({
   backlog: Object.freeze({
     id: 'backlog',
@@ -62,19 +72,19 @@ export const STATUS_CATEGORIES = Object.freeze({
     closes: false,
     delivers: false,
   }),
+  review: Object.freeze({
+    id: 'review',
+    label: 'На перевірці',
+    color: '#8b5cf6',
+    closes: false,
+    delivers: false,
+  }),
   done: Object.freeze({
     id: 'done',
     label: 'Готово',
     color: '#10b981',
     closes: true,
     delivers: true,
-  }),
-  cancelled: Object.freeze({
-    id: 'cancelled',
-    label: 'Скасовано',
-    color: '#71717a',
-    closes: true,
-    delivers: false,
   }),
 });
 
@@ -85,13 +95,35 @@ const BUILT_IN_STATUS_CATEGORIES = Object.freeze({
   backlog: 'backlog',
   todo: 'todo',
   'in-progress': 'in-progress',
-  'code-review': 'in-progress',
-  qa: 'in-progress',
-  'client-approval': 'in-progress',
+  // The statuses the product has always shipped for "handed over, not
+  // finished". They were read as work in progress only because no category
+  // said what they are.
+  review: 'review',
+  'code-review': 'review',
+  qa: 'review',
+  'client-approval': 'review',
   done: 'done',
-  cancelled: 'cancelled',
-  canceled: 'cancelled',
-  duplicate: 'cancelled',
+  // Ids the removed «Скасовано» category shipped with. Listed so that a
+  // trailing one is never mistaken for the last column and read as finished.
+  cancelled: 'in-progress',
+  canceled: 'in-progress',
+  duplicate: 'in-progress',
+});
+
+// Categories the product has removed, and what a status still carrying one is
+// read as now.
+//
+// This has to be answered before the `isDone` flag below, not after. «Скасовано»
+// closed a task, so `withStatusCategories` wrote `isDone: true` next to it in
+// every saved workflow document — leave that flag to decide and every status a
+// workflow once used for dropped work files itself under «Готово», and every
+// delivery number counts work nobody did as output.
+//
+// They come back as ordinary open work instead. That is visible and it is
+// honest: the tasks are still there, they are not finished, and dropping one
+// now means «Скасувати» on the task itself.
+const REMOVED_STATUS_CATEGORIES = Object.freeze({
+  cancelled: 'in-progress',
 });
 
 export function isStatusCategoryId(value) {
@@ -137,7 +169,8 @@ function guessedTerminalStatusIds(list) {
  * deliberate `isDone` flag closes a task; a built-in id keeps the meaning it
  * shipped with; the first column is where new work lands; and only then do the
  * two old guesses — a status named 'done', or simply the last column — decide.
- * Everything else is work in progress.
+ * Everything else is work in progress. A category the product has since removed
+ * is answered before all of it, for the reason written above the table.
  */
 export function statusCategoryMap(statuses) {
   const list = statusList(statuses);
@@ -150,6 +183,11 @@ export function statusCategoryMap(statuses) {
   list.forEach((status, index) => {
     if (isStatusCategoryId(status.category)) {
       categories.set(status.id, status.category);
+      return;
+    }
+    const removed = REMOVED_STATUS_CATEGORIES[status.category];
+    if (removed) {
+      categories.set(status.id, removed);
       return;
     }
     if (flagged.has(status.id)) {
@@ -215,8 +253,9 @@ export function closedStatusIds(statuses) {
  *
  * Everything that measures output asks this instead of `closedStatusIds`:
  * completion percentage, velocity, "closed in this period", the invoice preset.
- * A workflow that closes tasks only by cancelling them has nothing to measure,
- * so it falls back to the closed set rather than reporting a flat zero.
+ * The fallback to the closed set is unreachable while `done` is the only
+ * category that ends a task, and remains the answer for a workflow whose
+ * categories somehow leave nothing delivering.
  */
 export function deliveredStatusIds(statuses) {
   const list = statusList(statuses);
@@ -260,6 +299,25 @@ export function availableStatusesInCategory(categoryId, statuses, {
 /** Statuses whose category is `in-progress` — what «в роботі» means, exactly. */
 export function inProgressStatusIds(statuses) {
   return categoryStatusIds('in-progress', statuses);
+}
+
+/**
+ * Statuses whose category is `review` — handed over and waiting on somebody
+ * else. Deliberately not folded into `inProgressStatusIds`: "who is loaded with
+ * this task" and "is this task moving" are different questions here, and a
+ * caller that wants both says so by asking for both.
+ */
+export function reviewStatusIds(statuses) {
+  return categoryStatusIds('review', statuses);
+}
+
+/**
+ * Statuses of a task that has been started and is not finished — `in-progress`
+ * and `review` together. This is «в роботі» in the loose sense a chart means
+ * it: everything between the plan and the result.
+ */
+export function activeStatusIds(statuses) {
+  return [...inProgressStatusIds(statuses), ...reviewStatusIds(statuses)];
 }
 
 /** Statuses whose category is `backlog` — work that is collected, not planned. */

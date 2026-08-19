@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import {
+  Ban,
   CalendarDays,
   CircleDot,
   Clock3,
@@ -115,10 +116,19 @@ export default function BulkActionBar({
   const askArchive = async () => {
     const accepted = await confirm({
       title: `Архівувати ${count} завдань?`,
-      message: 'Завдання зникнуть з дошки, списків і підрахунку відкритої роботи, але лишаться в «Архіві» — без строку. Записаний час нікуди не дінеться: він і далі буде в таймшиті та в рахунках. Повернути можна будь-коли.',
+      message: 'Завдання зникнуть з дошки, списків і підрахунку відкритої роботи. У звітах, таймшиті та рахунках вони лишаються — записаний час і далі рахується як зроблена робота. Лежатимуть в «Архіві» без строку, повернути можна будь-коли.',
       confirmText: 'Архівувати',
     });
     if (accepted) await apply('archive');
+  };
+
+  const askCancel = async () => {
+    const accepted = await confirm({
+      title: `Скасувати ${count} завдань?`,
+      message: 'Скасування означає, що цієї роботи не буде. Завдання зникнуть не лише з дошки й списків, а й з усього обліку: з прогресу, зі звітів, з навантаження, з рахунків і з дедлайнів. Лежатимуть в «Архіві» → «Скасовані» без строку, повернути можна будь-коли. Якщо робота відбулася — архівуйте, тоді вона лишиться у звітах.',
+      confirmText: 'Скасувати завдання',
+    });
+    if (accepted) await apply('cancel');
   };
 
   const askDelete = async () => {
@@ -285,6 +295,7 @@ export default function BulkActionBar({
           { isDivider: true },
           { label: `Дублювати (${count})`, icon: Copy, onClick: () => apply('duplicate') },
           { label: `Архівувати (${count})`, icon: Archive, onClick: askArchive },
+          { label: `Скасувати (${count})`, icon: Ban, onClick: askCancel },
           {
             label: `Видалити (${count})`,
             icon: Trash2,

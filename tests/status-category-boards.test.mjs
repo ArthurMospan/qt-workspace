@@ -26,14 +26,15 @@ import {
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 // An organization that has actually used the editor: two statuses under «У
-// роботі», two that close a task, one of which does not deliver anything.
+// роботі», two more waiting on somebody else, and one end.
 const workflow = [
   { id: 'backlog', label: 'Беклог', category: 'backlog' },
   { id: 'todo', label: 'До виконання', category: 'todo' },
   { id: 'in-progress', label: 'У роботі', category: 'in-progress' },
-  { id: 'qa', label: 'QA', category: 'in-progress' },
+  { id: 'pairing', label: 'У парі', category: 'in-progress' },
+  { id: 'qa', label: 'QA', category: 'review' },
+  { id: 'client-approval', label: 'Погодження клієнтом', category: 'review' },
   { id: 'done', label: 'Готово', category: 'done' },
-  { id: 'dropped', label: 'Скасовано', category: 'cancelled' },
 ];
 
 // ── The editor ────────────────────────────────────────────────────────────────
@@ -55,14 +56,14 @@ test('grouping and flattening a workflow is lossless and puts it in flow order',
   // first «Скасовано» ever gets created.
   assert.deepEqual(
     [...groupStatusesByCategory(stored).keys()],
-    ['backlog', 'todo', 'in-progress', 'done', 'cancelled'],
+    ['backlog', 'todo', 'in-progress', 'review', 'done'],
   );
 });
 
 test('dragging a status into another section is the only way its category changes', () => {
   const groups = groupStatusesByCategory(workflow);
-  // «QA» moves from «У роботі» to «Готово».
-  const [moved] = groups.get('in-progress').splice(1, 1);
+  // «QA» moves from «На перевірці» to «Готово».
+  const [moved] = groups.get('review').splice(0, 1);
   groups.get('done').unshift(moved);
   const next = flattenStatusGroups(groups);
 
@@ -70,10 +71,11 @@ test('dragging a status into another section is the only way its category change
   assert.equal(next.find(s => s.id === 'qa').isDone, true);
   // Which is exactly what makes every QA task closed from that moment on — the
   // workflow API sees the closed set change and migrates completedAt with it.
-  assert.deepEqual(closedStatusIds(next), ['qa', 'done', 'dropped']);
-  // And the order it saves in still runs backlog → todo → in-progress → done.
+  assert.deepEqual(closedStatusIds(next), ['qa', 'done']);
+  // And the order it saves in still runs backlog → todo → in-progress → review
+  // → done, whatever order the sections were edited in.
   assert.deepEqual(next.map(s => s.id), [
-    'backlog', 'todo', 'in-progress', 'qa', 'done', 'dropped',
+    'backlog', 'todo', 'in-progress', 'pairing', 'client-approval', 'qa', 'done',
   ]);
 });
 
@@ -82,7 +84,7 @@ test('the editor cannot produce a workflow with nothing open or nothing closing'
 
   // Dragging the last closing status out.
   const a = groupStatusesByCategory(workflow);
-  a.get('todo').push(...a.get('done').splice(0), ...a.get('cancelled').splice(0));
+  a.get('todo').push(...a.get('done').splice(0));
   assert.equal(closingOf(flattenStatusGroups(a)), 0, 'the guard has something to catch');
 
   // Dragging everything into a closing category.
@@ -91,6 +93,7 @@ test('the editor cannot produce a workflow with nothing open or nothing closing'
     ...b.get('backlog').splice(0),
     ...b.get('todo').splice(0),
     ...b.get('in-progress').splice(0),
+    ...b.get('review').splice(0),
   ];
   b.get('done').push(...open);
   const flat = flattenStatusGroups(b);
@@ -128,19 +131,19 @@ test('a card dropped on My tasks lands exactly among cross-project neighbours', 
 });
 
 test('moving inside one category is a reorder, never a status change', () => {
-  // «QA» and «У роботі» are the same column on a category board.
+  // «QA» and «Погодження клієнтом» are the same column on a category board.
   assert.equal(
-    resolveCategoryStatusId('in-progress', workflow, { currentStatusId: 'qa' }),
-    'qa',
+    resolveCategoryStatusId('review', workflow, { currentStatusId: 'client-approval' }),
+    'client-approval',
   );
   // …unless that status is switched off in this project, in which case staying
   // put is not an option the server would accept anyway.
   assert.equal(
-    resolveCategoryStatusId('in-progress', workflow, {
-      currentStatusId: 'qa',
-      hiddenStatusIds: ['qa'],
+    resolveCategoryStatusId('review', workflow, {
+      currentStatusId: 'client-approval',
+      hiddenStatusIds: ['client-approval'],
     }),
-    'in-progress',
+    'qa',
   );
 });
 
@@ -158,7 +161,7 @@ test('My tasks persists same-category drops without calling the status API or sh
 test('a project’s hidden columns can never make a category drop illegal', () => {
   // The whole point of the model. Whatever a project switches off, a drop on a
   // category column resolves to something that project uses — or says so.
-  const hidden = ['qa'];
+  const hidden = ['qa', 'pairing'];
   for (const column of statusCategoryColumns(workflow)) {
     const resolved = resolveCategoryStatusId(column.id, workflow, { hiddenStatusIds: hidden });
     assert.ok(resolved, `${column.id} must resolve`);
@@ -168,7 +171,9 @@ test('a project’s hidden columns can never make a category drop illegal', () =
   // is null so the caller can name the project and the category instead of
   // writing a status the board would then refuse to show.
   assert.equal(
-    resolveCategoryStatusId('in-progress', workflow, { hiddenStatusIds: ['in-progress', 'qa'] }),
+    resolveCategoryStatusId('review', workflow, {
+      hiddenStatusIds: ['qa', 'client-approval'],
+    }),
     null,
   );
 });
@@ -183,7 +188,7 @@ test('every card on a category board has exactly one column, and it is never hid
   // Including a status the project hides: on a category board it still has a
   // column, which is why the card shows up there instead of vanishing.
   const issue = { columnId: 'qa' };
-  assert.equal(categories.get(columnOf(issue)), 'in-progress');
+  assert.equal(categories.get(columnOf(issue)), 'review');
 });
 
 test('the incoming column survives a project switching the backlog off', () => {

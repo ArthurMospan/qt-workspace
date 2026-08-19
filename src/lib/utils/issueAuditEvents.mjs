@@ -69,6 +69,8 @@ const ACTION_TEXT = Object.freeze({
   restored: 'Завдання відновлено',
   archived: 'Завдання відправлено в архів',
   unarchived: 'Завдання повернуто з архіву',
+  cancelled: 'Завдання скасовано',
+  uncancelled: 'Скасування завдання відмінено',
   'legacy-subtasks-migrated': 'Підзавдання перенесено в опис',
 });
 

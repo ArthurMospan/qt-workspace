@@ -15,6 +15,7 @@ import {
 } from '@/lib/services/issues';
 import { createResponseError, reportLoadError } from '@/lib/utils/errors';
 import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
+import { withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
@@ -53,7 +54,7 @@ async function writeAudit(issueId, {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-export function useIssues(projectId, { includeLinks = true, includeArchived = false } = {}) {
+export function useIssues(projectId, { includeLinks = true, includeSetAside = false } = {}) {
   const {
     activeOrgId, currentUser, authLoading, orgLoading
   } = useAppContext();
@@ -152,9 +153,13 @@ export function useIssues(projectId, { includeLinks = true, includeArchived = fa
       // Sort client-side by order ASC, fallback to createdAt asc
       docs.sort(compareIssues);
       deliveredRef.current = true;
-      // An archived task is not part of the working set. The task detail asks
-      // for them (`includeArchived`) so that its own link keeps opening it.
-      setSnapshotIssues(includeArchived ? docs : withoutArchivedIssues(docs));
+      // Neither an archived nor a cancelled task is part of the working set.
+      // One flag covers both because one reader wants both: the task screen,
+      // where a link has to keep opening whatever it points at, whichever of
+      // the two was done to it.
+      setSnapshotIssues(includeSetAside
+        ? docs
+        : withoutCancelledIssues(withoutArchivedIssues(docs)));
       setError(null);
       setLoading(false);
     }, err => {
@@ -186,7 +191,7 @@ export function useIssues(projectId, { includeLinks = true, includeArchived = fa
     }
 
     return () => { unsub(); unsubLinks(); };
-  }, [projectId, activeOrgId, includeLinks, includeArchived, currentUserId, authLoading, orgLoading]);
+  }, [projectId, activeOrgId, includeLinks, includeSetAside, currentUserId, authLoading, orgLoading]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { POST as createIssue } from '../route';
 import { DELETE as deleteIssue } from '../[issueId]/route';
 import { PATCH as archiveIssue } from '../[issueId]/archive/route';
+import { PATCH as cancelIssue } from '../[issueId]/cancel/route';
 import { PATCH as transitionIssueStatus } from '../[issueId]/status/route';
 import { deliverBulkNotifications } from '@/lib/server/bulkNotifications';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
@@ -277,6 +278,11 @@ export async function POST(request) {
           const internal = jsonRequest(new URL(`/api/issues/${encodeURIComponent(issue.id)}/archive`, request.url), request, 'PATCH', { archived: true });
           await responseResult(await archiveIssue(internal, { params: Promise.resolve({ issueId: issue.id }) }));
           return { id: issue.id, patch: { archivedAt: new Date() }, archived: true };
+        }
+        if (actionId === 'cancel') {
+          const internal = jsonRequest(new URL(`/api/issues/${encodeURIComponent(issue.id)}/cancel`, request.url), request, 'PATCH', { cancelled: true });
+          await responseResult(await cancelIssue(internal, { params: Promise.resolve({ issueId: issue.id }) }));
+          return { id: issue.id, patch: { cancelledAt: new Date() }, cancelled: true };
         }
         if (actionId === 'delete') {
           const internal = jsonRequest(new URL(`/api/issues/${encodeURIComponent(issue.id)}?childPolicy=block`, request.url), request, 'DELETE');

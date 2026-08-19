@@ -23,6 +23,7 @@ import {
   fetchDeletedIssues,
   restoreDeletedIssue,
   setIssueArchived,
+  setIssueCancelled,
 } from '@/lib/services/issues';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { useAccountSessions } from '@/lib/hooks/useAccountSessions';
@@ -38,7 +39,7 @@ import {
   Link2, PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock,
-  UserRoundX, ShieldCheck, MonitorSmartphone, KeyRound
+  UserRoundX, ShieldCheck, MonitorSmartphone, KeyRound, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -181,6 +182,45 @@ function ArchiveEmpty({ title, hint }) {
       </div>
       <p className="text-[14px] font-bold text-ink">{title}</p>
       <p className="text-[12px] text-muted mt-1 max-w-[420px]">{hint}</p>
+    </div>
+  );
+}
+
+/**
+ * The task lists of «Архів». Archived and cancelled tasks are the same row —
+ * a key, a title, the project and when it was put aside — so they are one
+ * component rather than two copies free to drift apart.
+ */
+function ArchiveIssueRows({ issues, projectNameById, since, onOpen, restore }) {
+  return (
+    <div className="flex flex-col divide-y divide-canvas -my-3">
+      {issues.map(issue => (
+        <div key={issue.id} className="flex items-center justify-between gap-3 py-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <Pill size="md" className="shrink-0">{issue.issueKey || '—'}</Pill>
+              <p className="truncate text-[13px] font-semibold text-ink">{issue.title || 'Без назви'}</p>
+            </div>
+            <p className="mt-0.5 truncate text-[12px] text-muted">
+              {projectNameById(issue.projectId)}
+              {since(issue)}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button style="ghost" size="sm" icon={ExternalLink} onClick={() => onOpen(issue)}>
+              Відкрити
+            </Button>
+            <Button
+              style="secondary"
+              size="sm"
+              icon={restore.icon}
+              onClick={() => restore.onClick(issue)}
+            >
+              {restore.label}
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -746,18 +786,20 @@ export default function SettingsPage() {
   const [mobilePane, setMobilePane] = useState('sidebar');
 
   // ── «Архів» ──────────────────────────────────────────────────
-  // Three lists, one section. The task streams only start once the section is
-  // open: an archive nobody is looking at must not cost a subscription — the
-  // whole workspace shares one read budget.
+  // Four lists, one section: everything that is out of the way, grouped by what
+  // put it there. The task streams only start once the section is open: an
+  // archive nobody is looking at must not cost a subscription — the whole
+  // workspace shares one read budget.
   const [archiveTab, setArchiveTab] = useState('projects');
   const archiveSectionOpen = activeSection === 'archives';
   const archiveProjectIds = useMemo(() => (
-    archiveSectionOpen && archiveTab === 'issues'
+    archiveSectionOpen && (archiveTab === 'issues' || archiveTab === 'cancelled')
       ? (projects || []).map(project => project.id)
       : []
   ), [archiveSectionOpen, archiveTab, projects]);
   const {
     allIssues: archiveScopedIssues,
+    cancelledIssues: cancelledIssueList,
     loading: archivedIssuesLoading,
   } = useWorkspaceAnalytics(archiveProjectIds, {
     includeLinks: false,
@@ -796,6 +838,15 @@ export default function SettingsPage() {
     try {
       await setIssueArchived(issue.id, false);
       showToast(`${issue.issueKey || 'Завдання'} повернуто з архіву`);
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося повернути завдання'), 'error');
+    }
+  };
+
+  const handleUncancelIssue = async (issue) => {
+    try {
+      await setIssueCancelled(issue.id, false);
+      showToast(`${issue.issueKey || 'Завдання'} повернуто в роботу`);
     } catch (error) {
       showToast(userFacingErrorMessage(error, 'Не вдалося повернути завдання'), 'error');
     }
@@ -2156,7 +2207,7 @@ export default function SettingsPage() {
   const statusGroupsBreakInvariant = next => {
     const closing = next.filter(status => isClosingCategory(status.category)).length;
     if (closing === 0) {
-      return 'Потрібен щонайменше один статус категорії «Готово» або «Скасовано» — '
+      return 'Потрібен щонайменше один статус категорії «Готово» — '
         + 'без нього не рахуються прогрес, швидкість і рахунок';
     }
     if (closing === next.length) {
@@ -4038,12 +4089,13 @@ export default function SettingsPage() {
         const archiveTabs = [
           { id: 'projects', label: 'Проєкти', count: archivedProjects.length },
           { id: 'issues', label: 'Завдання', count: archivedIssueList.length },
+          { id: 'cancelled', label: 'Скасовані', count: cancelledIssueList.length },
           { id: 'deleted', label: 'Нещодавно видалене', count: deletedIssues.items.length },
         ];
         return (
           <Section
             title="Архів"
-            desc="Те, що прибрано з роботи, але не втрачено: архівовані проєкти й завдання лежать тут без строку, а видалене — доки не спливе доба"
+            desc="Те, що прибрано з роботи, але не втрачено. Архівоване лишається у звітах і рахунках, скасоване не рахується ніде, і те й те лежить тут без строку — а видалене чекає, доки не спливе доба"
           >
             <div className="w-full overflow-x-auto">
               <Tabs
@@ -4091,43 +4143,43 @@ export default function SettingsPage() {
                 ) : archivedIssueList.length === 0 ? (
                   <ArchiveEmpty
                     title="Немає архівованих завдань"
-                    hint="Архівуйте завдання з самої задачі або масовою дією — воно зникне з дошки, але лишиться тут"
+                    hint="Архівують завершене: завдання йде з дошки й зі списків, але лишається у звітах, у таймшиті та в рахунках — записаний час і далі рахується як зроблена робота"
                   />
                 ) : (
-                  <div className="flex flex-col divide-y divide-canvas -my-3">
-                    {archivedIssueList.map(issue => (
-                      <div key={issue.id} className="flex items-center justify-between gap-3 py-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <Pill size="md" className="shrink-0">{issue.issueKey || '—'}</Pill>
-                            <p className="truncate text-[13px] font-semibold text-ink">{issue.title || 'Без назви'}</p>
-                          </div>
-                          <p className="mt-0.5 truncate text-[12px] text-muted">
-                            {projectNameById(issue.projectId)}
-                            {issue.archivedAt ? ` · в архіві з ${formatDate(issue.archivedAt)}` : ''}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <Button
-                            style="ghost"
-                            size="sm"
-                            icon={ExternalLink}
-                            onClick={() => router.push(issuePath(issue, issue.projectId))}
-                          >
-                            Відкрити
-                          </Button>
-                          <Button
-                            style="secondary"
-                            size="sm"
-                            icon={ArchiveRestore}
-                            onClick={() => handleUnarchiveIssue(issue)}
-                          >
-                            Повернути
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <ArchiveIssueRows
+                    issues={archivedIssueList}
+                    projectNameById={projectNameById}
+                    since={issue => (issue.archivedAt ? ` · в архіві з ${formatDate(issue.archivedAt)}` : '')}
+                    onOpen={issue => router.push(issuePath(issue, issue.projectId))}
+                    restore={{
+                      icon: ArchiveRestore,
+                      label: 'Повернути',
+                      onClick: handleUnarchiveIssue,
+                    }}
+                  />
+                )
+              )}
+
+              {archiveTab === 'cancelled' && (
+                archivedIssuesLoading && cancelledIssueList.length === 0 ? (
+                  <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
+                ) : cancelledIssueList.length === 0 ? (
+                  <ArchiveEmpty
+                    title="Немає скасованих завдань"
+                    hint="Скасовують те, чого не буде: завдання перестає рахуватися будь-де — у прогресі, у звітах, у навантаженні та в рахунках — але лишається тут, і його можна повернути"
+                  />
+                ) : (
+                  <ArchiveIssueRows
+                    issues={cancelledIssueList}
+                    projectNameById={projectNameById}
+                    since={issue => (issue.cancelledAt ? ` · скасовано ${formatDate(issue.cancelledAt)}` : '')}
+                    onOpen={issue => router.push(issuePath(issue, issue.projectId))}
+                    restore={{
+                      icon: Undo2,
+                      label: 'Повернути',
+                      onClick: handleUncancelIssue,
+                    }}
+                  />
                 )
               )}
 

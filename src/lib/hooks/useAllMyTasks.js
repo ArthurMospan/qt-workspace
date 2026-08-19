@@ -13,6 +13,7 @@ import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { reportLoadError } from '@/lib/utils/errors';
 import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
+import { withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
 import { pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
@@ -113,7 +114,9 @@ export function useAllMyTasks(userId) {
     };
     const publishIssues = () => {
       // A task put aside is not on anybody's list of what to do next.
-      const allDocs = withoutArchivedIssues(flattenDocumentBuckets(issueBuckets));
+      const allDocs = withoutCancelledIssues(
+        withoutArchivedIssues(flattenDocumentBuckets(issueBuckets)),
+      );
       const docs = allDocs
         .filter(issue => issue.assigneeIds?.includes(userId));
       docs.sort((a, b) => {

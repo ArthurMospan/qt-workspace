@@ -1,5 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
+import { isArchivedIssue } from '@/lib/utils/issueArchive.mjs';
+import { isCancelledIssue } from '@/lib/utils/issueCancel.mjs';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
@@ -43,7 +45,7 @@ export async function GET(request) {
         .where('organizationId', '==', organizationId)
         .where('dueDate', '>=', Timestamp.fromDate(deadlineFrom))
         .where('dueDate', '<=', Timestamp.fromDate(deadlineTo))
-        .select('title', 'issueKey', 'projectId', 'dueDate', 'assigneeIds', 'completedAt')
+        .select('title', 'issueKey', 'projectId', 'dueDate', 'assigneeIds', 'completedAt', 'archivedAt', 'cancelledAt')
         .get(),
       db.collection('projects')
         .where('organizationId', '==', organizationId)
@@ -114,6 +116,10 @@ export async function GET(request) {
     const deadlines = issuesSnapshot.docs.flatMap(document => {
       const issue = document.data();
       if (!visibleProjectIds.has(issue.projectId)) return [];
+      // A deadline is a claim on somebody's week, so it belongs to work that is
+      // still work. A task put aside — archived or cancelled — has no such claim
+      // and must not keep a day marked on a calendar it left.
+      if (isArchivedIssue(issue) || isCancelledIssue(issue)) return [];
       const dueDate = serializeTimestamp(issue.dueDate);
       if (!dueDate) return [];
       return [{

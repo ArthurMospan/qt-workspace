@@ -129,7 +129,15 @@ Primary collections:
 - `system/notificationSweep` — the scheduled sweep's watermark and last counts. Server-written only; Firestore rules have no `system` match, so browsers cannot read or forge it.
 - organization-scoped `channels`, `messages` and `readState`
 
-Archiving and deleting a task are separate, and mean different things. Archiving sets `archivedAt` through `/api/issues/[issueId]/archive`: the document stays where it is, leaves every working list, and has no expiry. Deleting moves the record into a `deletedIssues` tombstone with a 24-hour `purgeAfter`, after which the sweep removes it. Both are reversible until the tombstone is purged; «Налаштування» → «Архів» lists projects, archived tasks and still-restorable deletions.
+Archiving, cancelling and deleting a task are separate, and mean three different things.
+
+**Архівувати** sets `archivedAt` through `/api/issues/[issueId]/archive`. The work happened and is over: the task leaves every working list and stays in the record — the timesheet, the invoice, and the numbers for the period it was worked in are unchanged. No expiry.
+
+**Скасувати** sets `cancelledAt` through `/api/issues/[issueId]/cancel`. The work is not going to happen: the task leaves the record as well, and stops counting in progress, workload, velocity, billing, deadlines and search. It is filtered out at every stream that publishes issues rather than at each reader, so nothing downstream has to remember it exists. Refused when the task's hours are already fixed into an invoice — settled work can only be archived. No expiry.
+
+**Видалити** moves the record into a `deletedIssues` tombstone with a 24-hour `purgeAfter`, after which the sweep removes it.
+
+All three are reversible until the tombstone is purged; «Налаштування» → «Архів» lists projects, archived tasks, cancelled tasks and still-restorable deletions.
 
 `tasks` is a legacy collection and is closed to browsers entirely — nothing in the product reads it, and its old rule was the last org-wide read path that ignored project scope. New development must use `issues`.
 
@@ -154,7 +162,9 @@ the selected `#ENG-12` reference renders as a task preview and opens the issue.
 
 ### Statuses have two layers
 
-`organizations/{orgId}/settings/workflow` holds the organization's statuses. Each one carries a free label and a `category`, which is one of exactly five fixed values: `backlog`, `todo`, `in-progress`, `done`, `cancelled`. Labels are local — an organization may have as many as it likes, named whatever it likes. Categories are shared, and every surface that spans projects reads them: «Мої завдання» builds its columns from categories, and `done`/`cancelled` are what close a task, so `completedAt`, progress, velocity, overdue and invoices all follow the category and nothing else. `isDone` is still written, derived from the category, for documents and clients that predate it.
+`organizations/{orgId}/settings/workflow` holds the organization's statuses. Each one carries a free label and a `category`, which is one of exactly five fixed values: `backlog`, `todo`, `in-progress`, `review`, `done`. Labels are local — an organization may have as many as it likes, named whatever it likes. Categories are shared, and every surface that spans projects reads them: «Мої завдання» builds its columns from categories, and `done` is what closes a task, so `completedAt`, progress, velocity, overdue and invoices all follow the category and nothing else. `isDone` is still written, derived from the category, for documents and clients that predate it.
+
+`review` — «На перевірці» — is work handed over and waiting on somebody else: a review, a QA pass, a client's approval. It neither closes a task nor delivers anything, which is the point of having it. A task sitting there is still open, still blocks whatever it blocked, and can still run past its deadline, while the person who wrote it is no longer the one it is waiting on. Dropped work is not a category at all: see «Скасувати» above.
 
 The rules live in [src/lib/utils/statusCategories.mjs](src/lib/utils/statusCategories.mjs) and are shared by the client and the server routes. A workflow saved before categories existed needs no migration: its category is derived from what it already says (an explicit `isDone`, a built-in id, the entry column), and the terminal set it had is preserved exactly. The next save through `/api/organizations/{organizationId}/workflow` writes the resolved categories out, and that API refuses a workflow with nothing to finish in or nothing to start in.
 

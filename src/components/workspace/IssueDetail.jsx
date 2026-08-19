@@ -44,7 +44,8 @@ import DatePicker from '@/components/ui/Forms/DatePicker';
 
 import { can } from '@/lib/utils/can';
 import { isArchivedIssue, withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
-import { setIssueArchived } from '@/lib/services/issues';
+import { isCancelledIssue, withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
+import { setIssueArchived, setIssueCancelled } from '@/lib/services/issues';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { MultiSelect, Select } from '@/components/ui/Select';
 import { Alert, AttributeTrigger, ContextMenu, DetailLayout, DetailSection, Dialog, getTaskAttributeChrome, IconAction, Pill, Popover, Segmented, Surface, TaskAttributesPanel, Tabs, Tooltip, useConfirm } from '@/components/ui';
@@ -57,7 +58,7 @@ import {
   AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
   Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon, Archive, ArchiveRestore,
-  Maximize2, User, CircleDot,
+  Maximize2, User, CircleDot, Ban, Undo2,
 } from 'lucide-react';
 import { ParentTaskIcon, TaskIcon } from '@/lib/design/icons';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
@@ -268,9 +269,10 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     deleteIssue,
     restoreIssue,
     moveIssue,
-    // An archived task keeps its own link working — this is the one reader that
-    // asks for them, so «Архів» can open a task and put it back.
-  } = useIssues(projectId, { includeLinks: false, includeArchived: true });
+    // A task put aside — archived or cancelled — keeps its own link working.
+    // This is the one reader that asks for them, so «Архів» can open a task and
+    // put it back.
+  } = useIssues(projectId, { includeLinks: false, includeSetAside: true });
   const project = projects?.find(candidate => candidate.id === projectId);
   const issue = issues.find(candidate => issueMatchesRouteIdentifier(candidate, issueLocator, project));
   const issueId = issue?.id || '';
@@ -296,9 +298,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // project they aren't a team member of) was unresolvable and rendered empty.
   const { members } = useOrganization();
   // A task in the archive is read-only for the same reason an archived project
-  // is: it has been put aside, and the one action it offers is coming back.
+  // is: it has been put aside, and the one action it offers is coming back. A
+  // cancelled task is read-only on the same terms — editing work that has been
+  // called off is how it quietly comes back to life in somebody's list.
   const isIssueArchived = isArchivedIssue(issue);
-  const isArchived = project?.status === 'archived' || isIssueArchived;
+  const isIssueCancelled = isCancelledIssue(issue);
+  const isArchived = project?.status === 'archived' || isIssueArchived || isIssueCancelled;
 
   const { stages }   = useStagesForProject(projectId);
   const { sprints = [] } = useSprints();
@@ -780,10 +785,11 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const childIssuesDone = childIssues.filter(child => closedStatusIds.includes(child.columnId || child.status)).length;
   const openChildCount = childIssues.length - childIssuesDone;
-  // This screen subscribes with `includeArchived`, so its own link keeps
+  // This screen subscribes with `includeSetAside`, so its own link keeps
   // working. The pickers below must not inherit that: you do not hang new work
   // under a task that has been put aside, or link one to it.
-  const parentCandidates = withoutArchivedIssues(issues).filter(candidate => (
+  const openIssues = withoutCancelledIssues(withoutArchivedIssues(issues));
+  const parentCandidates = openIssues.filter(candidate => (
     candidate.id !== issueId
     && !existingParentIssueId(candidate)
   ));
@@ -798,7 +804,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     .map(link => ({ link, perspective: issueLinkPerspective(link, issueId) }))
     .filter(item => item.perspective);
   const linkedIssueIds = new Set(currentIssueLinks.map(item => item.perspective.otherIssueId));
-  const availableLinkIssues = withoutArchivedIssues(issues).filter(item => (
+  const availableLinkIssues = openIssues.filter(item => (
     item.id !== issueId
     && !linkedIssueIds.has(item.id)
   ));
@@ -1166,6 +1172,20 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     }
   };
 
+  const handleCancel = async (cancelled) => {
+    if (cancelled && !(await confirmDialog({
+      title: `Скасувати ${issue.issueKey}?`,
+      message: 'Скасування означає, що цієї роботи не буде. Завдання зникне не лише з дошки й списків, а й з усього обліку: з прогресу проєкту, зі звітів, з навантаження, з рахунків і з дедлайнів — так, ніби його не планували. Дані лишаються, воно чекає в «Архіві» → «Скасовані», і повернути можна будь-коли. Якщо робота відбулася і просто завершена — архівуйте, тоді вона лишиться у звітах.',
+      confirmText: 'Скасувати завдання',
+    }))) return;
+    try {
+      await setIssueCancelled(issueId, cancelled);
+      showToast(cancelled ? 'Завдання скасовано' : 'Завдання повернуто');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося змінити стан скасування', 'error');
+    }
+  };
+
   const handleDelete = async () => {
     if (!(await confirmDialog({
       title: `Видалити ${issue.issueKey}?`,
@@ -1262,7 +1282,10 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 // Two different things, and they finally read as two: putting a
                 // task aside for good, and deleting it with a clock running.
                 ...(can(orgRole, 'edit:issue')
-                  ? [{ label: 'Архівувати', icon: Archive, onClick: () => handleArchive(true) }]
+                  ? [
+                    { label: 'Архівувати', icon: Archive, onClick: () => handleArchive(true) },
+                    { label: 'Скасувати', icon: Ban, onClick: () => handleCancel(true) },
+                  ]
                   : []),
                 ...(can(orgRole, 'delete:issue')
                   ? [{ label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true }]
@@ -1270,6 +1293,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               ] : []),
               ...(isIssueArchived && can(orgRole, 'edit:issue')
                 ? [{ label: 'Повернути з архіву', icon: ArchiveRestore, onClick: () => handleArchive(false) }]
+                : []),
+              ...(isIssueCancelled && can(orgRole, 'edit:issue')
+                ? [{ label: 'Повернути завдання', icon: Undo2, onClick: () => handleCancel(false) }]
                 : []),
             ]}
           />
@@ -1381,7 +1407,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               <div className="mt-3">
                 <Alert variant="info" title="Завдання в архіві">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span>Воно не показується на дошці, у списках і звітах. Дані збережені — строку немає.</span>
+                    <span>Воно прибране з дошки, списків і підрахунку відкритої роботи. У звітах, таймшиті та рахунках лишається — записаний час нікуди не дівся. Строку немає.</span>
                     {can(orgRole, 'edit:issue') && (
                       <Button
                         style="secondary"
@@ -1390,6 +1416,30 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                         onClick={() => handleArchive(false)}
                       >
                         Повернути з архіву
+                      </Button>
+                    )}
+                  </div>
+                </Alert>
+              </div>
+            )}
+
+            {/* The other half of the same explanation. A cancelled task is out
+                of the numbers as well as out of the way, and that difference is
+                the only reason both actions exist — so it is said here, on the
+                task, rather than left to be inferred from an empty chart. */}
+            {isIssueCancelled && (
+              <div className="mt-3">
+                <Alert variant="warning" title="Завдання скасовано">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span>Цієї роботи не буде. Завдання не рахується ніде: ні в прогресі, ні у звітах, ні в навантаженні, ні в рахунках. Дані збережені — строку немає.</span>
+                    {can(orgRole, 'edit:issue') && (
+                      <Button
+                        style="secondary"
+                        size="sm"
+                        icon={Undo2}
+                        onClick={() => handleCancel(false)}
+                      >
+                        Повернути завдання
                       </Button>
                     )}
                   </div>

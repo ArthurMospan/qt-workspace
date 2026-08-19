@@ -30,7 +30,14 @@ import { taskDisplayKey } from '@/lib/utils/issueKeys.mjs';
  * @param {object} props.project Its project, for re-prefixing a legacy key.
  * @param {string} props.projectName Its project's name.
  * @param {boolean} props.showProjectName Whether to name the project — true only on cross-project lists.
+ * The key is struck through when the task is finished. Only the key: the title
+ * beside it is what the task *is*, and it is as true of a finished task as of
+ * an open one, while the key is the handle you reach for — and a handle you no
+ * longer need is exactly what a strikethrough says. The caller decides, because
+ * only it knows the workflow: «Готово» is a category, not a word.
+ *
  * @param {object} props.parentIssue The task this one hangs under, if any.
+ * @param {boolean} props.done Whether the task's status is in the «Готово» category.
  * @param {string} props.className Placement in the parent only.
  */
 export default function TaskIdentity({
@@ -39,6 +46,7 @@ export default function TaskIdentity({
   projectName,
   showProjectName = false,
   parentIssue = null,
+  done = false,
   className = '',
 }) {
   const resolvedProject = project || (projectName ? { name: projectName } : null);
@@ -67,7 +75,11 @@ export default function TaskIdentity({
   return (
     <span className={`flex min-w-0 items-center gap-[6px] leading-[14px] ${className}`}>
       {key && (
-        <span className="shrink-0 font-mono text-[10px] font-bold tracking-wide text-muted">
+        <span
+          className={`shrink-0 font-mono text-[10px] font-bold tracking-wide text-muted${
+            done ? ' line-through decoration-[1.5px]' : ''
+          }`}
+        >
           {key}
         </span>
       )}

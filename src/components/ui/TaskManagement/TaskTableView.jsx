@@ -226,7 +226,7 @@ export default function TaskTableView({
   const { currentUser, projects = [], activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
   const project = projects.find(candidate => candidate.id === projectId);
-  const { statuses, priorities, types, closedStatusIds } = useWorkflowConfig();
+  const { statuses, priorities, types, closedStatusIds, statusCategoryById } = useWorkflowConfig();
   const currentUserId = currentUser?.uid || currentUser?.id || null;
   // Subscribed once for the whole table rather than per row: the map is one
   // object in the store, and six hundred selectors over the same object is six
@@ -450,7 +450,13 @@ export default function TaskTableView({
       case 'key': {
         const path = issuePath(issue, project || projectId);
         const identity = issue.issueKey || '—';
-        const identityClass = 'truncate font-mono text-[11px] font-bold text-muted hover:text-ink hover:underline';
+        // Struck when the task is finished, like the key on a card and in a
+        // list row — the three draw the same thing and have to agree.
+        const identityClass = `truncate font-mono text-[11px] font-bold text-muted hover:text-ink hover:underline${
+          statusCategoryById.get(issue.columnId || issue.status) === 'done'
+            ? ' line-through decoration-[1.5px]'
+            : ''
+        }`;
         return (
           <span className="flex items-center gap-[5px]">
             {/* Reading a task and leaving the table are two different things. In

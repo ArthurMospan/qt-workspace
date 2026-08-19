@@ -100,8 +100,9 @@ function AnalyticsContent({
   const timeZone = organizationTimeZone(activeOrg);
   const { statuses, closedStatusIds, deliveredStatusIds } = useWorkflowConfig();
   // Closed answers "is there work left" — overdue, blockers, open counts.
-  // Delivered answers "was anything produced" — completion, velocity. Counting a
-  // cancelled task as delivered is how a workspace reports progress it never made.
+  // Delivered answers "was anything produced" — completion, velocity. They are
+  // the same set of statuses today and stay two questions, because a caller
+  // that asks the wrong one is a bug nobody sees until the numbers are read.
   const closedSet = useMemo(() => new Set(closedStatusIds), [closedStatusIds]);
   const deliveredSet = useMemo(() => new Set(deliveredStatusIds), [deliveredStatusIds]);
   // Work still in the backlog is not expected to carry an estimate. That used to

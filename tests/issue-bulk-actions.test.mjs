@@ -22,11 +22,12 @@ test('bulk action registry is complete and the API remains bounded', () => {
     'priority', 'priority-clear',
     'labels-add', 'labels-remove', 'labels-clear',
     'type', 'deadline', 'deadline-clear', 'estimate', 'estimate-clear',
-    'sprint', 'backlog', 'duplicate', 'archive', 'delete',
+    'sprint', 'backlog', 'duplicate', 'archive', 'cancel', 'delete',
   ]);
-  // Archiving is reversible and permission-wise an edit; deleting starts a
-  // retention clock and stays with the roles that may delete.
+  // Archiving and cancelling are reversible and permission-wise an edit;
+  // deleting starts a retention clock and stays with the roles that may delete.
   assert.equal(ISSUE_BULK_ACTION_BY_ID.get('archive').permission, 'edit:issue');
+  assert.equal(ISSUE_BULK_ACTION_BY_ID.get('cancel').permission, 'edit:issue');
   assert.equal(ISSUE_BULK_ACTION_BY_ID.get('archive').dangerous, undefined);
   assert.equal(ISSUE_BULK_ACTION_BY_ID.get('delete').permission, 'delete:issue');
   assert.equal(ISSUE_BULK_ACTION_BY_ID.get('delete').dangerous, true);

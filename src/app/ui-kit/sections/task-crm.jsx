@@ -144,7 +144,7 @@ export default function TaskCRMSection() {
 
       <PreviewBlock
         title="Task Identity — ключ, батьківське завдання, проєкт"
-        description="Порядок від завдання назовні: свій ключ → під ким висить → у якому проєкті. Усі три моноширинні: два з них ідентифікатори, а третій шрифт на рядку в 10px читався як шов, а не як різниця. Розрізняються вагою і кольором — вагу має лише власний ключ, решта контекст. Спільний line-height на всі три, інакше кожен рахує свою висоту рядка від свого шрифту і назва проєкту сидить нижче за ключі. Іконка справжня, а не символ «↳», у якого немає однакових метрик у різних шрифтах. Ключ не вигадується: завдання без ключа не показує нічого замість «PRE-a3f2» зі шматка id документа."
+        description="Порядок від завдання назовні: свій ключ → під ким висить → у якому проєкті. Усі три моноширинні: два з них ідентифікатори, а третій шрифт на рядку в 10px читався як шов, а не як різниця. Розрізняються вагою і кольором — вагу має лише власний ключ, решта контекст. Спільний line-height на всі три, інакше кожен рахує свою висоту рядка від свого шрифту і назва проєкту сидить нижче за ключі. Іконка справжня, а не символ «↳», у якого немає однакових метрик у різних шрифтах. Ключ не вигадується: завдання без ключа не показує нічого замість «PRE-a3f2» зі шматка id документа. Завдання в категорії «Готово» показує свій ключ закресленим — закреслюється саме ключ, ручка, за яку більше не треба братися, а не назва: назва лишається правдою і для зробленого завдання."
         filePath="src/components/ui/TaskManagement/TaskIdentity.jsx"
       >
         <div className="flex flex-col gap-3">
@@ -160,6 +160,8 @@ export default function TaskCRMSection() {
           <TaskIdentity issue={{ issueKey: 'WS-17' }} projectName="QuickTeam" showProjectName />
           {/* No key at all — the title below it is the task's name. */}
           <TaskIdentity issue={{}} projectName="QuickTeam" showProjectName />
+          {/* «Готово»: the key is struck, the rest of the line is not. */}
+          <TaskIdentity issue={{ issueKey: 'QT-138' }} projectName="QuickTeam" showProjectName done />
         </div>
       </PreviewBlock>
 
@@ -254,7 +256,7 @@ export default function TaskCRMSection() {
 
       <PreviewBlock
         title="Task List View — групування за категоріями"
-        description="groupBy=&quot;category&quot; — той самий organism на крос-проєктному списку «Мої завдання». Секції тут не статуси, а пʼять спільних категорій, тому назви статусів різних проєктів не змагаються за одну секцію."
+        description="groupBy=&quot;category&quot; — той самий organism на крос-проєктному списку «Мої завдання». Секції тут не статуси, а спільні категорії, тому назви статусів різних проєктів не змагаються за одну секцію."
         filePath="src/components/ui/TaskManagement/TaskListView.jsx"
         fullWidth
       >
@@ -267,7 +269,6 @@ export default function TaskCRMSection() {
           projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}
           showProjectName
           groupBy="category"
-          hiddenGroupIds={['cancelled']}
           onBulkUpdate={() => {}}
           canArchive
         />
@@ -391,7 +392,6 @@ export default function TaskCRMSection() {
             sprints={demoSprints}
             showProjectName
             groupBy="category"
-            hiddenColumns={['cancelled']}
             showHiddenLane
             onAddIssue={() => {}}
             onMoveIssue={() => {}}

@@ -75,7 +75,7 @@ export default function TaskRow({
   const project = projects.find(candidate => candidate.id === projectId);
   const currentUserId = currentUser?.uid || currentUser?.id;
   const isDraggingRef = useRef(false);
-  const { types, priorities, statuses, closedStatusIds } = useWorkflowConfig();
+  const { types, priorities, statuses, closedStatusIds, statusCategoryById } = useWorkflowConfig();
   // The same read cursor a board card reads, from the same organization-wide
   // stream. A row used to light its dot for an unread message only, so the list
   // and the board disagreed about the very same task the moment somebody changed
@@ -91,6 +91,9 @@ export default function TaskRow({
   const statusObj = showStatusName
     ? statuses.find(status => status.id === (task.columnId || task.status)) || null
     : null;
+  // The category, not the closed set: a struck key means «зроблено», and only
+  // «Готово» means that. Asking the category also keeps a renamed status right.
+  const isDelivered = statusCategoryById.get(task.columnId || task.status) === 'done';
 
   const typeObj = types.find(t => t.id === task.type) || {
     id: task.type || 'task',
@@ -352,6 +355,7 @@ export default function TaskRow({
               projectName={projectName}
               showProjectName={showProjectName}
               parentIssue={parentIssueId ? (parentIssue || { issueKey: '' }) : null}
+              done={isDelivered}
               className="max-w-full"
             />
 

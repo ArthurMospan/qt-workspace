@@ -1,5 +1,6 @@
 import { expandOccurrences } from './calendarRecurrence.mjs';
 import { isArchivedIssue } from './issueArchive.mjs';
+import { isCancelledIssue } from './issueCancel.mjs';
 import { DAILY_REMINDER_HOUR } from './notificationOutbox.mjs';
 import {
   DEFAULT_ORGANIZATION_TIME_ZONE,
@@ -201,7 +202,7 @@ export function deadlineReminderCandidates(
     // A task in the archive is not work anybody is expected to do, so its
     // deadline is not news. Reminding somebody about a task they deliberately
     // put aside — and cannot see on any board — is the definition of noise.
-    if (isArchivedIssue(issue)) continue;
+    if (isArchivedIssue(issue) || isCancelledIssue(issue)) continue;
 
     const timeZone = timeZonesByOrganization.get(issue.organizationId)
       || DEFAULT_ORGANIZATION_TIME_ZONE;

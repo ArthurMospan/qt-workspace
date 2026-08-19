@@ -67,7 +67,7 @@ test('missing workflow replaces every section from the previous organization wit
 
 test('partial legacy workflow fills all missing sections without replacing stored custom values', () => {
   const hydrated = hydrateWorkflowSettings({
-    statuses: [{ id: 'review', label: 'Review' }],
+    statuses: [{ id: 'triage', label: 'Розбір' }],
     labels: [],
   }, defaults);
 
@@ -75,7 +75,7 @@ test('partial legacy workflow fills all missing sections without replacing store
   // work lands. tests/status-categories.test.mjs covers the derivation itself.
   assert.deepEqual(
     hydrated.statuses,
-    [{ id: 'review', label: 'Review', category: 'backlog', isDone: false }],
+    [{ id: 'triage', label: 'Розбір', category: 'backlog', isDone: false }],
   );
   assert.deepEqual(hydrated.labels, []);
   assert.equal(hydrated.types[0].id, 'task');

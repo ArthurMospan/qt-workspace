@@ -12,6 +12,7 @@ import {
   flattenDocumentBuckets,
 } from '@/lib/utils/projectScopedQueries.mjs';
 import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
+import { withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, ListTodo, CircleDotDashed, CalendarClock, MessageSquare, Settings2 } from 'lucide-react';
@@ -460,7 +461,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           <strong className="text-ink">{stats.total}</strong>
           <span>завдань</span>
         </span>
-        <span className="flex items-center gap-[6px] text-muted" title="Незакриті завдання — усе, крім «Готово» і «Скасовано»">
+        <span className="flex items-center gap-[6px] text-muted" title="Незакриті завдання — усе, крім «Готово»">
           <CircleDotDashed size={14} strokeWidth={1.9} aria-hidden />
           <strong className="text-ink">{stats.active}</strong>
           <span>активних</span>
@@ -716,7 +717,9 @@ export default function WorkspacePage() {
         // `useWorkspaceAnalytics`, so the rule has to be applied by hand here
         // too: an archived task is out of the working set, and counting it
         // would hold a project's progress down with work nobody is doing.
-        setAllIssues(withoutArchivedIssues(flattenDocumentBuckets(buckets)));
+        setAllIssues(withoutCancelledIssues(
+          withoutArchivedIssues(flattenDocumentBuckets(buckets)),
+        ));
         setIssuesError(null);
       },
       (err) => {
@@ -740,8 +743,9 @@ export default function WorkspacePage() {
   }, []);
 
   // Real progress per project: % of issues actually delivered (the stored
-  // `progress` field is never updated). Delivered, not merely closed — a project
-  // whose tasks were cancelled has not made that much progress.
+  // `progress` field is never updated). Cancelled tasks are not in `allIssues`
+  // at all, so a plan that changed leaves no dent here in the shape of work
+  // nobody was ever going to do.
   const progressByProject = useMemo(() => {
     const deliveredSet = new Set(deliveredStatusIds);
     const counts = {};

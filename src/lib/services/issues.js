@@ -89,6 +89,19 @@ export async function setIssueArchived(issueId, archived) {
   );
 }
 
+/**
+ * Cancels a task, or takes the cancellation back. Reversible and with no clock
+ * on it, like the archive — and unlike it, a cancelled task leaves the record
+ * as well as the working set. See src/lib/utils/issueCancel.mjs.
+ */
+export async function setIssueCancelled(issueId, cancelled) {
+  return authenticatedRequest(
+    `/api/issues/${encodeURIComponent(issueId)}/cancel`,
+    { method: 'PATCH', body: JSON.stringify({ cancelled }) },
+    'Не вдалося змінити стан скасування завдання',
+  );
+}
+
 /** Deleted tasks that can still be restored (a 24-hour window). */
 export async function fetchDeletedIssues(organizationId) {
   const result = await authenticatedRequest(

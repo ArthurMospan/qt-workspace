@@ -15,7 +15,7 @@ import {
 } from './statusCategories.mjs';
 import { DEFAULT_TASK_TYPES } from './taskTypes.mjs';
 
-export const DEFAULT_STATUS_IDS = ['backlog', 'todo', 'in-progress', 'done'];
+export const DEFAULT_STATUS_IDS = ['backlog', 'todo', 'in-progress', 'review', 'done'];
 export const DEFAULT_TYPE_IDS = DEFAULT_TASK_TYPES.map(type => type.id);
 export const DEFAULT_PRIORITY_IDS = ['blocker', 'high', 'medium', 'low'];
 export const DEFAULT_LABEL_IDS = [];
@@ -27,6 +27,7 @@ export const STATUS_LABELS = {
   backlog: 'Беклог',
   todo: 'До виконання',
   'in-progress': 'У роботі',
+  review: 'На перевірці',
   'code-review': 'Код-ревʼю',
   qa: 'QA',
   'client-approval': 'Погодження клієнтом',
@@ -41,6 +42,7 @@ const BUILT_IN_LABEL_TRANSLATIONS = {
     backlog: { Backlog: 'Беклог' },
     todo: { 'To Do': 'До виконання' },
     'in-progress': { 'In Progress': 'У роботі' },
+    review: { Review: 'На перевірці', 'In Review': 'На перевірці' },
     'code-review': { 'Code Review': 'Код-ревʼю' },
     'client-approval': { 'Client Approval': 'Погодження клієнтом' },
     done: { Done: 'Готово' },
@@ -85,9 +87,10 @@ export function statusLabel(statusId, statuses = []) {
   return configured?.label || STATUS_LABELS[statusId] || statusId || '';
 }
 
-// Statuses that close a task — category `done` or `cancelled`. Overdue,
-// blockers, a parent waiting on its children, reminders and `completedAt` all
-// read this. The rule lives in statusCategories.mjs, which also knows how to
+// Statuses that close a task — category `done`. Overdue, blockers, a parent
+// waiting on its children, reminders and `completedAt` all read this. A task
+// «На перевірці» is not among them: it is handed over, not finished. The rule
+// lives in statusCategories.mjs, which also knows how to
 // read a workflow saved before categories existed (an `isDone` flag, then an id
 // of 'done', then the last column), so this stays the one answer the server
 // routes and the UI both get.
@@ -96,9 +99,10 @@ export function resolveClosedStatusIds(statuses) {
   return resolved.length ? resolved : ['done'];
 }
 
-// Statuses that mean work was delivered — category `done` alone. Everything that
-// measures output rather than "is there work left" asks this one, so a cancelled
-// task stops counting as a finished one.
+// Statuses that mean work was delivered — category `done` alone. Everything
+// that measures output rather than "is there work left" asks this one. Dropped
+// work never reaches it: cancelling is `cancelledAt` on the issue, and a
+// cancelled task is out of every set these numbers are built from.
 export function resolveDeliveredStatusIds(statuses) {
   const resolved = deliveredStatusIds(statuses);
   return resolved.length ? resolved : ['done'];
@@ -126,7 +130,7 @@ export function resolveEntryStatusId(statuses, hiddenStatusIds = []) {
     : DEFAULT_STATUS_ITEMS;
   const hidden = new Set(Array.isArray(hiddenStatusIds) ? hiddenStatusIds : []);
   const categories = statusCategoryMap(list);
-  for (const category of ['backlog', 'todo', 'in-progress']) {
+  for (const category of ['backlog', 'todo', 'in-progress', 'review']) {
     const found = list.find(status => (
       categories.get(status.id) === category && !hidden.has(status.id)
     ));

@@ -12,7 +12,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { fetchWorkflowViaApi } from '@/lib/services/workflow';
 import {
-  Circle, CircleCheck, CircleDashed, CircleDotDashed, CircleX,
+  Circle, CircleCheck, CircleDashed, CircleDotDashed, CircleDot,
 } from 'lucide-react';
 import { TASK_TYPE_ICONS } from '@/lib/design/taskTypeIcons';
 import {
@@ -38,13 +38,13 @@ export const TYPE_ICONS = TASK_TYPE_ICONS;
 // One glyph per status category, for the places where a category stands on its
 // own: the workflow editor and the columns of a cross-project board. A ring that
 // fills in as work moves right — dashed while it is only collected, empty once
-// planned, half while it runs, closed at the end.
+// planned, half while it runs, solid once it is handed over, closed at the end.
 export const STATUS_CATEGORY_ICONS = {
   backlog: CircleDashed,
   todo: Circle,
   'in-progress': CircleDotDashed,
+  review: CircleDot,
   done: CircleCheck,
-  cancelled: CircleX,
 };
 // Canonical default workflow for an org that has never saved
 // settings/workflow. Must stay in sync with the id lists in
@@ -72,6 +72,11 @@ export const DEFAULT_STATUSES = [{
   color: '#f59e0b',
   category: 'in-progress',
 }, {
+  id: 'review',
+  label: 'На перевірці',
+  color: '#8b5cf6',
+  category: 'review',
+}, {
   id: 'done',
   label: 'Готово',
   color: '#10b981',
@@ -81,14 +86,14 @@ export const DEFAULT_STATUSES = [{
 // ── The two ends of a task ─────────────────────────────────────────────────────
 // "Finished" is two questions, and the app used to answer both with one list.
 //
-//   closed    — nothing left to do here: category `done` or `cancelled`. Overdue,
-//               blockers, a parent waiting on its children, reminders and
-//               `completedAt` read this. A cancelled task must stop being
-//               overdue and must stop blocking whatever it blocked.
+//   closed    — nothing left to do here: category `done`. Overdue, blockers, a
+//               parent waiting on its children, reminders and `completedAt`
+//               read this. «На перевірці» is not closed — a task waiting on a
+//               reviewer can still run past its deadline, and hiding that is
+//               how a queue of unreviewed work becomes invisible.
 //   delivered — something was produced: category `done` alone. Completion
 //               percentage, velocity, "closed in this period" and the invoice
-//               preset read this, so a sprint whose work was dropped does not
-//               report itself as finished.
+//               preset read this.
 //
 // Neither is ever compared against a hardcoded id, and the rules live in the
 // shared, server-importable module — these used to be a second copy of them,

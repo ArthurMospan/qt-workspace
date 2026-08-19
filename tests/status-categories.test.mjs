@@ -9,9 +9,11 @@ import {
   closedStatusIds,
   deliveredStatusIds,
   entryStatusId,
+  activeStatusIds,
   inProgressStatusIds,
   isClosingCategory,
   isDeliveringCategory,
+  reviewStatusIds,
   resolveCategoryStatusId,
   statusCategoryColumns,
   statusCategoryMap,
@@ -49,7 +51,10 @@ test('a workflow saved before categories keeps exactly the meaning it had', () =
   const categories = statusCategoryMap(legacyWorkflow);
   assert.equal(categories.get('backlog'), 'backlog');
   assert.equal(categories.get('todo'), 'todo');
-  assert.equal(categories.get('code-review'), 'in-progress');
+  // «Код-ревʼю» is one of the ids the product shipped for "handed over, not
+  // finished", so it is review — it was only ever read as work in progress
+  // because no category said what it is.
+  assert.equal(categories.get('code-review'), 'review');
   // A custom id is never guessed at by name — it is work in progress.
   assert.equal(categories.get('s-1700000000'), 'in-progress');
   assert.equal(categories.get('done'), 'done');
@@ -101,49 +106,49 @@ test('an explicit category outranks every fallback', () => {
   ]), ['shipped']);
 });
 
-test('cancelling closes a task, exactly as flagging it done did', () => {
+test('the removed «Скасовано» category comes back as open work, never as done', () => {
+  // Every workflow that used it has `isDone: true` written beside it, because
+  // cancelling closed a task. If the flag were allowed to decide, those statuses
+  // would file themselves under «Готово» and every delivery number would count
+  // work nobody did. They are read as ordinary work in progress instead.
   const workflow = [
     { id: 'todo', label: 'До виконання', category: 'todo' },
-    { id: 'done', label: 'Готово', category: 'done' },
-    { id: 'dropped', label: 'Не актуально', category: 'cancelled' },
+    { id: 'done', label: 'Готово', category: 'done', isDone: true },
+    { id: 'dropped', label: 'Не актуально', category: 'cancelled', isDone: true },
   ];
-  assert.equal(isClosingCategory('cancelled'), true);
-  assert.deepEqual(closedStatusIds(workflow), ['done', 'dropped']);
-});
-
-test('closed and delivered are two different questions', () => {
-  const workflow = [
-    { id: 'todo', label: 'До виконання', category: 'todo' },
-    { id: 'qa', label: 'QA', category: 'in-progress' },
-    { id: 'done', label: 'Готово', category: 'done' },
-    { id: 'dropped', label: 'Не актуально', category: 'cancelled' },
-  ];
-  // Nothing left to do — a cancelled task must stop being overdue and must stop
-  // blocking whatever it blocked.
-  assert.deepEqual(closedStatusIds(workflow), ['done', 'dropped']);
-  // Something was produced — a sprint whose work was dropped is not finished.
+  assert.equal(isClosingCategory('cancelled'), false);
+  assert.equal(statusCategoryMap(workflow).get('dropped'), 'in-progress');
+  assert.deepEqual(closedStatusIds(workflow), ['done']);
   assert.deepEqual(deliveredStatusIds(workflow), ['done']);
-  assert.equal(isDeliveringCategory('cancelled'), false);
-  assert.equal(isClosingCategory('cancelled'), true);
 });
 
-test('a workflow that only ever cancels still reports something', () => {
-  // No `done` category at all: a flat zero for every percentage would be a worse
-  // answer than treating what closes tasks as what finishes them.
+test('«На перевірці» is neither closed nor delivered', () => {
   const workflow = [
     { id: 'todo', label: 'До виконання', category: 'todo' },
-    { id: 'dropped', label: 'Скасовано', category: 'cancelled' },
+    { id: 'qa', label: 'QA', category: 'review' },
+    { id: 'done', label: 'Готово', category: 'done' },
   ];
-  assert.deepEqual(deliveredStatusIds(workflow), ['dropped']);
-  assert.deepEqual(resolveDeliveredStatusIds(undefined), ['done']);
+  // Handed over is not finished: a task waiting on a reviewer is still open, so
+  // it can still be overdue and still blocks whatever it blocked.
+  assert.equal(isClosingCategory('review'), false);
+  assert.equal(isDeliveringCategory('review'), false);
+  assert.deepEqual(closedStatusIds(workflow), ['done']);
+  assert.deepEqual(deliveredStatusIds(workflow), ['done']);
 });
 
-test('a workflow with no cancelled status answers both questions the same way', () => {
-  // Which is why this split changes nothing for anybody today, and everything on
-  // the day somebody adds «Скасовано».
+test('closed and delivered are two questions with one answer today', () => {
+  // «Готово» is the only end a status has, so the two sets coincide. They stay
+  // two names because the callers are not asking the same thing, and a caller
+  // that asks the wrong one is a bug nobody sees until the numbers are read.
   assert.deepEqual(
     closedStatusIds(legacyWorkflow),
     deliveredStatusIds(legacyWorkflow),
+  );
+  // Neither ever answers with nothing, whatever a saved document contains.
+  assert.deepEqual(resolveDeliveredStatusIds(undefined), ['done']);
+  assert.deepEqual(
+    deliveredStatusIds([{ id: 'a', label: 'A' }, { id: 'z', label: 'Z' }]),
+    ['z'],
   );
 });
 
@@ -154,7 +159,7 @@ test('materialising a workflow writes a category and an isDone that agrees with 
     [
       ['backlog', 'backlog', false],
       ['todo', 'todo', false],
-      ['code-review', 'in-progress', false],
+      ['code-review', 'review', false],
       ['s-1700000000', 'in-progress', false],
       ['done', 'done', true],
     ],
@@ -163,7 +168,7 @@ test('materialising a workflow writes a category and an isDone that agrees with 
 
 test('category columns are the same five for everyone, in one fixed order', () => {
   assert.deepEqual(STATUS_CATEGORY_IDS, [
-    'backlog', 'todo', 'in-progress', 'done', 'cancelled',
+    'backlog', 'todo', 'in-progress', 'review', 'done',
   ]);
   // Declared out of order, rendered in canonical order.
   assert.deepEqual(
@@ -177,7 +182,7 @@ test('category columns are the same five for everyone, in one fixed order', () =
   // A category no status maps to is not a column anybody could drop into.
   assert.deepEqual(
     statusCategoryColumns(legacyWorkflow).map(column => column.id),
-    ['backlog', 'todo', 'in-progress', 'done'],
+    ['backlog', 'todo', 'in-progress', 'review', 'done'],
   );
   for (const column of statusCategoryColumns(legacyWorkflow)) {
     assert.ok(column.label, `${column.id} needs a label`);
@@ -186,7 +191,12 @@ test('category columns are the same five for everyone, in one fixed order', () =
 });
 
 test('«в роботі» and «беклог» are answers from the data, not positions in a list', () => {
-  assert.deepEqual(inProgressStatusIds(legacyWorkflow), ['code-review', 's-1700000000']);
+  assert.deepEqual(inProgressStatusIds(legacyWorkflow), ['s-1700000000']);
+  assert.deepEqual(reviewStatusIds(legacyWorkflow), ['code-review']);
+  // Both together are "started and not finished" — the loose «в роботі» a chart
+  // means. Kept apart at the source so a reviewer's queue never counts as
+  // somebody's workload.
+  assert.deepEqual(activeStatusIds(legacyWorkflow), ['s-1700000000', 'code-review']);
   assert.deepEqual(backlogStatusIds(legacyWorkflow), ['backlog']);
   // The old rule was `statuses.slice(1)` minus terminal ones, which counted
   // «До виконання» as work in progress.
@@ -251,7 +261,7 @@ test('new work lands in a backlog column, never in a position', () => {
   // Hidden columns are honoured, so a fallback is never a column the project
   // has switched off.
   assert.equal(resolveEntryStatusId(legacyWorkflow, ['backlog']), 'todo');
-  assert.equal(resolveEntryStatusId(legacyWorkflow, ['backlog', 'todo']), 'code-review');
+  assert.equal(resolveEntryStatusId(legacyWorkflow, ['backlog', 'todo']), 's-1700000000');
   // A workflow that was never saved still answers.
   assert.equal(resolveEntryStatusId(undefined), 'backlog');
   assert.equal(resolveEntryStatusId(undefined, ['backlog']), 'todo');
@@ -298,7 +308,7 @@ test('a saved workflow always has somewhere to start and somewhere to finish', (
   assert.equal(
     normalizeWorkflowMutationInput(sections([
       { id: 'a', label: 'A', category: 'done' },
-      { id: 'b', label: 'B', category: 'cancelled' },
+      { id: 'b', label: 'B', category: 'done' },
     ])).error.code,
     'MISSING_OPEN_STATUS',
   );
@@ -317,7 +327,7 @@ test('Settings opens on resolved categories, so it never saves on its own', () =
   const hydrated = hydrateWorkflowSettings({ statuses: legacyWorkflow }, {});
   assert.deepEqual(
     hydrated.statuses.map(status => status.category),
-    ['backlog', 'todo', 'in-progress', 'in-progress', 'done'],
+    ['backlog', 'todo', 'review', 'in-progress', 'done'],
   );
   // Idempotent: hydrating what was already hydrated changes nothing, which is
   // what makes the loaded payload a usable autosave baseline.
@@ -399,19 +409,19 @@ test('what measures output reads delivered; what asks "is there work left" reads
   assert.match(analytics, /const done\s+= issues\.filter\(i => deliveredSet\.has/);
   assert.match(analyticsTab, /const done\s+= filteredIssues\.filter\(i => deliveredSet\.has/);
   // The weekly chart is a hook feeding the shared `ColumnChart` now, but the
-  // set it reads is the same one: velocity measures output, and a cancelled
-  // task produced none.
+  // set it reads is the same one: velocity measures output, and a task sitting
+  // in review has produced none yet.
   assert.match(velocity, /function useWeeklyVelocity\([^)]*deliveredSet/);
   assert.match(workload, /done: actionableIssues\.filter\(issue => \(\s*\n\s*deliveredSet\.has/);
   assert.match(team, /const done = memberIssues\.filter\(issue => deliveredSet\.has/);
   assert.match(billing, /deliveredStatusIds\.includes\(issue\.columnId \|\| issue\.status\)/);
 
-  // And the ones that must stay closed: a cancelled task is not overdue, does not
-  // block anything, and is not work remaining on a burndown.
+  // And the ones that must stay closed: an unfinished task is overdue when its
+  // date passes, blocks what it blocked, and is work remaining on a burndown —
+  // «На перевірці» included, which is exactly why it does not close a task.
   assert.match(analytics, /isDueDateOverdue\(i\.dueDate, \{ now, timeZone \}\)[\s\S]{0,80}&& !closedSet\.has/);
-  // The burndown draws work *remaining*, so a cancelled task lowers the line
-  // the same way a finished one does — that is the closed set, not the
-  // delivered one. It feeds the shared `TrendChart` now; the set it reads is
+  // The burndown draws work *remaining*, so it reads the closed set rather than
+  // the delivered one. It feeds the shared `TrendChart` now; the set it reads is
   // unchanged.
   assert.match(velocity, /function useBurndown\([^)]*closedSet/);
   assert.match(workload, /const openItems = memberIssues\.filter\(issue => !closedSet\.has/);

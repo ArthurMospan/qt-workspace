@@ -29,8 +29,25 @@ This file contains current owner guardrails and confirmed open work. Completed i
 
 ### Status categories — the remaining step
 
-A status has a local label and a shared category (see the README). One follow-up
-is deliberately not built:
+A status has a local label and a shared category (see the README). Two notes and
+one follow-up.
+
+**«Скасовано» is no longer a category.** Dropped work is `cancelledAt` on the
+task, because a status puts a task in a column and a task in a column is still
+one of the tasks every report has to remember to subtract. An organization that
+had created a status under the old «Скасовано» section keeps it as an ordinary
+open status — deliberately visible rather than silently re-read as «Готово»,
+which is what its stored `isDone: true` would otherwise have meant. The one-time
+cleanup is by hand and takes a minute: cancel those tasks with the new action,
+then delete the status in «Налаштування» → «Статуси завдань». No script.
+
+**«На перевірці» is new**, and it is not added to a workflow anybody has already
+saved: the editor shows an empty section instead, so nobody's board grows a
+column overnight. The three ids the product shipped for it — `code-review`,
+`qa`, `client-approval` — move into the category automatically, which is the
+meaning they always had.
+
+One follow-up is deliberately not built:
 
 - Let one column of a project board hold several statuses, mapped explicitly. That
   is what "hidden columns" are really reaching for: today a status a project does

@@ -19,10 +19,12 @@ export const ISSUE_BULK_ACTIONS = Object.freeze([
   { id: 'sprint', label: 'Перемістити у спринт', value: 'sprintId' },
   { id: 'backlog', label: 'Повернути в backlog', value: 'none' },
   { id: 'duplicate', label: 'Дублювати', value: 'none' },
-  // Two actions, because they were always two things. `archive` puts tasks
-  // aside reversibly and forever; `delete` is the tombstone flow with a clock on
-  // it. `archive` used to be the second one wearing the first one's name.
+  // Three actions, because they are three things. `archive` puts finished work
+  // aside reversibly and forever, and it stays in the record. `cancel` says the
+  // work is not going to happen, and takes it out of the record too. `delete` is
+  // the tombstone flow with a clock on it. See src/lib/utils/issueCancel.mjs.
   { id: 'archive', label: 'Архівувати', value: 'none', permission: 'edit:issue' },
+  { id: 'cancel', label: 'Скасувати', value: 'none', permission: 'edit:issue' },
   { id: 'delete', label: 'Видалити', value: 'none', dangerous: true, permission: 'delete:issue' },
 ]);
 

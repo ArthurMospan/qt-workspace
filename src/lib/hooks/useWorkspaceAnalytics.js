@@ -8,12 +8,16 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { reportLoadError } from '@/lib/utils/errors';
 import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import {
+  cancelledIssuesOf,
+  withoutCancelledIssues,
+} from '@/lib/utils/issueCancel.mjs';
+import {
   chunkProjectIds,
   flattenDocumentBuckets,
 } from '@/lib/utils/projectScopedQueries.mjs';
 
 /**
- * One subscription, two readings of it.
+ * One subscription, three readings of it.
  *
  * `issues` is the working set — what is being worked on now. Archived tasks are
  * not in it, so boards, counts, workload and progress do not carry work nobody
@@ -24,6 +28,12 @@ import {
  * invoice built without them would quietly bill less than was done. Anything
  * reasoning about what *happened* reads this one; anything reasoning about what
  * is *open* reads the other.
+ *
+ * A cancelled task is in neither. Work that is not going to happen is not part
+ * of the present and did not happen in the past, so it is filtered out here
+ * rather than at each of the several dozen places that would otherwise have to
+ * remember. `cancelledIssues` is what «Архів» → «Скасовані» lists, and the only
+ * reader that gets them.
  */
 export function useWorkspaceAnalytics(projectIds = [], {
   includeLinks = true,
@@ -188,7 +198,9 @@ export function useWorkspaceAnalytics(projectIds = [], {
     return () => unsubs.forEach(unsubscribe => unsubscribe());
   }, [activeOrgId, authLoading, orgLoading, projectScope, queryTarget, includeLinks, includeTimeLogs]);
 
-  const issues = useMemo(() => withoutArchivedIssues(allIssues), [allIssues]);
+  const record = useMemo(() => withoutCancelledIssues(allIssues), [allIssues]);
+  const issues = useMemo(() => withoutArchivedIssues(record), [record]);
+  const cancelledIssues = useMemo(() => cancelledIssuesOf(allIssues), [allIssues]);
 
-  return { issues, allIssues, timeLogs, issueLinks, loading };
+  return { issues, allIssues: record, cancelledIssues, timeLogs, issueLinks, loading };
 }

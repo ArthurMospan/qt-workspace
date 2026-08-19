@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 113,
-    "props": 842,
-    "documentedProps": 842,
+    "props": 843,
+    "documentedProps": 843,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5672,6 +5672,13 @@
           "type": "string",
           "values": [],
           "description": "Placement in the parent only."
+        },
+        {
+          "name": "done",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether the task's status is in the «Готово» category."
         },
         {
           "name": "issue",

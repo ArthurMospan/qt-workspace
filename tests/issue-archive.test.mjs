@@ -31,8 +31,10 @@ test('archiving and deleting are two actions, not one wearing two names', async 
   assert.match(route, /actionId === 'delete'[\s\S]{0,400}'DELETE'/);
   assert.match(registry, /id: 'archive'[^}]*permission: 'edit:issue'/);
   assert.match(registry, /id: 'delete'[^}]*permission: 'delete:issue'/);
-  // The confirmations have to say which of the two is about to happen.
-  assert.match(bar, /лишаться в «Архіві» — без строку/);
+  // The confirmations have to say which of the three is about to happen, and
+  // the difference that matters is what happens to the numbers.
+  assert.match(bar, /У звітах, таймшиті та рахунках вони лишаються/);
+  assert.match(bar, /з усього обліку/);
   assert.match(bar, /«Нещодавно видалене»/);
 });
 
@@ -58,22 +60,24 @@ test('archived tasks leave the working lists but keep their own link', async () 
     read('../src/components/workspace/IssueDetail.jsx'),
     read('../src/app/(app)/page.js'),
   ]);
-  assert.match(issues, /includeArchived \? docs : withoutArchivedIssues\(docs\)/);
+  assert.match(issues, /withoutCancelledIssues\(withoutArchivedIssues\(docs\)\)/);
   assert.match(myTasks, /withoutArchivedIssues\(flattenDocumentBuckets\(issueBuckets\)\)/);
   // The home screen rolls its own subscription, so it needs the rule by hand or
   // a project's progress bar counts work nobody is doing.
-  assert.match(home, /setAllIssues\(withoutArchivedIssues\(flattenDocumentBuckets\(buckets\)\)\)/);
+  assert.match(home, /setAllIssues\(withoutCancelledIssues\(/);
   // The detail is the one reader that asks for them, so «Архів» can open a
   // task and put it back instead of showing "not found".
-  assert.match(detail, /useIssues\(projectId, \{ includeLinks: false, includeArchived: true \}\)/);
+  assert.match(detail, /useIssues\(projectId, \{ includeLinks: false, includeSetAside: true \}\)/);
   // …but its own pickers must not offer one as a parent or a link target.
-  assert.match(detail, /const parentCandidates = withoutArchivedIssues\(issues\)/);
-  assert.match(detail, /const availableLinkIssues = withoutArchivedIssues\(issues\)/);
+  assert.match(detail, /const openIssues = withoutCancelledIssues\(withoutArchivedIssues\(issues\)\)/);
+  assert.match(detail, /const parentCandidates = openIssues\.filter/);
+  assert.match(detail, /const availableLinkIssues = openIssues\.filter/);
 
-  // One subscription, two readings: the working set for what is open, the whole
-  // record for what was done.
-  assert.match(analytics, /const issues = useMemo\(\(\) => withoutArchivedIssues\(allIssues\)/);
-  assert.match(analytics, /return \{ issues, allIssues, timeLogs, issueLinks, loading \};/);
+  // One subscription, three readings: the working set for what is open, the
+  // record for what was done, and the cancelled ones for the one screen that
+  // lists them.
+  assert.match(analytics, /const issues = useMemo\(\(\) => withoutArchivedIssues\(record\)/);
+  assert.match(analytics, /return \{ issues, allIssues: record, cancelledIssues, timeLogs, issueLinks, loading \};/);
 });
 
 test('an archived task keeps its hours in the timesheet and on the invoice', async () => {
@@ -102,11 +106,12 @@ test('nothing chases people about a task that was put aside', async () => {
     read('../src/lib/server/reminderJobs.js'),
     read('../src/app/api/search/route.js'),
   ]);
-  assert.match(candidates, /if \(isArchivedIssue\(issue\)\) continue;/);
-  // The projection has to carry the field, or every archived task reads as active.
-  assert.match(jobs, /'archivedAt',/);
-  assert.match(search, /\.filter\(item => !isArchivedIssue\(item\.data\(\)\)\)/);
-  assert.match(search, /'dueDate', 'archivedAt'/);
+  assert.match(candidates, /if \(isArchivedIssue\(issue\) \|\| isCancelledIssue\(issue\)\) continue;/);
+  // The projection has to carry both fields, or a task that was put aside reads
+  // as active here and people go on being chased about it.
+  assert.match(jobs, /'archivedAt',\s*\n\s*'cancelledAt',/);
+  assert.match(search, /!isArchivedIssue\(item\.data\(\)\) && !isCancelledIssue\(item\.data\(\)\)/);
+  assert.match(search, /'dueDate', 'archivedAt', 'cancelledAt'/);
 });
 
 test('the trash list never hands a tombstone snapshot to the browser', async () => {

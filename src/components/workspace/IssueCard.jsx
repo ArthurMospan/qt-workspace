@@ -62,10 +62,13 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
   const hasUnreadActivity = isIssueUnread(issue, lastSeenAt, currentUserId);
   const { formatDate } = useLocalization();
   const isDraggingRef = useRef(false);
-  const { types, priorities, statuses, closedStatusIds } = useWorkflowConfig();
+  const { types, priorities, statuses, closedStatusIds, statusCategoryById } = useWorkflowConfig();
   const statusObj = showStatusName
     ? statuses.find(status => status.id === (issue.columnId || issue.status)) || null
     : null;
+  // The category, not the closed set: a struck key means «зроблено», and only
+  // «Готово» means that. Asking the category also keeps a renamed status right.
+  const isDelivered = statusCategoryById.get(issue.columnId || issue.status) === 'done';
   
   const typeObj = types.find(t => t.id === issue.type) || {
     id: issue.type || 'task',
@@ -229,6 +232,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               projectName={projectName}
               showProjectName={showProjectName}
               parentIssue={parentIssueId ? (parentIssue || { issueKey: '' }) : null}
+              done={isDelivered}
               className="max-w-[220px]"
             />
 
