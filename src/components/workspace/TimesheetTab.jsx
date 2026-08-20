@@ -80,6 +80,11 @@ function fmtWork(min) {
 // Thursday look like a Thursday everybody had finished. Today is marked the way
 // the calendar marks it: the date in an ink circle, and nothing else.
 
+// The header band of the team table, which is the one every other table in the
+// product wears: canvas fill, and the rule under it as an inset shadow rather
+// than a border, so `border-collapse` cannot hand it to the table.
+const TABLE_HEADER_CELL = 'h-9 bg-canvas py-0 shadow-[inset_0_-1px_0_var(--color-line)]';
+
 // The day of the week over the date, with today's date in the calendar's ink
 // circle. Every view in this file draws this line, and each used to draw it in
 // its own green.
@@ -256,23 +261,28 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
           </div>
         </Card>
       </div>
-      <div className="hidden overflow-x-auto rounded-[16px] bg-white lg:block">
+      {/* The same table chrome as the project's «Таблиця» and the analytics
+          tables: a bordered panel, a canvas header band with an inset rule, and
+          the same hairline between rows. This one keeps its own row height —
+          the cells hold chips, not figures — and its own totals row, which is
+          why it is not `DataTable`. */}
+      <div data-ui-surface="compact-bordered-card" data-ui-padding="none" className="ui-surface hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[760px] border-collapse text-left">
         <thead>
-          <tr className="border-b border-line bg-white">
-            <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]">Учасник</th>
+          <tr>
+            <th className={`${TABLE_HEADER_CELL} px-5 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]`}>Учасник</th>
             {days.map((d, i) => (
-              <th key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center w-[9%]">
+              <th key={i} className={`${TABLE_HEADER_CELL} border-l border-black/[0.04] px-2 text-center w-[9%]`}>
                 <DayHeading label={DAY_LABELS[i]} day={d} isToday={dayKey(d) === todayKey} />
               </th>
             ))}
-            <th className="px-4 py-3 text-center text-[11px] font-bold text-ink uppercase tracking-wider w-[13%]">Всього</th>
+            <th className={`${TABLE_HEADER_CELL} px-4 text-center text-[11px] font-bold text-ink uppercase tracking-wider w-[13%]`}>Всього</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#eeeeee]">
+        <tbody>
           {rows.map(({ m, uid, byDay, total }) => (
             <tr key={uid} onClick={() => onSelectMember?.(uid)}
-              className="bg-white hover:bg-[#fafafa] transition-colors cursor-pointer" title="Відкрити табель учасника">
+              className="border-b border-[#f4f4f5] bg-white hover:bg-[#fafafa] transition-colors cursor-pointer" title="Відкрити табель учасника">
               <td className="px-5 py-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <UserAvatar user={m} size="sm" />
