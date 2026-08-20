@@ -31,7 +31,20 @@ export default function BadgesSection() {
           <Pill tone="danger" size="md">Прострочено</Pill>
           <Pill tone="info" size="sm" shape="badge">1г 25хв</Pill>
           <Pill tone="surface" size="wide-sm" appearance="soft-outline">Проєкт</Pill>
-          <Pill tone="neutral" size="md" preset="avatar-counter">+3</Pill>
+          {/* Обидва лічильники стоять поруч зі стеком облич і мають бути
+              рівно такого ж розміру, як обличчя: avatar-counter — для 24px
+              (sm), avatar-counter-xs — для 16px (xs). Це четверта аватарка, а
+              не бейдж біля аватарок. */}
+          <span className="flex items-center -space-x-[6px]">
+            <UserAvatar user={{ id: 'p1', name: 'Артур Моспан' }} size="sm" stacked />
+            <UserAvatar user={{ id: 'p2', name: 'Іван Петренко' }} size="sm" stacked />
+            <Pill tone="neutral" size="md" preset="avatar-counter">+3</Pill>
+          </span>
+          <span className="flex items-center -space-x-[6px]">
+            <UserAvatar user={{ id: 'p1', name: 'Артур Моспан' }} size="xs" stacked />
+            <UserAvatar user={{ id: 'p2', name: 'Іван Петренко' }} size="xs" stacked />
+            <Pill tone="neutral" size="md" preset="avatar-counter-xs">+3</Pill>
+          </span>
         </div>
       </PreviewBlock>
 

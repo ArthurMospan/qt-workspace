@@ -278,7 +278,7 @@ function IssueRow({
                 <Pill
                   tone="neutral"
                   size="md"
-                  preset="avatar-counter"
+                  preset="avatar-counter-xs"
                 >
                   +{contributors.length - 3}
                 </Pill>

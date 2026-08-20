@@ -9,11 +9,11 @@
   },
   "totals": {
     "componentsWithVariants": 45,
-    "declaredValues": 371,
+    "declaredValues": 372,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 230,
+    "usedAndPreviewed": 231,
     "usedWithoutPreview": 0,
     "declaredUnused": 111
   },
@@ -952,7 +952,8 @@
         "soft-outline"
       ],
       "preset": [
-        "avatar-counter"
+        "avatar-counter",
+        "avatar-counter-xs"
       ],
       "weight": [
         "bold",
@@ -1396,7 +1397,7 @@
     "Dialog.size.sm": 12,
     "Dialog.presentation.sheet": 1,
     "Dialog.bodyPadding.spacious": 2,
-    "Pill.preset.avatar-counter": 5,
+    "Pill.preset.avatar-counter": 2,
     "IconAction.size.md": 4,
     "UserAvatar.size.sm": 11,
     "Alert.variant.error": 4,
@@ -1507,6 +1508,7 @@
     "Select.size.md": 1,
     "Input.preset.money": 2,
     "Pill.tone.warning": 3,
+    "Pill.preset.avatar-counter-xs": 3,
     "Surface.preset.bordered-panel": 1,
     "Segmented.composition.billing-selection": 1,
     "Select.filterRole.status": 1,
@@ -1806,6 +1808,7 @@
     "Pill.appearance.outline",
     "Pill.appearance.soft-outline",
     "Pill.preset.avatar-counter",
+    "Pill.preset.avatar-counter-xs",
     "Pill.shape.badge",
     "Pill.shape.capsule",
     "Pill.size.chat-day",

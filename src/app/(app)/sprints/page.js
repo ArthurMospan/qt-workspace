@@ -306,7 +306,13 @@ function AddExistingIssuesDialog({
               : 'Усі завдання вже розкладені по спринтах'}
           </p>
         ) : (
-          <div className="flex flex-col gap-[8px]">
+          // `pt-1` is the hover ring, not a margin. A row draws `ring-4` outside
+          // its own box when the pointer is on it, and with the pinned field
+          // ending exactly where the first row begins those four pixels were
+          // painted under white: the top task looked sliced off the moment you
+          // reached for it. The gap between two rows is 8px for the same
+          // reason — four for each ring — so the top one gets its four too.
+          <div className="flex flex-col gap-[8px] pt-1">
             {offered.map(issue => (
               <TaskRow
                 key={issue.id}

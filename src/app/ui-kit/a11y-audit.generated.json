@@ -43,7 +43,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/sprints/page.js:867",
+      "location": "src/app/(app)/sprints/page.js:873",
       "attributes": [
         "title",
         "aria-label"

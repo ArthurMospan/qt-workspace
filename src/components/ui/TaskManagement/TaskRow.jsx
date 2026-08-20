@@ -315,7 +315,7 @@ export default function TaskRow({
         <Pill
           tone="neutral"
           size="md"
-          preset="avatar-counter"
+          preset="avatar-counter-xs"
           title={assignees.slice(3).map(m => m.name || m.email?.split('@')[0]).join(', ')}
         >
           +{assignees.length - 3}
@@ -378,11 +378,12 @@ export default function TaskRow({
         </div>
 
         {/* Right Section: Metadata, Badges, Assignees.
-            The assignee stack is pinned to a fixed width: it used to follow the
-            number of faces and drag every badge left of it along, which is what
-            made a list of ten read as ten ragged lines. The badges keep their
-            natural widths — giving them a fixed track too opened a wide hole in
-            front of the avatars on every row without labels. */}
+            The assignee stack gets a floor, not a fixed width: it used to
+            follow the number of faces and drag every badge left of it along,
+            which is what made a list of ten read as ten ragged lines. The
+            badges keep their natural widths — giving them a fixed track too
+            opened a wide hole in front of the avatars on every row without
+            labels. */}
         <div className="flex w-auto shrink-0 flex-nowrap items-center justify-end gap-x-[12px] gap-y-[6px]">
           {/* Type Badge */}
           <span className="flex min-w-0 shrink-0 items-center">
@@ -400,8 +401,15 @@ export default function TaskRow({
             )}
           </span>
 
-          {/* Assignees — a fixed box so three faces and none take the same room. */}
-          <span className="flex w-[76px] shrink-0 items-center justify-end -space-x-[6px] overflow-visible">
+          {/* Assignees — a floor, so three faces and none take the same room.
+              The floor is the widest the cluster can be, measured rather than
+              guessed: three 16px faces overlapping by 6 is 36px, and the fourth
+              bubble carrying the remainder adds ten more — 46px for «+9», 50
+              for «+12». It was 76px, a number sized for nothing in particular,
+              and every row with one assignee spent thirty of them on a hole
+              between the badges and the face. A remainder in the hundreds is
+              allowed to widen its own row rather than be clipped. */}
+          <span className="flex min-w-[52px] shrink-0 items-center justify-end -space-x-[6px] overflow-visible">
             {assigneeFaces || <span className="text-[10px] text-faint italic">Н/В</span>}
           </span>
 

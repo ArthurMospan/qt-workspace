@@ -4308,7 +4308,8 @@
           "default": "",
           "type": "string",
           "values": [
-            "avatar-counter"
+            "avatar-counter",
+            "avatar-counter-xs"
           ],
           "description": "A named pairing of tone, size and shape used in more than one place."
         },

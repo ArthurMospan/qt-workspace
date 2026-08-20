@@ -982,6 +982,24 @@
     font-size: 9px;
     box-shadow: 0 0 0 2px var(--color-surface);
   }
+  /* The same counter beside `xs` faces. One size fitted the 24px avatars it was
+     written for and stood six pixels taller than the 16px ones it was also used
+     with — a stack of three heads and one lump. It is the fourth face in the
+     row, so it is the size of a face; a two-digit remainder widens it and
+     nothing else moves. */
+  .ui-pill[data-ui-pill-preset='avatar-counter-xs'] {
+    position: relative;
+    z-index: 10;
+    height: 16px;
+    /* The size token sets `min-height: 20px`, and a min-height beats a height.
+       Without this line the counter stayed 20px tall however short it was told
+       to be — which is the whole bug, four pixels at a time. */
+    min-height: 16px;
+    min-width: 16px;
+    padding: 0 3px;
+    font-size: 8px;
+    box-shadow: 0 0 0 2px var(--color-surface);
+  }
   .ui-pill[data-ui-pill-shape='badge'] { border-radius: 5px; }
   .ui-pill[data-ui-pill-shape='capsule'] { border-radius: 999px; }
   .ui-pill[data-ui-pill-tone='neutral'] {

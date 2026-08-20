@@ -529,7 +529,7 @@ export default function TaskTableView({
               </span>
             ))}
             {people.length > 3 && (
-              <Pill tone="neutral" size="md" preset="avatar-counter">+{people.length - 3}</Pill>
+              <Pill tone="neutral" size="md" preset="avatar-counter-xs">+{people.length - 3}</Pill>
             )}
           </span>
         );
