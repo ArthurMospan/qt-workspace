@@ -34,7 +34,7 @@ import { useOverlayHistory } from '@/lib/hooks/useOverlayHistory';
  * @param {React.ReactNode} props.footer Actions along the bottom.
  * @param {React.ReactNode} props.headerAction A control in the top-right, beside the close button.
  * @param {string} props.size Width token.
- * @param {string} props.bodyPadding Inner spacing of the body.
+ * @param {'default'|'spacious'|'responsive'|'invite'|'horizontal'|'sticky-head'|'flush'} props.bodyPadding Inner spacing of the body.
  * @param {'dialog'|'eyebrow'} props.titleContext Type scale of the headline.
  * @param {'dialog'|'sheet'} props.presentation Centred dialog, or a sheet from the edge.
  * @param {boolean} props.showCloseButton Whether the × is drawn.
@@ -92,6 +92,14 @@ export default function Dialog({
     responsive: 'p-5 sm:p-6',
     invite: 'px-5 py-5 sm:px-7',
     horizontal: 'px-6 py-0',
+    // For a body whose first child is `sticky top-0`. A scroll container's own
+    // top padding is inside the scrollport, so scrolled content passes through
+    // it and shows above anything pinned there; a sticky field that tried to
+    // cover it with a negative margin instead sat 20px over the first row and
+    // clipped it permanently. The body gives the padding up and the pinned
+    // child owns it — the only arrangement where nothing is cut at rest and
+    // nothing shows above the field while the list moves.
+    'sticky-head': 'px-5 pb-5 pt-0 sm:px-6',
     flush: 'p-0',
   }[bodyPadding] || 'px-6 py-5';
 

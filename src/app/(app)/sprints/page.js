@@ -257,6 +257,7 @@ function AddExistingIssuesDialog({
       title="Додати існуюче завдання"
       description={sprint.name}
       size="lg"
+      bodyPadding="sticky-head"
       footer={
         <>
           <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
@@ -280,10 +281,15 @@ function AddExistingIssuesDialog({
       }
     >
       <div className="flex flex-col">
-        {/* Поле лишається на місці, поки список під ним їде. Воно накриває
-            власний верхній відступ діалогу — тому йому нікуди зсуватись, і
-            між ним та першим рядком не зʼявляється щілина. */}
-        <div className="sticky top-0 z-10 -mx-5 -mt-5 bg-white px-5 pb-3 pt-5 sm:-mx-6 sm:px-6">
+        {/* Поле лишається на місці, поки список під ним їде. Верхній відступ
+            належить йому, а не тілу діалогу (`bodyPadding="sticky-head"`) —
+            саме тому воно прилипає до самого верху й нічого не ріже. Раніше
+            воно накривало чужий відступ через `-mt-5`: у потоці смуга
+            піднімалась на 20px, але нижчою не ставала, тож перше завдання
+            стояло рівно на 20px під білим тлом і виглядало обрубаним ще до
+            будь-якої прокрутки. По горизонталі відʼємний відступ лишається —
+            він робить тло на всю ширину і нічого не зсуває. */}
+        <div className="sticky top-0 z-10 -mx-5 bg-white px-5 pb-3 pt-5 sm:-mx-6 sm:px-6">
           <Input
             value={query}
             onChange={event => setQuery(event.target.value)}

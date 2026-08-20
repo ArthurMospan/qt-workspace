@@ -2304,14 +2304,15 @@
         {
           "name": "bodyPadding",
           "default": "'default'",
-          "type": "string",
+          "type": "'default'|'spacious'|'responsive'|'invite'|'horizontal'|'sticky-head'|'flush'",
           "values": [
             "default",
             "flush",
             "horizontal",
             "invite",
             "responsive",
-            "spacious"
+            "spacious",
+            "sticky-head"
           ],
           "description": "Inner spacing of the body."
         },

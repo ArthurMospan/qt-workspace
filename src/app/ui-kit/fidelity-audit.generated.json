@@ -543,17 +543,17 @@
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:1005",
+      "location": "src/app/(app)/sprints/page.js:1011",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:836",
+      "location": "src/app/(app)/sprints/page.js:842",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:991",
+      "location": "src/app/(app)/sprints/page.js:997",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },

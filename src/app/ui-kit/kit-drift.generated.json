@@ -9,11 +9,11 @@
   },
   "totals": {
     "componentsWithVariants": 45,
-    "declaredValues": 370,
+    "declaredValues": 371,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 229,
+    "usedAndPreviewed": 230,
     "usedWithoutPreview": 0,
     "declaredUnused": 111
   },
@@ -1062,7 +1062,8 @@
         "horizontal",
         "invite",
         "responsive",
-        "spacious"
+        "spacious",
+        "sticky-head"
       ],
       "titleContext": [
         "dialog",
@@ -1436,6 +1437,7 @@
     "SidebarLayout.context.settings": 1,
     "Dialog.presentation.dialog": 8,
     "Dialog.size.lg": 8,
+    "Dialog.bodyPadding.sticky-head": 1,
     "Button.composition.section-kebab": 4,
     "Pill.tone.count": 8,
     "Surface.composition.scroll-pane": 1,
@@ -1682,6 +1684,7 @@
     "Dialog.bodyPadding.invite",
     "Dialog.bodyPadding.responsive",
     "Dialog.bodyPadding.spacious",
+    "Dialog.bodyPadding.sticky-head",
     "Dialog.presentation.dialog",
     "Dialog.presentation.sheet",
     "Dialog.size.lg",

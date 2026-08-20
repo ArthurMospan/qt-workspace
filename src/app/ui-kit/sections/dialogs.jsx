@@ -75,6 +75,14 @@ const DIALOG_VARIANTS = [
     open: 'Проєкт → «Видалити проєкт»',
   },
   {
+    id: 'sticky-head',
+    label: 'bodyPadding="sticky-head"',
+    props: { bodyPadding: 'sticky-head', size: 'lg' },
+    note: 'Тіло віддає свій верхній відступ першому дочірньому елементу, коли той — sticky top-0. Поле пошуку тоді прилипає до самого верху: перший рядок не обрізається, а прокручені рядки не визирають над полем.',
+    where: 'Спринти → «Додати існуюче завдання»',
+    open: 'Спринти → «+» у шапці спринта → «Додати існуюче»',
+  },
+  {
     id: 'sheet',
     label: 'presentation="sheet"',
     props: { presentation: 'sheet', size: 'sm', bodyPadding: 'spacious' },
