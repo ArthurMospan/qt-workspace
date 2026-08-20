@@ -1856,7 +1856,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                                const hrs = parseInt(e.target.value) || 0;
                                const mins = logForm.minutes % 60;
                                setLogForm(f => ({ ...f, minutes: hrs * 60 + mins }));
-                            }} composition="duration-hours" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            }} composition="duration-hours" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
                           </div>
                           <div className="relative flex-1">
@@ -1864,7 +1864,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                                const mins = parseInt(e.target.value) || 0;
                                const hrs = Math.floor(logForm.minutes / 60);
                                setLogForm(f => ({ ...f, minutes: hrs * 60 + Math.min(mins, 59) }));
-                            }} composition="duration-minutes" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            }} composition="duration-minutes" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
                           </div>
                         </div>
@@ -1880,7 +1880,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                                const hrs = parseInt(e.target.value) || 0;
                                const mins = (logForm.estim || 0) % 60;
                                setLogForm(f => ({ ...f, estim: hrs * 60 + mins }));
-                            }} composition="duration-hours" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            }} composition="duration-hours" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
                           </div>
                           <div className="relative flex-1">
@@ -1888,7 +1888,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                                const mins = parseInt(e.target.value) || 0;
                                const hrs = Math.floor((logForm.estim || 0) / 60);
                                setLogForm(f => ({ ...f, estim: hrs * 60 + Math.min(mins, 59) }));
-                            }} composition="duration-minutes" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            }} composition="duration-minutes" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
                           </div>
                         </div>

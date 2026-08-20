@@ -46,7 +46,7 @@
       "covered": 108,
       "uncovered": 0,
       "routes": 13,
-      "previews": 144,
+      "previews": 145,
       "internal": 5,
       "unlisted": 0
     },
@@ -543,19 +543,19 @@
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:1016",
-      "tag": "div",
-      "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
-    },
-    {
-      "location": "src/app/(app)/sprints/page.js:1030",
+      "location": "src/app/(app)/sprints/page.js:1005",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:837",
+      "location": "src/app/(app)/sprints/page.js:836",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
+    },
+    {
+      "location": "src/app/(app)/sprints/page.js:991",
+      "tag": "div",
+      "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
       "location": "src/components/AudioTaskPanel.jsx:200",
@@ -658,7 +658,7 @@
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:290",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:288",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
@@ -703,7 +703,7 @@
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:648",
+      "location": "src/components/workspace/TimesheetTab.jsx:657",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },

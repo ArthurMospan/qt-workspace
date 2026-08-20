@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 353,
-    "elements": 4369,
+    "elements": 4371,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -43,7 +43,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/sprints/page.js:862",
+      "location": "src/app/(app)/sprints/page.js:861",
       "attributes": [
         "title",
         "aria-label"
@@ -207,14 +207,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/Select.jsx:282",
+      "location": "src/components/ui/Select.jsx:298",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/Select.jsx:493",
+      "location": "src/components/ui/Select.jsx:530",
       "attributes": [
         "aria-label"
       ]

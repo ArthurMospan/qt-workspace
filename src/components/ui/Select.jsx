@@ -161,6 +161,8 @@ function useDropdownPosition(isOpen, triggerRef, dropdownRef, gap = 4) {
  * @param {boolean} props.disabled Unavailable: the trigger is dimmed and will not open.
  * @param {string} props.placeholder Trigger text while nothing is selected.
  * @param {boolean} props.compact Denser trigger, for attribute strips.
+ * @param {boolean} props.searchable Puts a search box above the list, for a choice too long to scan.
+ * @param {string} props.searchPlaceholder Placeholder inside that search box.
  * @param {React.ComponentType} props.triggerIcon Leading glyph on the trigger.
  * @param {string} props.filterRole Which filter this is; `FilterBar` decides the width from it.
  * @param {'default'|'detail'|'projects'|'stacked'} props.filterContext Which width scale that lookup uses.
@@ -182,6 +184,8 @@ export function Select({
   variant = 'default',
   triggerIcon: TriggerIcon,
   compact = false,
+  searchable = false,
+  searchPlaceholder = 'Пошук...',
   size = 'lg',
   composition,
   filterRole,
@@ -190,6 +194,7 @@ export function Select({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [search, setSearch] = useState('');
   const containerRef = useRef(null);
   const dropdownRef = useRef(null);
   const triggerRef = useRef(null);
@@ -206,6 +211,7 @@ export function Select({
         !dropdownRef.current?.contains(event.target)
       ) {
         setIsOpen(false);
+        setSearch('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -213,7 +219,14 @@ export function Select({
   }, []);
 
   const selectedOption = options.find(o => o.value === value);
-  const selectedIndex = options.findIndex(o => o.value === value);
+  // Everything below the trigger — the keyboard, the highlight, the commit —
+  // reads this list, so a Select without a search box is the same control with
+  // the filter switched off. String(...) guards an option whose record is
+  // missing the name it was built from.
+  const shownOptions = searchable && search.trim()
+    ? options.filter(o => String(o.label ?? '').toLowerCase().includes(search.trim().toLowerCase()))
+    : options;
+  const selectedIndex = shownOptions.findIndex(o => o.value === value);
   const ResolvedTriggerIcon = TriggerIcon
     || (selectedOption?.icon ? null : FILTER_ROLE_ICONS[filterRole]);
 
@@ -226,16 +239,17 @@ export function Select({
   }, [activeIndex, isOpen]);
 
   const open = (index = selectedIndex >= 0 ? selectedIndex : 0) => {
-    setActiveIndex(options.length ? Math.max(0, Math.min(index, options.length - 1)) : -1);
+    setActiveIndex(shownOptions.length ? Math.max(0, Math.min(index, shownOptions.length - 1)) : -1);
     setIsOpen(true);
   };
   const close = ({ focusTrigger = true } = {}) => {
     setIsOpen(false);
     setActiveIndex(-1);
+    setSearch('');
     if (focusTrigger) triggerRef.current?.focus();
   };
   const commit = index => {
-    const option = options[index];
+    const option = shownOptions[index];
     if (!option) return;
     onChange(option.value);
     close();
@@ -259,17 +273,19 @@ export function Select({
       close();
     } else if (key === 'ArrowDown') {
       event.preventDefault();
-      setActiveIndex(current => Math.min(current + 1, options.length - 1));
+      setActiveIndex(current => Math.min(current + 1, shownOptions.length - 1));
     } else if (key === 'ArrowUp') {
       event.preventDefault();
       setActiveIndex(current => Math.max(current - 1, 0));
-    } else if (key === 'Home') {
+    // Home and End move the caret inside the search box; only a Select without
+    // one can spend them — and a space — on the list instead.
+    } else if (key === 'Home' && !searchable) {
       event.preventDefault();
       setActiveIndex(0);
-    } else if (key === 'End') {
+    } else if (key === 'End' && !searchable) {
       event.preventDefault();
-      setActiveIndex(options.length - 1);
-    } else if (key === 'Enter' || key === ' ') {
+      setActiveIndex(shownOptions.length - 1);
+    } else if (key === 'Enter' || (key === ' ' && !searchable)) {
       event.preventDefault();
       commit(activeIndex);
     } else if (key === 'Tab') {
@@ -319,7 +335,7 @@ export function Select({
         <div
           ref={dropdownRef}
           data-qt-floating-overlay
-          className={`fixed z-[1100] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] py-[6px] overflow-hidden ${dropdownClassName}`}
+          className={`fixed z-[1100] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] ${searchable ? 'pb-[6px]' : 'py-[6px]'} overflow-hidden ${dropdownClassName}`}
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -329,8 +345,29 @@ export function Select({
             visibility: dropdownPosition.visible ? 'visible' : 'hidden',
           }}
         >
+          {searchable && (
+            <div className="shrink-0 border-b border-[#f0f0f0] p-[8px]">
+              <div className="relative">
+                <Search size={14} className="absolute left-[10px] top-1/2 -translate-y-1/2 text-muted" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={search}
+                  onChange={event => { setSearch(event.target.value); setActiveIndex(0); }}
+                  onKeyDown={handleKeyDown}
+                  placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder}
+                  className="w-full bg-canvas text-[13px] font-medium text-ink rounded-[8px] pl-[32px] pr-[10px] py-[6px] outline-none border border-transparent focus:border-line"
+                />
+              </div>
+            </div>
+          )}
           <div className="max-h-[240px] overflow-y-auto custom-scrollbar" role="listbox" id={listboxId}>
-            {options.map((opt, index) => (
+            {shownOptions.length === 0 ? (
+              <div className="px-[12px] py-[16px] text-center text-[12px] font-medium text-muted">
+                Нічого не знайдено
+              </div>
+            ) : shownOptions.map((opt, index) => (
               <button
                 key={opt.value}
                 type="button"

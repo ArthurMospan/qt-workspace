@@ -227,7 +227,6 @@ function CalendarEventTimeSheet({
                     value={hours || ''}
                     placeholder="0"
                     onChange={inputEvent => updateDuration(Number(inputEvent.target.value) || 0, minutes)}
-                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted">год</span>
                 </div>
@@ -240,7 +239,6 @@ function CalendarEventTimeSheet({
                     value={minutes || ''}
                     placeholder="0"
                     onChange={inputEvent => updateDuration(hours, Number(inputEvent.target.value) || 0)}
-                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted">хв</span>
                 </div>

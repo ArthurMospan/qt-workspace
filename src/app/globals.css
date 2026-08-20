@@ -367,6 +367,22 @@
   .ui-button[data-ui-size='md'] { --ui-control-px: 16px; }
   .ui-field { --ui-control-px: 12px; }
   .ui-field[data-ui-leading='icon'] { --ui-control-pl: 36px; }
+  /* Native number spinners are a browser widget in the middle of a kit field:
+     they sit where the unit label goes, they change the value on a stray
+     scroll, and nothing in this product is entered by clicking an arrow twenty
+     times. Six call sites had already turned them off with the same pair of
+     utilities and fourteen had not, which is the whole reason «год / хв» looked
+     like a different control in the timesheet than in a task. Off once, here. */
+  .ui-field[type='number'] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  .ui-field[type='number']::-webkit-outer-spin-button,
+  .ui-field[type='number']::-webkit-inner-spin-button {
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0;
+  }
   .ui-control[data-ui-size='sm'] { --ui-control-height: var(--ui-control-sm); }
   .ui-control[data-ui-size='md'] { --ui-control-height: var(--ui-control-md); }
   .ui-control[data-ui-size='lg'] { --ui-control-height: var(--ui-control-lg); }
@@ -444,12 +460,6 @@
   .ui-control[data-ui-composition='duration-minutes'] {
     --ui-control-height: var(--ui-composition-metric);
   }
-  /* Declared with no geometry of their own — deliberately empty, not forgotten.
-     `Input` decides the room from its `suffix`, and the manifest reads these
-     selectors to know the two compositions exist. Giving them a height here
-     would be inventing one they never had. */
-  .ui-control[data-ui-composition='duration-compact-hours'],
-  .ui-control[data-ui-composition='duration-compact-minutes'] {}
   .ui-control[data-ui-composition='metric-text'] {
     --ui-control-height: var(--ui-composition-metric);
   }

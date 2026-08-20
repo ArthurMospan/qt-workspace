@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 113,
-    "props": 843,
-    "documentedProps": 843,
+    "props": 845,
+    "documentedProps": 845,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -547,8 +547,6 @@
             "chat-micro-action",
             "chat-panel-action",
             "color-hex",
-            "duration-compact-hours",
-            "duration-compact-minutes",
             "duration-hours",
             "duration-minutes",
             "inline-add-action",
@@ -2990,8 +2988,6 @@
           "type": "string",
           "values": [
             "color-hex",
-            "duration-compact-hours",
-            "duration-compact-minutes",
             "duration-hours",
             "duration-minutes",
             "inline-add-action",
@@ -4921,6 +4917,20 @@
           "type": "string",
           "values": [],
           "description": "Trigger text while nothing is selected."
+        },
+        {
+          "name": "searchable",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Puts a search box above the list, for a choice too long to scan."
+        },
+        {
+          "name": "searchPlaceholder",
+          "default": "'Пошук...'",
+          "type": "string",
+          "values": [],
+          "description": "Placeholder inside that search box."
         },
         {
           "name": "size",

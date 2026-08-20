@@ -16,6 +16,7 @@ export default function SelectsSection() {
   const [v5, setV5] = useState([]);
   const [limitedValues, setLimitedValues] = useState([5, 10, 15, 30, 60]);
   const [v6, setV6] = useState('in-progress');
+  const [v7, setV7] = useState('');
 
   const statusOpts = DEFAULT_STATUSES.map(s => ({ value: s.id, label: s.label, dotColor: s.color }));
   const priorityOpts = prioritySelectOptions(DEFAULT_PRIORITIES);
@@ -27,6 +28,15 @@ export default function SelectsSection() {
     { value: 'u2', label: 'Іван Петренко', user: { id: 'u2', name: 'Іван Петренко' } },
     { value: 'u3', label: 'Марина Коваль', user: { id: 'u3', name: 'Марина Коваль' } },
     { value: 'u4', label: 'Дмитро Сірко', user: { id: 'u4', name: 'Дмитро Сірко' } },
+  ];
+
+  // Номер попереду назви — так підпис завдання будує «Зафіксувати час», і саме
+  // тому пошук по «142» знаходить QT-142.
+  const issueOpts = [
+    { value: 'i1', label: 'QT-142 Перерахувати підсумки табеля' },
+    { value: 'i2', label: 'QT-143 Пошук у селекторі завдань' },
+    { value: 'i3', label: 'QT-158 Шапка спринта на десктопі' },
+    { value: 'i4', label: 'QT-160 Додати існуюче завдання у спринт' },
   ];
 
   return (
@@ -74,6 +84,21 @@ export default function SelectsSection() {
               dropdownClassName="w-[260px]"
             />
           </div>
+        </div>
+      </PreviewBlock>
+
+      {/* ─── Select with Search ─── */}
+      <PreviewBlock title="Select with Search" component="Select" description="Той самий Select із пошуковим рядком над списком: searchable вмикає його, searchPlaceholder підписує. Для вибору з довгого списку, який неможливо переглянути очима — завдання проєкту в «Зафіксувати час». Пошук іде по підпису опції, тому підпис, що починається з номера, знаходиться і за номером, і за назвою. Порожній результат каже «Нічого не знайдено», клавіатура рухається тільки знайденими рядками." fullWidth>
+        <div className="max-w-[300px]">
+          <label className="text-[11px] font-bold text-[#9a9a9a] uppercase tracking-wider mb-[6px] block">Завдання</label>
+          <Select
+            searchable
+            searchPlaceholder="Пошук за назвою або номером"
+            options={issueOpts}
+            value={v7}
+            onChange={setV7}
+            placeholder="Оберіть завдання..."
+          />
         </div>
       </PreviewBlock>
 

@@ -376,10 +376,9 @@ export default function GlobalSprintsPage() {
   const [backlogCollapsed, setBacklogCollapsed] = useState(false);
 
   const isManager = can(orgRole, 'manage:sprints');
-  // Below md the sprint header keeps the title, the plus and the kebab; every
-  // управлінська дія moves inside the kebab. `null` on the first render means
-  // desktop, which is the layout that has room either way.
-  const compactSprintActions = useIsMobile() === true;
+  // `null` on the first render means desktop, which is the layout that has
+  // room either way.
+  const isPhone = useIsMobile() === true;
   const projectIds = (projects || []).map(p => p.id);
   const {
     issues: snapshotIssues,
@@ -886,23 +885,42 @@ export default function GlobalSprintsPage() {
                           )}
                         </div>
 
-                        {/* A phone fits a title and two square controls on this
-                            line, and the row used to ask it for a title, a
-                            status, a count, a kebab, a labelled primary button
-                            and two more squares. Below md every управлінська дія
-                            lives in the kebab; the plus stays out because adding
-                            a task to a sprint is the whole job on a phone, where
-                            dragging a card between two stacked lists is not a
-                            real gesture. */}
+                        {/* Дві квадратні кнопки на обох ширинах. Рядок колись
+                            просив у телефона заголовок, статус, лічильник,
+                            кебаб, підписану головну кнопку і ще два квадрати —
+                            тепер кожна управлінська дія живе в кебабі, і на
+                            десктопі теж: шапка спринта скрізь читається
+                            однаково.
+
+                            «+» не створює завдання одразу, а питає, що саме
+                            додати: створити нове чи взяти вже наявне. Другий
+                            варіант — це те саме перетягування з «Без спринта»,
+                            сказане словами; на телефоні цього жесту немає, а на
+                            чотирьохстах завданнях він повільний і на десктопі. */}
                         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-                          <Button
-                            onClick={() => { setCreateTaskSprintId(sprint.id); setShowCreateTaskModal(true); }}
-                            style="ghost"
-                            size="icon-xs"
-                            icon={Plus}
-                            className="hover:!bg-white"
-                            aria-label={`Додати завдання у спринт ${sprint.name}`}
-                            title="Додати завдання у спринт"
+                          <ContextMenu
+                            trigger={(
+                              <Button
+                                style="ghost"
+                                size="icon-xs"
+                                icon={Plus}
+                                className="hover:!bg-white"
+                                aria-label={`Додати завдання у спринт ${sprint.name}`}
+                                title="Додати завдання у спринт"
+                              />
+                            )}
+                            items={[
+                              {
+                                label: 'Створити завдання',
+                                icon: Plus,
+                                onClick: () => { setCreateTaskSprintId(sprint.id); setShowCreateTaskModal(true); },
+                              },
+                              {
+                                label: 'Додати існуюче',
+                                icon: ListPlus,
+                                onClick: () => setAddExistingSprint(sprint),
+                              },
+                            ]}
                           />
                           <ContextMenu
                             trigger={(
@@ -924,7 +942,7 @@ export default function GlobalSprintsPage() {
                                 icon: CheckSquare,
                                 onClick: () => toggleSectionSelection(sprintIssues),
                               },
-                              ...(isManager && compactSprintActions ? [
+                              ...(isManager ? [
                                 { isDivider: true },
                                 ...(sprint.status === 'planned' ? [{
                                   label: 'Почати спринт',
@@ -948,49 +966,6 @@ export default function GlobalSprintsPage() {
                               ] : []),
                             ]}
                           />
-                          {isManager && !compactSprintActions && (<>
-                            {sprint.status === 'planned' && (
-                              <Button
-                                style="primary"
-                                size="sm"
-                                icon={Play}
-                                onClick={() => handleStartSprint(sprint.id)}
-                              >
-                                Почати спринт
-                              </Button>
-                            )}
-                            {sprint.status === 'active' && (
-                              <Button
-                                style="primary"
-                                size="sm"
-                                icon={Check}
-                                onClick={() => setShowCompleteSprintModal(sprint)}
-                              >
-                                Завершити
-                              </Button>
-                            )}
-                            <Button
-                              style="secondary"
-                              size="icon"
-                              icon={Edit2}
-                              onClick={() => setEditingSprint(sprint)}
-                            >
-                              Редагувати
-                            </Button>
-                            {sprint.status !== 'active' && (
-                              <Button
-                                style="secondary"
-                                size="icon"
-                                color="red"
-                                icon={Trash2}
-                                onClick={async () => {
-                                  if (await confirmDialog({ title: 'Видалити спринт?', confirmText: 'Видалити', danger: true })) deleteSprint(sprint.id);
-                                }}
-                              >
-                                Видалити
-                              </Button>
-                            )}
-                          </>)}
                         </div>
                       </div>
 
@@ -1026,7 +1001,7 @@ export default function GlobalSprintsPage() {
                   beside anything, so a 48px vertical spine of text would be a
                   stranger sitting under the sprints rather than a folded
                   column. */}
-              {backlogCollapsed && !compactSprintActions ? (
+              {backlogCollapsed && !isPhone ? (
                 <div
                   data-ui-surface="local"
                   className="flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"

@@ -39,7 +39,12 @@ test('the presets keep the one mechanism that survives the cascade', () => {
 test('every composition the product passes is still declared', () => {
   const manifest = extractVariants();
   for (const [component, values] of Object.entries({
-    Input: ['metric-editor', 'metric-text', 'inline-edit', 'duration-hours', 'duration-minutes', 'duration-compact-hours', 'duration-compact-minutes', 'status-entry', 'project-name'],
+    // `duration-compact-*` are gone with their single call site: the «Час»
+    // pair in «Зафіксувати час» now passes the same `duration-hours` /
+    // `duration-minutes` the tracker inside a task passes, because it is the
+    // same action and had no reason to be a second, shorter control. The two
+    // compact selectors declared no geometry at all, so nothing travelled.
+    Input: ['metric-editor', 'metric-text', 'inline-edit', 'duration-hours', 'duration-minutes', 'status-entry', 'project-name'],
     Segmented: ['dialog-tabs', 'billing-selection'],
     Textarea: ['transcript', 'audio-transcript', 'project-description', 'long-form', 'settings-note'],
     // `menu-item` is gone: it dressed a Button as a menu row for the two

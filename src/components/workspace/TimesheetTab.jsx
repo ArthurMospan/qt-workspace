@@ -496,8 +496,14 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
           </FormGroup>
         </div>
 
+        {/* Проєкт має сотні завдань, і людина, яка фіксує час, знає або номер
+            із чату, або кілька слів із назви. Список без пошуку означав
+            прокрутку до потрібного рядка — тому тут селектор із пошуком, а
+            підпис опції починається з номера, щоб «142» знаходило QT-142. */}
         <FormGroup label="Завдання" gap="md">
           <Select
+            searchable
+            searchPlaceholder="Пошук за назвою або номером"
             value={issueId}
             onChange={setIssueId}
             options={[
@@ -507,14 +513,17 @@ function LogTimeModal({ isOpen, onClose, projects, issues }) {
           />
         </FormGroup>
 
+        {/* Та сама пара полів, що й у трекінгу часу всередині завдання: ті самі
+            composition-и, та сама висота, ті самі підписи. Це одна дія, і
+            виглядати вона має однаково, де б людина її не робила. */}
         <FormGroup label="Час" gap="md">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Input type="number" min="0" placeholder="0" value={hours} onChange={e => setHours(e.target.value)} composition="duration-compact-hours" />
+              <Input size="lg" type="number" min="0" placeholder="0" value={hours} onChange={e => setHours(e.target.value)} composition="duration-hours" />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">год</span>
             </div>
             <div className="relative flex-1">
-              <Input type="number" min="0" max="59" placeholder="0" value={mins} onChange={e => setMins(e.target.value)} composition="duration-compact-minutes" />
+              <Input size="lg" type="number" min="0" max="59" placeholder="0" value={mins} onChange={e => setMins(e.target.value)} composition="duration-minutes" />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted pointer-events-none">хв</span>
             </div>
           </div>
