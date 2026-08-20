@@ -144,9 +144,11 @@ test('«Архів» lists the cancelled ones and hands them back', async () => 
   const settings = await read('../src/app/(app)/settings/page.js');
   assert.match(settings, /\{ id: 'cancelled', label: 'Скасовані', count: cancelledIssueList\.length \}/);
   assert.match(settings, /setIssueCancelled\(issue\.id, false\)/);
-  // The stream starts only when one of the task tabs is open — the archive
-  // shares the workspace's read budget with everything else.
-  assert.match(settings, /archiveTab === 'issues' \|\| archiveTab === 'cancelled'/);
+  // The stream starts when the section is open and not before — the archive
+  // shares the workspace's read budget with everything else. It is no longer
+  // scoped to a tab: the strip carries a count per tab, and a list that waits
+  // to be stood on cannot be counted.
+  assert.match(settings, /archiveSectionOpen \? \(projects \|\| \[\]\)\.map\(project => project\.id\) : \[\]/);
   // Both task lists are the same row, so they cannot drift apart.
   assert.match(settings, /function ArchiveIssueRows\(/);
 });

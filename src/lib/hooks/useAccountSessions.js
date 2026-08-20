@@ -17,9 +17,13 @@ import { reportLoadError } from '@/lib/utils/errors';
 import { listSessions } from '@/lib/utils/accountSessions.mjs';
 
 const SESSION_ID_KEY = 'qt:session-id';
-// A browser that is open all day writes this twice. The row's value is "which
-// devices", not "to the minute".
-const RECORD_INTERVAL_MS = 12 * 60 * 60 * 1000;
+// Half an hour, not half a day. The panel prints this stamp as «востаннє …»,
+// and at twelve hours that sentence was wrong about every device somebody had
+// used since breakfast — a security panel that misremembers when a browser was
+// last used is worse than one that says nothing. It is still a heartbeat, not a
+// tracker: one write per browser per half hour at the very most, and only when
+// somebody is actually looking at the workspace.
+const RECORD_INTERVAL_MS = 30 * 60 * 1000;
 
 /** This browser's own id, minted once and kept for as long as its storage lives. */
 export function deviceSessionId() {
@@ -47,25 +51,44 @@ export function useRecordAccountSession(userId) {
     const sessionId = deviceSessionId();
     if (!sessionId) return undefined;
     const key = `account-session:${userId}`;
-    if (!activityHeartbeatDue(key, RECORD_INTERVAL_MS)) return undefined;
 
     let cancelled = false;
-    // Deliberately not `claimActivityHeartbeat`: that one refuses a tab that is
-    // not visible, and it books the interval before the request is sent. Both
-    // are wrong here. A workspace restored into a background tab is still a
-    // sign-in worth recording, and a failed write must not leave the panel
-    // empty for twelve hours — the mark is made only once the write lands, so
-    // the next mount tries again.
-    authenticatedRequest('/api/account/sessions', {
-      method: 'POST',
-      body: JSON.stringify({ sessionId }),
-    }, 'Не вдалося зберегти сеанс')
-      .then(() => { if (!cancelled) markActivityHeartbeat(key); })
-      .catch(() => {
-        // A security panel that is one device short is worth less than a
-        // workspace that refuses to open, so this stays silent.
-      });
-    return () => { cancelled = true; };
+    const record = () => {
+      if (cancelled || !activityHeartbeatDue(key, RECORD_INTERVAL_MS)) return;
+      // Deliberately not `claimActivityHeartbeat`: that one refuses a tab that
+      // is not visible, and it books the interval before the request is sent.
+      // Both are wrong here. A workspace restored into a background tab is
+      // still a sign-in worth recording, and a failed write must not leave the
+      // panel stale for the whole interval — the mark is made only once the
+      // write lands, so the next attempt tries again.
+      authenticatedRequest('/api/account/sessions', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId }),
+      }, 'Не вдалося зберегти сеанс')
+        .then(() => { if (!cancelled) markActivityHeartbeat(key); })
+        .catch(() => {
+          // A security panel that is one device short is worth less than a
+          // workspace that refuses to open, so this stays silent.
+        });
+    };
+
+    record();
+    // The workspace mounts once and then stays mounted for days, so a mount is
+    // not on its own a measure of when a browser was last used. Coming back to
+    // the tab is: it is the moment the person is here again, and it costs a
+    // write only when the interval has already run out.
+    const onVisible = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') record();
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisible);
+    }
+    return () => {
+      cancelled = true;
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisible);
+      }
+    };
   }, [userId]);
 }
 
@@ -110,6 +133,13 @@ export function useAccountSessions(userId) {
     }
   }, []);
 
+  // `metadata.lastSignInTime` and `metadata.creationTime` are deliberately not
+  // published. The panel printed them as «Останній вхід» and «Обліковий запис
+  // створено», and the first of the two is not the sentence it looks like:
+  // Firebase refreshes it when a *credential* is presented, so a browser that
+  // has been open since yesterday reports yesterday to the person sitting in
+  // it. Which devices are signed in is the question this screen answers, and
+  // the rows below answer it.
   const signInUser = auth.currentUser;
   return {
     sessions,
@@ -118,7 +148,5 @@ export function useAccountSessions(userId) {
     endSession,
     currentSessionId,
     providerData: signInUser?.providerData || [],
-    lastSignInAt: signInUser?.metadata?.lastSignInTime || null,
-    createdAt: signInUser?.metadata?.creationTime || null,
   };
 }

@@ -247,9 +247,24 @@ function remainingTrashTime(purgeAfterMs) {
 // left margin under its own caption. So the row asks what it is holding — the
 // same static-marker trick PageHeader uses to find a FilterBar — and keeps a
 // switch on the right where it reads as an on/off for the line beside it.
+// Whether a row is governed by a switch. A switch is the smallest control in
+// the product, so its row stays one line on a phone while a row holding a
+// select or a text field stacks.
+//
+// Through a plain wrapper, not direct children only. «Брендинг у сайдбарі»
+// keeps its logo preview beside the toggle, so the pair lives in a `div` — and
+// a `div` is not a switch, which read as "this row holds something big" and
+// dropped the toggle onto a line of its own on every phone.
+const isSwitchNode = node => {
+  if (!isValidElement(node)) return false;
+  if (node.type?.isSwitch) return true;
+  if (node.type !== 'div' && node.type !== 'span') return false;
+  return Children.toArray(node.props?.children).some(isSwitchNode);
+};
+
 function Row({ label, desc, children, danger = false }) {
-  const switchOnly = Children.toArray(children).length > 0
-    && Children.toArray(children).every(child => isValidElement(child) && child.type?.isSwitch);
+  const items = Children.toArray(children);
+  const switchOnly = items.length > 0 && items.every(isSwitchNode);
   return (
     <div className={`flex justify-between gap-3 py-[12px] sm:flex-row sm:items-center sm:gap-6 ${
       switchOnly ? 'flex-row items-center' : 'flex-col items-stretch'
@@ -796,11 +811,14 @@ export default function SettingsPage() {
   // workspace shares one read budget.
   const [archiveTab, setArchiveTab] = useState('projects');
   const archiveSectionOpen = activeSection === 'archives';
+  // Scoped to the section, not to the tab. The four counts are drawn on the
+  // strip itself, so a tab that loads its own list only once you stand on it
+  // has no count until you do — which is why the numbers used to appear, and
+  // then vanish again when you moved on. The whole section is one subscription
+  // for as long as somebody is reading it.
   const archiveProjectIds = useMemo(() => (
-    archiveSectionOpen && (archiveTab === 'issues' || archiveTab === 'cancelled')
-      ? (projects || []).map(project => project.id)
-      : []
-  ), [archiveSectionOpen, archiveTab, projects]);
+    archiveSectionOpen ? (projects || []).map(project => project.id) : []
+  ), [archiveSectionOpen, projects]);
   const {
     allIssues: archiveScopedIssues,
     cancelledIssues: cancelledIssueList,
@@ -832,11 +850,14 @@ export default function SettingsPage() {
   }, [activeOrgId, showToast]);
 
   // A one-time read rather than a subscription: this list changes when somebody
-  // deletes a task, and nobody sits on this tab waiting for that to happen.
+  // deletes a task, and nobody sits on this tab waiting for that to happen. It
+  // is read when the section opens rather than when its tab does, for the same
+  // reason the streams above are: «Нещодавно видалене» carries a count on the
+  // strip, and a count nobody has opened the tab for is not a count.
   useEffect(() => {
-    if (!archiveSectionOpen || archiveTab !== 'deleted') return;
+    if (!archiveSectionOpen) return;
     void loadDeletedIssues();
-  }, [archiveSectionOpen, archiveTab, loadDeletedIssues]);
+  }, [archiveSectionOpen, loadDeletedIssues]);
 
   const handleUnarchiveIssue = async (issue) => {
     try {
@@ -3861,8 +3882,6 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'account': {
-        const signInAt = accountSecurity.lastSignInAt ? new Date(accountSecurity.lastSignInAt) : null;
-        const accountCreatedAt = accountSecurity.createdAt ? new Date(accountSecurity.createdAt) : null;
         // `formatTime` formats an "HH:MM" string off a form. Handed a Date it
         // returned the Date, and a settings row printed «Wed Aug 19 2026
         // 13:27:08 GMT+0300 (за східноєвропейським літнім часом)» — the line
@@ -3905,11 +3924,11 @@ export default function SettingsPage() {
               missing when the platform does not report it — a session that
               cannot say where it came from must not make one up. */}
           <Card preset="borderless" padding="lg">
-            <Row label="Пристрої" desc="Браузери, у яких відкривали цей обліковий запис">
-              <p className="text-[13px] font-semibold text-ink">
-                {accountSecurity.loading ? '—' : accountSecurity.sessions.length}
-              </p>
-            </Row>
+            {/* No figure beside the label. «3» is the length of the list
+                directly under it — a number the reader counts faster than they
+                read it, and one that said nothing about whether any of the
+                three is a stranger. */}
+            <Row label="Пристрої" desc="Браузери, у яких відкривали цей обліковий запис" />
             {accountSecurity.loading ? (
               <div className="flex justify-center py-8"><LoadingSpinner size="md" /></div>
             ) : accountSecurity.sessions.length === 0 ? (
@@ -3927,12 +3946,19 @@ export default function SettingsPage() {
                           <p className="truncate text-[13px] font-semibold text-ink">{session.device}</p>
                           {session.isCurrent && <Pill size="md" className="shrink-0">Цей пристрій</Pill>}
                         </div>
+                        {/* The device reading this row is here now, whatever
+                            the stored stamp says: that stamp is written on a
+                            schedule, so a browser somebody has been sitting in
+                            all afternoon used to report the morning. It is the
+                            one row whose answer is known without being read. */}
                         <p className="mt-0.5 truncate text-[12px] text-muted">
                           {[
                             session.place,
-                            session.lastSeenMillis
-                              ? `востаннє ${whenLabel(new Date(session.lastSeenMillis))}`
-                              : null,
+                            session.isCurrent
+                              ? 'зараз тут'
+                              : session.lastSeenMillis
+                                ? `востаннє ${whenLabel(new Date(session.lastSeenMillis))}`
+                                : null,
                           ].filter(Boolean).join(' · ') || 'Час останнього входу невідомий'}
                         </p>
                       </div>
@@ -3951,22 +3977,6 @@ export default function SettingsPage() {
                 ))}
               </div>
             )}
-          </Card>
-
-          {/* Two dates, said plainly. The last sign-in used to carry the
-              account's creation date in its description, which is a different
-              fact about a different day. */}
-          <Card preset="borderless" padding="lg">
-            <Row label="Останній вхід" desc="Коли цим обліковим записом користувалися востаннє">
-              <p className="text-[13px] font-semibold text-ink">
-                {signInAt ? whenLabel(signInAt) : '—'}
-              </p>
-            </Row>
-            <Row label="Обліковий запис створено" desc="Відколи він існує">
-              <p className="text-[13px] font-semibold text-ink">
-                {accountCreatedAt ? formatDate(accountCreatedAt) : '—'}
-              </p>
-            </Row>
           </Card>
 
           {/* «Способи входу» lives here now rather than in a section of its
