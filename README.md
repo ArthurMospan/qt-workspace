@@ -66,9 +66,6 @@ TELEGRAM_WEBHOOK_SECRET=
 # Scheduled calendar/deadline notifications (production)
 CRON_SECRET=
 
-# Opens /errors, the inbox for «Повідомити про помилку». Server-only, and the
-# page is closed while it is unset — there is no default and no fallback.
-ERROR_REPORTS_PASSWORD=
 ```
 
 `NEXT_PUBLIC_*` values are shipped to the browser. Never put Admin SDK, Cloudinary secret, email-provider secret, API keys or other credentials in a public variable.

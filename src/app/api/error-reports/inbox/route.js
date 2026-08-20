@@ -7,14 +7,17 @@
 // would read their team's failures, and the developer would have to walk every
 // organization to find their own bug list.
 //
-// So the reader is not a role here. It is a password, checked on the server
-// against `ERROR_REPORTS_PASSWORD` and never shipped to a browser. No value
-// configured means the inbox is closed — a page that opens because a variable
-// is missing is not a locked page.
+// So the reader is not a role here. It is a password, and it is the line right
+// below — change it there and nowhere else. Deliberately not an environment
+// variable: this is one person's door to a page nobody else has a reason to
+// open, and making it a deploy-time setting bought nothing but a setup step.
 import { NextResponse } from 'next/server';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+
+// The password. This is the whole of the configuration.
+const PASSWORD = 'AIW';
 
 const REPORT_LIMIT = 100;
 
@@ -24,9 +27,7 @@ const REPORT_LIMIT = 100;
 const digestOf = value => createHash('sha256').update(String(value ?? '')).digest();
 
 function passwordAccepted(candidate) {
-  const expected = process.env.ERROR_REPORTS_PASSWORD || '';
-  if (!expected) return false;
-  return timingSafeEqual(digestOf(candidate), digestOf(expected));
+  return timingSafeEqual(digestOf(candidate), digestOf(PASSWORD));
 }
 
 // Whoever is knocking. Behind a proxy the socket address is the proxy's, so the
@@ -39,10 +40,6 @@ function callerAddress(request) {
 
 export async function POST(request) {
   try {
-    if (!process.env.ERROR_REPORTS_PASSWORD) {
-      return NextResponse.json({ error: 'Сторінку не налаштовано' }, { status: 503 });
-    }
-
     // Ten tries in five minutes per address. A password is only as private as
     // the number of guesses it survives, and this page has no session to fall
     // back on.

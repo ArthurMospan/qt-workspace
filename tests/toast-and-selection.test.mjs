@@ -70,11 +70,13 @@ test('a failure can be reported, and the report has somewhere to land', () => {
   // an organization may decide this again.
   assert.doesNotMatch(route, /membership\?\.role/);
   assert.doesNotMatch(inbox, /membership/);
-  assert.match(inbox, /process\.env\.ERROR_REPORTS_PASSWORD/);
-  // Compared as fixed-length digests, and closed while unconfigured: a page
-  // that opens because a variable is missing is not a locked page.
+  // One constant, and no environment variable: this is one person's door to a
+  // page nobody else has a reason to open, and a deploy-time setting bought
+  // nothing but a setup step.
+  assert.match(inbox, /const PASSWORD = '/);
+  assert.doesNotMatch(inbox, /process\.env/);
+  // Compared as fixed-length digests, and guessing is bounded.
   assert.match(inbox, /timingSafeEqual/);
-  assert.match(inbox, /if \(!expected\) return false;/);
   assert.match(inbox, /enforceRateLimit\('errorReportsInbox'/);
 
   assert.match(page, /Звіти про помилки/);
