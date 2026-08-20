@@ -9,6 +9,13 @@
 // A report is written through this route rather than straight from the browser
 // on purpose: the client cannot be trusted with who it says it is, the rate
 // limit lives here, and the collection stays closed to client reads entirely.
+//
+// Reading them is `inbox/route.js`, behind a password and not behind a role.
+// The reports live in one root collection with the workspace stamped on each
+// one, rather than under the workspace itself — sitting inside an organization
+// is exactly what made «власник цієї організації» look like their natural
+// reader, and it also meant the one person they are for would have to walk
+// every workspace to find them.
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
@@ -42,7 +49,12 @@ export async function POST(request) {
     }
 
     const db = getAdminDb();
+    // The workspace by name as well as by id: the inbox lists reports from
+    // every workspace at once, and an id says nothing about which one broke.
+    const organizationSnapshot = await db.collection('organizations').doc(organizationId).get();
     const report = {
+      organizationId,
+      organizationName: organizationSnapshot.data()?.name || '',
       message,
       note: trimmed(body?.note, MAX_NOTE),
       detail: trimmed(body?.detail, MAX_TEXT),
@@ -54,65 +66,16 @@ export async function POST(request) {
       status: 'new',
       createdAt: Timestamp.now(),
     };
-    // Under the organization, not a root collection: the path already scopes
-    // it, so reading the newest hundred needs `orderBy` alone and no composite
-    // index to be deployed before this works. Firestore denies what no rule
-    // matches, so the collection is unreadable from a browser either way.
-    const written = await db.collection('organizations').doc(organizationId)
-      .collection('errorReports').add(report);
+    // One root collection, ordered by time and nothing else, so reading the
+    // newest hundred across every workspace needs no index deployed before it
+    // works. Firestore denies what no rule matches, so the collection is
+    // unreadable from a browser either way.
+    const written = await db.collection('errorReports').add(report);
     return NextResponse.json({ ok: true, id: written.id });
   } catch (error) {
     return routeErrorResponse(error, {
       context: 'error report',
       fallbackMessage: 'Не вдалося надіслати звіт',
-    });
-  }
-}
-
-// Reading them is not a workspace feature: an error report carries one member's
-// screen, path and failure, and the only people it is for are the ones who can
-// act on it. Owners only, and never from a client listener — this route is the
-// only way the collection is read, so it can stay closed in the rules.
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get('organizationId') || '';
-    const authorization = await authorizeOrgRequest(request, organizationId);
-    if (authorization.error) {
-      return NextResponse.json({ error: authorization.error }, { status: authorization.status });
-    }
-    if (authorization.membership?.role !== 'owner') {
-      return NextResponse.json({ error: 'Доступ лише для власника' }, { status: 403 });
-    }
-
-    const db = getAdminDb();
-    const snapshot = await db.collection('organizations').doc(organizationId)
-      .collection('errorReports')
-      .orderBy('createdAt', 'desc')
-      .limit(100)
-      .get();
-
-    return NextResponse.json({
-      reports: snapshot.docs.map(document => {
-        const data = document.data();
-        return {
-          id: document.id,
-          message: data.message || '',
-          note: data.note || '',
-          detail: data.detail || '',
-          context: data.context || '',
-          path: data.path || '',
-          userAgent: data.userAgent || '',
-          reportedByName: data.reportedByName || '',
-          status: data.status || 'new',
-          createdAt: data.createdAt?.toDate?.()?.toISOString?.() || null,
-        };
-      }),
-    });
-  } catch (error) {
-    return routeErrorResponse(error, {
-      context: 'error reports',
-      fallbackMessage: 'Не вдалося прочитати звіти',
     });
   }
 }

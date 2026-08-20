@@ -3,7 +3,6 @@
 // Store connector: reads the toast from useWorkspaceStore and renders it
 // through the ui-kit Toast (single source of truth for the toast visuals).
 import { useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UiToast from '@/components/ui/Feedback/Toast';
@@ -13,8 +12,7 @@ export default function WorkspaceToastHost() {
   const toast = useWorkspaceStore(s => s.toast);
   const clearToast = useWorkspaceStore(s => s.clearToast);
   const showToast = useWorkspaceStore(s => s.showToast);
-  const { activeOrgId, orgRole } = useAppContext();
-  const router = useRouter();
+  const { activeOrgId } = useAppContext();
 
   const message = typeof toast === 'string' ? toast : toast?.message;
   const detail = typeof toast === 'string' ? '' : toast?.detail;
@@ -32,16 +30,14 @@ export default function WorkspaceToastHost() {
         context,
         path: typeof window === 'undefined' ? '' : window.location.pathname + window.location.search,
       });
-      // The one person who can read them is offered the way there, once,
-      // where they already are — rather than a navigation entry every member
-      // sees and nobody uses.
-      showToast('Дякуємо — звіт надіслано', 'success', orgRole === 'owner' ? {
-        action: { label: 'Відкрити звіти', onClick: () => router.push('/errors') },
-      } : {});
+      // Nowhere to send anybody afterwards: the reports are read on /errors,
+      // which is not a workspace screen and belongs to whoever holds its
+      // password rather than to a role inside this organization.
+      showToast('Дякуємо — звіт надіслано', 'success');
     } catch {
       showToast('Не вдалося надіслати звіт', 'error', { context: 'error-report' });
     }
-  }, [activeOrgId, context, detail, message, orgRole, router, showToast]);
+  }, [activeOrgId, context, detail, message, showToast]);
 
   if (!toast) return null;
 

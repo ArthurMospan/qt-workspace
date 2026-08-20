@@ -46,7 +46,8 @@ test('a failure can be reported, and the report has somewhere to land', () => {
   const toast = read('components/ui/Feedback/Toast.jsx');
   const host = read('components/WorkspaceToastHost.jsx');
   const route = read('app/api/error-reports/route.js');
-  const page = read('app/(app)/errors/page.js');
+  const inbox = read('app/api/error-reports/inbox/route.js');
+  const page = read('app/errors/page.js');
 
   assert.match(toast, /isError && onReport/);
   assert.match(toast, /Повідомити про помилку/);
@@ -58,11 +59,27 @@ test('a failure can be reported, and the report has somewhere to land', () => {
   // it is, and the collection stays unreadable from any client.
   assert.match(route, /authorizeOrgRequest/);
   assert.match(route, /enforceRateLimit\('errorReport'/);
-  assert.match(route, /authorization\.membership\?\.role !== 'owner'/);
-  // Under the organization, so reading the newest hundred needs no composite
-  // index deployed before the page works.
-  assert.match(route, /collection\('organizations'\)\.doc\(organizationId\)\s*\n\s*\.collection\('errorReports'\)/);
+  // One root collection with the workspace stamped on each report, not a
+  // subcollection of the workspace: reading the newest hundred across every
+  // organization then needs no index deployed before the page works.
+  assert.match(route, /db\.collection\('errorReports'\)\.add\(report\)/);
+  assert.match(route, /organizationName: organizationSnapshot/);
+
+  // Reading is not a role. It used to be «власник організації», which is the
+  // wrong person the moment a workspace belongs to a customer — so no role in
+  // an organization may decide this again.
+  assert.doesNotMatch(route, /membership\?\.role/);
+  assert.doesNotMatch(inbox, /membership/);
+  assert.match(inbox, /process\.env\.ERROR_REPORTS_PASSWORD/);
+  // Compared as fixed-length digests, and closed while unconfigured: a page
+  // that opens because a variable is missing is not a locked page.
+  assert.match(inbox, /timingSafeEqual/);
+  assert.match(inbox, /if \(!expected\) return false;/);
+  assert.match(inbox, /enforceRateLimit\('errorReportsInbox'/);
+
   assert.match(page, /Звіти про помилки/);
+  // The password is never written down on the client.
+  assert.doesNotMatch(page, /localStorage|sessionStorage|document\.cookie/);
 });
 
 // The table draws a page at a time, so a header box that claimed «всі» would

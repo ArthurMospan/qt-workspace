@@ -37,15 +37,24 @@ export async function reportError({
   return result;
 }
 
-/** The newest hundred reports of this workspace. Owner only; the route says so. */
-export async function fetchErrorReports(organizationId) {
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) throw new Error('Authentication required');
-  const response = await fetch(
-    `/api/error-reports?organizationId=${encodeURIComponent(organizationId)}`,
-    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
-  );
+/**
+ * The newest hundred reports, from every workspace.
+ *
+ * Behind a password rather than a role, and the password travels in the body of
+ * a POST rather than in the address: a query string is written down by every
+ * proxy and every browser history along the way. There is no session here on
+ * purpose — /errors is not a workspace screen and does not ask anyone to log in.
+ *
+ * @param {string} password Read from the field on /errors.
+ */
+export async function fetchErrorReports(password) {
+  const response = await fetch('/api/error-reports/inbox', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+    cache: 'no-store',
+  });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || 'Failed to read the reports');
+  if (!response.ok) throw new Error(result.error || 'Не вдалося прочитати звіти');
   return result.reports || [];
 }

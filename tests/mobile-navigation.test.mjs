@@ -43,7 +43,8 @@ test('a screen ends its own scroller with the footprint the shell stopped reserv
     'src/app/(app)/analytics/team/[memberId]/page.js',
     'src/app/(app)/sprints/page.js',
     'src/app/(app)/settings/page.js',
-    'src/app/(app)/errors/page.js',
+    // `/errors` is not in this list any more and must not come back: it left
+    // the workspace shell entirely, so there is no bar over it to clear.
     'src/app/(app)/calendar/page.js',
     'src/app/(app)/[projectId]/ProjectBoardClient.jsx',
     'src/components/workspace/AgileBoard.jsx',
