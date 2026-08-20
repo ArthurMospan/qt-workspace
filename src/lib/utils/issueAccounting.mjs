@@ -109,20 +109,6 @@ export function buildIssueAccountingIndex(issues = []) {
   };
 }
 
-/**
- * Selects leaf tasks plus standalone top-level tasks, preserving the order of
- * the supplied list. `hierarchyIssues` may be wider than `issues`, which keeps
- * a parent classified as a summary even when its children are hidden by a UI
- * filter or assigned to another member.
- */
-export function selectActionableIssues(issues = [], hierarchyIssues = issues) {
-  const { summaryIssueIds } = buildIssueAccountingIndex(hierarchyIssues);
-  return issues.filter(issue => {
-    const id = normalizedId(issue?.id);
-    return !id || !summaryIssueIds.has(id);
-  });
-}
-
 function actionableDescendantIds(parentId, index) {
   const result = [];
   const pending = [...(index.childIdsByParent.get(parentId) || [])];
@@ -235,73 +221,42 @@ export function sumRawTimeLogMinutes(logs = []) {
   }, 0);
 }
 
-export function calculateBillingAutoPrice({
-  issue,
-  logSummary,
-  rates = {},
-  isSummaryParent = false,
-} = {}) {
-  const totalMinutes = validMinutes(logSummary?.totalMinutes);
-  if (totalMinutes > 0) {
-    return Object.entries(logSummary?.byUser || {}).reduce(
-      (total, [userId, minutes]) => (
-        total + (validMinutes(minutes) / 60) * (Number(rates[userId]) || 0)
-      ),
-      0,
-    );
-  }
-
-  // A parent estimate is a planning rollup. Billing it in addition to its
-  // children would duplicate money, so parents only use their own actual logs.
-  if (isSummaryParent) return 0;
-
-  const estimateMinutes = validMinutes(issue?.estimateMinutes);
-  if (estimateMinutes <= 0) return 0;
-  const assigneeId = normalizedId(issue?.assigneeIds?.[0]);
-  return (estimateMinutes / 60) * (assigneeId ? (Number(rates[assigneeId]) || 0) : 0);
-}
-
 /**
- * Summary parents are absent from estimated billing, but remain available when
- * they have time logged directly against themselves. Their children and
- * standalone tasks retain the usual actual-time/estimate fallback.
+ * An invoice charges for work that happened, so the only automatic source is
+ * raw time logs. An estimate is a plan, and turning a plan into money without
+ * anyone deciding to is the one thing billing must never do — a fixed price is
+ * typed in by hand instead.
  */
-export function selectBillableIssues(
-  issues = [],
-  timeLogsByIssue = {},
-  hierarchyIssues = issues,
-) {
-  const { summaryIssueIds } = buildIssueAccountingIndex(hierarchyIssues);
-  return issues.filter(issue => {
-    const issueId = normalizedId(issue?.id);
-    if (!issueId || !summaryIssueIds.has(issueId)) return true;
-    return validMinutes(timeLogsByIssue[issueId]?.totalMinutes) > 0;
-  });
+export function calculateBillingAutoPrice({ logSummary, rates = {} } = {}) {
+  if (validMinutes(logSummary?.totalMinutes) <= 0) return 0;
+  return Object.entries(logSummary?.byUser || {}).reduce(
+    (total, [userId, minutes]) => (
+      total + (validMinutes(minutes) / 60) * (Number(rates[userId]) || 0)
+    ),
+    0,
+  );
 }
 
 /**
- * Incremental invoicing uses only currently unbilled actual logs. A task that
- * has ever had actual time must not fall back to its estimate after those logs
- * are invoiced; it reappears only when new unbilled actual logs are added.
+ * Incremental invoicing offers the work that still has money left in it:
+ * unbilled raw logs, or a task that has never been billed at all and may need
+ * a hand-entered price. A task whose logs are already invoiced is settled
+ * business and returns only when new unbilled logs appear.
+ *
+ * Task hierarchy is deliberately absent here. A parent bills its own logs like
+ * any other task; nothing rolls up, so nothing can be charged twice.
  */
 export function selectIncrementalBillableIssues(
   issues = [],
   availableTimeLogsByIssue = {},
   allTimeLogsByIssue = availableTimeLogsByIssue,
-  hierarchyIssues = issues,
 ) {
-  const index = buildIssueAccountingIndex(hierarchyIssues);
-  return selectBillableIssues(
-    issues,
-    availableTimeLogsByIssue,
-    hierarchyIssues,
-  ).filter(issue => {
+  return issues.filter(issue => {
     const issueId = normalizedId(issue?.id);
     const availableActual = validMinutes(
       availableTimeLogsByIssue[issueId]?.totalMinutes,
     ) > 0;
     if (availableActual) return true;
-    if (index.summaryIssueIds.has(issueId)) return false;
     return (allTimeLogsByIssue[issueId]?.logIds || []).length === 0;
   });
 }

@@ -7,7 +7,6 @@ import {
   Alert, BarList, Card, ColumnChart, DetailSection, EmptyState, KpiCard, TaskListCard, TrendChart,
 } from '@/components/ui';
 import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
-import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 import { summarizeCycleTimes } from '@/lib/utils/velocityMetrics.mjs';
 import { buildVelocityExport } from '@/lib/utils/analyticsExport.mjs';
@@ -97,10 +96,6 @@ export default function VelocityTab({
   // measures output, and cancelling something produces none of it.
   const closedSet = useMemo(() => new Set(closedStatusIds), [closedStatusIds]);
   const deliveredSet = useMemo(() => new Set(deliveredStatusIds), [deliveredStatusIds]);
-  const actionableIssues = useMemo(
-    () => selectActionableIssues(issues),
-    [issues],
-  );
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -111,7 +106,7 @@ export default function VelocityTab({
     const periodAgo = now - period * 86400000;
     const prevPeriodAgo = now - period * 2 * 86400000;
 
-    const doneAll = actionableIssues.filter(i => deliveredSet.has(i.columnId || i.status));
+    const doneAll = issues.filter(i => deliveredSet.has(i.columnId || i.status));
 
     const donePeriod = doneAll.filter(i => {
       const t = getCompletedAtMillis(i);
@@ -123,7 +118,7 @@ export default function VelocityTab({
       return t >= prevPeriodAgo && t < periodAgo;
     });
 
-    const createdPeriod = actionableIssues.filter(i => {
+    const createdPeriod = issues.filter(i => {
       const t = i.createdAt?.toMillis?.() ?? 0;
       return t >= periodAgo;
     });
@@ -146,22 +141,22 @@ export default function VelocityTab({
         // Closed first, because closed is the measure and opened is the context
         // it is read against — the order the legend and the tooltip follow too.
         values: [
-          actionableIssues.filter(iss => { if (!deliveredSet.has(iss.columnId || iss.status)) return false; const t = getCompletedAtMillis(iss); return t >= dayStart && t <= dayEnd; }).length,
-          actionableIssues.filter(iss => { const t = iss.createdAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
+          issues.filter(iss => { if (!deliveredSet.has(iss.columnId || iss.status)) return false; const t = getCompletedAtMillis(iss); return t >= dayStart && t <= dayEnd; }).length,
+          issues.filter(iss => { const t = iss.createdAt?.toMillis?.() ?? 0; return t >= dayStart && t <= dayEnd; }).length,
         ],
       };
     });
 
     // By type breakdown — types come from the shared workflow config
     const byType = types.map(({ id: type, label, color }) => {
-      const typeIssues = actionableIssues.filter(i => i.type === type);
+      const typeIssues = issues.filter(i => i.type === type);
       const typeDone = typeIssues.filter(i => deliveredSet.has(i.columnId || i.status));
       return { type, label, color, total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
     }).filter(t => t.total > 0);
 
     // Per-project velocity
     const byProject = projects.map(p => {
-      const pIssues = actionableIssues.filter(i => i.projectId === p.id);
+      const pIssues = issues.filter(i => i.projectId === p.id);
       const pDone = pIssues.filter(i => deliveredSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= periodAgo);
       return { p, count: pDone.length, total: pIssues.length };
     }).filter(p => p.total > 0).sort((a, b) => b.count - a.count);
@@ -171,8 +166,8 @@ export default function VelocityTab({
       velocityTrend,
       createdPeriod: createdPeriod.length,
       totalDone: doneAll.length,
-      completionPct: actionableIssues.length > 0
-        ? Math.round((doneAll.length / actionableIssues.length) * 100)
+      completionPct: issues.length > 0
+        ? Math.round((doneAll.length / issues.length) * 100)
         : 0,
       avgCycleTime: cycleSummary.averageDays,
       invalidCycleCount: cycleSummary.invalidIssueIds.length,
@@ -180,20 +175,20 @@ export default function VelocityTab({
       byType,
       byProject,
     };
-  }, [actionableIssues, projects, period, deliveredSet, now, types]);
+  }, [issues, projects, period, deliveredSet, now, types]);
 
   const recentlyClosed = useMemo(
-    () => actionableIssues
+    () => issues
       .filter(issue => (
         deliveredSet.has(issue.columnId || issue.status)
         && getCompletedAtMillis(issue) >= now - period * 86400000
       ))
       .sort((left, right) => getCompletedAtMillis(right) - getCompletedAtMillis(left)),
-    [actionableIssues, deliveredSet, now, period],
+    [issues, deliveredSet, now, period],
   );
 
-  const burndown = useBurndown(actionableIssues, period, closedSet, now);
-  const weeklyVelocity = useWeeklyVelocity(actionableIssues, 8, deliveredSet, now);
+  const burndown = useBurndown(issues, period, closedSet, now);
+  const weeklyVelocity = useWeeklyVelocity(issues, 8, deliveredSet, now);
 
   // Every chart here is a count, so the file is those counts: the same days,
   // the same weeks, the same rows behind the bars.
@@ -208,11 +203,11 @@ export default function VelocityTab({
     completedAtOf: getCompletedAtMillis,
   }), [formatDate, period, projects, recentlyClosed, selectedProjectIds, stats, weeklyVelocity]);
   useEffect(() => {
-    onExportReady?.(actionableIssues.length > 0 ? buildExport : null);
+    onExportReady?.(issues.length > 0 ? buildExport : null);
     return () => onExportReady?.(null);
-  }, [actionableIssues.length, buildExport, onExportReady]);
+  }, [issues.length, buildExport, onExportReady]);
 
-  if (actionableIssues.length === 0) {
+  if (issues.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <EmptyState

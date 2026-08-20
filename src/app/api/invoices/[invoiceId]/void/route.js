@@ -7,7 +7,7 @@ import {
 } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import {
-  invoiceEstimateReservationId,
+  invoiceSourcelessReservationId,
   invoiceIsCancelled,
   invoiceReservationId,
   invoiceSourceIds,
@@ -75,7 +75,7 @@ export async function POST(request, context) {
     );
     const estimateReservationRefs = sourceItemIds.map(
       itemId => db.collection('invoiceEstimateReservations').doc(
-        invoiceEstimateReservationId(organizationId, projectId, itemId),
+        invoiceSourcelessReservationId(organizationId, projectId, itemId),
       ),
     );
 

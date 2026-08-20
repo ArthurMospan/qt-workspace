@@ -8,7 +8,7 @@ import {
   billedTimeLogDetails,
   isBilledTimeLog,
 } from '@/lib/utils/issueDeletion.mjs';
-import { invoiceEstimateReservationId } from '@/lib/server/invoicePayload.mjs';
+import { invoiceSourcelessReservationId } from '@/lib/server/invoicePayload.mjs';
 
 // Cancelling and un-cancelling a task. Reversible, with no clock on it, and
 // distinct from both of its neighbours: see `src/lib/utils/issueCancel.mjs` for
@@ -59,7 +59,7 @@ export async function PATCH(request, context) {
 
     const projectRef = db.collection('projects').doc(issue.projectId);
     const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
-      invoiceEstimateReservationId(issue.organizationId, issue.projectId, issueId),
+      invoiceSourcelessReservationId(issue.organizationId, issue.projectId, issueId),
     );
     const result = await db.runTransaction(async transaction => {
       const [currentSnap, projectSnap, estimateReservationSnap] = await Promise.all([

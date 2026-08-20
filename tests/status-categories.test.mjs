@@ -409,7 +409,7 @@ test('what measures output reads delivered; what asks "is there work left" reads
   // set it reads is the same one: velocity measures output, and a task sitting
   // in review has produced none yet.
   assert.match(velocity, /function useWeeklyVelocity\([^)]*deliveredSet/);
-  assert.match(workload, /done: actionableIssues\.filter\(issue => \(\s*\n\s*deliveredSet\.has/);
+  assert.match(workload, /done: issues\.filter\(issue => \(\s*\n\s*deliveredSet\.has/);
   assert.match(team, /const done = memberIssues\.filter\(issue => deliveredSet\.has/);
   assert.match(billing, /deliveredStatusIds\.includes\(issue\.columnId \|\| issue\.status\)/);
 

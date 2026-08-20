@@ -9,24 +9,24 @@ import {
   collectReservedInvoiceItemIds,
   collectReservedInvoiceTimeLogIds,
   findInvoiceTimeLogOverlap,
-  selectActionableIssues,
-  selectBillableIssues,
   selectIncrementalBillableIssues,
   sumRawTimeLogMinutes,
 } from '../src/lib/utils/issueAccounting.mjs';
 
-test('standalone tasks and leaves are actionable while their parent is a summary', () => {
+test('a parent is indexed with its children without being taken out of the list', () => {
   const issues = [
     { id: 'standalone', projectId: 'p1' },
     { id: 'parent', projectId: 'p1' },
     { id: 'child-a', projectId: 'p1', parentIssueId: 'parent' },
     { id: 'child-b', projectId: 'p1', parentIssueId: 'parent' },
   ];
+  const index = buildIssueAccountingIndex(issues);
 
-  assert.deepEqual(
-    selectActionableIssues(issues).map(issue => issue.id),
-    ['standalone', 'child-a', 'child-b'],
-  );
+  assert.deepEqual([...index.summaryIssueIds], ['parent']);
+  assert.deepEqual(index.childIdsByParent.get('parent'), ['child-a', 'child-b']);
+  // Having children is a fact about the hierarchy, never a reason to drop a
+  // task from a report: reports read the issue list itself.
+  assert.equal(index.byId.has('parent'), true);
 });
 
 test('legacy parentEpicId remains accounting-compatible before migration', () => {
@@ -34,26 +34,12 @@ test('legacy parentEpicId remains accounting-compatible before migration', () =>
     { id: 'legacy-parent', projectId: 'p1' },
     { id: 'legacy-child', projectId: 'p1', parentEpicId: 'legacy-parent' },
   ];
+  const index = buildIssueAccountingIndex(issues);
 
-  assert.deepEqual(
-    selectActionableIssues(issues).map(issue => issue.id),
-    ['legacy-child'],
-  );
+  assert.equal(index.parentIdByChild.get('legacy-child'), 'legacy-parent');
 });
 
-test('a parent stays a summary when its children are outside the visible filter', () => {
-  const hierarchyIssues = [
-    { id: 'parent', projectId: 'p1', priority: 'high' },
-    { id: 'child', projectId: 'p1', parentIssueId: 'parent', priority: 'low' },
-  ];
-
-  assert.deepEqual(
-    selectActionableIssues([hierarchyIssues[0]], hierarchyIssues),
-    [],
-  );
-});
-
-test('orphan and cross-project parent pointers remain visible as actionable work', () => {
+test('orphan and cross-project parent pointers stay unlinked', () => {
   const issues = [
     { id: 'orphan', projectId: 'p1', parentIssueId: 'missing' },
     { id: 'foreign-parent', projectId: 'p2' },
@@ -61,10 +47,7 @@ test('orphan and cross-project parent pointers remain visible as actionable work
   ];
   const index = buildIssueAccountingIndex(issues);
 
-  assert.deepEqual(
-    selectActionableIssues(issues).map(issue => issue.id),
-    ['orphan', 'foreign-parent', 'cross-project-child'],
-  );
+  assert.deepEqual([...index.summaryIssueIds], []);
   assert.deepEqual([...index.orphanIssueIds].sort(), ['cross-project-child', 'orphan']);
 });
 
@@ -76,10 +59,6 @@ test('nested legacy hierarchy counts only the deepest leaves and derives parent 
     { id: 'open-leaf', projectId: 'p1', parentIssueId: 'middle', columnId: 'to-do' },
   ];
 
-  assert.deepEqual(
-    selectActionableIssues(issues).map(issue => issue.id),
-    ['done-leaf', 'open-leaf'],
-  );
   const progress = buildParentIssueProgress(issues, ['done']);
   assert.deepEqual(
     progress.map(item => ({
@@ -115,7 +94,7 @@ test('cyclic legacy pointers are ignored so tasks do not vanish from accounting'
   ];
   const index = buildIssueAccountingIndex(issues);
 
-  assert.deepEqual(selectActionableIssues(issues).map(issue => issue.id), ['a', 'b']);
+  assert.deepEqual([...index.summaryIssueIds], []);
   assert.deepEqual([...index.cycleIssueIds].sort(), ['a', 'b']);
 });
 
@@ -170,9 +149,8 @@ test('legacy invoice keys block ambiguous historical work from being billed twic
   });
 });
 
-test('a zero-rate actual log never falls through to an estimate charge', () => {
+test('tracked time at a zero rate is worth nothing, and no estimate rescues it', () => {
   const price = calculateBillingAutoPrice({
-    issue: { estimateMinutes: 240, assigneeIds: ['u1'] },
     logSummary: { totalMinutes: 60, byUser: { u1: 60 } },
     rates: { u1: 0 },
   });
@@ -180,51 +158,38 @@ test('a zero-rate actual log never falls through to an estimate charge', () => {
   assert.equal(price, 0);
 });
 
-test('an actionable task falls back to estimate only when it has no actual time', () => {
+test('an estimate is never money: untracked work prices at zero', () => {
   const price = calculateBillingAutoPrice({
     issue: { estimateMinutes: 120, assigneeIds: ['u1'] },
     logSummary: { totalMinutes: 0, byUser: {} },
     rates: { u1: 50 },
   });
 
-  assert.equal(price, 100);
+  assert.equal(price, 0);
 });
 
-test('a parent estimate is never billable, while its own actual log is', () => {
+test('a parent bills its own tracked time like any other task', () => {
   const issues = [
     { id: 'parent', projectId: 'p1', estimateMinutes: 600, assigneeIds: ['u1'] },
     { id: 'child', projectId: 'p1', parentIssueId: 'parent', estimateMinutes: 60 },
   ];
-  const withoutParentLogs = {
+  const timeLogs = {
     child: { totalMinutes: 0, byUser: {}, logIds: [] },
-  };
-  assert.deepEqual(
-    selectBillableIssues(issues, withoutParentLogs).map(issue => issue.id),
-    ['child'],
-  );
-  assert.equal(calculateBillingAutoPrice({
-    issue: issues[0],
-    logSummary: { totalMinutes: 0, byUser: {} },
-    rates: { u1: 100 },
-    isSummaryParent: true,
-  }), 0);
-
-  const withParentLogs = {
-    ...withoutParentLogs,
     parent: { totalMinutes: 30, byUser: { u1: 30 }, logIds: ['parent-log'] },
   };
-  assert.deepEqual(
-    selectBillableIssues(issues, withParentLogs).map(issue => issue.id),
-    ['parent', 'child'],
-  );
+
   assert.equal(calculateBillingAutoPrice({
-    issue: issues[0],
-    logSummary: withParentLogs.parent,
+    logSummary: timeLogs.parent,
     rates: { u1: 100 },
-    isSummaryParent: true,
   }), 50);
+  // The 600-minute plan on the parent stays a plan even though its children
+  // tracked nothing: only the half hour somebody actually worked is money.
+  assert.equal(calculateBillingAutoPrice({
+    logSummary: timeLogs.child,
+    rates: { u1: 100 },
+  }), 0);
   assert.deepEqual(
-    collectSourceTimeLogIds(issues, withParentLogs),
+    collectSourceTimeLogIds(issues, timeLogs),
     ['parent-log'],
   );
 });
@@ -232,7 +197,7 @@ test('a parent estimate is never billable, while its own actual log is', () => {
 test('a task reappears after billing only when it receives new unbilled actual time', () => {
   const issues = [
     { id: 'actual-task', projectId: 'p1', estimateMinutes: 120 },
-    { id: 'estimate-only', projectId: 'p1', estimateMinutes: 60 },
+    { id: 'never-billed', projectId: 'p1', estimateMinutes: 60 },
   ];
   const allLogs = {
     'actual-task': {
@@ -244,7 +209,7 @@ test('a task reappears after billing only when it receives new unbilled actual t
 
   assert.deepEqual(
     selectIncrementalBillableIssues(issues, {}, allLogs).map(issue => issue.id),
-    ['estimate-only'],
+    ['never-billed'],
   );
   assert.deepEqual(
     selectIncrementalBillableIssues(issues, {
@@ -254,14 +219,14 @@ test('a task reappears after billing only when it receives new unbilled actual t
         logIds: ['new-log'],
       },
     }, allLogs).map(issue => issue.id),
-    ['actual-task', 'estimate-only'],
+    ['actual-task', 'never-billed'],
   );
 });
 
-test('saved invoices reserve raw logs and source-less estimate positions', () => {
+test('saved invoices reserve raw logs and source-less positions', () => {
   const items = [
     { id: 'actual-task' },
-    { id: 'estimated-task', estimateMinutes: 60 },
+    { id: 'manual-task' },
   ];
   const timeLogsByItem = {
     'actual-task': {
@@ -269,7 +234,7 @@ test('saved invoices reserve raw logs and source-less estimate positions', () =>
       byUser: { u1: 30 },
       logIds: ['log-1', 'log-2'],
     },
-    'estimated-task': {
+    'manual-task': {
       totalMinutes: 0,
       byUser: {},
       logIds: [],
@@ -279,7 +244,7 @@ test('saved invoices reserve raw logs and source-less estimate positions', () =>
     status: 'draft',
     items: [
       { itemId: 'actual-task', sourceTimeLogIds: ['log-1'] },
-      { itemId: 'estimated-task', sourceTimeLogIds: [] },
+      { itemId: 'manual-task', sourceTimeLogIds: [] },
     ],
   }];
 
@@ -289,15 +254,15 @@ test('saved invoices reserve raw logs and source-less estimate positions', () =>
   );
   assert.deepEqual(
     [...collectReservedInvoiceItemIds(invoices)],
-    ['estimated-task'],
+    ['manual-task'],
   );
   assert.deepEqual(
     findInvoiceTimeLogOverlap(items, timeLogsByItem, invoices),
     {
-      byItemId: { 'actual-task': ['log-1'], 'estimated-task': [] },
-      itemIds: ['actual-task', 'estimated-task'],
+      byItemId: { 'actual-task': ['log-1'], 'manual-task': [] },
+      itemIds: ['actual-task', 'manual-task'],
       logIds: ['log-1'],
-      sourceItemIds: ['estimated-task'],
+      sourceItemIds: ['manual-task'],
     },
   );
 });

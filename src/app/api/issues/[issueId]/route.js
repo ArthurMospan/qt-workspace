@@ -8,7 +8,7 @@ import {
   billedTimeLogDetails,
   isBilledTimeLog,
 } from '@/lib/utils/issueDeletion.mjs';
-import { invoiceEstimateReservationId } from '@/lib/server/invoicePayload.mjs';
+import { invoiceSourcelessReservationId } from '@/lib/server/invoicePayload.mjs';
 import {
   issueTombstoneId,
   issueUndoExpiresAt,
@@ -67,7 +67,7 @@ export async function DELETE(request, context) {
       issueTombstoneId(issue.organizationId, issueId),
     );
     const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
-      invoiceEstimateReservationId(
+      invoiceSourcelessReservationId(
         issue.organizationId,
         issue.projectId,
         issueId,

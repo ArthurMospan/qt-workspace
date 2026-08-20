@@ -9,7 +9,7 @@ import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   InvoicePayloadError,
   MAX_INVOICE_JSON_BYTES,
-  invoiceEstimateReservationId,
+  invoiceSourcelessReservationId,
   invoiceNumberSequenceId,
   invoiceReservationId,
   isFirestoreAlreadyExists,
@@ -139,7 +139,7 @@ export async function POST(request) {
     );
     const estimateReservationRefs = itemIds.map(
       itemId => db.collection('invoiceEstimateReservations').doc(
-        invoiceEstimateReservationId(organizationId, projectId, itemId),
+        invoiceSourcelessReservationId(organizationId, projectId, itemId),
       ),
     );
     const estimateReservationRefByItemId = new Map(

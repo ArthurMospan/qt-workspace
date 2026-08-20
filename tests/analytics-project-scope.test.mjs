@@ -19,16 +19,36 @@ test('workspace analytics excludes archived projects before subscribing to their
   assert.doesNotMatch(memberAnalytics, /useWorkspaceAnalytics\(projects\.map/);
 });
 
-test('analytics describes the leaf-task accounting rule without changing it', async () => {
-  const [analytics, accounting] = await Promise.all([
+test('analytics counts every task, a parent with subtasks included', async () => {
+  const [analytics, velocity, workload, team] = await Promise.all([
     read('../src/app/(app)/analytics/page.js'),
-    read('../src/lib/utils/issueAccounting.mjs'),
+    read('../src/components/workspace/VelocityTab.jsx'),
+    read('../src/components/workspace/WorkloadTab.jsx'),
+    read('../src/lib/utils/teamAnalytics.mjs'),
   ]);
 
-  assert.match(analytics, /label="Робочі задачі"/);
-  // The column header is «Задач» now; the table it heads is `DataTable`, whose
+  assert.match(analytics, /label="Задачі"/);
+  // The column header is «Задач»; the table it heads is `DataTable`, whose
   // columns are objects rather than a hand-written <thead>.
   assert.match(analytics, /header: 'Задач'/);
-  assert.match(analytics, /Батьківські задачі не рахуються окремо: їхня робота представлена підзавданнями\./);
-  assert.match(accounting, /return issues\.filter\(issue => \{[\s\S]{0,160}!summaryIssueIds\.has\(id\)/);
+  // A task used to leave every count the moment it gained a subtask, which
+  // rewrote finished weeks in the velocity chart. Nothing may filter by
+  // hierarchy here again.
+  for (const source of [analytics, velocity, workload, team]) {
+    assert.doesNotMatch(source, /selectActionableIssues|summaryIssueIds/);
+  }
+});
+
+test('billing never turns an estimate into money', async () => {
+  const [accounting, billing, payload] = await Promise.all([
+    read('../src/lib/utils/issueAccounting.mjs'),
+    read('../src/components/workspace/BillingTab.jsx'),
+    read('../src/lib/server/invoicePayload.mjs'),
+  ]);
+
+  assert.doesNotMatch(accounting, /estimateMinutes/);
+  assert.doesNotMatch(billing, /estimateMinutes/);
+  // 'estimate' survives as a historical kind on invoices already issued, but
+  // a new position may never be created with it.
+  assert.match(payload, /const SOURCE_KINDS = new Set\(\['actual', 'manual', 'none'\]\);/);
 });

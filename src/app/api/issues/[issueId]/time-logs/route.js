@@ -5,7 +5,7 @@ import {
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
-import { invoiceEstimateReservationId } from '@/lib/server/invoicePayload.mjs';
+import { invoiceSourcelessReservationId } from '@/lib/server/invoicePayload.mjs';
 import {
   applyTaskTimeLogMutation,
   authorizeTaskTimeLogRequest,
@@ -74,7 +74,7 @@ export async function POST(request, context) {
     const db = getAdminDb();
     const issueRef = db.collection('issues').doc(issueId);
     const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
-      invoiceEstimateReservationId(organizationId, projectId, issueId),
+      invoiceSourcelessReservationId(organizationId, projectId, issueId),
     );
     const logRef = db.collection('timeLogs').doc();
     await db.runTransaction(async transaction => {

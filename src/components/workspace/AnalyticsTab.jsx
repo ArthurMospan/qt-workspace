@@ -17,7 +17,6 @@ import {
 } from '@/components/ui';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
-import { selectActionableIssues } from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import { NO_PRIORITY_ID, selectablePriorities } from '@/lib/utils/priorities.mjs';
 import {
@@ -72,18 +71,14 @@ export default function AnalyticsTab({
   // work in progress as the literal id 'in-progress'. Categories say it outright.
   const backlogSet = useMemo(() => new Set(backlogStatusIds(statuses)), [statuses]);
   const inProgressSet = useMemo(() => new Set(inProgressStatusIds(statuses)), [statuses]);
-  const actionableIssues = useMemo(
-    () => selectActionableIssues(issues),
-    [issues],
-  );
 
   const filteredIssues = useMemo(() => {
-    return actionableIssues.filter(i => {
+    return issues.filter(i => {
       if (priorityFilter !== 'all' && (i.priority || NO_PRIORITY_ID) !== priorityFilter) return false;
       if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
     });
-  }, [actionableIssues, priorityFilter, typeFilter]);
+  }, [issues, priorityFilter, typeFilter]);
 
   const stats = useMemo(() => {
     const total   = filteredIssues.length;

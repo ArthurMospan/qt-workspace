@@ -41,10 +41,7 @@ import {
   filterTeamTimeLogs,
   memberAnalyticsHref,
 } from '@/lib/utils/teamAnalytics.mjs';
-import {
-  selectActionableIssues,
-  sumRawTimeLogMinutes,
-} from '@/lib/utils/issueAccounting.mjs';
+import { sumRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import {
   backlogStatusIds,
@@ -334,7 +331,7 @@ function AnalyticsContent({
 
         {/* KPI */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <KpiCard icon={Target} label="Робочі задачі"
+          <KpiCard icon={Target} label="Задачі"
             value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% виконано`} />
           <KpiCard icon={Zap} label={`Закрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`} onClick={() => onTabChange('velocity')}
             value={stats.recentDone} series={closedTrend} sub="тренди — у Продуктивності" />
@@ -386,9 +383,6 @@ function AnalyticsContent({
           title="По проєктах"
           meta={`${stats.byProject.length} ${plural(stats.byProject.length, ['проєкт', 'проєкти', 'проєктів'])}`}
         >
-          <p className="-mt-1 text-[11px] leading-relaxed text-muted">
-            Батьківські задачі не рахуються окремо: їхня робота представлена підзавданнями.
-          </p>
           {/* «Внутрішній / Клієнтський» is gone. Client collaboration lives in
               QuickTeam+, not in the internal workspace, so every project in this
               table was "Внутрішній" — a column that answered a question nobody
@@ -586,14 +580,6 @@ export default function WorkspaceAnalyticsPage() {
     [allIssues, filterIssue],
   );
   usePublishLocalSearchResults(analyticsSearch, filteredIssues.length);
-  const actionableIssueIds = useMemo(
-    () => new Set(selectActionableIssues(issues).map(issue => issue.id)),
-    [issues],
-  );
-  const analyticsIssues = useMemo(
-    () => filteredIssues.filter(issue => actionableIssueIds.has(issue.id)),
-    [actionableIssueIds, filteredIssues],
-  );
 
   const visibleProjects = useMemo(() => {
     if (!searchQuery) return activeProjects;
@@ -659,7 +645,7 @@ export default function WorkspaceAnalyticsPage() {
     () => filterTeamIssues(issues, projectFilters, teamMemberFilter),
     [issues, projectFilters, teamMemberFilter],
   );
-  const teamHierarchyIssues = useMemo(
+  const teamScopedIssues = useMemo(
     () => issues.filter(issue => (
       projectFilters.length === 0 || projectFilters.includes(issue.projectId)
     )),
@@ -861,7 +847,7 @@ export default function WorkspaceAnalyticsPage() {
         {activeTab === 'overview' && (
           <AnalyticsContent
             projects={visibleProjects}
-            issues={analyticsIssues}
+            issues={filteredIssues}
             issueReferenceIssues={issues}
             issueLinks={issueLinks}
             timeLogs={filteredTimeLogs}
@@ -896,7 +882,7 @@ export default function WorkspaceAnalyticsPage() {
 
         {activeTab === 'velocity' && (
           <VelocityTab
-            issues={analyticsIssues}
+            issues={filteredIssues}
             projects={visibleProjects}
             members={members}
             period={period}
@@ -910,7 +896,7 @@ export default function WorkspaceAnalyticsPage() {
           <WorkloadTab
             members={members}
             issues={teamIssues}
-            hierarchyIssues={teamHierarchyIssues}
+            scopedIssues={teamScopedIssues}
             logIssues={filteredIssuesWithArchived}
             timeLogs={teamTimeLogs}
             events={calendarEvents}

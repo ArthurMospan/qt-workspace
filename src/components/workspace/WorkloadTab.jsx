@@ -52,10 +52,7 @@ import {
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
-import {
-  selectActionableIssues,
-  sumRawTimeLogMinutes,
-} from '@/lib/utils/issueAccounting.mjs';
+import { sumRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
 import { buildMemberExport, buildWorkloadExport } from '@/lib/utils/analyticsExport.mjs';
@@ -594,12 +591,13 @@ function MemberDetail({
 export default function WorkloadTab({
   members = [],
   issues = [],
-  hierarchyIssues = issues,
+  // Every task in the selected projects, not only the ones a member filter
+  // left standing. «Остання активність» reads it, so a person's last touch on
+  // somebody else's task still counts as activity.
+  scopedIssues = issues,
   // Only «Останні записи часу» reads this. It must include archived tasks so an
-  // entry keeps naming the task it belongs to — but the hierarchy above must
-  // not, or a parent whose children were archived would be counted as a summary
-  // and its own work would vanish from the numbers.
-  logIssues = hierarchyIssues,
+  // entry keeps naming the task it belongs to.
+  logIssues = scopedIssues,
   timeLogs = [],
   events = [],
   projects = [],
@@ -625,10 +623,6 @@ export default function WorkloadTab({
   // The category, not the literal id 'in-progress': an org that renamed that
   // column showed every member as having nothing in progress.
   const inProgressSet = useMemo(() => new Set(inProgressStatusIds(statuses)), [statuses]);
-  const actionableIssues = useMemo(
-    () => selectActionableIssues(issues, hierarchyIssues),
-    [hierarchyIssues, issues],
-  );
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -642,21 +636,21 @@ export default function WorkloadTab({
   // leftover work into work nobody can see.
   const chartedMembers = useMemo(() => {
     const assignedIds = new Set(
-      actionableIssues
+      issues
         .filter(issue => !closedSet.has(issue.columnId || issue.status))
         .flatMap(issue => (Array.isArray(issue.assigneeIds) ? issue.assigneeIds : [])),
     );
     return members.filter(member => (
       isActiveMember(member) || assignedIds.has(memberId(member))
     ));
-  }, [actionableIssues, closedSet, members]);
+  }, [issues, closedSet, members]);
 
   const stats = useMemo(() => {
     const periodAgo = now - period * 86_400_000;
     return chartedMembers.map(member => {
       const uid = memberId(member);
-      const memberIssues = actionableIssues.filter(issue => issue.assigneeIds?.includes(uid));
-      const timesheetIssues = hierarchyIssues.filter(issue => issue.assigneeIds?.includes(uid));
+      const memberIssues = issues.filter(issue => issue.assigneeIds?.includes(uid));
+      const timesheetIssues = scopedIssues.filter(issue => issue.assigneeIds?.includes(uid));
       const openItems = memberIssues.filter(issue => !closedSet.has(issue.columnId || issue.status));
       const doneItems = memberIssues
         .filter(issue => deliveredSet.has(issue.columnId || issue.status) && getCompletedAtMillis(issue) >= periodAgo)
@@ -694,19 +688,19 @@ export default function WorkloadTab({
       if (b.inProgress !== a.inProgress) return b.inProgress - a.inProgress;
       return b.lastActivity - a.lastActivity;
     });
-  }, [actionableIssues, chartedMembers, closedSet, deliveredSet, hierarchyIssues, inProgressSet, logIssues, now, period, timeLogs, timeZone]);
+  }, [issues, chartedMembers, closedSet, deliveredSet, scopedIssues, inProgressSet, logIssues, now, period, timeLogs, timeZone]);
 
   const selectedStat = selectedMemberId !== 'all'
     ? stats.find(stat => stat.uid === selectedMemberId)
     : null;
   const summary = useMemo(() => {
     const periodAgo = now - period * 86_400_000;
-    const openItems = actionableIssues.filter(issue => !closedSet.has(issue.columnId || issue.status));
+    const openItems = issues.filter(issue => !closedSet.has(issue.columnId || issue.status));
     return {
       minutes: sumRawTimeLogMinutes(
         timeLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo),
       ),
-      done: actionableIssues.filter(issue => (
+      done: issues.filter(issue => (
         deliveredSet.has(issue.columnId || issue.status)
         && getCompletedAtMillis(issue) >= periodAgo
       )).length,
@@ -715,7 +709,7 @@ export default function WorkloadTab({
         isDueDateOverdue(issue.dueDate, { now, timeZone })
       )).length,
     };
-  }, [actionableIssues, closedSet, deliveredSet, now, period, timeLogs, timeZone]);
+  }, [issues, closedSet, deliveredSet, now, period, timeLogs, timeZone]);
 
   // What the file is depends on what the screen is showing: the team table, or
   // the one person it has been opened on. Exporting the whole team from a

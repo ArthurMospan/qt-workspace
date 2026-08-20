@@ -690,8 +690,10 @@ export function buildVelocityExport({
 
 const INVOICE_SOURCE_LABELS = {
   actual: 'За зафіксованим часом',
+  // Historical invoices only: billing no longer turns an estimate into money.
   estimate: 'За оцінкою',
   manual: 'Вручну',
+  none: 'Без зафіксованого часу',
 };
 
 /**

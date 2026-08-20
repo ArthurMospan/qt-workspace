@@ -52,7 +52,7 @@ test('issue deletion blocks both billed logs and source-less estimate reservatio
   const tombstoneWrite = route.indexOf('transaction.create(tombstoneRef');
 
   assert.ok(reservationRead > 0 && reservationRead < tombstoneWrite);
-  assert.match(route, /invoiceEstimateReservationId\(/);
+  assert.match(route, /invoiceSourcelessReservationId\(/);
   assert.match(route, /ISSUE_HAS_INVOICE_ESTIMATE/);
   assert.match(route, /ISSUE_HAS_BILLED_TIME/);
 });
@@ -87,7 +87,7 @@ test('actual task time cannot race a source-less estimate invoice reservation', 
     "collection('invoiceEstimateReservations').doc(",
   );
   const deterministicId = postRoute.indexOf(
-    'invoiceEstimateReservationId(organizationId, projectId, issueId)',
+    'invoiceSourcelessReservationId(organizationId, projectId, issueId)',
   );
   const transactionStart = postRoute.indexOf(
     'await db.runTransaction(async transaction =>',
@@ -122,7 +122,7 @@ test('YouTrack work-log import locks estimate reservations before changed writes
   );
   const source = importer.slice(functionStart, functionEnd);
   const deterministicReservation = source.indexOf(
-    'invoiceEstimateReservationId(job.organizationId, projectId, issueId)',
+    'invoiceSourcelessReservationId(job.organizationId, projectId, issueId)',
   );
   const transactionStart = source.indexOf(
     'db.runTransaction(async transaction =>',

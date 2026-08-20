@@ -55,7 +55,7 @@ export default function MemberAnalyticsPage() {
     )),
     [activeProjects, projectFilters],
   );
-  const hierarchyIssues = useMemo(
+  const scopedIssues = useMemo(
     () => issues.filter(issue => (
       projectFilters.length === 0 || projectFilters.includes(issue.projectId)
     )),
@@ -111,7 +111,7 @@ export default function MemberAnalyticsPage() {
           <WorkloadTab
             members={members}
             issues={memberIssues}
-            hierarchyIssues={hierarchyIssues}
+            scopedIssues={scopedIssues}
             logIssues={allIssues}
             timeLogs={memberTimeLogs}
             events={events}

@@ -10,7 +10,9 @@ export const MAX_TIME_LOG_MINUTES = 525_600;
 const MAX_MONEY = 1_000_000_000_000;
 const MAX_MINUTES = 100_000_000;
 const SUPPORTED_CURRENCIES = new Set(['USD', 'EUR', 'UAH', 'GBP', 'PLN']);
-const SOURCE_KINDS = new Set(['actual', 'estimate', 'manual', 'none']);
+// 'estimate' is a historical kind: invoices created before billing dropped the
+// estimate fallback keep it, but nothing may create one again.
+const SOURCE_KINDS = new Set(['actual', 'manual', 'none']);
 const CANCELLED_STATUSES = new Set(['cancelled', 'canceled', 'void', 'voided']);
 
 export class InvoicePayloadError extends Error {
@@ -124,7 +126,7 @@ function normalizeItem(item, index) {
     ? item.sourceKind.trim()
     : normalizedSourceIds.length > 0
       ? 'actual'
-      : 'estimate';
+      : 'none';
   if (!SOURCE_KINDS.has(sourceKind)) {
     reject('INVALID_INVOICE_PAYLOAD', `Некоректне джерело позиції #${index + 1}`);
   }
@@ -360,7 +362,7 @@ export function invoiceReservationId(organizationId, projectId, timeLogId) {
     .digest('hex');
 }
 
-export function invoiceEstimateReservationId(organizationId, projectId, itemId) {
+export function invoiceSourcelessReservationId(organizationId, projectId, itemId) {
   return createHash('sha256')
     .update(JSON.stringify([organizationId, projectId, 'source-less-item', itemId]))
     .digest('hex');

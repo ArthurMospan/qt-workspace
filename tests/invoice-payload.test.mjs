@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   InvoicePayloadError,
-  invoiceEstimateReservationId,
+  invoiceSourcelessReservationId,
   invoiceNumberSequenceId,
   invoiceReservationId,
   legacyInvoiceAmbiguousItemOverlap,
@@ -73,12 +73,12 @@ test('normalizes a bounded invoice and derives authoritative totals', () => {
   assert.equal(normalized.sourceItemByTimeLogId['log-1'].issueId, 'issue-1');
 });
 
-test('estimate-only positions remain valid and reserve their billing item', () => {
+test('a source-less position stays valid and reserves its billing item', () => {
   const normalized = normalizeInvoiceRequest(request({
     item: {
-      sourceKind: 'estimate',
+      sourceKind: 'none',
       sourceTimeLogIds: [],
-      minutes: 120,
+      minutes: 0,
     },
     invoice: {
       sourceTimeLogIds: [],
@@ -87,6 +87,22 @@ test('estimate-only positions remain valid and reserve their billing item', () =
 
   assert.deepEqual(normalized.sourceTimeLogIds, []);
   assert.deepEqual(normalized.sourceItemIds, ['issue-1']);
+});
+
+test('an estimate can no longer be named as the source of a new position', () => {
+  assert.throws(
+    () => normalizeInvoiceRequest(request({
+      item: {
+        sourceKind: 'estimate',
+        sourceTimeLogIds: [],
+        minutes: 120,
+      },
+      invoice: {
+        sourceTimeLogIds: [],
+      },
+    })),
+    error => error.code === 'INVALID_INVOICE_PAYLOAD',
+  );
 });
 
 test('issue-backed item ids are stable and arbitrary source-less lines are rejected', () => {
@@ -247,15 +263,15 @@ test('reservation IDs are stable and scoped by organization, project and log', (
   assert.notEqual(first, invoiceReservationId('org-1', 'project-2', 'log-1'));
   assert.notEqual(first, invoiceReservationId('org-2', 'project-1', 'log-1'));
 
-  const estimate = invoiceEstimateReservationId('org-1', 'project-1', 'issue-1');
+  const estimate = invoiceSourcelessReservationId('org-1', 'project-1', 'issue-1');
   assert.match(estimate, /^[a-f0-9]{64}$/);
   assert.equal(
     estimate,
-    invoiceEstimateReservationId('org-1', 'project-1', 'issue-1'),
+    invoiceSourcelessReservationId('org-1', 'project-1', 'issue-1'),
   );
   assert.notEqual(
     estimate,
-    invoiceEstimateReservationId('org-1', 'project-1', 'issue-2'),
+    invoiceSourcelessReservationId('org-1', 'project-1', 'issue-2'),
   );
 
   const sequence = invoiceNumberSequenceId('org-1', 2026);

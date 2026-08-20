@@ -51,7 +51,7 @@ test('invoice and deterministic reservations are created atomically with server-
   assert.match(route, /invoiceReservationId\(organizationId, projectId, timeLogId\)/);
   assert.match(route, /collection\('invoiceTimeLogReservations'\)/);
   assert.match(route, /transaction\.create\(reservationRef,\s*\{/);
-  assert.match(route, /invoiceEstimateReservationId\(organizationId, projectId, itemId\)/);
+  assert.match(route, /invoiceSourcelessReservationId\(organizationId, projectId, itemId\)/);
   assert.match(route, /collection\('invoiceEstimateReservations'\)/);
   assert.match(route, /legacyInvoiceItemOverlap\(/);
   assert.match(route, /createdBy:\s*authorization\.user\.uid/);

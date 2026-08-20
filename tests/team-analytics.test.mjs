@@ -54,7 +54,7 @@ test('a task with several assignees contributes to every assignee analytics view
   assert.equal(filterTeamIssues(sharedIssues, [], 'all').filter(issue => issue.id === 'shared').length, 1);
 });
 
-test('team analytics counts leaf and standalone work but never its summary parent', () => {
+test('team analytics counts every task in scope, a parent with subtasks included', () => {
   const hierarchicalIssues = [
     { id: 'parent', projectId: 'p1', assigneeIds: ['u1'] },
     { id: 'child-u1', projectId: 'p1', parentIssueId: 'parent', assigneeIds: ['u1'] },
@@ -64,11 +64,11 @@ test('team analytics counts leaf and standalone work but never its summary paren
 
   assert.deepEqual(
     filterTeamIssues(hierarchicalIssues, ['p1'], 'all').map(issue => issue.id),
-    ['child-u1', 'child-u2', 'standalone'],
+    ['parent', 'child-u1', 'child-u2', 'standalone'],
   );
   assert.deepEqual(
     filterTeamIssues(hierarchicalIssues, ['p1'], 'u1').map(issue => issue.id),
-    ['child-u1', 'standalone'],
+    ['parent', 'child-u1', 'standalone'],
   );
 });
 

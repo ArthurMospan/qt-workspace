@@ -27,7 +27,6 @@ import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import {
   aggregateIssueTimeLogs,
-  buildIssueAccountingIndex,
   calculateBillingAutoPrice,
   collectReservedInvoiceTimeLogIds,
   collectSourceTimeLogIds,
@@ -163,7 +162,6 @@ function IssueRow({
   statusLabel: issueStatusLabel,
   typeMeta,
   priorities,
-  isSummaryParent,
   billingConflictCount = 0,
 }) {
   const issueLogs = useMemo(
@@ -171,20 +169,11 @@ function IssueRow({
     [timeLogs, issue.id],
   );
 
-  // Auto price: sum per-user (minutes/60 * rate).
-  //
-  // The estimate is a fallback for tasks with NO logged time — keyed on whether
-  // time was tracked, not on whether the money came out to zero. Testing the
-  // total meant that 8 logged hours at a rate of 0 silently fell through to
-  // billing the estimate instead, quietly inventing a charge.
+  // Auto price: sum per-user (minutes/60 * rate). Tracked time is the only
+  // thing that prices itself; work nobody tracked gets a hand-typed sum.
   const autoPrice = useMemo(
-    () => calculateBillingAutoPrice({
-      issue,
-      logSummary: issueLogs,
-      rates,
-      isSummaryParent,
-    }),
-    [isSummaryParent, issue, issueLogs, rates],
+    () => calculateBillingAutoPrice({ logSummary: issueLogs, rates }),
+    [issueLogs, rates],
   );
 
   const price = useManual ? (manualPrice ?? 0) : autoPrice;
@@ -196,11 +185,11 @@ function IssueRow({
   const contributors = contributorIds
     .map(uid => members.find(member => (member.id || member.uid) === uid))
     .filter(Boolean);
+  // An estimate is deliberately not shown here. It used to be, and a row that
+  // reads «Оцінка 20 год» next to a sum of zero is a row nobody can act on.
   const effortLabel = issueLogs.totalMinutes > 0
     ? `Зафіксовано ${fmtMin(issueLogs.totalMinutes)}`
-    : issue.estimateMinutes
-      ? `Оцінка ${fmtMin(issue.estimateMinutes)}`
-      : 'Без часу й оцінки';
+    : 'Без зафіксованого часу — ціна вручну';
   const contributorSummary = Object.entries(issueLogs.byUser)
     .map(([uid, minutes]) => {
       const member = members.find(candidate => (candidate.id || candidate.uid) === uid);
@@ -646,10 +635,6 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
       projectId,
     });
   }, [billableLogs, events, issueTimeLogs, projectId]);
-  const hierarchyIndex = useMemo(
-    () => buildIssueAccountingIndex(issues),
-    [issues],
-  );
   const billableIssues = useMemo(
     () => selectIncrementalBillableIssues(
       issues,
@@ -913,13 +898,10 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
   const computePrice = useCallback((issue) => {
     if (useManualMap[issue.id]) return manualPrices[issue.id] ?? 0;
     return calculateBillingAutoPrice({
-      issue,
       logSummary: timeLogsByItem[issue.id],
       rates: memberRates,
-      isSummaryParent: hierarchyIndex.summaryIssueIds.has(issue.id),
     });
   }, [
-    hierarchyIndex.summaryIssueIds,
     manualPrices,
     memberRates,
     timeLogsByItem,
@@ -949,7 +931,6 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
         byUser: {},
         logIds: [],
       };
-      const isSummaryParent = hierarchyIndex.summaryIssueIds.has(iss.id);
       const hasActualTime = logSummary.totalMinutes > 0;
       return {
         itemId: iss.id,
@@ -957,17 +938,13 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
         key: iss.issueKey,
         title: iss.title,
         status: statusLabelOf(iss.columnId || iss.status),
-        minutes: hasActualTime
-          ? logSummary.totalMinutes
-          : isSummaryParent
-            ? 0
-            : iss.estimateMinutes || 0,
+        minutes: hasActualTime ? logSummary.totalMinutes : 0,
         price: computePrice(iss),
         sourceKind: useManualMap[iss.id]
           ? 'manual'
           : hasActualTime
             ? 'actual'
-            : 'estimate',
+            : 'none',
         sourceTimeLogIds: [...(logSummary.logIds || [])],
       };
     });
@@ -1261,7 +1238,6 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                       statusLabel={statusLabelOf(iss.columnId || iss.status)}
                       typeMeta={typeMeta}
                       priorities={priorities}
-                      isSummaryParent={hierarchyIndex.summaryIssueIds.has(iss.id)}
                       billingConflictCount={Math.max(
                         invoiceOverlap.byItemId[iss.id]?.length || 0,
                         invoiceOverlap.sourceItemIds.includes(iss.id) ? 1 : 0,

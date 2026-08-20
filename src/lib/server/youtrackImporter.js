@@ -41,7 +41,7 @@ import {
   isTaskEstimateReservationIdentity,
   taskTimeLogMirrorTransition,
 } from '@/lib/utils/taskTimeLog.mjs';
-import { invoiceEstimateReservationId } from '@/lib/server/invoicePayload.mjs';
+import { invoiceSourcelessReservationId } from '@/lib/server/invoicePayload.mjs';
 import {
   evaluateIssueStatusTransition,
   issueBlockLinkStatusConflict,
@@ -930,7 +930,7 @@ async function importWorkItems({ job, issueId, projectId, workItems }) {
   const issueRef = db.collection('issues').doc(issueId);
   const projectRef = db.collection('projects').doc(projectId);
   const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
-    invoiceEstimateReservationId(job.organizationId, projectId, issueId),
+    invoiceSourcelessReservationId(job.organizationId, projectId, issueId),
   );
   const actors = [];
   const rows = validItems.map(({ item, spentMinutes }) => {

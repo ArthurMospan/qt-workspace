@@ -302,7 +302,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:194",
+      "location": "src/components/workspace/WorkloadTab.jsx:191",
       "className": "flex min-w-0 items-center gap-3 text-left",
       "text": "",
       "childElements": [
@@ -321,7 +321,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:553",
+      "location": "src/components/workspace/WorkloadTab.jsx:550",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
       "childElements": [
@@ -626,7 +626,7 @@
       "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
     },
     {
-      "location": "src/components/workspace/BillingTab.jsx:505",
+      "location": "src/components/workspace/BillingTab.jsx:494",
       "tag": "div",
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
@@ -711,7 +711,7 @@
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:495",
+      "location": "src/components/workspace/WorkloadTab.jsx:492",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

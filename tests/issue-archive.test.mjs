@@ -94,9 +94,9 @@ test('an archived task keeps its hours in the timesheet and on the invoice', asy
   assert.match(page, /logIssues=\{filteredIssuesWithArchived\}/);
   // …while new time is still booked only against tasks that are in use.
   assert.match(timesheet, /const projectIssues = useMemo\(\s*[\s\S]{0,80}withoutArchivedIssues\(issues\)/);
-  // Hierarchy maths stays on the working set: an archived child must not turn
-  // its parent into a summary row and hide the parent's own work.
-  assert.match(workload, /logIssues = hierarchyIssues,/);
+  // «Остання активність» reads the project-wide list, so a person's last touch
+  // on an archived task still counts as activity.
+  assert.match(workload, /logIssues = scopedIssues,/);
   assert.match(workload, /referenceIssues: logIssues,/);
 });
 

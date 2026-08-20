@@ -19,7 +19,7 @@ test('task time-log POST is authenticated, bounded, scoped, and transactional', 
   assert.match(route, /await db\.runTransaction\(async transaction =>/);
   assert.match(
     route,
-    /invoiceEstimateReservationId\(organizationId, projectId, issueId\)/,
+    /invoiceSourcelessReservationId\(organizationId, projectId, issueId\)/,
   );
   assert.match(route, /collection\('invoiceEstimateReservations'\)/);
   assert.match(
@@ -114,7 +114,7 @@ test('YouTrack work-log writes share the estimate-reservation lock', async () =>
 
   assert.match(
     source,
-    /invoiceEstimateReservationId\(job\.organizationId, projectId, issueId\)/,
+    /invoiceSourcelessReservationId\(job\.organizationId, projectId, issueId\)/,
   );
   assert.match(source, /collection\('invoiceEstimateReservations'\)/);
   assert.match(source, /youTrackImportedWorkLogMatches\(current, row\.fields\)/);
