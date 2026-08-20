@@ -47,7 +47,7 @@ test('dense analytics, timesheet and invoice data have dedicated mobile cards', 
   // screens had written it, and only one of the three tables on them had it at
   // all — the team overview shipped a six-column grid with no phone layout.
   const dataTable = read('src/components/ui/DataDisplay/DataTable.jsx');
-  assert.match(dataTable, /hidden w-full border-collapse md:table/);
+  assert.match(dataTable, /className="hidden min-w-0 overflow-hidden md:block"/);
   assert.match(dataTable, /flex flex-col gap-2 md:hidden/);
   for (const source of [workspaceAnalytics, projectAnalytics]) {
     assert.match(source, /<DataTable/);

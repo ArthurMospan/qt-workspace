@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Zap, TrendingUp, CheckCircle2, Calendar, Activity, Folders, Shapes, TrendingDown } from 'lucide-react';
 import {
-  Alert, BarList, Card, ColumnChart, DetailSection, EmptyState, KpiCard, TaskListCard, TrendChart,
+  Alert, BarList, ChartCard, ColumnChart, EmptyState, KpiCard, TaskListCard, TrendChart,
 } from '@/components/ui';
 import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import { plural } from '@/lib/utils/plural.mjs';
@@ -25,16 +25,6 @@ const FLOW_SERIES = [
   { label: 'Закрито', color: 'var(--color-chart-1)' },
   { label: 'Відкрито', color: 'var(--color-chart-context)' },
 ];
-
-function ChartCard({ icon, title, meta, children, className = '' }) {
-  return (
-    <Card preset="borderless" padding="lg" className={className}>
-      <DetailSection icon={icon} title={title} meta={meta}>
-        {children}
-      </DetailSection>
-    </Card>
-  );
-}
 
 // ── Burndown ─────────────────────────────────────────────────────────────────
 // The work remaining, against the pace that would have finished it evenly. The

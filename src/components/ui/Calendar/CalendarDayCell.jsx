@@ -13,11 +13,12 @@ import React from 'react';
 
 const STATES = {
   default: 'border-black/[0.05] bg-white hover:border-black/10 hover:shadow-sm',
-  // Today keeps a ring rather than the ink fill the date circle uses: a whole
-  // tile filled with ink would out-shout the numbers inside it. The ring was
-  // green, which read as a status — the timesheet already spends green on "the
-  // day is full" — so today is drawn in the page's own ink instead.
-  today: 'border-ink/25 bg-white ring-2 ring-ink/[0.06] hover:border-ink/40',
+  // One ink hairline, and the date inside wears the circle — the same two marks
+  // the calendar's own month uses for today, because two calendars in one
+  // product that mark today differently are two products. It had been a quarter
+  // -opacity border under a 2px ring: a thin grey line with a smudge around it,
+  // which is neither a border nor a highlight.
+  today: 'border-ink bg-white',
   // A weekend is an ordinary day with nothing expected of it, so it loses only
   // the lift on hover.
   weekend: 'border-black/[0.05] bg-white hover:border-black/10',

@@ -72,9 +72,9 @@ function CopyableContact({ value, label }) {
 // else's it is a bubble, which is the whole difference between the two — so
 // they are one shape rather than two that drift.
 function StatusBubble({ emoji, text, onClick }) {
-  const Tag = onClick ? 'button' : 'div';
+  const Shell = onClick ? 'button' : 'div';
   return (
-    <Tag
+    <Shell
       {...(onClick ? { type: 'button', onClick, title: 'Змінити статус' } : {})}
       data-ui-surface="local"
       className={`absolute top-[-20px] left-[65%] z-20 flex min-w-[50px] max-w-[180px] items-center gap-[6px] rounded-[18px] border border-[#f0f0f0] bg-white px-[12px] py-[8px] shadow-lg ${
@@ -87,7 +87,7 @@ function StatusBubble({ emoji, text, onClick }) {
       ) : onClick ? (
         <span className="truncate text-[13px] font-normal tracking-tight text-muted">Статус</span>
       ) : null}
-    </Tag>
+    </Shell>
   );
 }
 

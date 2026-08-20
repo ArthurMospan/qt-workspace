@@ -2,10 +2,9 @@
 import { AlertTriangle, BarChart2, Flag, TrendingDown, Users, Wallet } from 'lucide-react';
 import {
   BarList,
-  Card,
+  ChartCard,
   ColumnChart,
   DataTable,
-  DetailSection,
   KpiCard,
   Meter,
   Pill,
@@ -98,31 +97,27 @@ export default function ChartsSection() {
         fullWidth
       >
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
-          <Card preset="borderless" padding="lg">
-            <DetailSection icon={BarChart2} title="По статусах">
-              <BarList
-                items={[
-                  { id: 'todo', label: 'До виконання', value: 14, color: '#6366f1' },
-                  { id: 'progress', label: 'У роботі', value: 9, color: '#f59e0b' },
-                  { id: 'review', label: 'На перевірці', value: 4, color: '#8b5cf6' },
-                  { id: 'done', label: 'Готово', value: 19, color: '#10b981' },
-                ]}
-              />
-            </DetailSection>
-          </Card>
-          <Card preset="borderless" padding="lg">
-            <DetailSection icon={Flag} title="Куди пішов час" meta="64г">
-              <BarList
-                scale="total"
-                format={minutes => `${Math.round(minutes / 60)}г`}
-                items={[
-                  { id: 'tasks', label: 'Завдання', value: 2400 },
-                  { id: 'meetings', label: 'Мітинги', value: 900, color: 'var(--color-chart-2)', meta: '6 подій' },
-                  { id: 'focus', label: 'Фокус-час', value: 540, color: 'var(--color-chart-3)' },
-                ]}
-              />
-            </DetailSection>
-          </Card>
+          <ChartCard icon={BarChart2} title="По статусах">
+            <BarList
+              items={[
+                { id: 'todo', label: 'До виконання', value: 14, color: '#6366f1' },
+                { id: 'progress', label: 'У роботі', value: 9, color: '#f59e0b' },
+                { id: 'review', label: 'На перевірці', value: 4, color: '#8b5cf6' },
+                { id: 'done', label: 'Готово', value: 19, color: '#10b981' },
+              ]}
+            />
+          </ChartCard>
+          <ChartCard icon={Flag} title="Куди пішов час" meta="64г">
+            <BarList
+              scale="total"
+              format={minutes => `${Math.round(minutes / 60)}г`}
+              items={[
+                { id: 'tasks', label: 'Завдання', value: 2400 },
+                { id: 'meetings', label: 'Мітинги', value: 900, color: 'var(--color-chart-2)', meta: '6 подій' },
+                { id: 'focus', label: 'Фокус-час', value: 540, color: 'var(--color-chart-3)' },
+              ]}
+            />
+          </ChartCard>
         </div>
       </PreviewBlock>
 
@@ -133,11 +128,9 @@ export default function ChartsSection() {
         component="ColumnChart"
         fullWidth
       >
-        <Card preset="borderless" padding="lg" className="w-full">
-          <DetailSection icon={BarChart2} title="Активність" meta="7 днів">
-            <ColumnChart data={DEMO_DAYS} series={DEMO_FLOW} height={130} />
-          </DetailSection>
-        </Card>
+        <ChartCard icon={BarChart2} title="Активність" meta="7 днів" className="w-full">
+          <ColumnChart data={DEMO_DAYS} series={DEMO_FLOW} height={130} />
+        </ChartCard>
       </PreviewBlock>
 
       <PreviewBlock
@@ -147,11 +140,9 @@ export default function ChartsSection() {
         component="TrendChart"
         fullWidth
       >
-        <Card preset="borderless" padding="lg" className="w-full">
-          <DetailSection icon={TrendingDown} title="Скільки роботи лишилось" meta="12 днів">
-            <TrendChart data={DEMO_BURNDOWN} valueLabel="Фактично лишилось" referenceLabel="Рівний темп" height={140} />
-          </DetailSection>
-        </Card>
+        <ChartCard icon={TrendingDown} title="Скільки роботи лишилось" meta="12 днів" className="w-full">
+          <TrendChart data={DEMO_BURNDOWN} valueLabel="Фактично лишилось" referenceLabel="Рівний темп" height={140} />
+        </ChartCard>
       </PreviewBlock>
 
       <PreviewBlock
@@ -183,54 +174,52 @@ export default function ChartsSection() {
         component="DataTable"
         fullWidth
       >
-        <Card preset="borderless" padding="lg" className="w-full">
-          <DetailSection icon={Users} title="Навантаження по виконавцях" meta="3">
-            <DataTable
-              rows={DEMO_MEMBERS}
-              rowKey={row => row.id}
-              columns={[
-                {
-                  id: 'member',
-                  header: 'Учасник',
-                  lead: true,
-                  cell: row => (
-                    <span className="flex min-w-0 items-center gap-2">
-                      <UserAvatar user={{ id: row.id, name: row.name }} size="sm" />
-                      <span className="min-w-0 truncate text-[13px] font-semibold text-ink">{row.name}</span>
-                    </span>
-                  ),
-                },
-                {
-                  id: 'focus',
-                  header: 'Поточний фокус',
-                  wide: true,
-                  cell: row => (row.focus
-                    ? <span className="block truncate text-[12px] font-medium text-ink">{row.focus}</span>
-                    : <span className="text-[12px] text-faint">Немає задач у роботі</span>),
-                },
-                {
-                  id: 'progress',
-                  header: 'Прогрес',
-                  width: '160px',
-                  wide: true,
-                  cell: row => <Meter value={row.done / (row.done + row.open)} reading={`Готово: ${row.done}/${row.done + row.open}`} height={6} />,
-                },
-                { id: 'done', header: 'Готово', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
-                { id: 'time', header: 'Час', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{Math.round(row.minutes / 60)}г</span> },
-                {
-                  id: 'state',
-                  header: 'Стан',
-                  align: 'right',
-                  width: '150px',
-                  wide: true,
-                  cell: row => (row.state === 'Стабільно'
-                    ? <Pill tone="success" size="md">{row.state}</Pill>
-                    : <Pill tone="warning" size="md">{row.state}</Pill>),
-                },
-              ]}
-            />
-          </DetailSection>
-        </Card>
+        <ChartCard icon={Users} title="Навантаження по виконавцях" count={3} className="w-full">
+          <DataTable
+            rows={DEMO_MEMBERS}
+            rowKey={row => row.id}
+            columns={[
+              {
+                id: 'member',
+                header: 'Учасник',
+                lead: true,
+                cell: row => (
+                  <span className="flex min-w-0 items-center gap-2">
+                    <UserAvatar user={{ id: row.id, name: row.name }} size="sm" />
+                    <span className="min-w-0 truncate text-[13px] font-semibold text-ink">{row.name}</span>
+                  </span>
+                ),
+              },
+              {
+                id: 'focus',
+                header: 'Поточний фокус',
+                wide: true,
+                cell: row => (row.focus
+                  ? <span className="block truncate text-[12px] font-medium text-ink">{row.focus}</span>
+                  : <span className="text-[12px] text-faint">Немає задач у роботі</span>),
+              },
+              {
+                id: 'progress',
+                header: 'Прогрес',
+                width: '160px',
+                wide: true,
+                cell: row => <Meter value={row.done / (row.done + row.open)} reading={`Готово: ${row.done}/${row.done + row.open}`} height={6} />,
+              },
+              { id: 'done', header: 'Готово', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
+              { id: 'time', header: 'Час', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{Math.round(row.minutes / 60)}г</span> },
+              {
+                id: 'state',
+                header: 'Стан',
+                align: 'right',
+                width: '150px',
+                wide: true,
+                cell: row => (row.state === 'Стабільно'
+                  ? <Pill tone="success" size="md">{row.state}</Pill>
+                  : <Pill tone="warning" size="md">{row.state}</Pill>),
+              },
+            ]}
+          />
+        </ChartCard>
       </PreviewBlock>
 
       <PreviewBlock
@@ -241,23 +230,19 @@ export default function ChartsSection() {
         fullWidth
       >
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
-          <Card preset="borderless" padding="lg">
-            <DetailSection icon={AlertTriangle} title="Що потребує уваги">
-              <SignalList
-                signals={[
-                  { id: '1', tone: 'critical', count: 4, title: 'Завдання заблоковані залежностями', description: 'Їх стримують незавершені задачі' },
-                  { id: '2', tone: 'critical', count: 3, title: 'Прострочені завдання', description: 'Дедлайн минув, робота відкрита' },
-                  { id: '3', tone: 'warning', count: 2, title: 'Без виконавця', description: 'Ніхто не відповідає за результат' },
-                  { id: '4', tone: 'info', count: 11, title: 'Без оцінки', description: 'Поза беклогом, але без плану за часом' },
-                ]}
-              />
-            </DetailSection>
-          </Card>
-          <Card preset="borderless" padding="lg">
-            <DetailSection icon={AlertTriangle} title="Що потребує уваги">
-              <SignalList signals={[]} emptyText="Нічого термінового — усе під контролем" />
-            </DetailSection>
-          </Card>
+          <ChartCard icon={AlertTriangle} title="Що потребує уваги">
+            <SignalList
+              signals={[
+                { id: '1', tone: 'critical', count: 4, title: 'Завдання заблоковані залежностями', description: 'Їх стримують незавершені задачі' },
+                { id: '2', tone: 'critical', count: 3, title: 'Прострочені завдання', description: 'Дедлайн минув, робота відкрита' },
+                { id: '3', tone: 'warning', count: 2, title: 'Без виконавця', description: 'Ніхто не відповідає за результат' },
+                { id: '4', tone: 'info', count: 11, title: 'Без оцінки', description: 'Поза беклогом, але без плану за часом' },
+              ]}
+            />
+          </ChartCard>
+          <ChartCard icon={AlertTriangle} title="Що потребує уваги">
+            <SignalList signals={[]} emptyText="Нічого термінового — усе під контролем" />
+          </ChartCard>
         </div>
       </PreviewBlock>
     </div>

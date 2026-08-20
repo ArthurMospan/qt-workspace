@@ -18,7 +18,7 @@ import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
 import {
-  BarList, Button, Card, DataTable, DetailSection, EmptyState, ExportMenu, KpiCard, LoadingSpinner,
+  BarList, Button, ChartCard, DataTable, EmptyState, ExportMenu, KpiCard, LoadingSpinner,
   Meter, PageHeader, Segmented, SignalList, Surface, TaskListCard,
 } from '@/components/ui';
 import { useLocalization } from '@/lib/hooks/useLocalization';
@@ -60,20 +60,6 @@ function fmtH(min) {
 
 function FilterDivider() {
   return <span className="w-[1px] h-[16px] bg-[#e3e3e3] mx-[2px] shrink-0" />;
-}
-
-// Every block on this screen is a white card with the same heading, and the
-// heading is the one the detail pages use. It used to be a local `SectionTitle`
-// here, a different local `SectionTitle` in AnalyticsTab, and a bare h3 with
-// hand-typed classes in three more places.
-function ChartCard({ icon, title, meta, action, children, className = '' }) {
-  return (
-    <Card preset="borderless" padding="lg" className={className}>
-      <DetailSection icon={icon} title={title} meta={meta} action={action}>
-        {children}
-      </DetailSection>
-    </Card>
-  );
 }
 
 // ── ОГЛЯД: стан воркспейсу «на зараз» ────────────────────────────────
@@ -378,11 +364,7 @@ function AnalyticsContent({
           </ChartCard>
         </div>
 
-        <ChartCard
-          icon={Folders}
-          title="По проєктах"
-          meta={`${stats.byProject.length} ${plural(stats.byProject.length, ['проєкт', 'проєкти', 'проєктів'])}`}
-        >
+        <ChartCard icon={Folders} title="По проєктах" count={stats.byProject.length}>
           {/* «Внутрішній / Клієнтський» is gone. Client collaboration lives in
               QuickTeam+, not in the internal workspace, so every project in this
               table was "Внутрішній" — a column that answered a question nobody

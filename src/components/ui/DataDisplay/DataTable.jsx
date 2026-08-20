@@ -23,8 +23,19 @@
 // they were designed for, and nothing is allowed to overrun its track.
 
 import React from 'react';
+import Surface from '@/components/ui/Surface';
 
 const ALIGN = { left: 'text-left', right: 'text-right', center: 'text-center' };
+
+// The chrome is the task table's, and deliberately so. Two tables in one
+// product that look like two products is the complaint this answers: the grid
+// on a project's «Таблиця» sits in a bordered panel with a canvas header band
+// and 36px rows, while this one drew hairlines straight onto the card with
+// nothing around it and rows a third taller. The behaviour stays different —
+// that is the part `TaskTableView` was built for — but a row of figures is now
+// read at the same weight in both places.
+const HEADER_CELL = 'h-9 bg-canvas px-[10px] shadow-[inset_0_-1px_0_var(--color-line)]';
+const BODY_CELL = 'h-9 px-[10px] py-0 align-middle';
 
 /**
  * @typedef {object} DataTableColumn
@@ -65,46 +76,48 @@ export default function DataTable({
   return (
     <div className={`min-w-0 ${className}`}>
       {/* ── Table ─────────────────────────────────────────────────────── */}
-      <table className="hidden w-full border-collapse md:table">
-        <thead>
-          <tr>
-            {columns.map(column => (
-              <th
-                key={column.id}
-                scope="col"
-                style={column.width ? { width: column.width } : undefined}
-                className={`ui-type-eyebrow border-b border-[color:var(--color-chart-grid)] pb-2 pr-4 last:pr-0 ${ALIGN[column.align] || ALIGN.left}`}
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(row => {
-            const href = rowHref?.(row);
-            return (
-              <tr
-                key={rowKey(row)}
-                className="group border-b border-[color:var(--color-chart-grid)] transition-colors last:border-0 hover:bg-canvas/60"
-              >
-                {columns.map(column => (
-                  <td
-                    key={column.id}
-                    className={`py-3 pr-4 align-middle last:pr-0 ${ALIGN[column.align] || ALIGN.left}`}
-                  >
-                    {column === leadColumn && href ? (
-                      <a href={href} className="block min-w-0 group-hover:underline">
-                        {column.cell(row)}
-                      </a>
-                    ) : column.cell(row)}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <Surface preset="compact-bordered-card" padding="none" className="hidden min-w-0 overflow-hidden md:block">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              {columns.map(column => (
+                <th
+                  key={column.id}
+                  scope="col"
+                  style={column.width ? { width: column.width } : undefined}
+                  className={`ui-type-eyebrow uppercase tracking-wide text-muted ${HEADER_CELL} ${ALIGN[column.align] || ALIGN.left}`}
+                >
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => {
+              const href = rowHref?.(row);
+              return (
+                <tr
+                  key={rowKey(row)}
+                  className="group border-b border-[#f4f4f5] transition-colors last:border-0 hover:bg-[#fafafa]"
+                >
+                  {columns.map(column => (
+                    <td
+                      key={column.id}
+                      className={`${BODY_CELL} ${ALIGN[column.align] || ALIGN.left}`}
+                    >
+                      {column === leadColumn && href ? (
+                        <a href={href} className="block min-w-0 group-hover:underline">
+                          {column.cell(row)}
+                        </a>
+                      ) : column.cell(row)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Surface>
 
       {/* ── The same rows, stacked ────────────────────────────────────── */}
       <div className="flex flex-col gap-2 md:hidden">

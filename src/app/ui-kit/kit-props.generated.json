@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 113,
-    "props": 845,
-    "documentedProps": 845,
+    "components": 114,
+    "props": 852,
+    "documentedProps": 852,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -707,7 +707,7 @@
     },
     "CalendarDayNumber": {
       "file": "src/components/ui/Calendar/CalendarDayNumber.jsx",
-      "summary": "The date in the corner of a day cell, and the control that opens that day.",
+      "summary": "The date in the corner of a day cell, and the control that opens that day. Without an `onClick` it is a plain mark rather than a button.",
       "props": [
         {
           "name": "className",
@@ -721,7 +721,14 @@
           "default": "",
           "type": "(event) => void",
           "values": [],
-          "description": "Opens the day."
+          "description": "Opens the day. Omitted where the day is already inside a control."
+        },
+        {
+          "name": "size",
+          "default": "'md'",
+          "type": "'md'|'sm'",
+          "values": [],
+          "description": "The month cell's corner, or the narrow strip a phone shows a week in."
         },
         {
           "name": "state",
@@ -1035,6 +1042,54 @@
           "type": "(id: string) => void",
           "values": [],
           "description": "Opens one."
+        }
+      ]
+    },
+    "ChartCard": {
+      "file": "src/components/ui/Layout/ChartCard.jsx",
+      "summary": "A titled block of an analytics screen.",
+      "props": [
+        {
+          "name": "action",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "A control belonging to the heading."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "count",
+          "default": "",
+          "type": "number",
+          "values": [],
+          "description": "How many things it is about — drawn as the same pill every count in the product is."
+        },
+        {
+          "name": "icon",
+          "default": "",
+          "type": "React.ComponentType",
+          "values": [],
+          "description": "The block's glyph."
+        },
+        {
+          "name": "meta",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "A quiet clause after the title: a period, a total, a budget. Never a count."
+        },
+        {
+          "name": "title",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What the block measures."
         }
       ]
     },

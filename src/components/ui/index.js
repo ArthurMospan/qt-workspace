@@ -111,6 +111,7 @@ export { default as TaskAttributesPanel, getTaskAttributeChrome, AttributeTrigge
 export { default as SidebarLayout } from './Layout/SidebarLayout'
 export { default as DetailLayout } from './Layout/DetailLayout'
 export { default as DetailSection } from './Layout/DetailSection'
+export { default as ChartCard } from './Layout/ChartCard'
 export { default as PageHeader } from './Layout/PageHeader'
 export { default as UserMenu } from './Layout/UserMenu'
 export { default as NotificationBell } from './Layout/NotificationBell'

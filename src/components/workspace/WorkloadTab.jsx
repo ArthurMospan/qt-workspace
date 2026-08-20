@@ -24,9 +24,8 @@ import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
   BarList,
   Button,
-  Card,
+  ChartCard,
   DataTable,
-  DetailSection,
   EmptyState,
   KpiCard,
   Meter,
@@ -128,20 +127,6 @@ function RiskPill({ stat }) {
   return <Pill tone="success" size="md">{label}</Pill>;
 }
 
-// The same card and heading every other analytics block uses. The workload bar
-// that used to live here mixed its own #7ba98d, #c96a5a and #b8b8b8 — three
-// colours that appear nowhere else in the product, for a fact the row already
-// stated twice in figures.
-function ChartCard({ icon, title, meta, children, className = '' }) {
-  return (
-    <Card preset="borderless" padding="lg" className={className}>
-      <DetailSection icon={icon} title={title} meta={meta}>
-        {children}
-      </DetailSection>
-    </Card>
-  );
-}
-
 function TeamOverview({ stats, summary, period, positions, now, onSelectMember }) {
   return (
     <div className="flex w-full flex-col gap-4 pb-16">
@@ -172,7 +157,7 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
         />
       </div>
 
-      <ChartCard icon={Users} title="Команда" meta={`${stats.length} ${plural(stats.length, ['учасник', 'учасники', 'учасників'])}`}>
+      <ChartCard icon={Users} title="Команда" count={stats.length}>
         {/* This was a six-column CSS grid written out twice — once for the
             header and once for every row — with a fourth heading style, a 15px
             figure that appears nowhere else, emerald and cyan numbers, and a

@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 113,
-    "stateful": 101,
+    "components": 114,
+    "stateful": 102,
     "hover": 68,
     "focus": 69,
     "disabled": 35,
     "loading": 6,
     "error": 6,
-    "long-text": 70
+    "long-text": 71
   },
   "components": {
     "Alert": {
@@ -101,6 +101,9 @@
     "ChannelRail": {
       "hover": "own",
       "focus": "global"
+    },
+    "ChartCard": {
+      "long-text": "children, title"
     },
     "ChatAttachmentList": {
       "hover": "own",
@@ -559,7 +562,6 @@
     ],
     "Card": [
       "surfaces",
-      "charts",
       "variant-matrix",
       "states"
     ],
@@ -568,6 +570,9 @@
     ],
     "ChannelRail": [
       "inner-nav-layout"
+    ],
+    "ChartCard": [
+      "charts"
     ],
     "ChatAttachmentList": [
       "chat-elements"
@@ -634,7 +639,6 @@
       "detail-layout"
     ],
     "DetailSection": [
-      "charts",
       "detail-layout",
       "variant-matrix"
     ],

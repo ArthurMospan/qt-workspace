@@ -11,7 +11,7 @@ import { CalendarIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Dialog, Button, CalendarDayCell, Card, FormGroup, Select, Input, EmptyState } from '@/components/ui';
+import { Dialog, Button, CalendarDayCell, CalendarDayNumber, Card, FormGroup, Select, Input, EmptyState } from '@/components/ui';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import {
   calendarEventHref,
@@ -73,12 +73,28 @@ function fmtWork(min) {
 // fought the content instead of ranking it. Muted, warm equivalents below keep
 // text contrast above 4.5:1 on their own fill:
 //   норма виконана  #e6f2ea / #2f6b4b   частково  #fdf0e3 / #9a5b18
-//   сьогодні        #f4f8f5 / header #eaf2ec / ring #dbe9e0 / #2f6b4b
 //
-// Today is that pale green everywhere it is a fill. It used to be `bg-canvas`
-// in the team table, which is the page background itself: on a white table the
-// column read as a hole punched through the card rather than as the day you
-// are standing on.
+// Green means one thing here and it is not «today»: it is «the day's norm is
+// met». Today used to be a pale green wash too — a whole column of it in the
+// team table — which spent the same colour on two unrelated facts and made a
+// Thursday look like a Thursday everybody had finished. Today is marked the way
+// the calendar marks it: the date in an ink circle, and nothing else.
+
+// The day of the week over the date, with today's date in the calendar's ink
+// circle. Every view in this file draws this line, and each used to draw it in
+// its own green.
+function DayHeading({ label, day, isToday, size = 'md' }) {
+  return (
+    <span className={`inline-flex items-center gap-[4px] font-bold uppercase ${
+      size === 'sm' ? 'text-[9px]' : 'text-[11px]'
+    } ${isToday ? 'text-ink' : 'text-muted'}`}>
+      {label}
+      <CalendarDayNumber state={isToday ? 'today' : 'default'} size={size}>
+        {day.getDate()}
+      </CalendarDayNumber>
+    </span>
+  );
+}
 
 // Colored capacity chip: "6г 20хв з 8г"
 function DayChip({ minutes, capacity = DAY_MIN, compact = false }) {
@@ -128,17 +144,11 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
         return (
           <div key={key}
             className={`rounded-[16px] border p-[8px] flex flex-col gap-[8px] min-h-[260px] transition-colors ${
-              isToday
-                ? 'border-ink/25 bg-white ring-2 ring-ink/[0.06]'
-                : isWeekend
-                  ? 'border-black/[0.05] bg-white'
-                  : 'border-black/[0.05] bg-white'
+              isToday ? 'border-ink bg-white' : 'border-black/[0.05] bg-white'
             }`}>
             {/* Day header */}
             <div className="flex items-center justify-between px-[4px] pt-[2px]">
-              <span className={`text-[11px] font-bold uppercase ${isToday ? 'text-ink' : 'text-muted'}`}>
-                {DAY_LABELS[i]} <span className="text-[13px] text-ink">{d.getDate()}</span>
-              </span>
+              <DayHeading label={DAY_LABELS[i]} day={d} isToday={isToday} />
               <DayChip minutes={total} capacity={isWeekend ? 0 : DAY_MIN} compact={isWeekend && total === 0} />
             </div>
             {/* Task cards */}
@@ -228,10 +238,8 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
                 const minutes = byDay[dayKey(day)] || 0;
                 const isToday = dayKey(day) === todayKey;
                 return (
-                  <div key={dayKey(day)} className={`rounded-[10px] px-1.5 py-2 text-center ${isToday ? 'bg-[#f4f8f5] ring-1 ring-[#dbe9e0]' : 'bg-canvas'}`}>
-                    <p className={`text-[9px] font-bold uppercase ${isToday ? 'text-[#2f6b4b]' : 'text-muted'}`}>
-                      {DAY_LABELS[index]} {day.getDate()}
-                    </p>
+                  <div key={dayKey(day)} className={`rounded-[10px] px-1.5 py-2 text-center ${isToday ? 'border border-ink bg-white' : 'bg-canvas'}`}>
+                    <DayHeading label={DAY_LABELS[index]} day={day} isToday={isToday} size="sm" />
                     <p className={`mt-1 text-[10px] font-bold ${minutes > 0 ? 'text-ink' : 'text-faint'}`}>
                       {minutes > 0 ? fmtMin(minutes) : '—'}
                     </p>
@@ -254,10 +262,8 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
           <tr className="border-b border-line bg-white">
             <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-[24%]">Учасник</th>
             {days.map((d, i) => (
-              <th key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center w-[9%] ${dayKey(d) === todayKey ? 'bg-[#eaf2ec]' : 'bg-white'}`}>
-                <span className={`text-[11px] font-bold uppercase ${dayKey(d) === todayKey ? 'text-[#2f6b4b]' : 'text-muted'}`}>
-                  {DAY_LABELS[i]} {d.getDate()}
-                </span>
+              <th key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center w-[9%]">
+                <DayHeading label={DAY_LABELS[i]} day={d} isToday={dayKey(d) === todayKey} />
               </th>
             ))}
             <th className="px-4 py-3 text-center text-[11px] font-bold text-ink uppercase tracking-wider w-[13%]">Всього</th>
@@ -276,7 +282,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               {days.map((d, i) => {
                 const min = byDay[dayKey(d)] || 0;
                 return (
-                  <td key={i} className={`border-l border-black/[0.04] px-2 py-3 text-center ${dayKey(d) === todayKey ? 'bg-[#f4f8f5]' : 'bg-white'}`}>
+                  <td key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center">
                     {min > 0
                       ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
                       : <span className="text-[12px] text-faint">—</span>}
@@ -357,9 +363,9 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
                 onClick={() => onSelectDay?.(d)}
                 title="Відкрити тиждень"
               >
-                <span className={`text-[12px] font-bold ${inMonth ? 'text-ink' : 'text-muted'}`}>
+                <CalendarDayNumber state={isToday ? 'today' : inMonth ? 'default' : 'outside'}>
                   {d.getDate()}
-                </span>
+                </CalendarDayNumber>
                 {cell?.minutes > 0 && (
                   <>
                     <DayChip minutes={cell.minutes} capacity={isWeekend ? 0 : DAY_MIN} compact />

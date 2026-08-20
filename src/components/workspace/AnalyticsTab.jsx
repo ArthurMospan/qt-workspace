@@ -13,7 +13,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import {
-  BarList, Card, DataTable, DetailSection, Meter, SignalList, TaskListCard,
+  BarList, ChartCard, DataTable, Meter, SignalList, TaskListCard,
 } from '@/components/ui';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
@@ -28,20 +28,6 @@ import { plural } from '@/lib/utils/plural.mjs';
 function fmtH(min) {
   const h = Math.floor(min / 60), m = min % 60;
   return h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : `${m}хв`;
-}
-
-// The same card and the same heading the workspace analytics screen uses. This
-// file used to carry its own `SectionTitle` — an eyebrow, where the other file
-// had a near-identical eyebrow of its own — which is how the two screens that
-// answer the same questions ended up looking like different products.
-function ChartCard({ icon, title, meta, children, className = '' }) {
-  return (
-    <Card preset="borderless" padding="lg" className={className}>
-      <DetailSection icon={icon} title={title} meta={meta}>
-        {children}
-      </DetailSection>
-    </Card>
-  );
 }
 
 export default function AnalyticsTab({
@@ -323,7 +309,7 @@ export default function AnalyticsTab({
 
         {/* ── Per-member table ─────────────────────────────────────── */}
         {stats.memberStats.length > 0 && (
-          <ChartCard icon={Users} title="Навантаження по виконавцях" meta={`${stats.memberStats.length}`}>
+          <ChartCard icon={Users} title="Навантаження по виконавцях" count={stats.memberStats.length}>
             {/* Two hand-written tables — one for the screen, one for the phone —
                 each with its own header type, its own rules and its own idea of
                 what colour a number is. `DataTable` is both, and it is the same
