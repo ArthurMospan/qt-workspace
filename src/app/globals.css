@@ -43,11 +43,20 @@
      Status keeps its own reserved scale (success/warning/danger/info) and never
      stands in for "series 2". Entity colours — a status, a type, a priority —
      come from the workspace's own configuration and are the entity's, not the
-     chart's. */
-  --color-chart-1:       #2f6fb0;  /* the measure */
+     chart's.
+
+     The measure is the product's own ink, and that is the point: a progress
+     bar, a meter, a sparkline and a trend line are the workspace measuring
+     itself, not a series that needs a hue to be told from another one. It used
+     to be a blue nothing else on any screen was, which read as a second primary
+     colour the product does not have. The two slots below stay hues, because
+     they only ever appear where two or three series share one plot. */
+  --color-chart-1:       var(--color-ink);  /* the measure */
   --color-chart-2:       #cf7a22;
   --color-chart-3:       #0e8f74;
-  --color-chart-track:   #eef2f6;  /* the unfilled half of a bar or a meter */
+  /* Grey, not blue-grey: under an ink bar the old #eef2f6 track was the only
+     cool thing left in the picture. */
+  --color-chart-track:   #ededee;  /* the unfilled half of a bar or a meter */
   --color-chart-context: #bcbcbc;  /* the series that is context, not the point */
   --color-chart-grid:    #f0f0f0;  /* hairline axes and rules */
 }

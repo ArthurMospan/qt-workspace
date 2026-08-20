@@ -102,10 +102,10 @@ export default function ChartsSection() {
             <DetailSection icon={BarChart2} title="По статусах">
               <BarList
                 items={[
-                  { id: 'todo', label: 'До виконання', value: 14, color: '#6b7280' },
-                  { id: 'progress', label: 'У роботі', value: 9, color: '#2f6fb0' },
-                  { id: 'review', label: 'На перевірці', value: 4, color: '#cf7a22' },
-                  { id: 'done', label: 'Готово', value: 19, color: '#0e8f74' },
+                  { id: 'todo', label: 'До виконання', value: 14, color: '#6366f1' },
+                  { id: 'progress', label: 'У роботі', value: 9, color: '#f59e0b' },
+                  { id: 'review', label: 'На перевірці', value: 4, color: '#8b5cf6' },
+                  { id: 'done', label: 'Готово', value: 19, color: '#10b981' },
                 ]}
               />
             </DetailSection>
