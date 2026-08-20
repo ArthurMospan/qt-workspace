@@ -784,7 +784,6 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     .filter(candidate => existingParentIssueId(candidate) === issueId)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const childIssuesDone = childIssues.filter(child => closedStatusIds.includes(child.columnId || child.status)).length;
-  const openChildCount = childIssues.length - childIssuesDone;
   // This screen subscribes with `includeSetAside`, so its own link keeps
   // working. The pickers below must not inherit that: you do not hang new work
   // under a task that has been put aside, or link one to it.
@@ -2015,7 +2014,15 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   icon={TaskIcon}
                   title="Підзавдання"
                   count={childIssues.length}
-                  meta={openChildCount > 0 ? `${childIssuesDone}/${childIssues.length} · ${openChildCount} ще в роботі` : `${childIssuesDone}/${childIssues.length}`}
+                  // At the right edge, over the bar it reads — not trailing the
+                  // count Pill, where it read as part of the title and said one
+                  // fact twice: «0/1 · 1 ще в роботі» is a ratio and then the
+                  // same ratio's remainder.
+                  action={childIssues.length > 0 ? (
+                    <span className="ml-auto shrink-0 text-[11px] font-medium text-muted">
+                      Готово: {childIssuesDone}/{childIssues.length}
+                    </span>
+                  ) : null}
                   className="pt-2"
                 >
                   {childIssues.length > 0 && (
