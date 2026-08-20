@@ -114,21 +114,21 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:188",
+      "location": "src/components/ui/ChatComposerCore.jsx:197",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:215",
+      "location": "src/components/ui/ChatComposerCore.jsx:224",
       "attributes": [
         "aria-label"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/ChatComposerCore.jsx:232",
+      "location": "src/components/ui/ChatComposerCore.jsx:241",
       "attributes": [
         "aria-label"
       ]

@@ -184,13 +184,22 @@ export default function ChatComposerCore({
         <div className="max-md:flex max-md:items-end max-md:gap-1 max-md:p-1">
           {textarea}
           <div className="flex items-center justify-between border-t border-[#f0f0f0] px-3 pb-3 pt-2 max-md:contents">
-            <div className="flex items-center gap-1 max-md:order-first">{toolbar}</div>
+            {/* One line of the field tall, on a phone: 15px text at
+                `leading-relaxed` plus the field's 7px above and below — 38px.
+                The row is bottom-aligned so that a field grown to several lines
+                keeps its controls on the last one, and a 32px glyph hung from
+                that bottom edge sits three pixels below the centre of a
+                single-line field, which is the resting state and the one
+                anybody looks at. Matching the line height makes «bottom» and
+                «centre» the same place while the field is one line, and still
+                hugs the bottom once it is not. */}
+            <div className="flex items-center gap-1 max-md:order-first max-md:h-[38px]">{toolbar}</div>
             <button
               type="button"
               onClick={onSubmit}
               disabled={sendDisabled}
               aria-label={sendAriaLabel}
-              className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-[13px] font-semibold transition-all max-md:h-9 max-md:w-9 max-md:shrink-0 max-md:justify-center max-md:gap-0 max-md:rounded-full max-md:px-0 max-md:py-0 ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-[13px] font-semibold transition-all max-md:h-[38px] max-md:w-[38px] max-md:shrink-0 max-md:justify-center max-md:gap-0 max-md:rounded-full max-md:px-0 max-md:py-0 ${
                 sendDisabled
                   ? 'cursor-not-allowed bg-[#f0f0f0] text-[#b0b0b0]'
                   : 'bg-ink text-white shadow-sm hover:bg-[#333] active:scale-95'
