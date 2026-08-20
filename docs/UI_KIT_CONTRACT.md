@@ -433,7 +433,7 @@ component preset. Справжній одноразовий виняток по�
 Затверджені межі лишаються такими:
 
 - **AuthLayout** — Login і Onboarding поза зоною змін authenticated UI Kit.
-- **UserStatusSetter** — його product usage є доказом оголошених status-варіантів;
+- **UserStatusDialog** — його product usage є доказом оголошених status-варіантів;
   див. розділ нижче.
 - **MobileNav і WorkspaceSidebar** — branded controls можуть читати `--sb-*`
   змінні теми й не зобов'язані набувати нейтрального вигляду `IconAction`.
@@ -456,7 +456,7 @@ component preset. Справжній одноразовий виняток по�
 хедері.
 
 **Компонент, чий виклик — єдиний доказ варіанта, лишається на місці.** Разом із
-файлом зі звіту зникає і його вживання варіантів. `UserStatusSetter` — живий
+файлом зі звіту зникає і його вживання варіантів. `UserStatusDialog` — живий
 приклад: він єдиний, хто вживає `Input composition="status-entry"`,
 `Button composition="status-submit"` і `Dialog size="status"`. Після переїзду
 всі три потрапили б у `declaredUnused`, поки продукт малює їх щоразу, коли

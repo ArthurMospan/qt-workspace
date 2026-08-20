@@ -7,6 +7,7 @@ import { Surface, Card, Badge, StatusBadge, Button, IconAction, PresenceDot, Tab
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
+import UserStatusDialog from '@/components/UserStatusDialog';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAllMyTasks } from '@/lib/hooks/useAllMyTasks';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -67,6 +68,29 @@ function CopyableContact({ value, label }) {
   );
 }
 
+// The line over the avatar. On your own profile it is a button and on anybody
+// else's it is a bubble, which is the whole difference between the two — so
+// they are one shape rather than two that drift.
+function StatusBubble({ emoji, text, onClick }) {
+  const Tag = onClick ? 'button' : 'div';
+  return (
+    <Tag
+      {...(onClick ? { type: 'button', onClick, title: 'Змінити статус' } : {})}
+      data-ui-surface="local"
+      className={`absolute top-[-20px] left-[65%] z-20 flex min-w-[50px] max-w-[180px] items-center gap-[6px] rounded-[18px] border border-[#f0f0f0] bg-white px-[12px] py-[8px] shadow-lg ${
+        onClick ? 'cursor-pointer transition-colors hover:border-line hover:bg-canvas' : ''
+      }`}
+    >
+      <span className="shrink-0 text-[18px]">{emoji || '💭'}</span>
+      {text ? (
+        <span className="truncate text-[13px] font-normal tracking-tight text-ink">{text}</span>
+      ) : onClick ? (
+        <span className="truncate text-[13px] font-normal tracking-tight text-muted">Статус</span>
+      ) : null}
+    </Tag>
+  );
+}
+
 export default function ProfileView({ user, onClose }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -84,6 +108,7 @@ export default function ProfileView({ user, onClose }) {
   const { members: orgMembers } = useOrganization();
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
   const [activeTab, setActiveTab] = useState('profile');
+  const [statusOpen, setStatusOpen] = useState(false);
 
   if (!user) return null;
 
@@ -98,7 +123,13 @@ export default function ProfileView({ user, onClose }) {
   const details = getRealProfileDetails(user);
   // The line the person wrote about themselves. `user.status` is the membership
   // record and says «active» about everybody.
-  const statusText = user.statusText || null;
+  //
+  // On your own profile it is read from the signed-in user rather than from the
+  // member list: that one is a server route the page holds a copy of, so a
+  // status you have just set here would not come back for as long as the copy
+  // lasts, and the bubble you had just used would still show the old line.
+  const statusText = (isMe ? currentUser?.status : user.statusText) || null;
+  const statusEmoji = (isMe ? currentUser?.statusEmoji : user.statusEmoji) || null;
 
   const positionName = positions.find(p => p.id === user.positionId)?.label || user.positionId || user.title || user.email;
 
@@ -183,16 +214,19 @@ export default function ProfileView({ user, onClose }) {
             {isOnline && <PresenceDot size="hero" collar="white" className="bottom-[6px] right-[6px]" />}
             {/* `statusText`, not `status`: the second one is the membership —
                 `active` — and this bubble used to read it out as the line the
-                person had written about themselves. */}
-            {(statusText || user.statusEmoji) && (
-              <div data-ui-surface="local" className="absolute top-[-20px] left-[65%] bg-white border border-[#f0f0f0] rounded-[18px] px-[12px] py-[8px] shadow-lg flex items-center gap-[6px] z-20 max-w-[180px] min-w-[50px]">
-                <span className="text-[18px] shrink-0">{user.statusEmoji}</span>
-                {statusText && (
-                  <span className="text-[13px] font-normal text-ink tracking-tight truncate">
-                    {statusText}
-                  </span>
-                )}
-              </div>
+                person had written about themselves.
+
+                On your own profile the bubble is the control that sets it. It
+                was readable here and settable only from the pill in the chat
+                header, which is a different screen — so the one place the
+                status is actually looked at could not change it. Somebody
+                else's bubble stays a bubble. */}
+            {(statusText || statusEmoji || isMe) && (
+              <StatusBubble
+                emoji={statusEmoji}
+                text={statusText}
+                onClick={isMe ? () => setStatusOpen(true) : undefined}
+              />
             )}
           </div>
           
@@ -477,6 +511,8 @@ export default function ProfileView({ user, onClose }) {
         )}
 
       </div>
+
+      {statusOpen && <UserStatusDialog onClose={() => setStatusOpen(false)} />}
     </div>
   );
 }

@@ -91,7 +91,7 @@ test('the variant matrix renders every component that can stand alone', () => {
 // component into `src/components/ui` takes its call site out of view — and with
 // it, the evidence for every variant that call site was the only user of.
 //
-// `UserStatusSetter` is the live example and the reason this number is pinned.
+// `UserStatusDialog` is the live example and the reason this number is pinned.
 // It is the sole user of `Input composition="status-entry"`, `Button
 // composition="status-submit"` and `Dialog size="status"`; promoting it to the
 // kit would move three variants into this list while the product went on
