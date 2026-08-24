@@ -4,11 +4,12 @@
 // keeps the active org choice inside this tab, and provides switchOrg().
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
-  collection, query, where, getDocs,
+  collection, query, where, getDocs, getDocsFromServer,
   doc, getDoc, onSnapshot,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import { buildOrganizationList } from '@/lib/utils/organizationList.mjs';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import {
   organizationLoadErrorKind,
@@ -113,10 +114,42 @@ export function OrgProvider({ user, children }) {
     //
     // A snapshot may only publish if nothing newer has arrived since it started.
     let snapshotSequence = 0;
+    // The list this listener last put on screen. A workspace whose organization
+    // document a read failed to return keeps the name it already had instead of
+    // going blank while the document is fetched again.
+    let publishedOrgs = [];
     const membershipsQuery = query(
       collection(db, 'orgMemberships'),
       where('userId', '==', uid)
     );
+
+    const readOrganizationsById = async (orgIds, fromServer) => {
+      const chunks = [];
+      for (let i = 0; i < orgIds.length; i += 30) chunks.push(orgIds.slice(i, i + 30));
+      const snapshots = await Promise.all(chunks.map(ids => {
+        const request = query(collection(db, 'organizations'), where('__name__', 'in', ids));
+        return fromServer ? getDocsFromServer(request) : getDocs(request);
+      }));
+      return snapshots.flatMap(orgSnap => orgSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    };
+
+    // `getDocs` answers from the local cache whenever the SDK believes it is
+    // offline, and a cache that never held one of these documents answers short
+    // rather than failing — there is no error to catch and nothing to retry. A
+    // membership is proof the workspace is there, so a smaller answer than the
+    // memberships describe is asked again, of the server this time. If that is
+    // unreachable the entry survives anyway, marked pending by the builder.
+    const readOrganizationDocuments = async (orgIds) => {
+      const documents = await readOrganizationsById(orgIds, false);
+      const found = new Set(documents.map(document => document.id));
+      const missing = orgIds.filter(orgId => !found.has(orgId));
+      if (missing.length === 0) return documents;
+      try {
+        return documents.concat(await readOrganizationsById(missing, true));
+      } catch {
+        return documents;
+      }
+    };
 
     const applyMembershipSnapshot = async (memSnap) => {
       snapshotSequence += 1;
@@ -124,33 +157,23 @@ export function OrgProvider({ user, children }) {
       // True while this snapshot is still the newest one to have arrived.
       const current = () => !cancelled && sequence === snapshotSequence;
       try {
-        let orgs = [];
-        if (!memSnap.empty) {
-          // Fetch the organization documents for these memberships
-          const orgIds = [...new Set(memSnap.docs.map(d => d.data().orgId).filter(Boolean))];
-          const chunks = [];
-          for (let i = 0; i < orgIds.length; i += 30) chunks.push(orgIds.slice(i, i + 30));
-          const snapshots = await Promise.all(chunks.map(ids => getDocs(query(
-            collection(db, 'organizations'),
-            where('__name__', 'in', ids)
-          ))));
-          orgs = snapshots.flatMap(orgSnap => orgSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-        }
+        const memberships = memSnap.docs.map(document => document.data());
+        const orgIds = [...new Set(memberships.map(membership => membership.orgId).filter(Boolean))];
+        const documents = orgIds.length > 0 ? await readOrganizationDocuments(orgIds) : [];
 
-        // Legacy fallback removed to enforce strict multi-tenancy
+        const { organizations, roles } = buildOrganizationList(memberships, documents, publishedOrgs);
 
         if (!current()) return;
+        publishedOrgs = organizations;
         setOrgError(null);
-        setAllOrgs(orgs);
-        setOrgRoles(Object.fromEntries(
-          memSnap.docs
-            .map(document => document.data())
-            .filter(membership => membership.orgId && membership.role)
-            .map(membership => [membership.orgId, membership.role]),
-        ));
+        setAllOrgs(organizations);
+        setOrgRoles(roles);
 
-        if (orgs.length === 0) {
-          setOrgRoles({});
+        // Nobody has a workspace only when nobody has a membership. It used to
+        // be the organization documents that decided this, so a read that came
+        // back empty sent a person who owns two workspaces to «створіть
+        // організацію».
+        if (organizations.length === 0) {
           setNoOrg(true);
           setActiveOrgId(null);
           setActiveOrg(null);
@@ -161,20 +184,13 @@ export function OrgProvider({ user, children }) {
 
         // Pick active org: prefer this tab's choice, fallback to first.
         const stored = typeof window !== 'undefined' ? sessionStorage.getItem(TAB_STORAGE_KEY) : null;
-        const preferred = stored && orgs.find(o => o.id === stored);
-        const chosen = preferred || orgs[0];
-
-        // Retrieve role from orgMemberships if we can, else fallback
-        let chosenRole = null;
-        if (!memSnap.empty) {
-           const memData = memSnap.docs.find(d => d.data().orgId === chosen.id)?.data();
-           if (memData) chosenRole = memData.role;
-        }
+        const preferred = stored && organizations.find(o => o.id === stored);
+        const chosen = preferred || organizations[0];
 
         // Apply org (bypassing members array logic)
         setActiveOrgId(chosen.id);
         setActiveOrg(chosen);
-        setOrgRole(chosenRole);
+        setOrgRole(roles[chosen.id] ?? null);
         setNoOrg(false);
         setOrgLoading(false);
         persistTabOrganization(chosen.id);

@@ -83,6 +83,12 @@ export default function WorkspaceLayout({ children }) {
     if (authLoading || orgLoading) return;
     if (!currentUser) return;
     if (!activeOrg) return;
+    // A workspace whose organization document has not been read yet is present
+    // because its membership is — see buildOrganizationList. It has no fields,
+    // so `onboarded` reads as missing, and sending its owner off to «створіть
+    // організацію» over a read that has not finished is exactly the kind of
+    // thing that must not follow from a slow network.
+    if (activeOrg.pending) return;
     const requestedOrgId = new URLSearchParams(window.location.search).get('org');
     if (requestedOrgId && requestedOrgId !== activeOrgId) return;
     const isOwnerOrAdmin = orgRole === 'owner' || orgRole === 'admin';

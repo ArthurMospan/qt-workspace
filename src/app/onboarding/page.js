@@ -74,7 +74,8 @@ function OnboardingPageContent() {
     if (!orgName.trim() || saving) return;
     setSaving(true);
     const uid = currentUser?.id || currentUser?.uid;
-    const orgId = (isNewOrg || !activeOrgId) ? `org_${uid?.slice(0, 8)}_${Date.now()}` : activeOrgId;
+    const isFreshOrganization = isNewOrg || !activeOrgId;
+    const orgId = isFreshOrganization ? `org_${uid?.slice(0, 8)}_${Date.now()}` : activeOrgId;
     const detectedTimeZone = normalizeTimeZone(
       Intl.DateTimeFormat().resolvedOptions().timeZone,
     );
@@ -97,14 +98,28 @@ function OnboardingPageContent() {
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
-      // Ensure owner membership exists
-      await setDoc(doc(db, 'orgMemberships', `${orgId}_${uid}`), {
-        id: `${orgId}_${uid}`,
-        orgId,
-        userId: uid,
-        role: 'owner',
-        joinedAt: new Date().toISOString(),
-      }, { merge: true });
+      // The owner seat, written once — with the organization it belongs to.
+      //
+      // Only a new organization needs one. Onboarding an organization that is
+      // already the active one means its seat is what made it active, and a
+      // client write to a membership that already exists is refused outright:
+      // roles, rates and removals are server-owned, and a merge write onto an
+      // existing document is an update like any other. So this used to fail on
+      // a line whose whole job was to be a no-op, telling the owner the
+      // workspace could not be saved after it already had been.
+      //
+      // Reading first is not the way around it either — the read rule tests
+      // `resource.data.userId`, and on a document that is not there yet that is
+      // a denial rather than an empty answer. Knowing which case we are in is.
+      if (isFreshOrganization) {
+        await setDoc(doc(db, 'orgMemberships', `${orgId}_${uid}`), {
+          id: `${orgId}_${uid}`,
+          orgId,
+          userId: uid,
+          role: 'owner',
+          joinedAt: new Date().toISOString(),
+        });
+      }
 
       // Force local state update immediately, bypassing switchOrg's allOrgs check
       if (setActiveOrgId) {

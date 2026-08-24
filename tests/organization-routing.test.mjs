@@ -6,6 +6,7 @@ import {
   organizationLoadRetryDelay,
   shouldRetryOrganizationLoad,
 } from '../src/lib/utils/organizationLoadErrors.mjs';
+import { buildOrganizationList } from '../src/lib/utils/organizationList.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -99,9 +100,119 @@ test('an organization list published late cannot overwrite a newer one', async (
   assert.match(context, /snapshotSequence \+= 1;\s*\n\s*const sequence = snapshotSequence;/);
   assert.match(context, /const current = \(\) => !cancelled && sequence === snapshotSequence;/);
   // The publish is guarded, not merely the unmount.
-  assert.match(context, /if \(!current\(\)\) return;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(orgs\);/);
+  assert.match(
+    context,
+    /if \(!current\(\)\) return;\s*\n\s*publishedOrgs = organizations;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(organizations\);/,
+  );
 
   // The list itself is still built from memberships alone — access is
   // `orgMemberships` and nothing else — so the guard protects the right thing.
   assert.match(context, /collection\(db, 'orgMemberships'\),\s*\n\s*where\('userId', '==', uid\)/);
+});
+
+// Ordering was only half of it. The list was assembled out of the organization
+// documents, so however the reads were sequenced, a read that came back short
+// deleted a workspace — and `getDocs` comes back short without failing whenever
+// the SDK believes it is offline and answers from a cache that never held the
+// document. Nothing re-runs until a membership changes, so the workspace stayed
+// gone. A membership is the proof a workspace exists; the document only names
+// it.
+test('a workspace survives an organization document that did not come back', () => {
+  const memberships = [
+    { orgId: 'org-one', userId: 'u', role: 'owner' },
+    { orgId: 'org-two', userId: 'u', role: 'member' },
+  ];
+
+  const { organizations, roles } = buildOrganizationList(
+    memberships,
+    [{ id: 'org-two', name: 'Друга' }],
+  );
+
+  assert.deepEqual(organizations.map(organization => organization.id), ['org-one', 'org-two']);
+  assert.equal(organizations[0].pending, true);
+  assert.equal(organizations[1].name, 'Друга');
+  // The role is the membership's own, so it is known even for the entry whose
+  // document is missing — that is what the switcher prints under the name.
+  assert.deepEqual(roles, { 'org-one': 'owner', 'org-two': 'member' });
+});
+
+test('an entry whose document is missing keeps the name it already had', () => {
+  const memberships = [{ orgId: 'org-one', role: 'owner' }];
+  const known = [{ id: 'org-one', name: 'OneB', logo: 'https://example.test/logo.png' }];
+
+  const { organizations } = buildOrganizationList(memberships, [], known);
+
+  assert.equal(organizations[0].name, 'OneB');
+  assert.equal(organizations[0].logo, 'https://example.test/logo.png');
+  assert.notEqual(organizations[0].pending, true);
+
+  // A document that did come back is the fresher of the two.
+  const refreshed = buildOrganizationList(memberships, [{ id: 'org-one', name: 'OneB Ltd' }], known);
+  assert.equal(refreshed.organizations[0].name, 'OneB Ltd');
+});
+
+test('a membership names its workspace once, whatever the snapshot holds', () => {
+  const { organizations, roles } = buildOrganizationList(
+    [
+      { orgId: 'org-one', role: 'owner' },
+      { orgId: 'org-one', role: 'owner' },
+      { role: 'member' },
+      null,
+    ],
+    [{ id: 'org-one', name: 'OneB' }, { id: 'org-ghost', name: 'Не наша' }],
+  );
+
+  // Deduplicated, and an organization no membership names is not a workspace of
+  // this person's however it got into the read.
+  assert.deepEqual(organizations.map(organization => organization.id), ['org-one']);
+  assert.deepEqual(roles, { 'org-one': 'owner' });
+});
+
+test('no memberships is the only thing that means no workspace', () => {
+  const { organizations, roles } = buildOrganizationList([], []);
+  assert.deepEqual(organizations, []);
+  assert.deepEqual(roles, {});
+});
+
+test('a short organizations read is asked again, of the server', async () => {
+  const [context, layout] = await Promise.all([
+    read('../src/lib/context/OrgContext.js'),
+    read('../src/app/(app)/layout.js'),
+  ]);
+
+  // The list is the memberships', and the documents only decorate it.
+  assert.match(context, /buildOrganizationList\(memberships, documents, publishedOrgs\)/);
+  // Whatever the cache failed to supply is requested from the server, and the
+  // request being unreachable does not shorten the list either.
+  assert.match(context, /const missing = orgIds\.filter\(orgId => !found\.has\(orgId\)\);/);
+  assert.match(context, /documents\.concat\(await readOrganizationsById\(missing, true\)\)/);
+  assert.match(context, /fromServer \? getDocsFromServer\(request\) : getDocs\(request\)/);
+  // «Створіть організацію» follows from having no membership, never from a read.
+  assert.match(context, /if \(organizations\.length === 0\) \{\s*\n\s*setNoOrg\(true\);/);
+  // And an entry still waiting for its document does not read as un-onboarded.
+  assert.match(layout, /if \(activeOrg\.pending\) return;/);
+});
+
+// The owner seat is written when the organization is created. Rewriting it on
+// every onboarding was meant to be harmless, but roles and removals are
+// server-owned: the rules refuse every client write to a membership that
+// already exists, and a merge write onto an existing document is one of those.
+// Onboarding an organization that already had its seat failed on that no-op,
+// after the organization itself had already been saved.
+//
+// Asking whether the document is there first would swap that failure for a
+// worse one: the read rule tests `resource.data.userId`, so on a membership
+// that does not exist yet the answer is a denial rather than an empty snapshot,
+// and the failure would move to the new-organization path everybody takes.
+// Which case we are in is already known — a new organization is the one whose
+// id was minted a few lines above.
+test('onboarding writes the owner membership only for an organization it just made', async () => {
+  const onboarding = await read('../src/app/onboarding/page.js');
+
+  assert.match(onboarding, /const isFreshOrganization = isNewOrg \|\| !activeOrgId;/);
+  assert.match(onboarding, /const orgId = isFreshOrganization \? `org_\$\{uid\?\.slice\(0, 8\)\}_\$\{Date\.now\(\)\}` : activeOrgId;/);
+  assert.match(onboarding, /if \(isFreshOrganization\) \{\s*\n\s*await setDoc\(doc\(db, 'orgMemberships'/);
+  // Created outright, never merged onto whatever is there, and never read first.
+  assert.doesNotMatch(onboarding, /'orgMemberships'[\s\S]{0,400}\{ merge: true \}/);
+  assert.doesNotMatch(onboarding, /getDoc\(/);
 });

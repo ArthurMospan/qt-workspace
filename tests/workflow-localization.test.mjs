@@ -111,6 +111,16 @@ test('an organization role is written in one place, in Ukrainian', async () => {
     new URL('../src/lib/context/OrgContext.js', import.meta.url),
     'utf8',
   );
-  assert.match(context, /setOrgRoles\(Object\.fromEntries\(/);
+  // The map is keyed off the membership documents themselves and handed to the
+  // provider whole, so a workspace still waiting for its organization document
+  // is labelled with the role its membership already states.
+  assert.match(context, /const \{ organizations, roles \} = buildOrganizationList\(memberships, documents, publishedOrgs\);/);
+  assert.match(context, /setOrgRoles\(roles\);/);
   assert.match(context, /allOrgs, orgRoles, activeOrgId/);
+
+  const organizationList = await readFile(
+    new URL('../src/lib/utils/organizationList.mjs', import.meta.url),
+    'utf8',
+  );
+  assert.match(organizationList, /if \(membership\.role\) roles\[orgId\] = membership\.role;/);
 });
