@@ -96,12 +96,33 @@ export function OrgProvider({ user, children }) {
     let retryAttempt = 0;
     let retryTimer = null;
     let unsubscribe = () => {};
+    // Which membership snapshot this is. The handler below is `async`: it
+    // receives a snapshot and then goes back to Firestore for the organization
+    // documents, so two snapshots can be in flight at once and finish in either
+    // order.
+    //
+    // They arrive in pairs. Firestore's persistent cache — on in production —
+    // answers the listener from IndexedDB first and from the server a moment
+    // later, and the two do not have to agree: a browser whose cache never held
+    // one of the memberships emits that shorter list first. Whichever fetch
+    // returned last used to win, so if the cached one lost the race by a
+    // millisecond, the workspace it did not know about disappeared from the
+    // switcher — and stayed gone, because nothing re-runs until a membership
+    // changes. Reloading was a coin toss; another browser, or another account
+    // with a cold cache, looked perfectly fine.
+    //
+    // A snapshot may only publish if nothing newer has arrived since it started.
+    let snapshotSequence = 0;
     const membershipsQuery = query(
       collection(db, 'orgMemberships'),
       where('userId', '==', uid)
     );
 
     const applyMembershipSnapshot = async (memSnap) => {
+      snapshotSequence += 1;
+      const sequence = snapshotSequence;
+      // True while this snapshot is still the newest one to have arrived.
+      const current = () => !cancelled && sequence === snapshotSequence;
       try {
         let orgs = [];
         if (!memSnap.empty) {
@@ -118,7 +139,7 @@ export function OrgProvider({ user, children }) {
 
         // Legacy fallback removed to enforce strict multi-tenancy
 
-        if (cancelled) return;
+        if (!current()) return;
         setOrgError(null);
         setAllOrgs(orgs);
         setOrgRoles(Object.fromEntries(

@@ -76,3 +76,32 @@ test('a denied read is retried before it is called a loss of access', async () =
   assert.match(layout, /accessFailure \? \([\s\S]*Увійти іншим акаунтом/);
   assert.match(issueDetail, /!issueAccessFailure && \([\s\S]*Спробувати ще раз/);
 });
+
+// A stale membership snapshot must not be able to hide a workspace.
+//
+// The handler is async: it takes a snapshot of `orgMemberships` and then goes
+// back to Firestore for the organization documents. Snapshots arrive in pairs —
+// Firestore's persistent cache answers first, the server a moment later — and
+// the two need not agree, because a browser whose cache never held one of the
+// memberships emits the shorter list first. Both fetches were then in flight at
+// once and whichever returned last won, so a cached snapshot that lost the race
+// by a millisecond removed a workspace the person owns from the switcher, and
+// it stayed removed until a membership changed. Reloading was a coin toss, and
+// another account with a cold cache looked perfectly healthy.
+//
+// Snapshots are numbered in arrival order, and only the newest may publish —
+// which makes the server's answer authoritative by construction, since it
+// always arrives after the cache's.
+test('an organization list published late cannot overwrite a newer one', async () => {
+  const context = await read('../src/lib/context/OrgContext.js');
+
+  assert.match(context, /let snapshotSequence = 0;/);
+  assert.match(context, /snapshotSequence \+= 1;\s*\n\s*const sequence = snapshotSequence;/);
+  assert.match(context, /const current = \(\) => !cancelled && sequence === snapshotSequence;/);
+  // The publish is guarded, not merely the unmount.
+  assert.match(context, /if \(!current\(\)\) return;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(orgs\);/);
+
+  // The list itself is still built from memberships alone — access is
+  // `orgMemberships` and nothing else — so the guard protects the right thing.
+  assert.match(context, /collection\(db, 'orgMemberships'\),\s*\n\s*where\('userId', '==', uid\)/);
+});
