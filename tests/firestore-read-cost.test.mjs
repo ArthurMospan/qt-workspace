@@ -252,12 +252,15 @@ test('the windowed time-log queries have the composite indexes they need', () =>
     .map(entry => entry.fields.map(field => field.fieldPath).join(','));
 
   // A range on `loggedAt` next to `issueId != ''` is two inequality fields, so
-  // the index has to carry both. `loggedAt` comes first because the date range
-  // is the selective one — it should bound the scan, with the issue filter
-  // skipping calendar rows inside it.
+  // the index has to carry both — and Firestore chooses the index by the order
+  // the fields appear in the filter set, not by which range is the more
+  // selective. `(…, loggedAt, issueId)` looked like the better plan and was
+  // simply not an index this query can use: production answered
+  // FAILED_PRECONDITION with the ordering below spelled out. Reasoning about
+  // the planner is not the same as asking it.
   assert.ok(
-    paths.includes('organizationId,projectId,loggedAt,issueId'),
-    'task logs in a window need (organizationId, projectId, loggedAt, issueId)',
+    paths.includes('organizationId,projectId,issueId,loggedAt'),
+    'task logs in a window need (organizationId, projectId, issueId, loggedAt)',
   );
   assert.ok(
     paths.includes('organizationId,projectId,sourceType,eventVisibility,loggedAt'),
