@@ -2059,7 +2059,7 @@
     },
     "SignalList": {
       "file": "src/components/ui/Feedback/SignalList.jsx",
-      "count": 2,
+      "count": 1,
       "showcased": true,
       "usedByKit": [],
       "routes": [
@@ -2067,7 +2067,6 @@
         "/analytics"
       ],
       "usedIn": [
-        "src/components/workspace/AnalyticsTab.jsx",
         "src/components/workspace/AttentionPanel.jsx"
       ]
     },
@@ -6334,7 +6333,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:434",
-            "src/components/workspace/AnalyticsTab.jsx:329",
+            "src/components/workspace/AnalyticsTab.jsx:350",
             "src/components/workspace/IssueCard.jsx:379",
             "src/components/workspace/TimesheetTab.jsx:231",
             "src/components/workspace/TimesheetTab.jsx:284",
@@ -6435,6 +6434,7 @@
         "muted": {
           "count": 3,
           "routes": [
+            "/[projectId]",
             "/analytics",
             "/calendar",
             "/settings",
@@ -6509,6 +6509,7 @@
         "(default)": {
           "count": 1,
           "routes": [
+            "/[projectId]",
             "/analytics"
           ],
           "files": [
@@ -7111,7 +7112,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:985",
-            "src/components/workspace/AnalyticsTab.jsx:204"
+            "src/components/workspace/AnalyticsTab.jsx:212"
           ]
         },
         "inset": {
@@ -7176,7 +7177,7 @@
             "src/components/WorkspaceInfoCenter.jsx:200",
             "src/components/profile/ProfileView.jsx:425",
             "src/components/profile/ProfileView.jsx:457",
-            "src/components/workspace/AnalyticsTab.jsx:204",
+            "src/components/workspace/AnalyticsTab.jsx:212",
             "src/components/workspace/QtPlusProjectTab.jsx:248",
             "src/components/workspace/QtPlusProjectTab.jsx:258",
             "src/components/workspace/QtPlusProjectTab.jsx:270",
@@ -7244,7 +7245,7 @@
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:152",
             "src/components/WorkspaceInfoCenter.jsx:200",
-            "src/components/workspace/AnalyticsTab.jsx:204",
+            "src/components/workspace/AnalyticsTab.jsx:212",
             "src/components/workspace/QtPlusProjectTab.jsx:248",
             "src/components/workspace/QtPlusProjectTab.jsx:258",
             "src/components/workspace/QtPlusProjectTab.jsx:270",
@@ -8251,7 +8252,7 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:418",
-            "src/components/workspace/AnalyticsTab.jsx:317"
+            "src/components/workspace/AnalyticsTab.jsx:338"
           ]
         },
         "comfortable": {
@@ -8277,7 +8278,7 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:438",
-            "src/components/workspace/AnalyticsTab.jsx:241",
+            "src/components/workspace/AnalyticsTab.jsx:262",
             "src/components/workspace/WorkloadTab.jsx:235"
           ]
         }
@@ -8300,7 +8301,7 @@
             "/[projectId]"
           ],
           "files": [
-            "src/components/workspace/AnalyticsTab.jsx:241"
+            "src/components/workspace/AnalyticsTab.jsx:262"
           ]
         }
       }

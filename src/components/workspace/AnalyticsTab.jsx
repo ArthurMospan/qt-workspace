@@ -13,9 +13,10 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import {
-  BarList, ChartCard, DataTable, Meter, SignalList, TaskListCard,
+  BarList, ChartCard, DataTable, Meter, TaskListCard,
 } from '@/components/ui';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
+import AttentionPanel from '@/components/workspace/AttentionPanel';
 import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import { NO_PRIORITY_ID, selectablePriorities } from '@/lib/utils/priorities.mjs';
@@ -70,14 +71,17 @@ export default function AnalyticsTab({
     const total   = filteredIssues.length;
     const done    = filteredIssues.filter(i => deliveredSet.has(i.columnId || i.status)).length;
     const inProg  = filteredIssues.filter(i => inProgressSet.has(i.columnId || i.status)).length;
+    // Arrays, not counts. A finding on this tab was as much of a dead end as
+    // the same finding on the workspace screen: the tasks were computed by a
+    // filter and the filter was thrown away.
     const blockerPriority = filteredIssues.filter(i => (
       i.priority === 'blocker'
       && !closedSet.has(i.columnId || i.status)
-    )).length;
+    ));
     const dependencyBlocked = filteredIssues.filter(i => (
       !closedSet.has(i.columnId || i.status)
       && openBlockerIssues(i.id, issues, issueLinks, closedSet).length > 0
-    )).length;
+    ));
     const overdue = filteredIssues.filter(i => {
       return isDueDateOverdue(i.dueDate, { now, timeZone })
         && !closedSet.has(i.columnId || i.status);
@@ -167,19 +171,21 @@ export default function AnalyticsTab({
   // called «Увага» — the loudest component in the kit, stacked, on the quietest
   // screen. The findings themselves have not changed.
   const signals = [
-    stats.dependencyBlocked > 0 && {
+    stats.dependencyBlocked.length > 0 && {
       id: 'blocked',
       tone: 'critical',
-      count: stats.dependencyBlocked,
-      title: `${plural(stats.dependencyBlocked, ['Завдання заблоковане', 'Завдання заблоковані', 'Завдань заблоковано'])} залежностями`,
+      count: stats.dependencyBlocked.length,
+      title: `${plural(stats.dependencyBlocked.length, ['Завдання заблоковане', 'Завдання заблоковані', 'Завдань заблоковано'])} залежностями`,
       description: 'Їх стримують незавершені задачі',
+      issues: stats.dependencyBlocked,
     },
-    stats.blockerPriority > 0 && {
+    stats.blockerPriority.length > 0 && {
       id: 'blocker-priority',
       tone: 'warning',
-      count: stats.blockerPriority,
+      count: stats.blockerPriority.length,
       title: 'Критичний пріоритет',
       description: 'Потребують негайної уваги',
+      issues: stats.blockerPriority,
     },
     stats.noAssignee.length > 0 && {
       id: 'no-assignee',
@@ -187,6 +193,7 @@ export default function AnalyticsTab({
       count: stats.noAssignee.length,
       title: 'Без виконавця',
       description: 'Ніхто не відповідає за результат',
+      issues: stats.noAssignee,
     },
     stats.unestimated.length > 0 && {
       id: 'unestimated',
@@ -194,6 +201,7 @@ export default function AnalyticsTab({
       count: stats.unestimated.length,
       title: 'Без оцінки',
       description: 'Поза беклогом, але без плану за часом',
+      issues: stats.unestimated,
     },
   ].filter(Boolean);
 
@@ -218,19 +226,32 @@ export default function AnalyticsTab({
       {/* Сіра панель-підложка, на ній білі картки — як на сторінці проєктів */}
       <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface w-full flex flex-col gap-4">
 
-        {/* ── KPI row ─────────────────────────────────────────────── */}
+        {/* ── KPI row ─────────────────────────────────────────────────
+            «Завершено завдань» counts over the whole life of the project and
+            stays that way, unlike the same tile on the workspace overview: a
+            workspace is ongoing and its completion rate only climbs, while a
+            project is a finite thing and "how far along is it" is the question
+            somebody opens this tab to ask. It says which set it is a share of,
+            which is the part that was missing.
+
+            «Velocity (7 днів)» is «Закрито за 7 днів». An English word in a
+            Ukrainian interface is a word most readers have to translate before
+            they can read the number under it, and the window it measures was
+            only in the label by accident. Seven days is fixed here because this
+            tab has no period control — the workspace screen is where a window
+            is chosen. */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard icon={Target}       label="Завершено завдань"
             value={`${stats.done} / ${stats.total}`}
-            sub={`${stats.completionPct}% завершення`} />
-          <KpiCard icon={Zap}          label="Velocity (7 днів)"
+            sub={`${stats.completionPct}% усіх завдань проєкту`} />
+          <KpiCard icon={Zap}          label="Закрито за 7 днів"
             value={stats.recentDone}
-            sub="завдань закрито за тиждень"
+            sub="проти попереднього тижня"
             trend={stats.velocityTrend} />
-          <KpiCard icon={AlertCircle}  label="Прострочено"
+          <KpiCard icon={AlertCircle}  label="Прострочено зараз"
             value={stats.overdue.length}
             sub="завдань після дедлайну" />
-          <KpiCard icon={Users}        label="В роботі"
+          <KpiCard icon={Users}        label="У роботі зараз"
             value={stats.inProg}
             sub="активних завдань" />
         </div>
@@ -348,11 +369,17 @@ export default function AnalyticsTab({
           </ChartCard>
         )}
 
-        {/* ── What needs a look ────────────────────────────────────── */}
+        {/* ── What needs a look ──────────────────────────────────────
+            The same panel as the workspace overview, so a finding opens onto
+            its tasks here too rather than stopping at a number. */}
         {signals.length > 0 && (
-          <ChartCard icon={AlertTriangle} title="Що потребує уваги">
-            <SignalList signals={signals} />
-          </ChartCard>
+          <AttentionPanel
+            signals={signals}
+            allIssues={issues}
+            members={members}
+            projects={project ? [project] : []}
+            issueLinks={issueLinks}
+          />
         )}
 
         {/* ── Empty state ───────────────────────────────────────────── */}
