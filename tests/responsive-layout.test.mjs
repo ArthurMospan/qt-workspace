@@ -53,7 +53,7 @@ test('dense analytics, timesheet and invoice data have dedicated mobile cards', 
     assert.match(source, /<DataTable/);
   }
   assert.match(timesheet, /space-y-3 lg:hidden/);
-  assert.match(timesheet, /ui-surface hidden overflow-x-auto lg:block/);
+  assert.match(timesheet, /hidden overflow-x-auto rounded-\[16px\] bg-white lg:block/);
   assert.match(billing, /mb-2 space-y-2 sm:hidden/);
   assert.match(billing, /hidden w-full sm:table/);
 });

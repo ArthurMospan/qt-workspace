@@ -37,15 +37,43 @@ const ALIGN = { left: 'text-left', right: 'text-right', center: 'text-center' };
 const HEADER_CELL = 'h-9 bg-canvas px-[10px] shadow-[inset_0_-1px_0_var(--color-line)]';
 const BODY_CELL = 'h-9 px-[10px] py-0 align-middle';
 
+// One rhythm, three tracks. The four tables using this component had written
+// eight different widths between them — 88, 90, 92, 96, 100, 110, 112, 150 —
+// so «Прострочено» was 112px wide on one analytics tab and 100px on the next,
+// and no two columns of figures lined up down the screen. A column says what
+// kind of thing it holds and the table decides how much room that takes, which
+// is the only way the beat can be the same everywhere.
+//
+// `figure` is sized for «Прострочено», the longest heading any of them has: a
+// track that fits the widest label is the one that lets every other figure sit
+// in the same column of air instead of each finding its own.
+const TRACKS = {
+  figure: '116px',
+  meter: '184px',
+  chip: '144px',
+};
+
+// A figure column is right-aligned unless it says otherwise — a column of
+// numbers is read down its last digit, and having to remember to say so at
+// every call site is how one of them ended up left-aligned.
+const DEFAULT_ALIGN = { figure: 'right', chip: 'right', meter: 'left' };
+
+// The type of a column of figures belongs to the table, not to each cell.
+// Every call site used to spell `ui-type-figure` on a span of its own and pick
+// its own colour while doing it — ink here, muted there, for facts of exactly
+// the same kind. The cell carries the type; the call site is left with the one
+// thing that is its own business, which is whether a number means trouble.
+const FIGURE_TYPE = 'ui-type-figure';
+
 /**
  * @typedef {object} DataTableColumn
  * @property {string} id
  * @property {string} header Column label. Also the row label in the stacked layout.
  * @property {(row: object) => React.ReactNode} cell What to draw.
- * @property {'left'|'right'|'center'} align Which edge the value sits on. Figures go right.
+ * @property {'left'|'right'|'center'} align Which edge the value sits on. Defaults from `size`: figures and chips go right.
  * @property {boolean} lead The identifying column: it leads the stacked card and never gets a label there.
- * @property {string} width A fixed track for this column, where one is needed.
- * @property {boolean} wide Its value is not a short figure — a title, a bar, a pill. In the stacked layout it takes the row to itself with the label above it, instead of being squeezed into half a phone.
+ * @property {'figure'|'meter'|'chip'} size What kind of thing the column holds, which is what decides its track. A column with no `size` is the flexible one that holds the name.
+ * @property {boolean} wide Its value is not a short figure — a title, a bar, a pill. In the stacked layout it takes the row to itself with the label above it, instead of being squeezed into half a phone. A `meter` or `chip` column is wide by definition and does not have to say so.
  */
 
 /**
@@ -72,6 +100,9 @@ export default function DataTable({
 
   const leadColumn = columns.find(column => column.lead) || columns[0];
   const restColumns = columns.filter(column => column !== leadColumn);
+  const trackOf = column => TRACKS[column.size];
+  const alignOf = column => column.align || DEFAULT_ALIGN[column.size] || 'left';
+  const typeOf = column => (column.size === 'figure' ? FIGURE_TYPE : '');
 
   return (
     <div className={`min-w-0 ${className}`}>
@@ -84,8 +115,8 @@ export default function DataTable({
                 <th
                   key={column.id}
                   scope="col"
-                  style={column.width ? { width: column.width } : undefined}
-                  className={`ui-type-eyebrow uppercase tracking-wide text-muted ${HEADER_CELL} ${ALIGN[column.align] || ALIGN.left}`}
+                  style={trackOf(column) ? { width: trackOf(column) } : undefined}
+                  className={`ui-type-eyebrow uppercase tracking-wide text-muted ${HEADER_CELL} ${ALIGN[alignOf(column)]}`}
                 >
                   {column.header}
                 </th>
@@ -103,7 +134,13 @@ export default function DataTable({
                   {columns.map(column => (
                     <td
                       key={column.id}
-                      className={`${BODY_CELL} ${ALIGN[column.align] || ALIGN.left}`}
+                      // A column of figures under a column of names: lining,
+                      // tabular digits stand at cap height where a name is
+                      // mostly x-height, so at equal weight the numbers read
+                      // as the larger thing on the row. `column` steps them
+                      // back to 500 and lets the name lead its own row.
+                      data-ui-density={column.size === 'figure' ? 'column' : undefined}
+                      className={`${BODY_CELL} ${typeOf(column)} ${ALIGN[alignOf(column)]}`}
                     >
                       {column === leadColumn && href ? (
                         <a href={href} className="block min-w-0 group-hover:underline">
@@ -137,7 +174,7 @@ export default function DataTable({
             >
               {href ? <a href={href} className="block min-w-0">{lead}</a> : lead}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-                {restColumns.map(column => (column.wide ? (
+                {restColumns.map(column => ((column.wide || column.size === 'meter' || column.size === 'chip') ? (
                   <div key={column.id} className="col-span-2 flex min-w-0 flex-col gap-1">
                     <dt className="truncate text-[10px] font-semibold text-muted">{column.header}</dt>
                     <dd className="min-w-0">{column.cell(row)}</dd>
@@ -145,7 +182,12 @@ export default function DataTable({
                 ) : (
                   <div key={column.id} className="flex min-w-0 items-baseline justify-between gap-2">
                     <dt className="shrink-0 text-[10px] font-semibold text-muted">{column.header}</dt>
-                    <dd className="min-w-0 truncate text-right">{column.cell(row)}</dd>
+                    <dd
+                      data-ui-density={column.size === 'figure' ? 'column' : undefined}
+                      className={`min-w-0 truncate text-right ${typeOf(column)}`}
+                    >
+                      {column.cell(row)}
+                    </dd>
                   </div>
                 )))}
               </dl>

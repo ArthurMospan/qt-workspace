@@ -10,6 +10,7 @@ import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflow
 import { plural } from '@/lib/utils/plural.mjs';
 import { summarizeCycleTimes } from '@/lib/utils/velocityMetrics.mjs';
 import { buildVelocityExport } from '@/lib/utils/analyticsExport.mjs';
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtShortDate(date) {
@@ -137,11 +138,14 @@ export default function VelocityTab({
       };
     });
 
-    // By type breakdown — types come from the shared workflow config
-    const byType = types.map(({ id: type, label, color }) => {
+    // By type breakdown — types come from the shared workflow config, and the
+    // whole type comes along: its glyph is what the reader already knows it by
+    // on a card, in search and in the selector.
+    const byType = types.map(entry => {
+      const { id: type, label, color } = entry;
       const typeIssues = issues.filter(i => i.type === type);
       const typeDone = typeIssues.filter(i => deliveredSet.has(i.columnId || i.status));
-      return { type, label, color, total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
+      return { type, label, color, icon: taskTypeIcon(entry), total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
     }).filter(t => t.total > 0);
 
     // Per-project velocity
@@ -255,13 +259,20 @@ export default function VelocityTab({
           <ChartCard icon={Shapes} title="По типах">
             {/* The type owns its colour, and «зроблено з усього» is the number
                 the bar is a picture of — it used to be printed beside a bar
-                scaled to a different quantity entirely. */}
+                scaled to a different quantity entirely.
+
+                A task type has a glyph, and it is the glyph a reader has
+                already learnt on a card, in search and in every selector. This
+                chart was drawing a plain colour dot instead — a second, poorer
+                way of naming the same thing, and one that says nothing at all
+                to a reader who cannot separate the hues. */}
             <BarList
-              items={stats.byType.map(({ type, label, color, total, done }) => ({
+              items={stats.byType.map(({ type, label, color, icon: TypeGlyph, total, done }) => ({
                 id: type,
                 label,
                 value: done,
                 color,
+                leading: <TypeGlyph size={14} className="shrink-0" style={{ color }} />,
                 meta: `з ${total}`,
               }))}
               emptyText="Немає даних"

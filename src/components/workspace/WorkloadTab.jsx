@@ -215,24 +215,25 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
             {
               id: 'progress',
               header: 'Прогрес',
-              width: '150px',
-              wide: true,
+              size: 'meter',
               cell: row => (
-                // What the bar is filled with, said in words: the bar draws
-                // done against everything assigned, and the figure beside it
-                // used to count the other half — «1 відкрито» against a bar
-                // that had moved because something was *finished*.
+                // Done against everything assigned — the same quantity the bar
+                // is a picture of. The figure beside it used to count the other
+                // half, «1 відкрито» against a bar that had moved because
+                // something was *finished*; and it used to say so above the bar
+                // rather than beside it, which is two lines in a one-line row.
                 <Meter
                   value={row.done / Math.max(row.done + row.open, 1)}
-                  reading={`Готово: ${row.done}/${row.done + row.open}`}
+                  reading={`${row.done}/${row.done + row.open}`}
+                  layout="inline"
                   height={6}
                 />
               ),
             },
-            { id: 'done', header: 'Готово', align: 'right', width: '88px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
-            { id: 'inProgress', header: 'В роботі', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{row.inProgress}</span> },
-            { id: 'time', header: 'Час', align: 'right', width: '96px', cell: row => <span className="ui-type-figure text-muted">{fmtH(row.minutes)}</span> },
-            { id: 'state', header: 'Стан', align: 'right', width: '150px', wide: true, cell: row => <RiskPill stat={row} /> },
+            { id: 'done', header: 'Готово', size: 'figure', cell: row => row.done },
+            { id: 'inProgress', header: 'В роботі', size: 'figure', cell: row => row.inProgress },
+            { id: 'time', header: 'Час', size: 'figure', cell: row => fmtH(row.minutes) },
+            { id: 'state', header: 'Стан', size: 'chip', cell: row => <RiskPill stat={row} /> },
           ]}
         />
       </ChartCard>

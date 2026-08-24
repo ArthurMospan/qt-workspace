@@ -113,8 +113,8 @@ export default function ChartsSection() {
               format={minutes => `${Math.round(minutes / 60)}г`}
               items={[
                 { id: 'tasks', label: 'Завдання', value: 2400 },
-                { id: 'meetings', label: 'Мітинги', value: 900, color: 'var(--color-chart-2)', meta: '6 подій' },
-                { id: 'focus', label: 'Фокус-час', value: 540, color: 'var(--color-chart-3)' },
+                { id: 'meetings', label: 'Мітинги', value: 900, meta: '6 подій' },
+                { id: 'focus', label: 'Фокус-час', value: 540 },
               ]}
             />
           </ChartCard>
@@ -201,18 +201,15 @@ export default function ChartsSection() {
               {
                 id: 'progress',
                 header: 'Прогрес',
-                width: '160px',
-                wide: true,
-                cell: row => <Meter value={row.done / (row.done + row.open)} reading={`Готово: ${row.done}/${row.done + row.open}`} height={6} />,
+                size: 'meter',
+                cell: row => <Meter value={row.done / (row.done + row.open)} reading={`${row.done}/${row.done + row.open}`} layout="inline" height={6} />,
               },
-              { id: 'done', header: 'Готово', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
-              { id: 'time', header: 'Час', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{Math.round(row.minutes / 60)}г</span> },
+              { id: 'done', header: 'Готово', size: 'figure', cell: row => row.done },
+              { id: 'time', header: 'Час', size: 'figure', cell: row => `${Math.round(row.minutes / 60)}г` },
               {
                 id: 'state',
                 header: 'Стан',
-                align: 'right',
-                width: '150px',
-                wide: true,
+                size: 'chip',
                 cell: row => (row.state === 'Стабільно'
                   ? <Pill tone="success" size="md">{row.state}</Pill>
                   : <Pill tone="warning" size="md">{row.state}</Pill>),

@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 853,
-    "documentedProps": 853,
+    "props": 854,
+    "documentedProps": 854,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3799,6 +3799,16 @@
           "type": "string",
           "values": [],
           "description": "What is being measured, above the bar."
+        },
+        {
+          "name": "layout",
+          "default": "'stack'",
+          "type": "'stack'|'inline'",
+          "values": [
+            "inline",
+            "stack"
+          ],
+          "description": "Reading above the bar, or beside it. `inline` is for a table cell, where the row is one line."
         },
         {
           "name": "reading",

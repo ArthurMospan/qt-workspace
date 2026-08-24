@@ -331,19 +331,18 @@ export default function AnalyticsTab({
                     </span>
                   ),
                 },
-                { id: 'total', header: 'Всього', align: 'right', width: '90px', cell: row => <span className="ui-type-figure text-ink">{row.total}</span> },
-                { id: 'done', header: 'Виконано', align: 'right', width: '100px', cell: row => <span className="ui-type-figure text-muted">{row.done}</span> },
-                { id: 'open', header: 'Відкрито', align: 'right', width: '100px', cell: row => <span className="ui-type-figure text-ink">{row.open}</span> },
+                { id: 'total', header: 'Всього', size: 'figure', cell: row => row.total },
+                { id: 'done', header: 'Виконано', size: 'figure', cell: row => row.done },
+                { id: 'open', header: 'Відкрито', size: 'figure', cell: row => row.open },
                 {
                   id: 'overdue',
                   header: 'Прострочено',
-                  align: 'right',
-                  width: '112px',
+                  size: 'figure',
                   cell: row => (row.overdue > 0
-                    ? <span className="ui-type-figure text-[#ef4444]">{row.overdue}</span>
-                    : <span className="ui-type-figure text-faint">—</span>),
+                    ? <span className="font-semibold text-[#ef4444]">{row.overdue}</span>
+                    : <span className="text-faint">—</span>),
                 },
-                { id: 'time', header: 'Час', align: 'right', width: '100px', cell: row => <span className="ui-type-figure text-muted">{row.minutes > 0 ? fmtH(row.minutes) : '—'}</span> },
+                { id: 'time', header: 'Час', size: 'figure', cell: row => (row.minutes > 0 ? fmtH(row.minutes) : <span className="text-faint">—</span>) },
               ]}
             />
           </ChartCard>

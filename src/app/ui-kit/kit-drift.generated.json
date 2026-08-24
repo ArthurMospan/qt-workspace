@@ -9,13 +9,13 @@
   },
   "totals": {
     "componentsWithVariants": 45,
-    "declaredValues": 372,
+    "declaredValues": 374,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 231,
+    "usedAndPreviewed": 232,
     "usedWithoutPreview": 0,
-    "declaredUnused": 111
+    "declaredUnused": 112
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -314,6 +314,12 @@
       "component": "MarkdownViewer",
       "prop": "size",
       "value": "md",
+      "namespace": null
+    },
+    {
+      "component": "Meter",
+      "prop": "layout",
+      "value": "stack",
       "namespace": null
     },
     {
@@ -1299,6 +1305,10 @@
         "danger",
         "neutral",
         "warning"
+      ],
+      "layout": [
+        "inline",
+        "stack"
       ]
     },
     "FilterBar": {
@@ -1355,6 +1365,7 @@
     "Select.filterRole.member": 7,
     "Select.filterRole.priority": 5,
     "Select.filterRole.type": 7,
+    "Meter.layout.inline": 2,
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
@@ -1786,6 +1797,8 @@
     "MarkdownViewer.size.md",
     "MentionMenu.density.composer",
     "MentionMenu.density.timeline",
+    "Meter.layout.inline",
+    "Meter.layout.stack",
     "Meter.tone.danger",
     "Meter.tone.neutral",
     "Meter.tone.warning",

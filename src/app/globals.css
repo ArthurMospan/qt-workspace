@@ -1293,6 +1293,15 @@
     font-weight: 600 !important;
     font-variant-numeric: tabular-nums;
   }
+  /* A whole column of figures, under a whole column of names. 600 is right for
+     one number on a card, where it is the loudest thing on purpose; down a
+     table it is not, because lining tabular digits stand at cap height while a
+     name is mostly x-height — equal weight is not equal presence, and the
+     numbers were reading as the larger thing on every row. One step back is
+     enough to let the row's own name lead it. */
+  .ui-type-figure[data-ui-density='column'] {
+    font-weight: 500 !important;
+  }
   .ui-type-eyebrow,
   .ui-label {
     font-size: var(--ui-type-eyebrow-size) !important;

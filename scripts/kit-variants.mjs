@@ -172,7 +172,10 @@ const SOURCES = {
   // Progress is `neutral` by default because most progress means nothing beyond
   // itself; the three severities are the exception, and they say so in words as
   // well as in hue.
-  Meter: { tone: { map: ['Charts/Meter.jsx', 'TONES'] } },
+  Meter: {
+    tone: { map: ['Charts/Meter.jsx', 'TONES'] },
+    layout: { map: ['Charts/Meter.jsx', 'LAYOUTS'] },
+  },
   FilterBar: { context: { map: ['FilterBar.jsx', 'WIDTHS'] } },
   Popover: {
     align: { literal: ['start', 'center', 'end'] },

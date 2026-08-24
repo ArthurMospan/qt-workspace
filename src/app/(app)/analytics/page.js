@@ -230,10 +230,17 @@ function AnalyticsContent({
   // Read above the early returns because the export is built from it, and the
   // export has to be registered by every render, not only the ones that draw a
   // chart.
+  //
+  // Three shares of one total, and they were drawn as three kinds of thing:
+  // «Завдання» plain, «Мітинги» amber with a dot beside it, «Фокус-час» a third
+  // hue. A colour on a row of a chart is a claim that the row belongs to a
+  // series the reader is meant to recognise elsewhere — a status, a task type.
+  // These are three labelled slices of one figure, the label says which is
+  // which, and the length says how much. Nothing here needs a second alphabet.
   const timeSplit = useMemo(() => [
     { id: 'tasks', label: 'Завдання', value: Math.max(0, Math.round(stats.periodMin - calendarStats.meetingMinutes - calendarStats.focusMinutes)) },
-    { id: 'meetings', label: 'Мітинги', value: Math.round(calendarStats.meetingMinutes), color: 'var(--color-chart-2)', meta: `${calendarStats.meetings} ${plural(calendarStats.meetings, ['подія', 'події', 'подій'])}` },
-    { id: 'focus', label: 'Фокус-час', value: Math.round(calendarStats.focusMinutes), color: 'var(--color-chart-3)' },
+    { id: 'meetings', label: 'Мітинги', value: Math.round(calendarStats.meetingMinutes), meta: `${calendarStats.meetings} ${plural(calendarStats.meetings, ['подія', 'події', 'подій'])}` },
+    { id: 'focus', label: 'Фокус-час', value: Math.round(calendarStats.focusMinutes) },
   ].filter(row => row.value > 0), [calendarStats, stats.periodMin]);
 
   // The file is this screen, so it is offered only once the screen has one.
@@ -381,27 +388,29 @@ function AnalyticsContent({
                 lead: true,
                 cell: row => <span className="block truncate text-[13px] font-semibold text-ink">{row.p.name}</span>,
               },
-              { id: 'total', header: 'Задач', align: 'right', width: '92px', cell: row => <span className="ui-type-figure text-ink">{row.total}</span> },
+              { id: 'total', header: 'Задач', size: 'figure', cell: row => row.total },
               {
                 id: 'progress',
                 header: 'Прогрес',
-                width: '180px',
-                // A bar needs a width to be a bar: stacked on a phone it takes
-                // the row rather than half of one.
-                wide: true,
-                cell: row => <Meter value={row.pct / 100} reading={`${row.pct}%`} height={6} />,
+                size: 'meter',
+                // Along the row, not across it. Stacked, the reading sat on a
+                // baseline nothing else in the row shared and the bar filled
+                // 34 of the row's 36 pixels.
+                cell: row => <Meter value={row.pct / 100} reading={`${row.pct}%`} layout="inline" height={6} />,
               },
-              { id: 'open', header: 'Відкрито', align: 'right', width: '96px', cell: row => <span className="ui-type-figure text-ink">{row.open}</span> },
+              { id: 'open', header: 'Відкрито', size: 'figure', cell: row => row.open },
               {
+                // The one figure on the row allowed to raise its voice: a
+                // missed deadline is the only thing here that is not simply a
+                // count of how the work stands.
                 id: 'overdue',
                 header: 'Прострочено',
-                align: 'right',
-                width: '112px',
+                size: 'figure',
                 cell: row => (row.overdue > 0
-                  ? <span className="ui-type-figure text-[#ef4444]">{row.overdue}</span>
-                  : <span className="ui-type-figure text-faint">—</span>),
+                  ? <span className="font-semibold text-[#ef4444]">{row.overdue}</span>
+                  : <span className="text-faint">—</span>),
               },
-              { id: 'time', header: `Час · ${period}д`, align: 'right', width: '110px', cell: row => <span className="ui-type-figure text-muted">{fmtH(row.minutes)}</span> },
+              { id: 'time', header: `Час · ${period}д`, size: 'figure', cell: row => fmtH(row.minutes) },
             ]}
           />
         </ChartCard>

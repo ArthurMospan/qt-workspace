@@ -325,7 +325,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:535",
+      "location": "src/components/workspace/WorkloadTab.jsx:536",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
       "childElements": [
@@ -699,12 +699,12 @@
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:164",
+      "location": "src/components/workspace/TimesheetTab.jsx:159",
       "tag": "div",
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:673",
+      "location": "src/components/workspace/TimesheetTab.jsx:669",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
@@ -714,7 +714,7 @@
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:477",
+      "location": "src/components/workspace/WorkloadTab.jsx:478",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

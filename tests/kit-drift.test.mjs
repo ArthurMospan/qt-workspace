@@ -125,9 +125,12 @@ test('the variant matrix renders every component that can stand alone', () => {
 // nothing. Neither can ever be counted: `state` is not a variant prop name the
 // scan reads, so every state of both calendar components has always lived in
 // this list, and a default has no call site by definition.
+// Raised 111 → 112 by the meter's inline layout. `Meter layout="inline"` is
+// what a table row uses and three call sites pass it; `stack` is the value you
+// get by writing nothing, and a default has no call site by definition.
 test('promoting a component to the kit does not orphan the variants it used', () => {
   assert.ok(
-    committed.totals.declaredUnused <= 111,
+    committed.totals.declaredUnused <= 112,
     `declaredUnused grew to ${committed.totals.declaredUnused}: a call site that evidenced a variant has gone out of the scan's view`,
   );
   for (const key of ['Input.composition.status-entry', 'Button.composition.status-submit', 'Dialog.size.status']) {

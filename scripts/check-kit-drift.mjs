@@ -41,6 +41,10 @@ const VARIANT_PROP_NAMES = new Set([
   // Skeleton's share-of-the-line. Safe as a variant name: the only other
   // `width=` in the workspace is next/image's, which is not a kit component.
   'width',
+  // Which way a component lays itself out — Meter's reading above its bar or
+  // beside it. Only kit imports are read here, so a `layout` on anything else
+  // is invisible to this scan.
+  'layout',
   // How much of a screen PageSkeleton stands in for.
   'region',
 ]);
