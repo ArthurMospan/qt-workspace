@@ -5,11 +5,15 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   collection, query, where, getDocs, getDocsFromServer,
-  doc, getDoc, onSnapshot,
+  doc, onSnapshot,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { reportLoadError } from '@/lib/utils/errors';
-import { buildOrganizationList } from '@/lib/utils/organizationList.mjs';
+import {
+  buildOrganizationList,
+  createMembershipSnapshotGate,
+} from '@/lib/utils/organizationList.mjs';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import {
   organizationLoadErrorKind,
@@ -51,25 +55,15 @@ export function OrgProvider({ user, children }) {
   const [noOrg,       setNoOrg]       = useState(false); // true → show onboarding prompt
 
   // ── Apply an org as active (Internal helper) ─────────────────────────
-  const applyOrg = useCallback(async (orgData, uid) => {
-    // Persisted BEFORE the await below. The membership listener re-derives the
-    // active org from this tab's storage on every snapshot, so writing it late let a
-    // snapshot arriving mid-await revert the switch the user just made.
+  const applyOrg = useCallback((orgData, role) => {
+    // The list listener already read the membership and published its role.
+    // Reading the same document again here used the cache-preferred `getDoc`,
+    // which could turn a role we had just verified into null in the one browser
+    // whose cache did not contain that membership.
     persistTabOrganization(orgData.id);
     setActiveOrgId(orgData.id);
     setActiveOrg(orgData);
-
-    try {
-      const memSnap = await getDoc(doc(db, 'orgMemberships', `${orgData.id}_${uid}`));
-      if (memSnap.exists()) {
-        setOrgRole(memSnap.data().role);
-      } else {
-        setOrgRole(null);
-      }
-    } catch {
-      setOrgRole(null);
-    }
-    
+    setOrgRole(role ?? null);
     setNoOrg(false);
     setOrgError(null);
     setOrgLoading(false);
@@ -102,18 +96,23 @@ export function OrgProvider({ user, children }) {
     // documents, so two snapshots can be in flight at once and finish in either
     // order.
     //
-    // They arrive in pairs. Firestore's persistent cache — on in production —
-    // answers the listener from IndexedDB first and from the server a moment
-    // later, and the two do not have to agree: a browser whose cache never held
-    // one of the memberships emits that shorter list first. Whichever fetch
-    // returned last used to win, so if the cached one lost the race by a
-    // millisecond, the workspace it did not know about disappeared from the
-    // switcher — and stayed gone, because nothing re-runs until a membership
-    // changes. Reloading was a coin toss; another browser, or another account
-    // with a cold cache, looked perfectly fine.
+    // They often arrive in pairs. Firestore's persistent cache — on in
+    // production — answers the listener from IndexedDB first and the server may
+    // answer a moment later. The two do not have to agree: a browser whose cache
+    // never held one of the memberships emits the shorter list first. The server
+    // half is not guaranteed while the SDK considers itself offline, which is
+    // why the explicit server read below is part of this path rather than an
+    // assumption about listener ordering.
     //
-    // A snapshot may only publish if nothing newer has arrived since it started.
-    let snapshotSequence = 0;
+    // A cached snapshot may publish as a fast provisional answer, but it can
+    // never supersede a server snapshot. Sequence alone is not enough: an old
+    // cache callback can start after a forced server read and would once again
+    // become "newer" merely by arriving later.
+    const membershipSnapshotGate = createMembershipSnapshotGate();
+    let hasAuthoritativeMemberships = false;
+    let membershipServerRequest = 0;
+    let membershipServerRetryAttempt = 0;
+    let membershipServerRetryTimer = null;
     // The list this listener last put on screen. A workspace whose organization
     // document a read failed to return keeps the name it already had instead of
     // going blank while the document is fetched again.
@@ -140,7 +139,13 @@ export function OrgProvider({ user, children }) {
     // memberships describe is asked again, of the server this time. If that is
     // unreachable the entry survives anyway, marked pending by the builder.
     const readOrganizationDocuments = async (orgIds) => {
-      const documents = await readOrganizationsById(orgIds, false);
+      let documents = [];
+      try {
+        documents = await readOrganizationsById(orgIds, false);
+      } catch {
+        // The membership still proves the entry. The server-specific read below
+        // gets one more chance to decorate it; failing that, it remains pending.
+      }
       const found = new Set(documents.map(document => document.id));
       const missing = orgIds.filter(orgId => !found.has(orgId));
       if (missing.length === 0) return documents;
@@ -151,19 +156,25 @@ export function OrgProvider({ user, children }) {
       }
     };
 
-    const applyMembershipSnapshot = async (memSnap) => {
-      snapshotSequence += 1;
-      const sequence = snapshotSequence;
-      // True while this snapshot is still the newest one to have arrived.
-      const current = () => !cancelled && sequence === snapshotSequence;
+    const applyMembershipDocuments = async (
+      memberships,
+      authoritative,
+      suppliedOrganizationDocuments = null,
+    ) => {
+      // Once a server answer has started, no cache-only answer may shorten it,
+      // even if the cache callback itself happens to arrive later.
+      const snapshotTicket = membershipSnapshotGate.begin(authoritative);
+      if (!snapshotTicket) return;
+      const current = () => !cancelled && snapshotTicket.isCurrent();
       try {
-        const memberships = memSnap.docs.map(document => document.data());
         const orgIds = [...new Set(memberships.map(membership => membership.orgId).filter(Boolean))];
-        const documents = orgIds.length > 0 ? await readOrganizationDocuments(orgIds) : [];
+        const documents = suppliedOrganizationDocuments
+          ?? (orgIds.length > 0 ? await readOrganizationDocuments(orgIds) : []);
 
         const { organizations, roles } = buildOrganizationList(memberships, documents, publishedOrgs);
 
         if (!current()) return;
+        if (authoritative) hasAuthoritativeMemberships = true;
         publishedOrgs = organizations;
         setOrgError(null);
         setAllOrgs(organizations);
@@ -174,6 +185,15 @@ export function OrgProvider({ user, children }) {
         // back empty sent a person who owns two workspaces to «створіть
         // організацію».
         if (organizations.length === 0) {
+          // An empty cache proves only that this browser has never cached a
+          // membership. Redirecting from that answer creates a fake "new
+          // organization" flow for an existing owner. Only the server may say
+          // that the account genuinely has no workspace.
+          if (!authoritative) {
+            setNoOrg(false);
+            setOrgLoading(true);
+            return;
+          }
           setNoOrg(true);
           setActiveOrgId(null);
           setActiveOrg(null);
@@ -193,12 +213,22 @@ export function OrgProvider({ user, children }) {
         setOrgRole(roles[chosen.id] ?? null);
         setNoOrg(false);
         setOrgLoading(false);
-        persistTabOrganization(chosen.id);
+        // A partial cache must not replace a stored choice it did not know
+        // about. The forced server read can then restore that exact workspace,
+        // rather than merely put it back somewhere in the switcher.
+        if (authoritative || preferred || !stored) persistTabOrganization(chosen.id);
         retryAttempt = 0;
       } catch (err) {
         handleLoadError('[OrgContext] organizations', err);
       }
     };
+
+    const applyMembershipSnapshot = (memSnap, authoritative = !memSnap.metadata?.fromCache) => (
+      applyMembershipDocuments(
+        memSnap.docs.map(document => document.data()),
+        authoritative,
+      )
+    );
 
     const handleLoadError = (scope, err) => {
       reportLoadError(scope, err);
@@ -223,20 +253,89 @@ export function OrgProvider({ user, children }) {
       setOrgLoading(false);
     };
 
+    const refreshMembershipsFromServer = async () => {
+      const request = ++membershipServerRequest;
+      try {
+        let serverSnapshot = null;
+        try {
+          serverSnapshot = await getDocsFromServer(membershipsQuery);
+        } catch (error) {
+          reportLoadError('[OrgContext] memberships Firestore server refresh', error);
+        }
+        if (cancelled || request !== membershipServerRequest) return;
+        if (serverSnapshot) {
+          membershipServerRetryAttempt = 0;
+          await applyMembershipSnapshot(serverSnapshot, true);
+          return;
+        }
+
+        // Firestore and the app are separate network paths. If the persistent
+        // client thinks it is offline, ask the authenticated Next.js server for
+        // the same token-scoped directory through the Admin SDK. This is what
+        // lets one poisoned browser repair itself without clearing IndexedDB.
+        const directory = await authenticatedRequest(
+          '/api/organizations',
+          {},
+          'Не вдалося перевірити список організацій',
+        );
+        if (cancelled || request !== membershipServerRequest) return;
+        membershipServerRetryAttempt = 0;
+        await applyMembershipDocuments(
+          Array.isArray(directory.memberships) ? directory.memberships : [],
+          true,
+          Array.isArray(directory.organizations) ? directory.organizations : [],
+        );
+      } catch (err) {
+        if (cancelled || request !== membershipServerRequest) return;
+        reportLoadError('[OrgContext] memberships server refresh', err);
+        if (
+          (shouldRetryOrganizationLoad(err) || Number(err?.status) >= 500)
+          && membershipServerRetryAttempt < ORG_LOAD_RETRY_LIMIT
+        ) {
+          membershipServerRetryAttempt += 1;
+          if (membershipServerRetryTimer) window.clearTimeout(membershipServerRetryTimer);
+          membershipServerRetryTimer = window.setTimeout(
+            refreshMembershipsFromServer,
+            organizationLoadRetryDelay(membershipServerRetryAttempt),
+          );
+          return;
+        }
+        // A cache-only empty list is not permission to create a replacement
+        // organization. If the server cannot verify it after retries, show the
+        // recoverable load error instead of silently claiming there is no org.
+        if (!hasAuthoritativeMemberships && publishedOrgs.length === 0) {
+          setOrgError(err);
+          setOrgLoading(false);
+        }
+      }
+    };
+
     const subscribe = () => {
       if (cancelled) return;
       unsubscribe();
       unsubscribe = onSnapshot(
         membershipsQuery,
+        { includeMetadataChanges: true },
         applyMembershipSnapshot,
         err => handleLoadError('[OrgContext] memberships', err),
       );
     };
 
     subscribe();
+    refreshMembershipsFromServer();
+    const refreshOnFocus = () => {
+      membershipServerRetryAttempt = 0;
+      refreshMembershipsFromServer();
+    };
+    window.addEventListener('focus', refreshOnFocus);
+    window.addEventListener('online', refreshOnFocus);
     return () => {
       cancelled = true;
       if (retryTimer) window.clearTimeout(retryTimer);
+      if (membershipServerRetryTimer) window.clearTimeout(membershipServerRetryTimer);
+      membershipServerRequest += 1;
+      window.removeEventListener('focus', refreshOnFocus);
+      window.removeEventListener('online', refreshOnFocus);
       unsubscribe();
     };
   }, [user?.id, applyOrg]); // eslint-disable-line
@@ -245,11 +344,10 @@ export function OrgProvider({ user, children }) {
   const switchOrg = useCallback((orgId) => {
     const target = allOrgs.find(o => o.id === orgId);
     if (!target || !user) return;
-    const uid = user.id || user.uid;
     // Set loading briefly so project data refreshes cleanly
     setOrgLoading(true);
-    applyOrg(target, uid);
-  }, [allOrgs, user, applyOrg]);
+    applyOrg(target, orgRoles[orgId]);
+  }, [allOrgs, orgRoles, user, applyOrg]);
 
   // ── Live-sync the active org document and membership ──────────────────
   useEffect(() => {
@@ -277,7 +375,8 @@ export function OrgProvider({ user, children }) {
     let unsubMem = () => {};
     if (uid) {
       unsubMem = onSnapshot(doc(db, 'orgMemberships', `${activeOrgId}_${uid}`), (snap) => {
-        setOrgRole(snap.exists() ? snap.data().role : null);
+        if (snap.exists()) setOrgRole(snap.data().role);
+        else if (!snap.metadata.fromCache) setOrgRole(null);
       }, (err) => {
         console.warn('[OrgContext] membership sync permission error (expected during logout):', err.message);
       });

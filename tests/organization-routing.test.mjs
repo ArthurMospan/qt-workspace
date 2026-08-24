@@ -6,7 +6,10 @@ import {
   organizationLoadRetryDelay,
   shouldRetryOrganizationLoad,
 } from '../src/lib/utils/organizationLoadErrors.mjs';
-import { buildOrganizationList } from '../src/lib/utils/organizationList.mjs';
+import {
+  buildOrganizationList,
+  createMembershipSnapshotGate,
+} from '../src/lib/utils/organizationList.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -90,19 +93,33 @@ test('a denied read is retried before it is called a loss of access', async () =
 // it stayed removed until a membership changed. Reloading was a coin toss, and
 // another account with a cold cache looked perfectly healthy.
 //
-// Snapshots are numbered in arrival order, and only the newest may publish —
-// which makes the server's answer authoritative by construction, since it
-// always arrives after the cache's.
+// Snapshots are numbered inside their source class, and a server snapshot has
+// priority over every cached one. Arrival order alone cannot establish that:
+// a delayed cache callback is still cache even when it happens to arrive last.
 test('an organization list published late cannot overwrite a newer one', async () => {
   const context = await read('../src/lib/context/OrgContext.js');
 
-  assert.match(context, /let snapshotSequence = 0;/);
-  assert.match(context, /snapshotSequence \+= 1;\s*\n\s*const sequence = snapshotSequence;/);
-  assert.match(context, /const current = \(\) => !cancelled && sequence === snapshotSequence;/);
+  const gate = createMembershipSnapshotGate();
+  const cachedFirst = gate.begin(false);
+  const serverSecond = gate.begin(true);
+  assert.equal(cachedFirst.isCurrent(), false);
+  assert.equal(serverSecond.isCurrent(), true);
+
+  // Arrival after a server read started cannot make a cache result authoritative.
+  assert.equal(gate.begin(false), null);
+
+  // Two real server refreshes can race too; the newest one wins among equals.
+  const newerServer = gate.begin(true);
+  assert.equal(serverSecond.isCurrent(), false);
+  assert.equal(newerServer.isCurrent(), true);
+
+  assert.match(context, /const membershipSnapshotGate = createMembershipSnapshotGate\(\);/);
+  assert.match(context, /const snapshotTicket = membershipSnapshotGate\.begin\(authoritative\);/);
+  assert.match(context, /const current = \(\) => !cancelled && snapshotTicket\.isCurrent\(\);/);
   // The publish is guarded, not merely the unmount.
   assert.match(
     context,
-    /if \(!current\(\)\) return;\s*\n\s*publishedOrgs = organizations;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(organizations\);/,
+    /if \(!current\(\)\) return;\s*\n\s*if \(authoritative\) hasAuthoritativeMemberships = true;\s*\n\s*publishedOrgs = organizations;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(organizations\);/,
   );
 
   // The list itself is still built from memberships alone — access is
@@ -187,10 +204,57 @@ test('a short organizations read is asked again, of the server', async () => {
   assert.match(context, /const missing = orgIds\.filter\(orgId => !found\.has\(orgId\)\);/);
   assert.match(context, /documents\.concat\(await readOrganizationsById\(missing, true\)\)/);
   assert.match(context, /fromServer \? getDocsFromServer\(request\) : getDocs\(request\)/);
-  // «Створіть організацію» follows from having no membership, never from a read.
-  assert.match(context, /if \(organizations\.length === 0\) \{\s*\n\s*setNoOrg\(true\);/);
+  // «Створіть організацію» follows only from a server-confirmed empty
+  // membership list, never from an empty cache.
+  assert.match(context, /if \(organizations\.length === 0\) \{[\s\S]*if \(!authoritative\) \{[\s\S]*setNoOrg\(true\);/);
   // And an entry still waiting for its document does not read as un-onboarded.
   assert.match(layout, /if \(activeOrg\.pending\) return;/);
+});
+
+test('a short membership cache is verified against the server before it can mean no workspace', async () => {
+  const [context, route] = await Promise.all([
+    read('../src/lib/context/OrgContext.js'),
+    read('../src/app/api/organizations/route.js'),
+  ]);
+
+  // The previous fix forced only organization-document reads. It could not
+  // recover an organization whose membership itself had never reached this
+  // browser's cache, because its id was absent before those reads even began.
+  assert.match(context, /getDocsFromServer\(membershipsQuery\)/);
+  assert.match(context, /refreshMembershipsFromServer\(\);/);
+  assert.match(context, /window\.addEventListener\('focus', refreshOnFocus\)/);
+  assert.match(context, /window\.addEventListener\('online', refreshOnFocus\)/);
+
+  // A stuck Firestore client has an independent recovery channel through the
+  // authenticated app server. The token supplies the uid; a caller cannot ask
+  // this route for somebody else's directory.
+  assert.match(context, /authenticatedRequest\(\s*'\/api\/organizations'/);
+  assert.match(route, /const authorization = await authenticateRequest\(request\);/);
+  assert.match(route, /\.where\('userId', '==', uid\)/);
+  assert.doesNotMatch(route, /searchParams|request\.json\(/);
+
+  // Cache results remain useful for a fast first paint, but only a server result
+  // can prove that zero memberships really means zero workspaces.
+  assert.match(context, /authoritative = !memSnap\.metadata\?\.fromCache/);
+  assert.match(context, /const snapshotTicket = membershipSnapshotGate\.begin\(authoritative\);\s*if \(!snapshotTicket\) return;/);
+  assert.match(context, /if \(!authoritative\) \{\s*setNoOrg\(false\);\s*setOrgLoading\(true\);\s*return;/);
+  assert.match(context, /\{ includeMetadataChanges: true \}/);
+});
+
+test('switching to a server-recovered organization does not erase its verified role from a short cache', async () => {
+  const context = await read('../src/lib/context/OrgContext.js');
+
+  assert.match(context, /applyOrg\(target, orgRoles\[orgId\]\)/);
+  assert.doesNotMatch(context, /const memSnap = await getDoc/);
+  assert.match(context, /if \(snap\.exists\(\)\) setOrgRole\(snap\.data\(\)\.role\);\s*else if \(!snap\.metadata\.fromCache\) setOrgRole\(null\);/);
+});
+
+test('the obsolete client-side organization bootstrap is gone', async () => {
+  const hook = await read('../src/lib/hooks/useOrganization.js');
+
+  assert.doesNotMatch(hook, /initOrg/);
+  assert.doesNotMatch(hook, /getDoc\(membershipRef\)/);
+  assert.doesNotMatch(hook, /setDoc\(membershipRef/);
 });
 
 // The owner seat is written when the organization is created. Rewriting it on

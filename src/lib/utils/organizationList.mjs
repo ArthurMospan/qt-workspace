@@ -2,6 +2,33 @@
 // The workspaces a person belongs to, assembled from their memberships.
 
 /**
+ * Order asynchronous membership snapshots without mistaking arrival order for
+ * authority. Cached snapshots may race each other until a server snapshot has
+ * started; after that, only the newest server snapshot may publish.
+ */
+export function createMembershipSnapshotGate() {
+  let sequence = 0;
+  let authoritativeSequence = 0;
+
+  return {
+    begin(authoritative = false) {
+      if (!authoritative && authoritativeSequence > 0) return null;
+      sequence += 1;
+      const ownSequence = sequence;
+      if (authoritative) authoritativeSequence = ownSequence;
+
+      return {
+        isCurrent() {
+          return authoritative
+            ? ownSequence === authoritativeSequence
+            : authoritativeSequence === 0 && ownSequence === sequence;
+        },
+      };
+    },
+  };
+}
+
+/**
  * One entry per membership, always.
  *
  * A membership is the proof that a workspace exists for this person — access is

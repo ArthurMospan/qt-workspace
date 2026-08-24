@@ -3,7 +3,7 @@
 // src/lib/hooks/useOrganization.js
 // Organization = one workspace in the multi-organization membership model.
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import { doc, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import {
@@ -147,34 +147,6 @@ export function useOrganization() {
     store.getServerSnapshot,
   );
 
-  // Ensure org exists (called by owner on first load)
-  const initOrg = useCallback(async (ownerId, ownerName) => {
-    if (!activeOrgId) return;
-    const ref = doc(db, 'organizations', activeOrgId);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        id: activeOrgId,
-        name: 'QuickTeam',
-        ownerId,
-        createdAt: serverTimestamp()
-      });
-    }
-
-    // Ensure owner is in orgMemberships
-    const membershipRef = doc(db, 'orgMemberships', `${activeOrgId}_${ownerId}`);
-    const memSnap = await getDoc(membershipRef);
-    if (!memSnap.exists()) {
-      await setDoc(membershipRef, {
-        id: `${activeOrgId}_${ownerId}`,
-        orgId: activeOrgId,
-        userId: ownerId,
-        role: 'owner',
-        joinedAt: new Date().toISOString()
-      });
-    }
-  }, [activeOrgId]);
-
   // Invite by email
   // `projectIds` scopes the invitation to projects the invitee joins the moment
   // they accept, so inviting from the project form does not need a second trip
@@ -244,7 +216,6 @@ export function useOrganization() {
     members,
     loading,
     error,
-    initOrg,
     inviteMember,
     changeMemberRole,
     setMemberRate,
