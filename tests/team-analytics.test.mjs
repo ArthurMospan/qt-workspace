@@ -115,3 +115,49 @@ test('every analytics list of tasks is the shared TaskListCard', async () => {
   );
   assert.match(preview, /<TaskListCard/);
 });
+
+// A timesheet names the task an hour was logged against.
+//
+// A member's own page used to be handed only the tasks *assigned* to them, so
+// an hour logged on somebody else's task had nothing to resolve and the row
+// read «???». The workspace timesheet, handed the whole record, named that very
+// same task perfectly — and adding yourself as assignee made the «???» go away,
+// which teaches exactly the wrong lesson about what an assignee is.
+//
+// Logging time on a task you do not own is ordinary. What a timesheet needs is
+// the record, not the assignment.
+test('a member timesheet resolves every task its hours point at', async () => {
+  const workload = await readFile(
+    new URL('../src/components/workspace/WorkloadTab.jsx', import.meta.url),
+    'utf8',
+  );
+
+  // `referenceIssues` is `logIssues` — every task in scope, archived included,
+  // which is what this same component already hands «Останні записи часу».
+  assert.match(workload, /issues=\{stat\.referenceIssues\}/);
+  assert.doesNotMatch(workload, /issues=\{stat\.timesheetIssues\}/);
+  assert.match(workload, /referenceIssues: logIssues/);
+
+  // And a month cell says «Відкрити тиждень», so it has to open one. Without a
+  // handler it was a pointer over a dead square.
+  assert.match(workload, /onSelectDay=\{day => \{ setAnchor\(day\); setMode\('week'\); \}\}/);
+});
+
+// The card lights up under the pointer, which is a promise that it is
+// clickable. That promise used to be kept by six characters of the issue key
+// alone, while the title right below it — the part a person reads and aims at
+// — did nothing at all.
+test('a timesheet card is the link, not the identifier inside it', async () => {
+  const timesheet = await readFile(
+    new URL('../src/components/workspace/TimesheetTab.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(timesheet, /const href = issue \? issuePath\(issue\) : event \? calendarEventHref\(event\) : null;/);
+  assert.match(timesheet, /<Link key=\{targetKey\} href=\{href\}/);
+  // The hover affordance appears only where there is somewhere to go.
+  assert.match(timesheet, /href \? 'hover:border-\[#d0d0d0\]' : ''/);
+  // «???» told nobody anything. What is left says one thing only: the task
+  // behind this hour no longer exists.
+  assert.doesNotMatch(timesheet, /\?\?\?/);
+  assert.match(timesheet, /title="Завдання більше не існує"/);
+});

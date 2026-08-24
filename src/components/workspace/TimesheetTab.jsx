@@ -156,32 +156,53 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
             {entries.map(([targetKey, minutes]) => {
               const issue = issuesById[targetKey];
               const event = eventsByKey[targetKey];
-              return (
-                <div key={targetKey} data-ui-surface="local" className="bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors">
-                  <div className="flex items-center justify-between gap-2">
+              const href = issue ? issuePath(issue) : event ? calendarEventHref(event) : null;
+              // The whole card, not the six characters of the key. It already
+              // lit up on hover — a border that changes under the pointer is a
+              // promise that the thing is clickable — and then only the
+              // identifier answered, while the title right under it, which is
+              // what a person actually reads and aims at, did nothing.
+              const body = (
+                <>
+                  <span className="flex items-center justify-between gap-2">
                     {issue ? (
-                      <Link href={issuePath(issue)}
-                        className={`text-[12px] font-bold hover:underline truncate uppercase ${isArchivedIssue(issue) ? 'text-muted' : 'text-ink'}`}
+                      <span
+                        className={`text-[12px] font-bold truncate uppercase ${isArchivedIssue(issue) ? 'text-muted' : 'text-ink'}`}
                         title={isArchivedIssue(issue) ? 'Завдання в архіві' : undefined}>
                         {issue.issueKey || targetKey.slice(0, 6)}
-                      </Link>
+                      </span>
                     ) : event ? (
-                      <Link href={calendarEventHref(event)} className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink hover:underline">
+                      <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink">
                         <CalendarIcon size={12} className="shrink-0 text-muted" />
                         <span className="truncate">Подія</span>
-                      </Link>
+                      </span>
                     ) : (
-                      <span className="text-[12px] font-bold text-faint uppercase">???</span>
+                      // Nothing to open: the task behind this hour is not in the
+                      // set this screen was handed. That used to be routine on a
+                      // member's own page, which was given only their assigned
+                      // tasks; it now means the task was deleted for real.
+                      <span className="text-[12px] font-bold text-faint uppercase" title="Завдання більше не існує">—</span>
                     )}
                     <span className="text-[12px] font-bold text-ink shrink-0">{fmtMin(minutes)}</span>
-                  </div>
-                  {issue?.title && (
-                    <p className="text-[11px] text-muted mt-[2px] line-clamp-2 leading-snug">{issue.title}</p>
+                  </span>
+                  {(issue?.title || event?.title) && (
+                    <span className="block text-[11px] text-muted mt-[2px] line-clamp-2 leading-snug">
+                      {issue?.title || event?.title}
+                    </span>
                   )}
-                  {event?.title && (
-                    <p className="text-[11px] text-muted mt-[2px] line-clamp-2 leading-snug">{event.title}</p>
-                  )}
-                </div>
+                </>
+              );
+              const cardClass = `block bg-white border border-line rounded-[12px] px-[10px] py-[8px] transition-colors ${
+                href ? 'hover:border-[#d0d0d0]' : ''
+              }`;
+              return href ? (
+                <Link key={targetKey} href={href} data-ui-surface="local" className={cardClass}>
+                  {body}
+                </Link>
+              ) : (
+                <span key={targetKey} data-ui-surface="local" className={cardClass}>
+                  {body}
+                </span>
               );
             })}
           </div>

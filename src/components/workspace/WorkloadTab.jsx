@@ -541,7 +541,14 @@ function MemberTimesheet({ stat, members, projects, events }) {
         <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => shift(1)} aria-label="Наступний період" />
       </div>
       <TimesheetTab
-        issues={stat.timesheetIssues}
+        // Every task the record knows about, not the ones this person happens
+        // to be assigned to. A timesheet names the task an hour was logged
+        // against, and somebody can log time on a task they do not own — that
+        // is normal, and it was showing up as «???» on their own page while the
+        // workspace timesheet, which is handed the whole record, named it
+        // perfectly. Adding yourself as assignee «fixed» it, which is exactly
+        // the wrong lesson to have to learn.
+        issues={stat.referenceIssues}
         events={events}
         timeLogs={stat.allLogs}
         members={members}
@@ -549,6 +556,9 @@ function MemberTimesheet({ stat, members, projects, events }) {
         member={stat.uid}
         mode={mode}
         anchor={anchor}
+        // A month cell already invites the click — it says «Відкрити тиждень».
+        // Without this it was a cursor over a dead square.
+        onSelectDay={day => { setAnchor(day); setMode('week'); }}
       />
     </div>
   );
