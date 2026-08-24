@@ -94,9 +94,14 @@ test('help, releases and legal pages are public, searchable and mobile-safe', as
     const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
     expect(response?.status(), route).toBe(200);
     await expect(page.getByRole('heading', { level: 1 })).toContainText(heading);
+    await expect(page.getByRole('link', { name: 'QuickTeam — головна' })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, `${route} horizontal overflow`).toBeLessThanOrEqual(0);
   }
+
+  await page.goto('/terms', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('tab', { name: 'Умови користування' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('button', { name: 'Назад' })).toHaveCount(0);
 
   const expectedMatches = searchHelpArticles(HELP_QUERY);
   expect(
