@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 114,
-    "props": 856,
-    "documentedProps": 856,
+    "components": 115,
+    "props": 861,
+    "documentedProps": 861,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4793,6 +4793,47 @@
           "type": "string",
           "values": [],
           "description": "Placeholder for that picker."
+        }
+      ]
+    },
+    "RefreshStamp": {
+      "file": "src/components/ui/DataDisplay/RefreshStamp.jsx",
+      "summary": "When a reading was taken, and the way to take another. A screen either updates itself or it says when it last looked — and the second is only honest if it is on the screen.",
+      "props": [
+        {
+          "name": "at",
+          "default": "null",
+          "type": "number|null",
+          "values": [],
+          "description": "When the reading was taken, in milliseconds. Nothing is drawn until there is one."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "label",
+          "default": "'Оновлено о'",
+          "type": "string",
+          "values": [],
+          "description": "The whole phrase before the time, preposition included — «Оновлено о», «Дані на». A screen that means something more specific says it in full rather than having a preposition chosen for it."
+        },
+        {
+          "name": "loading",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether a newer reading is on its way; the icon turns while it is."
+        },
+        {
+          "name": "onRefresh",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Take another reading."
         }
       ]
     },

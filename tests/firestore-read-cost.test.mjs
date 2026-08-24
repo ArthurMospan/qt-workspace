@@ -209,6 +209,40 @@ test('every screen that reads time logs says which window it is drawing', async 
   assert.match(sprints, /includeTimeLogs: false/);
 });
 
+// A live listener earns its cost where somebody is acting on the data as it
+// changes — a board they are dragging cards on, a task two people are editing,
+// a conversation. A report is not that. Nobody drags anything on «Огляд»; the
+// numbers are read, and a figure that rewrites itself mid-sentence is a
+// distraction that also holds a listener open over the largest collections in
+// the product for as long as the tab is left up.
+test('the report screens take a reading rather than holding a subscription', () => {
+  const hook = readFileSync(join(root, 'lib', 'hooks', 'useWorkspaceAnalytics.js'), 'utf8');
+  // One hook, two modes — not two code paths that can drift apart.
+  assert.match(hook, /live = true,/);
+  assert.match(hook, /if \(live\) \{\s*\n\s*return onSnapshot\(/);
+  assert.match(hook, /getDocs\(sourceQuery\)/);
+  // «Оновлено о» is a claim about age, so it is refused while the data is live.
+  assert.match(hook, /readAt: live \? null :/);
+
+  for (const file of [
+    'app/(app)/analytics/page.js',
+    'app/(app)/analytics/team/[memberId]/page.js',
+  ]) {
+    const source = readFileSync(join(root, file.split('/').join(sep)), 'utf8');
+    assert.match(source, /live: false/, `${file} must read rather than subscribe`);
+    // And a screen that stopped updating itself has to say so, and offer a
+    // newer reading. Either half alone is worse than the live listener was.
+    assert.match(source, /<RefreshStamp/, `${file} must say when it was read`);
+    assert.match(source, /onRefresh=\{refresh/, `${file} must offer a newer reading`);
+  }
+
+  // The screens where the data is the thing being worked on keep the default.
+  for (const file of ['app/(app)/sprints/page.js', 'app/(app)/settings/page.js']) {
+    const source = readFileSync(join(root, file.split('/').join(sep)), 'utf8');
+    assert.doesNotMatch(source, /live: false/, `${file} is a working screen, not a report`);
+  }
+});
+
 test('the windowed time-log queries have the composite indexes they need', () => {
   const indexes = JSON.parse(
     readFileSync(fileURLToPath(new URL('../firestore.indexes.json', import.meta.url)), 'utf8'),

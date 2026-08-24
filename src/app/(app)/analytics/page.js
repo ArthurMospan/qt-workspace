@@ -22,7 +22,7 @@ import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
 import {
   BarList, Button, ChartCard, DataTable, EmptyState, ExportMenu, KpiCard, LoadingSpinner,
-  Meter, PageHeader, Segmented, Surface, TaskListCard,
+  Meter, PageHeader, RefreshStamp, Segmented, Surface, TaskListCard,
 } from '@/components/ui';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { buildOverviewExport } from '@/lib/utils/analyticsExport.mjs';
@@ -536,7 +536,7 @@ export default function WorkspaceAnalyticsPage() {
     exportBuilderRef.current = builder;
   }, []);
   const buildActiveExport = useCallback(() => exportBuilderRef.current?.() || null, []);
-  const exportMenu = <ExportMenu build={buildActiveExport} className="ml-auto max-md:hidden" />;
+  const exportMenu = <ExportMenu build={buildActiveExport} />;
 
   // Shared filters (one FilterBar under the tabs; each tab adds its own controls)
   const [projectFilters, setProjectFilters] = useState([]);
@@ -608,14 +608,49 @@ export default function WorkspaceAnalyticsPage() {
     timeLogs,
     issueLinks,
     loading,
+    readAt: recordsReadAt,
+    refresh: refreshRecords,
   } = useWorkspaceAnalytics(activeProjectIds, {
     // «Рахунок» reads raw logs of its own project through `useProjectAllTimeLogs`
     // — an invoice is about every unbilled hour ever recorded, not about a
-    // period — so this subscription has nothing to do while that tab is open.
+    // period — so this read has nothing to do while that tab is open.
     includeTimeLogs: needsRawTimeLogs,
     timeLogWindow,
+    // A report is a reading, not a feed. Nobody drags a card on this screen or
+    // types into it; the numbers are read, and a figure that rewrites itself
+    // mid-sentence is a distraction that also keeps listeners open over the
+    // largest collections in the product for as long as the tab is left up.
+    live: false,
   });
-  const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
+  const {
+    events: calendarEvents,
+    loading: calendarLoading,
+    refresh: refreshCalendar,
+  } = useCalendarEvents();
+
+  // One reading, one timestamp: the oldest of the three sources, because that
+  // is the age of the least fresh number on screen.
+  const readingTakenAt = useMemo(() => {
+    const stamps = [recordsReadAt, readAt].filter(value => typeof value === 'number');
+    return stamps.length ? Math.min(...stamps) : null;
+  }, [readAt, recordsReadAt]);
+  const refreshReading = useCallback(() => {
+    refreshRecords();
+    refreshRollups();
+    refreshCalendar({ silent: true });
+  }, [refreshCalendar, refreshRecords, refreshRollups]);
+  // The stamp and the export button are the header's trailing pair: when this
+  // was read, and a copy of what it says.
+  const headerTrailing = (
+    <span className="ml-auto flex items-center gap-[8px] max-md:hidden">
+      <RefreshStamp
+        at={readingTakenAt}
+        loading={loading || rollupsLoading}
+        onRefresh={refreshReading}
+      />
+      {exportMenu}
+    </span>
+  );
 
   const shiftAnchor = dir => {
     setTsAnchor(prev => {
@@ -872,7 +907,7 @@ export default function WorkspaceAnalyticsPage() {
                     <Button style="ghost" size="icon-sm" icon={ChevronRight} onClick={() => shiftAnchor(1)} aria-label="Наступний період" />
                   </span>
                 </FilterBar>
-                {exportMenu}
+                {headerTrailing}
                 <Button style="primary" size="lg" icon={Plus} onClick={() => setTsLogOpen(true)} className="max-md:hidden">
                   Зафіксувати час
                 </Button>
@@ -906,7 +941,7 @@ export default function WorkspaceAnalyticsPage() {
                 <FilterDivider />
                 <Segmented value={period} onChange={setPeriod} options={periodOptions} />
               </FilterBar>
-              {exportMenu}
+              {headerTrailing}
               </>
             ) : (
               <>
@@ -954,7 +989,7 @@ export default function WorkspaceAnalyticsPage() {
                 <FilterDivider />
                 <Segmented value={period} onChange={setPeriod} options={periodOptions} />
               </FilterBar>
-              {exportMenu}
+              {headerTrailing}
               </>
             )
           }

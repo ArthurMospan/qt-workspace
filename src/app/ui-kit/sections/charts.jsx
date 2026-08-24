@@ -8,6 +8,7 @@ import {
   KpiCard,
   Meter,
   Pill,
+  RefreshStamp,
   SignalList,
   Sparkline,
   TrendChart,
@@ -249,6 +250,18 @@ export default function ChartsSection() {
           <ChartCard icon={AlertTriangle} title="Що потребує уваги">
             <SignalList signals={[]} emptyText="Нічого термінового — усе під контролем" />
           </ChartCard>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Коли це читали"
+        description="Звіт або оновлюється сам, або каже, коли востаннє дивився. Аналітика більше не тримає живих підписок над колекціями, що ростуть найшвидше — запис часу пишеться щоразу, коли хтось зупиняє таймер, і слухач над ними коштував би цілого дня квоти на читання за одне відкрите вкладення. Тому підпис замінює обіцянку, яку той слухач давав: одне читання, час цього читання й тиха кнопка поруч, щоб узяти нове. Це не статус — нічого не зламалось і нічого не потребує уваги."
+        filePath="src/components/ui/DataDisplay/RefreshStamp.jsx"
+      >
+        <div className="flex flex-wrap items-center gap-6">
+          <RefreshStamp at={Date.parse('2026-08-24T09:41:00')} onRefresh={() => {}} />
+          <RefreshStamp at={Date.parse('2026-08-24T09:41:00')} onRefresh={() => {}} loading />
+          <RefreshStamp at={Date.parse('2026-08-24T09:41:00')} label="Дані на" onRefresh={() => {}} />
         </div>
       </PreviewBlock>
     </div>

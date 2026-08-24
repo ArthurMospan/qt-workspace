@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 114,
-      "used": 114,
+      "components": 115,
+      "used": 115,
       "unused": 0,
-      "covered": 109,
+      "covered": 110,
       "uncovered": 0,
       "routes": 12,
-      "previews": 145,
+      "previews": 146,
       "internal": 5,
       "unlisted": 0
     },

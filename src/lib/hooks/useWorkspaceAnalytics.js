@@ -1,9 +1,10 @@
 'use client';
 
 // Loads issues and time logs only for the already-authorized project list.
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   collection,
+  getDocs,
   onSnapshot,
   query,
   Timestamp,
@@ -63,11 +64,29 @@ import {
  * log window changes whenever somebody picks another period or pages the
  * timesheet back a week. Sharing one effect meant every period change tore down
  * and re-read every task in the organization to answer a question about hours.
+ *
+ * ── Живе чи разове ───────────────────────────────────────────────────────
+ *
+ * `live` decides whether these are subscriptions or one reading.
+ *
+ * A live listener is worth its cost where somebody is acting on the data as it
+ * changes: a board they are dragging cards on, a task two people are editing,
+ * a conversation. A report is not that. Nobody drags anything on «Огляд»; the
+ * numbers are read, and a figure that rewrites itself mid-sentence is a
+ * distraction rather than a service — and it is a distraction that keeps a
+ * listener open over the largest collections the product has, for as long as
+ * the tab is left on screen.
+ *
+ * So the report screens ask for `live: false`: one read, a `readAt` to say when
+ * it was taken, and `refresh` for when somebody wants a newer one. The board,
+ * «Мої завдання» and the sprint screens keep the live default, because there
+ * the data is the thing being worked on.
  */
 export function useWorkspaceAnalytics(projectIds = [], {
   includeLinks = true,
   includeTimeLogs = true,
   timeLogWindow = null,
+  live = true,
 } = {}) {
   const { activeOrgId, authLoading, orgLoading } = useAppContext();
   const [allIssues, setAllIssues] = useState([]);
@@ -75,6 +94,12 @@ export function useWorkspaceAnalytics(projectIds = [], {
   const [issueLinks, setIssueLinks] = useState([]);
   const [issuesLoading, setIssuesLoading] = useState(true);
   const [timeLogsLoading, setTimeLogsLoading] = useState(true);
+  const [issuesReadAt, setIssuesReadAt] = useState(null);
+  const [timeLogsReadAt, setTimeLogsReadAt] = useState(null);
+  // Bumped by `refresh`. In live mode nothing reads it, because there is
+  // nothing to refresh.
+  const [nonce, setNonce] = useState(0);
+  const refresh = useCallback(() => setNonce(value => value + 1), []);
   const projectScope = [...new Set(projectIds.filter(Boolean))].sort().join(',');
   const windowedTimeLogs = includeTimeLogs && isTimeLogWindow(timeLogWindow);
   const sinceMillis = windowedTimeLogs ? timeLogWindow.sinceMillis : null;
@@ -128,11 +153,15 @@ export function useWorkspaceAnalytics(projectIds = [], {
     if (expectedStreamCount === 0) {
       queueMicrotask(() => setIssuesLoading(false));
     }
-    const subscribe = options => unsubs.push(subscribeToBucket({
+    const subscribe = options => unsubs.push(readBucket({
       ...options,
+      live,
       readyStreams,
       expectedStreamCount,
-      onReady: () => setIssuesLoading(false),
+      onReady: () => {
+        setIssuesLoading(false);
+        setIssuesReadAt(Date.now());
+      },
     }));
 
     chunks.forEach((chunk, chunkIndex) => {
@@ -165,7 +194,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
     });
 
     return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [activeOrgId, authLoading, orgLoading, projectScope, issueTarget, includeLinks]);
+  }, [activeOrgId, authLoading, orgLoading, projectScope, issueTarget, includeLinks, live, nonce]);
 
   // ── Time logs, inside the window the caller is drawing ──────────────────
   useEffect(() => {
@@ -201,13 +230,17 @@ export function useWorkspaceAnalytics(projectIds = [], {
     const readyStreams = new Set();
     const expectedStreamCount = chunks.length * 2 + 1;
     const unsubs = [];
-    const subscribe = options => unsubs.push(subscribeToBucket({
+    const subscribe = options => unsubs.push(readBucket({
       ...options,
+      live,
       buckets: timeLogBuckets,
       publish: setTimeLogs,
       readyStreams,
       expectedStreamCount,
-      onReady: () => setTimeLogsLoading(false),
+      onReady: () => {
+        setTimeLogsLoading(false);
+        setTimeLogsReadAt(Date.now());
+      },
     }));
 
     // Projectless team events are organization analytics only and cannot be
@@ -260,6 +293,8 @@ export function useWorkspaceAnalytics(projectIds = [], {
     windowedTimeLogs,
     sinceMillis,
     untilMillis,
+    live,
+    nonce,
   ]);
 
   const record = useMemo(() => withoutCancelledIssues(allIssues), [allIssues]);
@@ -288,14 +323,33 @@ export function useWorkspaceAnalytics(projectIds = [], {
     timeLogs: recordTimeLogs,
     issueLinks,
     loading: issuesLoading || (windowedTimeLogs && timeLogsLoading),
+    // When the reading was taken, and how to take another. Null while this is a
+    // live subscription, because «оновлено о» would be a lie about data that is
+    // never more than a moment old.
+    readAt: live ? null : latestReadAt(issuesReadAt, windowedTimeLogs ? timeLogsReadAt : null),
+    refresh,
   };
 }
 
-function subscribeToBucket({
+function latestReadAt(...values) {
+  const known = values.filter(value => typeof value === 'number');
+  return known.length ? Math.max(...known) : null;
+}
+
+/**
+ * One stream of documents into its bucket — as a subscription or as a single
+ * read, depending on what the screen is for.
+ *
+ * Both shapes publish the same way and return the same teardown, so the two
+ * call sites above do not branch: the difference between a board and a report
+ * is one flag, not two code paths that can drift apart.
+ */
+function readBucket({
   key,
   sourceQuery,
   buckets,
   publish,
+  live,
   readyStreams,
   expectedStreamCount,
   onReady,
@@ -304,22 +358,37 @@ function subscribeToBucket({
     readyStreams.add(key);
     if (readyStreams.size >= expectedStreamCount) onReady();
   };
-  return onSnapshot(
-    sourceQuery,
-    { serverTimestamps: 'estimate' },
+  const deliver = docs => {
+    buckets.set(key, docs.map(document => ({ id: document.id, ...document.data() })));
+    publish(flattenDocumentBuckets(buckets));
+    markReady();
+  };
+  const fail = error => {
+    reportLoadError(`[useWorkspaceAnalytics:${key}]`, error);
+    buckets.set(key, []);
+    publish(flattenDocumentBuckets(buckets));
+    markReady();
+  };
+
+  if (live) {
+    return onSnapshot(
+      sourceQuery,
+      { serverTimestamps: 'estimate' },
+      snapshot => deliver(snapshot.docs),
+      fail,
+    );
+  }
+
+  let cancelled = false;
+  getDocs(sourceQuery).then(
     snapshot => {
-      buckets.set(key, snapshot.docs.map(document => ({
-        id: document.id,
-        ...document.data(),
-      })));
-      publish(flattenDocumentBuckets(buckets));
-      markReady();
+      if (!cancelled) deliver(snapshot.docs);
     },
     error => {
-      reportLoadError(`[useWorkspaceAnalytics:${key}]`, error);
-      buckets.set(key, []);
-      publish(flattenDocumentBuckets(buckets));
-      markReady();
+      if (!cancelled) fail(error);
     },
   );
+  return () => {
+    cancelled = true;
+  };
 }

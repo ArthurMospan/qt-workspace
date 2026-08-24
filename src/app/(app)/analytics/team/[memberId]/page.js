@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Users } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -15,6 +15,7 @@ import {
   Button,
   EmptyState,
   LoadingSpinner,
+  RefreshStamp,
   Segmented,
   Surface,
 } from '@/components/ui';
@@ -68,8 +69,18 @@ export default function MemberAnalyticsPage() {
     allIssues,
     timeLogs,
     loading,
-  } = useWorkspaceAnalytics(activeProjectIds, { timeLogWindow });
-  const { events, loading: calendarLoading } = useCalendarEvents();
+    readAt,
+    refresh: refreshRecords,
+  } = useWorkspaceAnalytics(activeProjectIds, { timeLogWindow, live: false });
+  const {
+    events,
+    loading: calendarLoading,
+    refresh: refreshCalendar,
+  } = useCalendarEvents();
+  const refreshReading = useCallback(() => {
+    refreshRecords();
+    refreshCalendar({ silent: true });
+  }, [refreshCalendar, refreshRecords]);
 
   const member = members.find(item => (item.id || item.uid) === memberId);
   const visibleProjects = useMemo(
@@ -163,6 +174,7 @@ export default function MemberAnalyticsPage() {
                   onChange={setPeriod}
                   options={PERIOD_OPTIONS}
                 />
+                <RefreshStamp at={readAt} loading={loading} onRefresh={refreshReading} />
               </FilterBar>
             )}
           />

@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 114,
-    "stateful": 102,
+    "components": 115,
+    "stateful": 103,
     "hover": 68,
     "focus": 68,
     "disabled": 35,
-    "loading": 6,
+    "loading": 7,
     "error": 6,
-    "long-text": 71
+    "long-text": 72
   },
   "components": {
     "Alert": {
@@ -354,6 +354,10 @@
     "ProjectSettingsForm": {
       "loading": "prop",
       "long-text": "description"
+    },
+    "RefreshStamp": {
+      "loading": "prop",
+      "long-text": "label"
     },
     "ResponseChoice": {
       "disabled": "prop",
@@ -796,6 +800,9 @@
     ],
     "ProjectSettingsForm": [
       "dialogs"
+    ],
+    "RefreshStamp": [
+      "charts"
     ],
     "ResponseChoice": [
       "inputs",

@@ -64,6 +64,7 @@ export { default as TypeBadge } from './DataDisplay/TypeBadge'
 export { default as Pill } from './DataDisplay/Pill'
 export { default as Counter } from './DataDisplay/Counter'
 export { default as KpiCard } from './DataDisplay/KpiCard'
+export { default as RefreshStamp } from './DataDisplay/RefreshStamp'
 export { default as DataTable } from './DataDisplay/DataTable'
 
 // ===== CHARTS =====
