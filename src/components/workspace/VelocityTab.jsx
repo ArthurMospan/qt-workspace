@@ -2,7 +2,7 @@
 // src/components/workspace/VelocityTab.jsx — Продуктивність: потік роботи й час завершення
 // Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Zap, TrendingUp, CheckCircle2, Calendar, Activity, Shapes, TrendingDown } from 'lucide-react';
+import { Zap, CheckCircle2, Calendar, Activity, Shapes, TrendingDown, Target } from 'lucide-react';
 import {
   Alert, BarList, ChartCard, ColumnChart, EmptyState, KpiCard, TaskListCard,
 } from '@/components/ui';
@@ -122,21 +122,22 @@ export default function VelocityTab({
       const { id: type, label, color } = entry;
       const created = createdPeriod.filter(issue => issue.type === type).length;
       const done = donePeriod.filter(issue => issue.type === type).length;
-      return { type, label, color, icon: taskTypeIcon(entry), created, done, net: created - done };
+      return { type, label, color, icon: taskTypeIcon(entry), created, done };
     }).filter(row => row.created > 0 || row.done > 0);
 
     return {
       donePeriod: donePeriod.length,
       velocityTrend,
       createdPeriod: createdPeriod.length,
-      netBacklog: createdPeriod.length - donePeriod.length,
+      openNow: issues.filter(i => !closedSet.has(i.columnId || i.status)).length,
+      excludedCompletionCount: doneAll.filter(i => getCompletedAtMillis(i) <= 0).length,
       medianCycleTime: cycleSummary.medianDays,
       p85CycleTime: cycleSummary.p85Days,
       invalidCycleCount: cycleSummary.invalidIssueIds.length,
       days,
       byType,
     };
-  }, [issues, period, deliveredSet, now, types]);
+  }, [issues, period, closedSet, deliveredSet, now, types]);
 
   const recentlyClosed = useMemo(
     () => issues
@@ -200,7 +201,9 @@ export default function VelocityTab({
             value={stats.donePeriod}
             label={`Закрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
             series={stats.days.map(day => day.values[0])}
-            sub="проти попереднього періоду" />
+            sub={stats.excludedCompletionCount > 0
+              ? `${stats.excludedCompletionCount} без точної дати завершення не враховано`
+              : 'проти попереднього періоду'} />
           {/* «Всього закрито» stood here and counted every task the workspace
               had ever finished — a number that only climbs, on the tab whose
               entire subject is change. The tile it makes room for is the one
@@ -211,19 +214,15 @@ export default function VelocityTab({
             sub={stats.p85CycleTime !== null
               ? `85% закриваються за ≤ ${stats.p85CycleTime}д`
               : 'потрібні завершені задачі'} />
-          <KpiCard icon={stats.netBacklog > 0 ? TrendingUp : stats.netBacklog < 0 ? TrendingDown : Activity}
-            value={stats.netBacklog > 0 ? `+${stats.netBacklog}` : stats.netBacklog}
-            label="Зміна беклогу"
-            sub={`створено ${stats.createdPeriod} · закрито ${stats.donePeriod}`} />
-          <KpiCard icon={stats.createdPeriod > stats.donePeriod ? TrendingUp : TrendingDown}
+          <KpiCard icon={Target}
+            value={stats.openNow}
+            label="Відкрито зараз"
+            sub="усі незавершені завдання у вибраному контексті" />
+          <KpiCard icon={Activity}
             value={stats.createdPeriod}
             label={`Створено за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
             series={stats.days.map(day => day.values[1])}
-            sub={stats.createdPeriod > stats.donePeriod
-              ? 'Більше відкривається, ніж закривається'
-              : stats.createdPeriod < stats.donePeriod
-                ? 'Команда випереджає потік'
-                : 'Відкривається і закривається порівну'} />
+            sub="нових завдань за вибраний період" />
         </div>
 
         {stats.invalidCycleCount > 0 && (

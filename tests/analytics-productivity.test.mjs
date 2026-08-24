@@ -9,7 +9,8 @@ test('productivity shows observable flow and oldest work, not a scope-free burnd
   );
 
   assert.doesNotMatch(source, /useBurndown|Скільки роботи лишилось|Рівний темп/);
-  assert.match(source, /Зміна беклогу/);
+  assert.doesNotMatch(source, /Зміна беклогу/);
+  assert.match(source, /Відкрито зараз/);
   assert.match(source, /Найстаріші відкриті завдання/);
   assert.match(source, /const dayCount = period/);
   assert.match(source, /Від створення до завершення/);

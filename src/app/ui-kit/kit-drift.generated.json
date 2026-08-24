@@ -1481,7 +1481,7 @@
     "TextAction.size.sm": 4,
     "Dialog.bodyPadding.invite": 1,
     "Input.size.lg": 9,
-    "Alert.variant.warning": 10,
+    "Alert.variant.warning": 9,
     "IconAction.appearance.danger": 1,
     "Counter.status.muted": 3,
     "Counter.status.info": 5,

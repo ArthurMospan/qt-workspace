@@ -411,6 +411,7 @@ export async function POST(request, context) {
         issueId: '',
         sourceType: 'calendar_event',
         eventId,
+        sourceTitle: String(event.title || '').slice(0, 500),
         eventVisibility: 'team',
         calendarOrganizerId: event.organizerId,
         occurrenceStartAt,

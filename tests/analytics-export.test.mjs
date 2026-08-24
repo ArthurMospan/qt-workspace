@@ -222,17 +222,40 @@ test('the overview file carries the figures its charts draw', () => {
   assert.equal(timeSplit.total.value, 380, 'the split totals the period, not its own rows');
 });
 
+test('the timesheet keeps a source name when its task or event is no longer readable', () => {
+  const document = buildTimesheetExport({
+    logs: [{
+      id: 'orphan',
+      issueId: 'deleted-task',
+      projectId: 'p1',
+      userId: 'u1',
+      sourceKey: 'QT-9',
+      sourceTitle: 'Видалена, але названа задача',
+      spentMinutes: 45,
+    }],
+    members: [{ id: 'u1', name: 'Артур' }],
+    projects: [{ id: 'p1', name: 'Сайт' }],
+    rangeLabel: 'Тиждень',
+    dateOf: () => new Date(2026, 7, 24),
+    eventKeyOf: source => source.eventId || source.id,
+  });
+
+  const [row] = document.blocks[0].rows;
+  assert.equal(row.key, 'QT-9');
+  assert.equal(row.title, 'Видалена, але названа задача');
+});
+
 test('the productivity file compares created and closed flow without a fake completion rate', () => {
   const document = buildVelocityExport({
     stats: {
       donePeriod: 3,
       createdPeriod: 5,
-      netBacklog: 2,
+      openNow: 8,
       velocityTrend: null,
       medianCycleTime: 4,
       p85CycleTime: 9,
       days: [{ label: '24 серп.', values: [3, 5] }],
-      byType: [{ label: 'Задача', created: 5, done: 3, net: 2 }],
+      byType: [{ label: 'Задача', created: 5, done: 3 }],
     },
     weeklyVelocity: [],
     recentlyClosed: [],
@@ -241,9 +264,9 @@ test('the productivity file compares created and closed flow without a fake comp
   });
 
   const kpis = document.blocks.find(block => block.id === 'kpi');
-  assert.ok(kpis.rows.some(row => row.label === 'Зміна беклогу' && row.value === '+2'));
+  assert.ok(kpis.rows.some(row => row.label === 'Відкрито зараз' && row.value === '8'));
   const types = document.blocks.find(block => block.id === 'types');
-  assert.deepEqual(types.columns.map(column => column.label), ['Тип', 'Створено', 'Закрито', 'Зміна беклогу']);
+  assert.deepEqual(types.columns.map(column => column.label), ['Тип', 'Створено', 'Закрито']);
   assert.ok(!types.columns.some(column => column.label.includes('%')));
 });
 

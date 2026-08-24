@@ -163,5 +163,5 @@ test('a timesheet card is the link, not the identifier inside it', async () => {
   // «???» told nobody anything. What is left says one thing only: the task
   // behind this hour no longer exists.
   assert.doesNotMatch(timesheet, /\?\?\?/);
-  assert.match(timesheet, /title="Завдання більше не існує"/);
+  assert.match(timesheet, /title="Джерело запису більше не існує"/);
 });

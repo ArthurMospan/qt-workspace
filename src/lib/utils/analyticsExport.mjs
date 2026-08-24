@@ -415,8 +415,8 @@ export function buildTimesheetExport({
       date: date ? formatDate(date) : '',
       member: memberName(memberById.get(log.userId)) ,
       project: projectName(projectById.get(log.projectId)),
-      key: issue?.issueKey || (event ? 'ПОДІЯ' : ''),
-      title: issue?.title || event?.title || log.description || 'Запис часу',
+      key: issue?.issueKey || log.sourceKey || (event || log.eventId ? 'ПОДІЯ' : ''),
+      title: issue?.title || event?.title || log.sourceTitle || log.description || 'Запис часу',
       minutes: Number(log.spentMinutes) || 0,
       description: log.description || '',
     };
@@ -612,10 +612,7 @@ export function buildVelocityExport({
         rows: [
           { label: `Закрито за ${period} днів`, value: String(stats.donePeriod) },
           { label: 'Створено за період', value: String(stats.createdPeriod) },
-          {
-            label: 'Зміна беклогу',
-            value: `${stats.netBacklog > 0 ? '+' : ''}${stats.netBacklog || 0}`,
-          },
+          { label: 'Відкрито зараз', value: String(stats.openNow || 0) },
           ...(stats.velocityTrend === null || stats.velocityTrend === undefined
             ? []
             : [{ label: 'Зміна до попереднього періоду', value: `${stats.velocityTrend}%` }]),
@@ -658,7 +655,6 @@ export function buildVelocityExport({
           { id: 'label', label: 'Тип', width: 20, value: row => row.label },
           { id: 'created', label: 'Створено', type: 'number', width: 10, value: row => row.created },
           { id: 'done', label: 'Закрито', type: 'number', width: 10, value: row => row.done },
-          { id: 'net', label: 'Зміна беклогу', type: 'number', width: 14, value: row => row.net },
         ],
         rows: stats.byType,
       },

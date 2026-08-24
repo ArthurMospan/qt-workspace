@@ -13,15 +13,7 @@ function timestampMillis(value) {
 }
 
 export function issueCycleStartMillis(issue) {
-  const createdAt = timestampMillis(issue?.createdAt);
-  const isYouTrackIssue = issue?.source === 'youtrack'
-    || issue?.importMetadata?.provider === 'youtrack';
-  if (!isYouTrackIssue) return createdAt;
-
-  const importedAt = timestampMillis(
-    issue?.importedAt || issue?.importMetadata?.importedAt,
-  );
-  return importedAt > 0 ? Math.max(createdAt, importedAt) : createdAt;
+  return timestampMillis(issue?.createdAt);
 }
 
 // The value at a share of the way through a sorted list. Nearest-rank, not
@@ -35,8 +27,10 @@ function percentile(sortedValues, share) {
 
 /**
  * Build cycle-time metrics without allowing corrupted dates to disappear.
- * Imported YouTrack history starts no earlier than the first QuickTeam import;
- * a completion before that lower bound is reported as a data error.
+ * Imported YouTrack history uses the source creation and completion dates.
+ * The caller admits only completion dates with trustworthy provenance; moving
+ * the start to the QuickTeam migration date would turn historical work into a
+ * negative or artificially short cycle.
  *
  * Three readings, because one of them was lying. Cycle time is the textbook
  * skewed distribution: most tasks close in a few days and a handful sit open

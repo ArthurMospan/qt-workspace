@@ -11,7 +11,7 @@ import { CalendarIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Alert, Dialog, Button, CalendarDayCell, CalendarDayNumber, Card, FormGroup, Select, Input, EmptyState } from '@/components/ui';
+import { Dialog, Button, CalendarDayCell, CalendarDayNumber, Card, FormGroup, Select, Input, EmptyState } from '@/components/ui';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import {
   calendarEventHref,
@@ -23,7 +23,6 @@ import { buildTimesheetExport, fileNameDate } from '@/lib/utils/analyticsExport.
 import { createTaskTimeLogViaApi } from '@/lib/services/timeLogs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { isArchivedIssue, withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
-import { findTimeLogAnomalies } from '@/lib/utils/timeLogAnomalies.mjs';
 
 // ── Working-time constants (like YouTrack: 1д = 8г, 1т = 5д) ────────────────
 const DAY_MIN = 8 * 60;
@@ -118,7 +117,10 @@ function logDate(log) {
 
 // ── Week view: one member — day columns with task cards (YouTrack style) ─────
 function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
-  // grid[dayKey] = [{ issue, minutes, logsCount }]
+  // Keep a small source snapshot beside the sum. A deleted task or event may
+  // temporarily outlive its source while the undo/purge job catches up; the
+  // timesheet must still name what the hours belonged to instead of drawing a
+  // blank title.
   const byDay = useMemo(() => {
     const map = {};
     days.forEach(d => { map[dayKey(d)] = new Map(); });
@@ -128,8 +130,16 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
       const key = dayKey(d);
       if (!map[key]) return;
       const targetKey = log.issueId || calendarEventOccurrenceKey(log.eventId, log.occurrenceStartAt);
-      const cur = map[key].get(targetKey) || 0;
-      map[key].set(targetKey, cur + (log.spentMinutes || 0));
+      const current = map[key].get(targetKey) || {
+        minutes: 0,
+        sourceKey: '',
+        sourceTitle: '',
+      };
+      map[key].set(targetKey, {
+        minutes: current.minutes + (log.spentMinutes || 0),
+        sourceKey: current.sourceKey || log.sourceKey || '',
+        sourceTitle: current.sourceTitle || log.sourceTitle || log.description || '',
+      });
     });
     return map;
   }, [days, logs]);
@@ -140,7 +150,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
       {days.map((d, i) => {
         const key = dayKey(d);
         const entries = [...(byDay[key]?.entries() || [])];
-        const total = entries.reduce((s, [, min]) => s + min, 0);
+        const total = entries.reduce((sum, [, entry]) => sum + entry.minutes, 0);
         const isToday = key === todayKey;
         const isWeekend = i >= 5;
         return (
@@ -154,7 +164,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
               <DayChip minutes={total} capacity={isWeekend ? 0 : DAY_MIN} compact={isWeekend && total === 0} />
             </div>
             {/* Task cards */}
-            {entries.map(([targetKey, minutes]) => {
+            {entries.map(([targetKey, entry]) => {
               const issue = issuesById[targetKey];
               const event = eventsByKey[targetKey];
               const href = issue ? issuePath(issue) : event ? calendarEventHref(event) : null;
@@ -170,7 +180,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
                       <span
                         className={`text-[12px] font-bold truncate uppercase ${isArchivedIssue(issue) ? 'text-muted' : 'text-ink'}`}
                         title={isArchivedIssue(issue) ? 'Завдання в архіві' : undefined}>
-                        {issue.issueKey || targetKey.slice(0, 6)}
+                        {issue.issueKey || entry.sourceKey || targetKey.slice(0, 6)}
                       </span>
                     ) : event ? (
                       <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink">
@@ -182,13 +192,15 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
                       // set this screen was handed. That used to be routine on a
                       // member's own page, which was given only their assigned
                       // tasks; it now means the task was deleted for real.
-                      <span className="text-[12px] font-bold text-faint uppercase" title="Завдання більше не існує">—</span>
+                      <span className="text-[12px] font-bold text-faint uppercase" title="Джерело запису більше не існує">
+                        {entry.sourceKey || 'Видалено'}
+                      </span>
                     )}
-                    <span className="text-[12px] font-bold text-ink shrink-0">{fmtMin(minutes)}</span>
+                    <span className="text-[12px] font-bold text-ink shrink-0">{fmtMin(entry.minutes)}</span>
                   </span>
-                  {(issue?.title || event?.title) && (
+                  {(issue?.title || event?.title || entry.sourceTitle) && (
                     <span className="block text-[11px] text-muted mt-[2px] line-clamp-2 leading-snug">
-                      {issue?.title || event?.title}
+                      {issue?.title || event?.title || entry.sourceTitle}
                     </span>
                   )}
                 </>
@@ -648,10 +660,6 @@ export default function TimesheetTab({
   }, [timeLogs, rangeStart, rangeEnd, isTeam, member]);
 
   const totalMin = rangeLogs.reduce((s, l) => s + (l.spentMinutes || 0), 0);
-  const anomalousLogs = useMemo(
-    () => findTimeLogAnomalies(rangeLogs, events),
-    [events, rangeLogs],
-  );
   const selectedMember = !isTeam ? members.find(m => (m.id || m.uid) === member) : null;
   const teamCapacity = isTeam ? capacity * Math.max(members.length, 1) : capacity;
 
@@ -705,16 +713,6 @@ export default function TimesheetTab({
             {isTeam && <span className="text-faint"> · {members.length} учасн.</span>}
           </p>
         </div>
-
-        {anomalousLogs.length > 0 && (
-          <Alert
-            variant="warning"
-            title="Перевірте незвично довгі записи часу"
-            className="mb-4"
-          >
-            Знайдено записів: {anomalousLogs.length}. Вони враховані в підсумку, але їхня тривалість значно перевищує звичайний робочий день або тривалість події в календарі.
-          </Alert>
-        )}
 
         {/* Grid */}
         {timeLogs.length === 0 ? (

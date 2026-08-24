@@ -680,7 +680,7 @@
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:694",
+      "location": "src/components/workspace/TimesheetTab.jsx:702",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },

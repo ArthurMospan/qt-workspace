@@ -34,7 +34,7 @@ test('Ukrainian plural forms handle teens, compound counts and negative values',
   assert.throws(() => plural(2, ['одна', 'дві']), /three Ukrainian forms/);
 });
 
-test('YouTrack cycle time starts at import and exposes contradictory dates', () => {
+test('cycle time uses source dates and exposes contradictory dates', () => {
   const day = 86_400_000;
   const imported = {
     id: 'imported',
@@ -46,7 +46,7 @@ test('YouTrack cycle time starts at import and exposes contradictory dates', () 
   const invalid = {
     id: 'invalid',
     importMetadata: { provider: 'youtrack', importedAt: timestamp(20 * day) },
-    createdAt: timestamp(2 * day),
+    createdAt: timestamp(20 * day),
     completedAt: timestamp(19 * day),
   };
   const native = {
@@ -56,16 +56,16 @@ test('YouTrack cycle time starts at import and exposes contradictory dates', () 
   };
   const completedAt = issue => issue.completedAt.toMillis();
 
-  assert.equal(issueCycleStartMillis(imported), 10 * day);
+  assert.equal(issueCycleStartMillis(imported), day);
   assert.equal(issueCycleStartMillis(native), 5 * day);
   // Two valid samples. The mean survives because the exported file has always
   // carried it, but the readings the screen leads with are the median and the
   // 85th percentile: a mean cycle time is dragged by the handful of tasks that
   // sat open for months until it describes nothing anybody worked on.
   assert.deepEqual(summarizeCycleTimes([imported, native, invalid], completedAt), {
-    averageDays: 3,
+    averageDays: 7,
     medianDays: 2,
-    p85Days: 3,
+    p85Days: 12,
     sampleSize: 2,
     invalidIssueIds: ['invalid'],
   });

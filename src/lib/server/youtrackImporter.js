@@ -911,7 +911,14 @@ async function importComments({ job, issueId, projectId, comments }) {
   return actors;
 }
 
-async function importWorkItems({ job, issueId, projectId, workItems }) {
+async function importWorkItems({
+  job,
+  issueId,
+  projectId,
+  sourceKey = '',
+  sourceTitle = '',
+  workItems,
+}) {
   const normalizedItems = workItems.map(item => ({
     item,
     spentMinutes: Math.round(Number(item?.duration?.minutes)),
@@ -949,6 +956,8 @@ async function importWorkItems({ job, issueId, projectId, workItems }) {
       fields: {
         issueId,
         projectId,
+        sourceKey: String(sourceKey || '').slice(0, 120),
+        sourceTitle: String(sourceTitle || '').slice(0, 500),
         userId: actor.id,
         organizationId: job.organizationId,
         spentMinutes,
@@ -1230,7 +1239,11 @@ async function processIssue(jobRef, job, queueItem) {
       projectId: targetProjectId,
       comments,
     }),
-    importWorkItems({ job, issueId: saved.issueId, projectId: targetProjectId, workItems }),
+    importWorkItems({ job, issueId: saved.issueId, projectId: targetProjectId,
+      sourceKey: issue.idReadable || '',
+      sourceTitle: issue.summary || '',
+      workItems,
+    }),
   ]);
   await Promise.all([
     saveExternalActors(job, [...saved.actors, ...commentActors, ...workItemResult.actors]),

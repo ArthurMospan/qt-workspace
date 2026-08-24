@@ -134,6 +134,8 @@ export async function POST(request, context) {
         organizationId,
         projectId,
         issueId,
+        sourceKey: String(issue.issueKey || '').slice(0, 120),
+        sourceTitle: String(issue.title || '').slice(0, 500),
         userId: authorization.user.uid,
         spentMinutes,
         description: description.value,

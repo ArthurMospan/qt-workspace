@@ -399,7 +399,7 @@ function RecentTime({ logs, issues, events, projects, types = [] }) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[12px] font-semibold text-ink">
-                    {event?.title || issue?.title || log.description || 'Запис часу'}
+                    {event?.title || issue?.title || log.sourceTitle || log.description || 'Запис часу'}
                   </span>
                   <span className="mt-0.5 block truncate text-[10px] text-muted">
                     {project?.name || 'Без проєкту'}

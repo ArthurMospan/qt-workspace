@@ -33,6 +33,7 @@ import {
   ensureSystemTaskType,
 } from '@/lib/utils/taskTypes.mjs';
 import { DEFAULT_WORKFLOW_POSITIONS } from '@/lib/utils/workflowPositions.mjs';
+import { reliableCompletedAtMillis } from '@/lib/utils/completionDates.mjs';
 
 export const TYPE_ICONS = TASK_TYPE_ICONS;
 // One glyph per status category, for the places where a category stands on its
@@ -113,15 +114,11 @@ export function isClosedStatus(statusId, statuses) {
   return getClosedStatusIds(statuses).includes(statusId);
 }
 
-// Historical issues may not have completedAt yet. The updatedAt fallback keeps
-// old analytics usable while every new closing transition records completedAt.
+// A period can only claim that work closed when the stored completion date is
+// trustworthy. In particular, an edit is not a completion and the migration
+// timestamp of a legacy YouTrack task is not its source completion date.
 export function getCompletedAtMillis(issue) {
-  const value = issue?.completedAt || issue?.updatedAt;
-  if (!value) return 0;
-  if (typeof value.toMillis === 'function') return value.toMillis();
-  if (typeof value.seconds === 'number') return value.seconds * 1000;
-  const parsed = new Date(value).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
+  return reliableCompletedAtMillis(issue);
 }
 
 // QUI-130. «Задача» leads because it is the default: most issues are tasks, and
