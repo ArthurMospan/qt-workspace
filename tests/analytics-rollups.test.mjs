@@ -11,6 +11,7 @@ import {
   countedTaskMinutes,
   rebuildRollupTotals,
   rollupTotalsMatch,
+  summarizeRollups,
 } from '../src/lib/utils/analyticsRollups.mjs';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -232,6 +233,91 @@ test('a day nothing moved on is not a write', () => {
   const changed = deltas.changed();
   assert.equal(changed.length, 1);
   assert.equal(changed[0].day, '2026-08-25');
+});
+
+// ── The reading side ─────────────────────────────────────────────────────
+
+test('a period is the sum of its days, per project and per person', () => {
+  const rollups = [
+    {
+      organizationId: 'org', projectId: 'alpha', day: '2026-08-23',
+      taskMinutes: 120, eventMinutes: 30, cancelledTaskMinutes: 0,
+      minutesByUser: { anna: 90, borys: 60 }, cancelledMinutesByUser: {},
+    },
+    {
+      organizationId: 'org', projectId: 'alpha', day: '2026-08-24',
+      taskMinutes: 60, eventMinutes: 0, cancelledTaskMinutes: 60,
+      minutesByUser: { anna: 60 }, cancelledMinutesByUser: { anna: 60 },
+    },
+    {
+      organizationId: 'org', projectId: 'beta', day: '2026-08-24',
+      taskMinutes: 45, eventMinutes: 0, cancelledTaskMinutes: 0,
+      minutesByUser: { borys: 45 }, cancelledMinutesByUser: {},
+    },
+    // Team calendar time that hangs off no project.
+    {
+      organizationId: 'org', projectId: '', day: '2026-08-24',
+      taskMinutes: 0, eventMinutes: 25, cancelledTaskMinutes: 0,
+      minutesByUser: { anna: 25 }, cancelledMinutesByUser: {},
+    },
+  ];
+
+  const all = summarizeRollups(rollups);
+  // 120 + 30, then a day entirely cancelled out, then 45, then 25.
+  assert.equal(all.totalMinutes, 220);
+  assert.equal(all.minutesByProject.alpha, 150);
+  assert.equal(all.minutesByProject.beta, 45);
+  assert.equal(all.minutesByProject[''], 25);
+  assert.equal(all.minutesByUser.anna, 115);
+  assert.equal(all.minutesByUser.borys, 105);
+  // The cancelled day contributed nothing, so it is not the day Anna was last
+  // seen working.
+  assert.equal(all.lastLoggedDayByUser.anna, '2026-08-24', 'the calendar hour is still hers');
+  assert.equal(all.lastLoggedDayByUser.borys, '2026-08-24');
+
+  // Selecting projects is a question about projects, so organization-wide
+  // calendar time is not folded into whichever one is on screen.
+  const alphaOnly = summarizeRollups(rollups, { projectIds: ['alpha'] });
+  assert.equal(alphaOnly.totalMinutes, 150);
+  assert.deepEqual(Object.keys(alphaOnly.minutesByProject), ['alpha']);
+});
+
+test('the analytics screens read days, and open records only when a day cannot answer', async () => {
+  const [page, workload, memberPage, hook] = await Promise.all([
+    read('src/app/(app)/analytics/page.js'),
+    read('src/components/workspace/WorkloadTab.jsx'),
+    read('src/app/(app)/analytics/team/[memberId]/page.js'),
+    read('src/lib/hooks/useAnalyticsRollups.js'),
+  ]);
+
+  // «Огляд» is handed a figure, never a collection of logs.
+  assert.match(page, /periodTime=\{periodTime\}/);
+  assert.doesNotMatch(page, /<AnalyticsContent[\s\S]{0,400}timeLogs=/);
+  // «Команда» is handed figures per person.
+  assert.match(page, /periodTime=\{teamPeriodTime\}/);
+
+  // A day's total knows the project, the date and who logged the hour — so a
+  // question about tasks (a search, an assignee, a priority, a type) falls back
+  // to the records, over exactly the same days.
+  assert.match(page, /const taskScopedTimeFilter = /);
+  assert.match(page, /const needsRawTimeLogs = activeTab === 'timesheet'/);
+  assert.match(page, /activeTab === 'overview' && taskScopedTimeFilter/);
+  assert.match(page, /source: 'rollups'/);
+  assert.match(page, /source: 'logs'/);
+
+  // The team table sums; a member's own page draws their timesheet, which is
+  // the records. Exactly one of the two props is ever supplied.
+  assert.match(workload, /periodTime = null,/);
+  assert.match(workload, /summedMinutes === null \? sumRawTimeLogMinutes\(logs\) : summedMinutes/);
+  assert.match(memberPage, /timeLogs=\{memberTimeLogs\}/);
+  assert.doesNotMatch(memberPage, /periodTime=/);
+
+  // And the totals are read once, not subscribed to: a report is a reading
+  // taken at a moment, and it says when.
+  assert.doesNotMatch(hook, /onSnapshot/);
+  assert.match(hook, /getDocs\(/);
+  assert.match(hook, /readAt/);
+  assert.match(hook, /refresh/);
 });
 
 // ── The write paths ──────────────────────────────────────────────────────

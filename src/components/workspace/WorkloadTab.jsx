@@ -38,7 +38,7 @@ import {
 } from '@/lib/hooks/useWorkflowConfig';
 import { isDueDateOverdue } from '@/lib/utils/date';
 import { useAppContext } from '@/lib/context/AppContext';
-import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
+import { organizationTimeZone, zonedDateTimeToUtcMs } from '@/lib/utils/timeZone.mjs';
 import {
   effectiveTimeLogDate,
   effectiveTimeLogMillis,
@@ -82,6 +82,16 @@ function positionLabel(member, positions) {
   return positions.find(position => position.id === member?.positionId)?.label
     || member?.title
     || 'Посада не вказана';
+}
+
+// A day key back to an instant, so «остання активність» from a daily total and
+// «остання активність» from a record are the same kind of number. Noon rather
+// than midnight: the day is all that is known, and the middle of it is the
+// reading least likely to fall on the wrong side of «сьогодні».
+function dayKeyMillis(day, timeZone) {
+  if (!day) return 0;
+  const millis = zonedDateTimeToUtcMs(day, { hour: 12 }, timeZone);
+  return Number.isFinite(millis) ? millis : 0;
 }
 
 function latestActivityMillis(memberIssues, memberLogs) {
@@ -624,6 +634,17 @@ export default function WorkloadTab({
   // entry keeps naming the task it belongs to.
   logIssues = scopedIssues,
   timeLogs = [],
+  // The period's hours, already summed per person by `analyticsRollups`.
+  //
+  // The team table needs three figures per row and no records: how many minutes
+  // somebody logged, and roughly when they last did. That is what a daily total
+  // is, and reading it costs a document per project per day instead of every
+  // time log the period contains.
+  //
+  // A member's own page is the other case — it draws their timesheet, which is
+  // the records themselves — and it passes `timeLogs` instead. Exactly one of
+  // the two is ever supplied.
+  periodTime = null,
   events = [],
   projects = [],
   period = 30,
@@ -674,6 +695,7 @@ export default function WorkloadTab({
     const periodAgo = now - period * 86_400_000;
     return chartedMembers.map(member => {
       const uid = memberId(member);
+      const summedMinutes = periodTime ? (periodTime.minutesByUser?.[uid] || 0) : null;
       const memberIssues = issues.filter(issue => issue.assigneeIds?.includes(uid));
       const timesheetIssues = scopedIssues.filter(issue => issue.assigneeIds?.includes(uid));
       const openItems = memberIssues.filter(issue => !closedSet.has(issue.columnId || issue.status));
@@ -688,7 +710,13 @@ export default function WorkloadTab({
         .filter(log => log.userId === uid)
         .sort((a, b) => effectiveTimeLogMillis(b) - effectiveTimeLogMillis(a));
       const logs = allLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo);
-      const minutes = sumRawTimeLogMinutes(logs);
+      const minutes = summedMinutes === null ? sumRawTimeLogMinutes(logs) : summedMinutes;
+      // «Востаннє активний» is drawn as «3 дні тому», so a day is all the
+      // precision that reading ever carried — and a day is what a daily total
+      // can say without opening a single record.
+      const lastLoggedMillis = periodTime
+        ? dayKeyMillis(periodTime.lastLoggedDayByUser?.[uid], timeZone)
+        : 0;
       // The shape of the last eight weeks, and how long one of this person's
       // tasks typically takes. Both used to require opening a whole velocity
       // screen scoped to one member — which also drew them a burndown of their
@@ -723,14 +751,17 @@ export default function WorkloadTab({
         minutes,
         weeklyDone,
         medianCycleTime: cycle.medianDays,
-        lastActivity: latestActivityMillis(timesheetIssues, allLogs),
+        lastActivity: Math.max(
+          latestActivityMillis(timesheetIssues, allLogs),
+          lastLoggedMillis,
+        ),
       };
     }).sort((a, b) => {
       if (b.overdue !== a.overdue) return b.overdue - a.overdue;
       if (b.inProgress !== a.inProgress) return b.inProgress - a.inProgress;
       return b.lastActivity - a.lastActivity;
     });
-  }, [issues, chartedMembers, closedSet, deliveredSet, scopedIssues, inProgressSet, logIssues, now, period, timeLogs, timeZone]);
+  }, [issues, chartedMembers, closedSet, deliveredSet, scopedIssues, inProgressSet, logIssues, now, period, periodTime, timeLogs, timeZone]);
 
   const selectedStat = selectedMemberId !== 'all'
     ? stats.find(stat => stat.uid === selectedMemberId)
@@ -739,7 +770,7 @@ export default function WorkloadTab({
     const periodAgo = now - period * 86_400_000;
     const openItems = issues.filter(issue => !closedSet.has(issue.columnId || issue.status));
     return {
-      minutes: sumRawTimeLogMinutes(
+      minutes: periodTime ? periodTime.totalMinutes : sumRawTimeLogMinutes(
         timeLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo),
       ),
       done: issues.filter(issue => (
@@ -751,7 +782,7 @@ export default function WorkloadTab({
         isDueDateOverdue(issue.dueDate, { now, timeZone })
       )).length,
     };
-  }, [issues, closedSet, deliveredSet, now, period, timeLogs, timeZone]);
+  }, [issues, closedSet, deliveredSet, now, period, periodTime, timeLogs, timeZone]);
 
   // What the file is depends on what the screen is showing: the team table, or
   // the one person it has been opened on. Exporting the whole team from a

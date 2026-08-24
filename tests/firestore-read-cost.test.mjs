@@ -193,9 +193,13 @@ test('every screen that reads time logs says which window it is drawing', async 
     assert.match(source, /timeLogWindow/, `${file} must bound its time-log read`);
     assert.match(
       source,
-      /periodTimeLogWindow|timesheetTimeLogWindow/,
+      /dayRangeTimeLogWindow|timesheetTimeLogWindow/,
       `${file} must take its window from analyticsWindow.mjs, not invent one`,
     );
+    // And the period itself is whole days in the organization's timezone, so
+    // that the daily totals and the records behind them are about the same
+    // stretch of time.
+    assert.match(source, /periodDayRange\(/, `${file} must measure its period in days`);
   }
 
   // The screens that do not need hours do not pay for them.

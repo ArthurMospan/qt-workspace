@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Users } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
-import { useLocalDayStart } from '@/lib/hooks/useLocalDayStart';
+import { useMinuteClock } from '@/lib/hooks/useMinuteClock';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -25,8 +25,10 @@ import {
 } from '@/lib/utils/teamAnalytics.mjs';
 import {
   ANALYTICS_PERIOD_DAYS,
-  periodTimeLogWindow,
+  dayRangeTimeLogWindow,
+  periodDayRange,
 } from '@/lib/utils/analyticsWindow.mjs';
+import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 
 const PERIOD_OPTIONS = ANALYTICS_PERIOD_DAYS.map(days => ({ value: days, label: `${days}д` }));
 
@@ -37,7 +39,11 @@ function memberName(member) {
 export default function MemberAnalyticsPage() {
   const { memberId } = useParams();
   const router = useRouter();
-  const { projects = [] } = useAppContext();
+  const { activeOrg, projects = [] } = useAppContext();
+  // Which day an hour belongs to is a fact about the workspace, so the period
+  // is measured in the workspace's own days — the same ones the daily totals
+  // and the exported file are keyed by.
+  const timeZone = organizationTimeZone(activeOrg);
   const activeProjects = useMemo(
     () => projects.filter(project => project.status !== 'archived'),
     [projects],
@@ -52,10 +58,10 @@ export default function MemberAnalyticsPage() {
   // One person's hours over the chosen period — so that is what is read. This
   // screen used to open the whole organization's time-log history to draw a
   // thirty-day bar chart.
-  const dayStart = useLocalDayStart();
+  const now = useMinuteClock();
   const timeLogWindow = useMemo(
-    () => periodTimeLogWindow(dayStart, period),
-    [dayStart, period],
+    () => dayRangeTimeLogWindow(periodDayRange(now, period, timeZone)),
+    [now, period, timeZone],
   );
   const {
     issues,

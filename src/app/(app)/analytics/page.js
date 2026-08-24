@@ -10,7 +10,8 @@ import {
   BarChart2, AlertTriangle, Clock, Folders, Users, Zap, Target, Receipt,
   ChevronLeft, ChevronRight, Plus,
 } from 'lucide-react';
-import { useLocalDayStart } from '@/lib/hooks/useLocalDayStart';
+import { useAnalyticsRollups } from '@/lib/hooks/useAnalyticsRollups';
+import { useMinuteClock } from '@/lib/hooks/useMinuteClock';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import { getCompletedAtMillis, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -40,15 +41,19 @@ import {
 } from '@/lib/utils/timeLogDates.mjs';
 import {
   filterTeamIssues,
-  filterTeamTimeLogs,
   memberAnalyticsHref,
 } from '@/lib/utils/teamAnalytics.mjs';
 import {
   ANALYTICS_PERIOD_DAYS,
-  periodTimeLogWindow,
+  dayRangeTimeLogWindow,
+  periodDayRange,
   timesheetTimeLogWindow,
 } from '@/lib/utils/analyticsWindow.mjs';
-import { sumRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
+import { summarizeRollups } from '@/lib/utils/analyticsRollups.mjs';
+import {
+  isValidRawTimeLogMinutes,
+  sumRawTimeLogMinutes,
+} from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import {
   backlogStatusIds,
@@ -65,6 +70,12 @@ function fmtH(min) {
   return h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : `${m}хв`;
 }
 
+// The same gate the invoice and the rollups use, so one log cannot be worth
+// thirty minutes in a total and nothing in the table beside it.
+function validPeriodMinutes(log) {
+  return isValidRawTimeLogMinutes(log?.spentMinutes) ? Number(log.spentMinutes) : 0;
+}
+
 function FilterDivider() {
   return <span className="w-[1px] h-[16px] bg-[#e3e3e3] mx-[2px] shrink-0" />;
 }
@@ -77,10 +88,16 @@ function AnalyticsContent({
   issues,
   issueReferenceIssues,
   issueLinks,
-  timeLogs,
+  // The period's hours already summed — from the daily totals when the screen's
+  // filters are about days, from the logs themselves when they are about tasks.
+  // Either way this component gets a figure and never a collection, because
+  // «скільки часу за 30 днів» is a question the records should not have to be
+  // opened to answer.
+  periodTime,
   events,
   members,
   loading,
+  now,
   period,
   onTabChange,
   onExportReady,
@@ -102,11 +119,6 @@ function AnalyticsContent({
   // «У роботі» is a category, never the literal id 'in-progress': an org that
   // renamed or split that column used to report zero here.
   const inProgressSet = useMemo(() => new Set(inProgressStatusIds(statuses)), [statuses]);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(timer);
-  }, []);
   const calendarStats = useMemo(() => {
     const periodStart = now - period * 24 * 3600 * 1000;
     const periodEnd = now + period * 24 * 3600 * 1000;
@@ -185,8 +197,7 @@ function AnalyticsContent({
       return t > periodAgo;
     }).length;
 
-    const periodLogs = timeLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo);
-    const periodMin = sumRawTimeLogMinutes(periodLogs);
+    const periodMin = periodTime.totalMinutes;
 
     const byProject = projects.map(p => {
       const pIssues  = issues.filter(i => i.projectId === p.id);
@@ -196,7 +207,7 @@ function AnalyticsContent({
         isDueDateOverdue(i.dueDate, { now, timeZone })
         && !closedSet.has(i.columnId || i.status)
       )).length;
-      const pMin = sumRawTimeLogMinutes(periodLogs.filter(l => l.projectId === p.id));
+      const pMin = periodTime.minutesByProject[p.id] || 0;
       const pPct = pIssues.length > 0 ? Math.round((pDone / pIssues.length) * 100) : 0;
       return { p, total: pIssues.length, done: pDone, open: pOpen, overdue: pOverdue, minutes: pMin, pct: pPct };
     }).sort((a, b) => b.total - a.total);
@@ -226,7 +237,7 @@ function AnalyticsContent({
     period,
     projects,
     statuses,
-    timeLogs,
+    periodTime,
   ]);
 
   // Where the period's time actually went. Four calendar tiles used to sit here
@@ -548,13 +559,49 @@ export default function WorkspaceAnalyticsPage() {
   // and pages through them; every other tab is the trailing period. Reading the
   // union of the two would mean that paging the timesheet back to March pulled
   // every log written since March, so the window follows the tab instead.
-  const dayStart = useLocalDayStart();
+  const now = useMinuteClock();
+  const periodRange = useMemo(
+    () => periodDayRange(now, period, exportTimeZone),
+    [exportTimeZone, now, period],
+  );
   const timeLogWindow = useMemo(
     () => (activeTab === 'timesheet'
       ? timesheetTimeLogWindow(tsMode, tsAnchor)
-      : periodTimeLogWindow(dayStart, period)),
-    [activeTab, dayStart, period, tsAnchor, tsMode],
+      : dayRangeTimeLogWindow(periodRange)),
+    [activeTab, periodRange, tsAnchor, tsMode],
   );
+
+  // The period's hours, read as one small document per project per day.
+  //
+  // This is the whole point of the daily totals: «за 90 днів» across an active
+  // team is thousands of time logs and at most ninety documents per project.
+  // The tiles, «Куди пішов час» and the time column of «По проєктах» are sums
+  // over days, and days are what this reads.
+  const { rollups, loading: rollupsLoading, readAt, refresh: refreshRollups } =
+    useAnalyticsRollups(activeProjectIds, { dayRange: periodRange });
+
+  // A day's total knows the project, the date and who logged the hour. It does
+  // not know which task the hour was against, so it cannot answer «час на
+  // задачах, призначених Анні», a search, or a filter by priority or type —
+  // those are questions about tasks, not about days.
+  //
+  // So the aggregate is the fast path and the records are the exact one: with
+  // no such filter on — which is how this screen is opened and how it is read
+  // nearly all of the time — nothing reads a raw log at all. Turn one on and
+  // the same period is read from the logs themselves, over exactly the same
+  // days, because both bounds come from the one `periodRange`.
+  const taskScopedTimeFilter = Boolean(analyticsSearch.trim())
+    || assigneeFilter !== 'all'
+    || priorityFilter !== 'all'
+    || typeFilter !== 'all';
+  // «Табель» is the records themselves — a grid of who logged what against
+  // which task — so it reads them. Everything else on this screen is a sum, and
+  // a sum is what the daily totals are. «Команда» included: selecting a person
+  // navigates to their own page, so the tab here is always the team table, and
+  // a team table needs figures per person rather than the entries behind them.
+  const needsRawTimeLogs = activeTab === 'timesheet'
+    || (activeTab === 'overview' && taskScopedTimeFilter);
+
   const {
     issues,
     allIssues,
@@ -565,7 +612,7 @@ export default function WorkspaceAnalyticsPage() {
     // «Рахунок» reads raw logs of its own project through `useProjectAllTimeLogs`
     // — an invoice is about every unbilled hour ever recorded, not about a
     // period — so this subscription has nothing to do while that tab is open.
-    includeTimeLogs: activeTab !== 'billing',
+    includeTimeLogs: needsRawTimeLogs,
     timeLogWindow,
   });
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
@@ -695,6 +742,37 @@ export default function WorkspaceAnalyticsPage() {
     typeFilter,
   ]);
 
+  // The period's hours, summed per project and per person, from the daily
+  // totals. This is what «Команда» reads whatever the filters are: the member
+  // filter there selects a person rather than a set of tasks, and a person is
+  // a dimension the totals carry.
+  const teamPeriodTime = useMemo(
+    () => summarizeRollups(rollups, { projectIds: projectFilters }),
+    [projectFilters, rollups],
+  );
+
+  // The period's hours, whichever way this screen is entitled to read them.
+  // One shape either way, so «Огляд» never has to know which path it got.
+  const periodTime = useMemo(() => {
+    if (!taskScopedTimeFilter) {
+      return {
+        totalMinutes: teamPeriodTime.totalMinutes,
+        minutesByProject: teamPeriodTime.minutesByProject,
+        source: 'rollups',
+      };
+    }
+    const minutesByProject = {};
+    let totalMinutes = 0;
+    for (const log of filteredTimeLogs) {
+      const minutes = validPeriodMinutes(log);
+      if (!minutes) continue;
+      totalMinutes += minutes;
+      const projectId = log.projectId || '';
+      minutesByProject[projectId] = (minutesByProject[projectId] || 0) + minutes;
+    }
+    return { totalMinutes, minutesByProject, source: 'logs' };
+  }, [filteredTimeLogs, taskScopedTimeFilter, teamPeriodTime]);
+
   // Табель фільтрується лише по проєктах — вимір «хто» задає селектор учасника
   const projectScopedTimeLogs = useMemo(
     () => timeLogs.filter(log => (
@@ -712,11 +790,6 @@ export default function WorkspaceAnalyticsPage() {
     )),
     [issues, projectFilters],
   );
-  const teamTimeLogs = useMemo(
-    () => filterTeamTimeLogs(timeLogs, projectFilters, teamMemberFilter),
-    [projectFilters, teamMemberFilter, timeLogs],
-  );
-
   const TABS = [
     { id: 'overview', label: 'Огляд', icon: BarChart2 },
     { id: 'timesheet', label: 'Табель', icon: Clock },
@@ -911,10 +984,11 @@ export default function WorkspaceAnalyticsPage() {
             issues={filteredIssues}
             issueReferenceIssues={issues}
             issueLinks={issueLinks}
-            timeLogs={filteredTimeLogs}
+            periodTime={periodTime}
             events={calendarEvents}
             members={members}
-            loading={loading || calendarLoading}
+            loading={loading || rollupsLoading || calendarLoading}
+            now={now}
             period={period}
             onTabChange={setActiveTab}
             onExportReady={registerExport}
@@ -959,7 +1033,7 @@ export default function WorkspaceAnalyticsPage() {
             issues={teamIssues}
             scopedIssues={teamScopedIssues}
             logIssues={filteredIssuesWithArchived}
-            timeLogs={teamTimeLogs}
+            periodTime={teamPeriodTime}
             events={calendarEvents}
             projects={activeProjects}
             period={period}
