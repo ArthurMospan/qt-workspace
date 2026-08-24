@@ -107,19 +107,16 @@ test('help, news and versions are read in place; contracts keep their own addres
     read('src/components/AuthLayout.jsx'),
     read('src/app/login/page.js'),
   ]);
-  // A public route can be the first page in a fresh tab, so its navigation is a
-  // stable QuickTeam header rather than a history-dependent back button.
+  // A public route gets brand identity, not a second navigation system. Help
+  // already lives in the product and each contract keeps its own URL.
   const withoutComments = source => source.replace(/\/\*[\s\S]*?\*\//g, '');
   assert.match(shell, /next\/image/);
   assert.match(shell, /aria-label="QuickTeam — головна"/);
-  assert.match(shell, /aria-label="Публічна навігація"/);
-  assert.match(shell, /До робочого простору/);
-  assert.doesNotMatch(withoutComments(shell), /PublicBackLink|router\.back|Назад/);
-  // Contracts expose their siblings, effective date and on-page contents
-  // before the clauses begin, so a reader always knows where they are.
-  assert.match(legal, /<Tabs tabs=\{LEGAL_TABS\} activeTab=\{document\.slug\}/);
-  assert.match(legal, /Набуває чинності/);
-  assert.match(legal, /aria-label="Зміст документа"/);
+  assert.doesNotMatch(withoutComments(shell), /<nav|Довідка|Правова інформація|До робочого простору|PublicBackLink|router\.back|Назад/);
+  // A contract is a heading followed by its text, without a document hub,
+  // duplicated metadata, a contents rail or cross-document footer.
+  assert.match(legal, /<article aria-label=\{document\.title\}/);
+  assert.doesNotMatch(withoutComments(legal), /Tabs|LEGAL_TABS|Набуває чинності|Постачальник сервісу|Зміст документа|<aside|<footer|next\/link/);
   // …and set in the product's own type scale, not a landing page's.
   for (const [name, source] of [
     ['legal document', legal],

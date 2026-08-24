@@ -100,7 +100,9 @@ test('help, releases and legal pages are public, searchable and mobile-safe', as
   }
 
   await page.goto('/terms', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('tab', { name: 'Умови користування' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  await expect(page.getByText('Набуває чинності')).toHaveCount(0);
+  await expect(page.getByText('Постачальник сервісу')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Назад' })).toHaveCount(0);
 
   const expectedMatches = searchHelpArticles(HELP_QUERY);
