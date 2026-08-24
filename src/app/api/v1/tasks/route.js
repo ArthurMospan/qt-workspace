@@ -42,9 +42,9 @@ function resolveIntegrationWorkflow({ workflow, project = null, requestedPriorit
   }
   return {
     status,
-    priority: priorityIds.includes(requestedPriority)
-      ? requestedPriority
-      : (priorityIds.includes('high') ? 'high' : priorityIds[0]),
+    // An integration that does not mention priority has not set one — it used
+    // to get «Високий», which is a louder claim than the caller made.
+    priority: priorityIds.includes(requestedPriority) ? requestedPriority : NO_PRIORITY_ID,
     type: typeSelection.type,
     completed: resolveClosedStatusIds(workflow.statuses).includes(status),
   };

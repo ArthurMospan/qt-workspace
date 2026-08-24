@@ -62,7 +62,7 @@ import {
 } from 'lucide-react';
 import { ParentTaskIcon, TaskIcon } from '@/lib/design/icons';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
-import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
@@ -832,7 +832,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     setDraft({
       title:           issue.title,
       type:            issue.type     || 'task',
-      priority:        issue.priority || 'medium',
+      priority:        issue.priority || NO_PRIORITY_ID,
       estimateMinutes: issue.estimateMinutes || 0,
       dueDate:         toLocalDateInput(due, { timeZone }),
       description:     issue.description || '',
@@ -1088,7 +1088,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
         title,
         description: '',
         type: childTypeId,
-        priority: issue.priority || 'medium',
+        priority: issue.priority || NO_PRIORITY_ID,
         status: initialStatus,
         columnId: initialStatus,
         parentIssueId: issueId,
@@ -1139,7 +1139,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
         title: `${issue.title || 'Завдання'} (копія)`,
         description: issue.description || '',
         type: issue.type || 'task',
-        priority: issue.priority || 'medium',
+        priority: issue.priority || NO_PRIORITY_ID,
         status: duplicateStatus,
         columnId: duplicateStatus,
         assigneeIds: Array.isArray(issue.assigneeIds) ? issue.assigneeIds : [],

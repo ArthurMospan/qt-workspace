@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:3622",
+      "location": "src/app/(app)/settings/page.js:3615",
       "attributes": [
         "title",
         "aria-label"
@@ -35,7 +35,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:654",
+      "location": "src/app/(app)/settings/page.js:647",
       "attributes": [
         "aria-label",
         "title"
@@ -274,7 +274,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/workspace/HoverCard.jsx:162",
+      "location": "src/components/workspace/HoverCard.jsx:160",
       "attributes": [
         "title"
       ]

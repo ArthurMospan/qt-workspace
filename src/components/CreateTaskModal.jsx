@@ -22,7 +22,7 @@ import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import Tabs from '@/components/ui/Tabs';
 import AudioTaskPanel from '@/components/AudioTaskPanel';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
-import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import Alert from '@/components/ui/Feedback/Alert';
 import ToggleSwitch from '@/components/ui/Forms/ToggleSwitch';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
@@ -48,7 +48,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
   const [form, setForm] = useState({
     title: '', description: '', status: 'backlog',
-    priority: 'medium', type: 'task',
+    priority: NO_PRIORITY_ID, type: 'task',
     assignees: [], labelIds: [], dueDate: '',
     estimateHours: '',
     projectId: projects && projects.length > 0 ? projects[0].id : '',
@@ -102,7 +102,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     title: '',
     description: '',
     status: defaultStatusId(),
-    priority: 'medium',
+    priority: NO_PRIORITY_ID,
     type: 'task',
     assignees: initialAssignees?.length
       ? initialAssignees

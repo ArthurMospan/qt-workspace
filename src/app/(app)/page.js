@@ -49,6 +49,7 @@ import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { createIssueViaApi } from '@/lib/services/issues';
+import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
 import { sendProjectInvitations } from '@/lib/services/projectInvitations';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
@@ -1053,7 +1054,7 @@ export default function WorkspacePage() {
               title: formData.title,
               description: formData.description || '',
               status: formData.status || 'backlog',
-              priority: formData.priority || 'medium',
+              priority: formData.priority || NO_PRIORITY_ID,
               type: formData.type || 'task',
               assigneeIds: formData.assignees || [],
               labelIds: formData.labelIds || [],

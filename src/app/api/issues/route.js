@@ -319,9 +319,14 @@ export async function POST(request) {
         description: typeof data.description === 'string' ? data.description.slice(0, 50_000) : '',
         columnId: status,
         status,
-        priority: freshPriorityIds.has(data.priority)
-          ? data.priority
-          : (freshPriorityIds.has('medium') ? 'medium' : [...freshPriorityIds][0]),
+        // Nothing said about priority means no priority, not «Середній».
+        // Defaulting to the middle of the scale is not a neutral choice — it is
+        // a claim, made on the author's behalf, about work nobody has ranked
+        // yet, and it made «Середній» the most common priority in the workspace
+        // by a wide margin while meaning nothing at all. `none` is a real,
+        // selectable value that every reader already understands
+        // (`priorityPresentation`), so it is what an unranked task gets.
+        priority: freshPriorityIds.has(data.priority) ? data.priority : NO_PRIORITY_ID,
         type: freshTypeSelection.type,
         assigneeIds,
         labelIds: Array.isArray(data.labelIds)

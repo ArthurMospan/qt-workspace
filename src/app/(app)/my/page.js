@@ -426,7 +426,7 @@ export default function MyTasksPage() {
               title: formData.title,
               description: formData.description || '',
               status: formData.status || 'backlog',
-              priority: formData.priority || 'medium',
+              priority: formData.priority || NO_PRIORITY_ID,
               type: formData.type || 'task',
               assigneeIds: formData.assignees || [],
               labelIds: formData.labelIds || [],

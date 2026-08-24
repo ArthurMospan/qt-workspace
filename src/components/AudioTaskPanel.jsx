@@ -12,7 +12,7 @@ import { Checkbox, FileInput, FormGroup, IconAction, Input, Textarea } from '@/c
 import { fromDateInput } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { AUDIO_UPLOAD_ACCEPT } from '@/lib/utils/uploadPolicy.mjs';
 
 // A finished analysis is minutes of a real call plus whatever the user has
@@ -162,7 +162,7 @@ export default function AudioTaskPanel({
           projectId: effectiveProjectId,
           title: task.title.trim(),
           description: task.description || '',
-          priority: task.priority || 'medium',
+          priority: task.priority || NO_PRIORITY_ID,
           type: 'task',
           status: 'todo',
           assignees: task.assigneeId ? [task.assigneeId] : [],
@@ -297,7 +297,7 @@ export default function AudioTaskPanel({
                       aria-label="Опис задачі"
                     />
                     <div className="flex flex-wrap gap-2">
-                      <Select value={task.priority || 'medium'} onChange={value => updateTask(index, { priority: value })} options={prioritySelectOptions(priorities)} compact />
+                      <Select value={task.priority || NO_PRIORITY_ID} onChange={value => updateTask(index, { priority: value })} options={prioritySelectOptions(priorities)} compact />
                       <Select
                         value={task.assigneeId || ''}
                         onChange={value => updateTask(index, { assigneeId: value })}

@@ -9,12 +9,12 @@ import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
 import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
-  DEFAULT_PRIORITY_IDS,
   DEFAULT_TYPE_IDS,
   resolveClosedStatusIds,
   resolveEntryStatusId,
   workflowIds,
 } from '@/lib/utils/workflowDefaults.mjs';
+import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 
 function config() {
   return {
@@ -247,10 +247,9 @@ export async function createIssueFromTelegram({
     );
     const status = resolveEntryStatusId(workflow.statuses, [...hiddenStatusIds]);
     if (!status) throw new Error('У проєкті немає доступного статусу');
-    const priorityIds = workflowIds(workflow.priorities, DEFAULT_PRIORITY_IDS);
-    const priority = priorityIds.includes('medium')
-      ? 'medium'
-      : priorityIds[0];
+    // A task dictated into Telegram carries no priority, so it gets none —
+    // the same answer every other way of creating a task now gives.
+    const priority = NO_PRIORITY_ID;
     const typeSelection = resolveNewIssueType(
       'task',
       workflowIds(workflow.types, DEFAULT_TYPE_IDS),
