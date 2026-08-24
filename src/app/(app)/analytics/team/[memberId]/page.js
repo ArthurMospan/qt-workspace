@@ -69,6 +69,7 @@ export default function MemberAnalyticsPage() {
     allIssues,
     timeLogs,
     loading,
+    refreshing,
     readAt,
     refresh: refreshRecords,
   } = useWorkspaceAnalytics(activeProjectIds, { timeLogWindow, live: false });
@@ -174,7 +175,7 @@ export default function MemberAnalyticsPage() {
                   onChange={setPeriod}
                   options={PERIOD_OPTIONS}
                 />
-                <RefreshStamp at={readAt} loading={loading} onRefresh={refreshReading} />
+                <RefreshStamp at={readAt} loading={refreshing} onRefresh={refreshReading} />
               </FilterBar>
             )}
           />

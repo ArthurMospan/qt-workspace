@@ -96,10 +96,20 @@ export function useWorkspaceAnalytics(projectIds = [], {
   const [timeLogsLoading, setTimeLogsLoading] = useState(true);
   const [issuesReadAt, setIssuesReadAt] = useState(null);
   const [timeLogsReadAt, setTimeLogsReadAt] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   // Bumped by `refresh`. In live mode nothing reads it, because there is
   // nothing to refresh.
   const [nonce, setNonce] = useState(0);
-  const refresh = useCallback(() => setNonce(value => value + 1), []);
+  // Asking a new question and asking the same one again look different. A new
+  // project scope or a new period clears the screen and shows a spinner,
+  // because what was there answered something else. Pressing refresh leaves the
+  // figures exactly where they are: they are still the right ones until better
+  // ones arrive, and a report that blanks itself every time somebody checks for
+  // newer numbers teaches people not to check.
+  const refresh = useCallback(() => {
+    setRefreshing(true);
+    setNonce(value => value + 1);
+  }, []);
   const projectScope = [...new Set(projectIds.filter(Boolean))].sort().join(',');
   const windowedTimeLogs = includeTimeLogs && isTimeLogWindow(timeLogWindow);
   const sinceMillis = windowedTimeLogs ? timeLogWindow.sinceMillis : null;
@@ -161,6 +171,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
       onReady: () => {
         setIssuesLoading(false);
         setIssuesReadAt(Date.now());
+        setRefreshing(false);
       },
     }));
 
@@ -240,6 +251,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
       onReady: () => {
         setTimeLogsLoading(false);
         setTimeLogsReadAt(Date.now());
+        setRefreshing(false);
       },
     }));
 
@@ -323,6 +335,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
     timeLogs: recordTimeLogs,
     issueLinks,
     loading: issuesLoading || (windowedTimeLogs && timeLogsLoading),
+    refreshing: live ? false : refreshing,
     // When the reading was taken, and how to take another. Null while this is a
     // live subscription, because «оновлено о» would be a lie about data that is
     // never more than a moment old.

@@ -577,8 +577,20 @@ export default function WorkspaceAnalyticsPage() {
   // team is thousands of time logs and at most ninety documents per project.
   // The tiles, «Куди пішов час» and the time column of «По проєктах» are sums
   // over days, and days are what this reads.
-  const { rollups, loading: rollupsLoading, readAt, refresh: refreshRollups } =
-    useAnalyticsRollups(activeProjectIds, { dayRange: periodRange });
+  //
+  // «Табель» and «Рахунок» are about records rather than sums, so while one of
+  // them is open there is no day range to read and nothing is read. A total
+  // nothing on screen will draw is still a document somebody paid for.
+  const summedTabs = activeTab === 'overview' || activeTab === 'workload';
+  const {
+    rollups,
+    loading: rollupsLoading,
+    refreshing: rollupsRefreshing,
+    readAt,
+    refresh: refreshRollups,
+  } = useAnalyticsRollups(activeProjectIds, {
+    dayRange: summedTabs ? periodRange : null,
+  });
 
   // A day's total knows the project, the date and who logged the hour. It does
   // not know which task the hour was against, so it cannot answer «час на
@@ -608,6 +620,7 @@ export default function WorkspaceAnalyticsPage() {
     timeLogs,
     issueLinks,
     loading,
+    refreshing: recordsRefreshing,
     readAt: recordsReadAt,
     refresh: refreshRecords,
   } = useWorkspaceAnalytics(activeProjectIds, {
@@ -645,7 +658,7 @@ export default function WorkspaceAnalyticsPage() {
     <span className="ml-auto flex items-center gap-[8px] max-md:hidden">
       <RefreshStamp
         at={readingTakenAt}
-        loading={loading || rollupsLoading}
+        loading={recordsRefreshing || rollupsRefreshing}
         onRefresh={refreshReading}
       />
       {exportMenu}

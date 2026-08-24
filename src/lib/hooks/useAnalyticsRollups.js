@@ -21,37 +21,63 @@ import { chunkProjectIds } from '@/lib/utils/projectScopedQueries.mjs';
  * board card or a message is, and a figure that rewrites itself while somebody
  * is looking at it is a distraction rather than a feature. The screen says when
  * it was taken and offers to take another — see `readAt` and `refresh`.
+ *
+ * Pass no `dayRange` and nothing is read at all. That is how a screen whose
+ * current tab is about records rather than sums — «Табель», «Рахунок» — avoids
+ * paying for totals it will not draw.
+ *
+ * Asking a new question and asking the same one again are different events, and
+ * they look different. A new period or a new project selection clears what is on
+ * screen and shows a spinner, because the old figures answered something else.
+ * Pressing refresh leaves them exactly where they are and reports `refreshing`,
+ * because they are still the right figures until better ones arrive — and a
+ * report that blanks itself for half a second every time somebody checks for
+ * newer numbers teaches people not to check.
  */
 export function useAnalyticsRollups(projectIds = [], { dayRange = null } = {}) {
   const { activeOrgId, authLoading, orgLoading } = useAppContext();
   const [rollups, setRollups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [readAt, setReadAt] = useState(null);
   const [nonce, setNonce] = useState(0);
   const projectScope = [...new Set(projectIds.filter(Boolean))].sort().join(',');
   const startDay = dayRange?.startDay || '';
   const endDay = dayRange?.endDay || '';
+  const target = `${activeOrgId || ''}/${projectScope}/${startDay}/${endDay}`;
+  const targetRef = useRef('');
   const requestRef = useRef(0);
 
   const refresh = useCallback(() => setNonce(value => value + 1), []);
 
   useEffect(() => {
     if (!activeOrgId || !startDay || !endDay) {
+      targetRef.current = '';
       queueMicrotask(() => {
         setRollups([]);
         setReadAt(null);
+        setRefreshing(false);
         // Still resolving the organization is not the same as having read it
-        // and found nothing.
-        setLoading(Boolean(authLoading || orgLoading));
+        // and found nothing. Nothing asked for is neither: a screen that wants
+        // no totals is not waiting for any.
+        setLoading(Boolean(activeOrgId ? false : (authLoading || orgLoading)));
       });
       return undefined;
     }
 
+    const askingSomethingElse = targetRef.current !== target;
+    targetRef.current = target;
     const request = requestRef.current + 1;
     requestRef.current = request;
     let cancelled = false;
     queueMicrotask(() => {
-      if (!cancelled && requestRef.current === request) setLoading(true);
+      if (cancelled || requestRef.current !== request) return;
+      if (askingSomethingElse) {
+        setRollups([]);
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
     });
 
     const chunks = chunkProjectIds(projectScope ? projectScope.split(',') : []);
@@ -88,12 +114,13 @@ export function useAnalyticsRollups(projectIds = [], { dayRange = null } = {}) {
       }))));
       setReadAt(Date.now());
       setLoading(false);
+      setRefreshing(false);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [activeOrgId, authLoading, orgLoading, projectScope, startDay, endDay, nonce]);
+  }, [activeOrgId, authLoading, orgLoading, projectScope, startDay, endDay, target, nonce]);
 
-  return { rollups, loading, readAt, refresh };
+  return { rollups, loading, refreshing, readAt, refresh };
 }

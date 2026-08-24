@@ -318,6 +318,19 @@ test('the analytics screens read days, and open records only when a day cannot a
   assert.match(hook, /getDocs\(/);
   assert.match(hook, /readAt/);
   assert.match(hook, /refresh/);
+
+  // A total nothing on screen will draw is still a document somebody paid for,
+  // so the tabs that are about records read no days at all.
+  assert.match(page, /const summedTabs = activeTab === 'overview' \|\| activeTab === 'workload'/);
+  assert.match(page, /dayRange: summedTabs \? periodRange : null/);
+
+  // Asking a new question clears the screen; asking the same one again does
+  // not. A report that blanks itself every time somebody checks for newer
+  // numbers teaches people not to check.
+  assert.match(hook, /const askingSomethingElse = targetRef\.current !== target/);
+  assert.match(hook, /if \(askingSomethingElse\) \{[\s\S]{0,120}setLoading\(true\);/);
+  assert.match(hook, /setRefreshing\(true\);/);
+  assert.match(page, /loading=\{recordsRefreshing \|\| rollupsRefreshing\}/);
 });
 
 // ── The write paths ──────────────────────────────────────────────────────
