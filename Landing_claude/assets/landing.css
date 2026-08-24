@@ -1,13 +1,16 @@
 /* ══════════════════════════════════════════════════════════════════════════
    QuickTeam — лендінг.
-   Окремий статичний сайт. Нічого не імпортує з продукту і нічого в ньому не
-   змінює: токени нижче переписані вручну з src/app/globals.css, щоб цю теку
-   можна було винести в інший репозиторій одним рухом.
 
-   Ролі кольорів перевернуті відносно застосунку. У продукті ink (#1f1f1f) —
-   це текст і сайдбар на світлому полотні; тут ink — це поверхня, а полотно
-   (#f4f4f5) стало текстом. Мокапи всередині показують справжній світлий
-   інтерфейс, тому сторінка навколо них навмисно темна.
+   Сторінка темна, а мокапи всередині — світлі, бо це справжній інтерфейс
+   продукту: `assets/product.css` збирається Tailwind'ом з того самого
+   `src/app/globals.css`, а розмітка приходить із живого /ui-kit. Тут немає
+   ані копії кнопки, ані «схожої на нашу» картки задачі.
+
+   Через це файл ділиться на дві частини. Все, що описує сторінку, живе тут
+   і навмисно поза шарами (`@layer`), тому перебиває базові правила продукту —
+   зокрема `body`, якому застосунок задає висоту екрана й заборону прокрутки.
+   Все, що описує мокап, обмежене `.shot` і майже нічого не задає: інтерфейс
+   уже приніс свої стилі з собою.
    ══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. Токени ─────────────────────────────────────────────────────────── */
@@ -15,9 +18,7 @@
 :root {
   /* Поле. Глибше за сайдбар, щоб сам сайдбар (#1f1f1f) читався як поверхня. */
   --void:        #0c0c0d;
-  --void-2:      #101011;
   --ink:         #1f1f1f;   /* колір сайдбару продукту — тут це картка */
-  --ink-hover:   #303030;
   --raise:       #262627;
 
   /* Світло */
@@ -40,19 +41,24 @@
 
   /* Геометрія — з UI Kit: --ui-radius-* */
   --r-action:    10px;
-  --r-field:     10px;
   --r-inset:     12px;
   --r-surface:   16px;
   --r-dialog:    24px;
 
   /* Контроли — з UI Kit: --ui-control-* */
-  --ctl-sm:      28px;
   --ctl-md:      32px;
   --ctl-lg:      36px;
 
   --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Roboto Condensed', 'Inter', system-ui, sans-serif;
   --font-mono:    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  /* У застосунку ці дві змінні підставляє next/font. Тут шрифти приходять
+     звичайним <link>, тож імена треба назвати самим — інакше `--font-inter`
+     з @theme продукту резолвиться в порожнечу і мокап їде на системному
+     шрифті, хоча решта сторінки набрана правильно. */
+  --font-inter-loaded: 'Inter';
+  --font-roboto-loaded: 'Roboto Condensed';
 
   --wrap:        1180px;
   --gutter:      24px;
@@ -71,8 +77,14 @@ html {
   scroll-padding-top: 84px;
 }
 
+/* Застосунок — оболонка на весь екран: його `body` має висоту в 100dvh і
+   `overflow: hidden`, бо всередині скролять окремі панелі. Лендінг — довга
+   сторінка, тож обидва ці правила треба зняти явно. */
 body {
   margin: 0;
+  height: auto;
+  overflow: visible;
+  overflow-x: clip;
   background: var(--void);
   color: var(--paper);
   font-family: var(--font-body);
@@ -80,15 +92,12 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 img, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 p { margin: 0; }
 h1, h2, h3, h4 { margin: 0; font-weight: 400; }
-ul, ol { margin: 0; padding: 0; list-style: none; }
 
 ::selection { background: var(--amber); color: #14100b; }
 
@@ -155,13 +164,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   flex: none;
 }
 
-.eyebrow--plain::before { display: none; }
-
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-
-.amber { color: var(--amber-lift); }
-.teal  { color: var(--teal-lift); }
-.dim   { color: var(--muted); }
 
 /* ── 4. Каркас ────────────────────────────────────────────────────────── */
 
@@ -175,8 +178,6 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .section { padding-block: clamp(60px, 6.6vw, 96px); position: relative; }
 .section--tight { padding-block: clamp(44px, 4.6vw, 68px); }
 .section--flush-top { padding-top: 0; }
-
-.rule { height: 1px; background: var(--line-soft); border: 0; margin: 0; }
 
 .section-head { display: grid; gap: 18px; max-width: 720px; }
 .section-head--wide { max-width: 880px; }
@@ -280,6 +281,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   height: var(--ctl-md);
   border-radius: 8px;
   border: 1px solid var(--line);
+  background: none;
+  color: inherit;
+  cursor: pointer;
   align-items: center;
   justify-content: center;
 }
@@ -328,9 +332,6 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 /* ── 8. Герой ─────────────────────────────────────────────────────────── */
 
-/* Низ героя не розчиняється градієнтом. Рама — цілий предмет із власним
-   краєм і заокругленням; затирати її знизу означає показати продукт так,
-   ніби знімок не долили до кінця. Тому просто поле під нею. */
 .hero {
   position: relative;
   padding-top: clamp(112px, 10vw, 140px);
@@ -366,10 +367,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   flex: none;
 }
 
-/* Сцена мокапа: нахил вирівнюється під час скролу (landing.js) */
+/* Нахил вирівнюється під час скролу (landing.js).
+   Кадр ширший за текстову колонку сторінки: колонка дошки має фіксовані
+   280px, і на 1180px четверта з них ріжеться рівно по краю картки. */
 .hero__stage {
   position: relative;
   z-index: 1;
+  max-width: 1340px;
   margin-top: clamp(44px, 5.5vw, 80px);
   perspective: 2400px;
   perspective-origin: 50% 0%;
@@ -381,34 +385,20 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   will-change: transform;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   9. Мокапи продукту
 
-/* ── 9. Мокап застосунку ──────────────────────────────────────────────────
-   Це «фотографія» продукту, намальована розміткою, а не знімок екрана: вона
-   лишається різкою на будь-якій щільності пікселів, її можна анімувати й
-   вона не старіє разом зі скріншотом.
+   Далі — рівно те, чого справжній інтерфейс не може знати про себе сам:
+   рама браузера навколо нього, межі кадру й одна сцена руху. Кольори,
+   відступи, типографіка, іконки — усе це вже прийшло разом з розміткою.
+   ══════════════════════════════════════════════════════════════════════════ */
 
-   Усередині мокапа діють кольори продукту, а не сторінки: полотно #f4f4f5,
-   картки білі, лінії #e9e9e9, сайдбар #1f1f1f. Світлий екран у темній рамі —
-   і є та сама «денна пляма», навколо якої побудована сторінка.
-
-   .shot тримає фіксовану ширину макета й масштабується цілком (landing.js),
-   тож пропорції інтерфейсу ніколи не пливуть від ширини вікна.             */
-
-.shot { position: relative; width: 100%; overflow: hidden; }
-
-.shot__stage {
-  width: var(--shot-w, 1180px);
-  transform: scale(var(--s, 1));
-  transform-origin: top left;
-}
-
-/* Рама. Темніша за сторінку, щоб світлий екран усередині читався як екран, а
-   не як прогалина у фоні. */
+/* Рама. Темніша за сторінку, щоб світлий екран усередині читався як екран,
+   а не як прогалина у фоні. */
 .frame {
   border-radius: var(--r-dialog);
   border: 1px solid rgba(255,255,255,0.12);
   background: #151516;
-  padding: 0 0 1px;
   overflow: hidden;
   box-shadow:
     0 1px 0 rgba(255,255,255,0.06) inset,
@@ -449,281 +439,72 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .frame__url svg { width: 10px; height: 10px; opacity: 0.6; }
 
-/* ── Застосунок ───────────────────────────────────────────────────────── */
-
-.app {
-  display: flex;
-  background: #f4f4f5;
-  color: #1f1f1f;
-  font-size: 13px;
+/* Кадр інтерфейсу.
+   Текст усередині — темний на світлому, як у застосунку, тому колір і шрифт
+   треба повернути: сторінка навколо світла на темному й успадкувалася б
+   усередину. Ширші за кадр елементи (дошка, таблиця) обрізаються рамкою — це
+   те саме, що бачить людина у вужчому вікні браузера. */
+.shot {
+  position: relative;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-body);
   line-height: 1.45;
-  height: var(--app-h, 620px);
+  text-align: left;
   isolation: isolate;
 }
 
-/* Сайдбар — той самий #1f1f1f, що в продукті, і саме він задав палітру
-   всієї сторінки. */
-.sb {
-  width: 210px;
-  flex: none;
-  background: #1f1f1f;
-  color: #fff;
-  padding: 12px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+.shot :focus-visible { outline: none; }
 
-.sb__top { display: flex; align-items: center; gap: 9px; padding: 4px 6px 0; }
-.sb__logo { width: 22px; height: 22px; flex: none; }
-.sb__org { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
-.sb__org small { display: block; font-size: 10.5px; color: rgba(255,255,255,0.42); font-weight: 400; letter-spacing: 0; }
+/* Каталог показує компоненти на білому тлі превʼю; на сторінці вони стоять
+   у власній рамі, тож зайвий білий прямокутник під ними тільки додає шов. */
+.shot--plain { background: #f4f4f5; padding: 16px; }
 
-.sb__search {
-  height: 30px;
-  border-radius: 9px;
-  background: rgba(255,255,255,0.07);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding-inline: 9px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.44);
-}
-.sb__search svg { width: 13px; height: 13px; }
-.sb__search kbd {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.5);
-}
+/* ── Сцена: картка переїжджає в сусідню колонку ────────────────────────────
+   Єдиний рух усередині мокапа й він відбувається один раз, коли дошку
+   вперше видно. Відстань і висота слота не задані числом: їх міряє
+   landing.js по самій дошці, бо ширина колонки залежить від ширини вікна. */
 
-.sb__nav { display: grid; gap: 1px; }
+/* Колонка й її список прокручуються, а отже обрізають усе, що виходить за
+   межі, — включно з карткою, яка саме виїжджає в сусідню колонку. У кадрі
+   прокручувати нічого, тож на час сцени вони перестають бути кліпом. */
+.fly-lane, .fly-column { overflow: visible !important; }
 
-.sb__item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  height: 30px;
-  padding-inline: 9px;
-  border-radius: 8px;
-  font-size: 12.5px;
-  color: rgba(255,255,255,0.7);
-}
-.sb__item svg { width: 14px; height: 14px; flex: none; opacity: 0.85; }
-.sb__item[data-active='true'] { background: rgba(255,255,255,0.1); color: #fff; font-weight: 500; }
-.sb__item b {
-  margin-left: auto;
-  font-size: 10px;
-  font-weight: 600;
-  min-width: 16px;
-  height: 15px;
-  border-radius: 999px;
-  background: #cf7a22;
-  color: #fff;
-  display: grid;
-  place-items: center;
-  padding-inline: 4px;
-}
-
-.sb__label {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.32);
-  padding: 0 9px 4px;
-}
-
-.sb__project { display: flex; align-items: center; gap: 9px; height: 27px; padding-inline: 9px;
-  border-radius: 8px; font-size: 12.5px; color: rgba(255,255,255,0.66); }
-.sb__project i { width: 7px; height: 7px; border-radius: 2px; flex: none; }
-
-.sb__foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 8px 6px 2px;
-  border-top: 1px solid rgba(255,255,255,0.08); }
-.sb__foot span { font-size: 12px; color: rgba(255,255,255,0.8); }
-.sb__foot small { display: block; font-size: 10px; color: rgba(255,255,255,0.38); }
-
-/* ── Робоча область ───────────────────────────────────────────────────── */
-
-.pane { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #f4f4f5; }
-
-.pane__head {
-  height: 56px;
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-inline: 20px;
-  background: #fff;
-  border-bottom: 1px solid #e9e9e9;
-}
-
-.crumb { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #9a9a9a; }
-.crumb b { color: #1f1f1f; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
-.crumb svg { width: 12px; height: 12px; }
-
-.seg { display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: #f4f4f5; }
-.seg span { font-size: 12px; padding: 4px 11px; border-radius: 7px; color: #9a9a9a; }
-.seg span[data-active='true'] { background: #fff; color: #1f1f1f; font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.07); }
-
-.pane__actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-.stack { display: flex; }
-.stack .av { margin-left: -6px; box-shadow: 0 0 0 2px #fff; }
-.stack .av:first-child { margin-left: 0; }
-
-.av {
-  width: 24px; height: 24px; border-radius: 50%;
-  display: grid; place-items: center;
-  font-size: 9.5px; font-weight: 600; color: #fff;
-  letter-spacing: 0.02em; flex: none;
-}
-.av--sm { width: 18px; height: 18px; font-size: 8px; }
-.av--lg { width: 32px; height: 32px; font-size: 11px; }
-.av--a { background: #3f4a56; }
-.av--b { background: #7a5c3a; }
-.av--c { background: #40614f; }
-.av--d { background: #5b4560; }
-.av--e { background: #4a4a4a; }
-
-.mini-btn {
-  height: 28px; padding-inline: 12px; border-radius: 10px;
-  background: #1f1f1f; color: #fff; font-size: 12px; font-weight: 500;
-  display: inline-flex; align-items: center; gap: 6px;
-}
-.mini-btn svg { width: 12px; height: 12px; }
-.mini-btn--quiet { background: #fff; color: #1f1f1f; border: 1px solid #e9e9e9; }
-
-.pane__filters {
-  height: 44px; flex: none;
-  display: flex; align-items: center; gap: 7px;
-  padding-inline: 20px;
-  border-bottom: 1px solid #e9e9e9;
-  background: #fff;
-}
-
-.chip {
-  height: 24px; padding-inline: 9px; border-radius: 7px;
-  border: 1px solid #e9e9e9; background: #fff;
-  font-size: 11.5px; color: #6b6b6b;
-  display: inline-flex; align-items: center; gap: 5px;
-}
-.chip svg { width: 11px; height: 11px; opacity: 0.55; }
-.chip i { width: 6px; height: 6px; border-radius: 50%; }
-.chip[data-on='true'] { border-color: #1f1f1f; color: #1f1f1f; font-weight: 500; }
-
-/* ── Дошка ───────────────────────────────────────────────────────────── */
-
-.board {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
-  padding: 16px 20px 20px;
-  align-items: start;
-}
-
-.col { min-width: 0; display: grid; gap: 8px; align-content: start; }
-
-.col__head { display: flex; align-items: center; gap: 7px; padding: 0 2px 2px; }
-.col__head i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-.col__head span { font-size: 11.5px; font-weight: 600; letter-spacing: -0.005em; }
-.col__head b { font-size: 10.5px; font-weight: 500; color: #9a9a9a; font-family: var(--font-mono); }
-.col__head em { margin-left: auto; font-style: normal; color: #cfcfcf; font-size: 13px; line-height: 1; }
-
-.card {
-  background: #fff;
-  border: 1px solid #e9e9e9;
-  border-radius: 12px;
-  padding: 9px 10px 8px;
-  display: grid;
-  gap: 8px;
-  box-shadow: 0 1px 1px rgba(0,0,0,0.02);
-}
-
-.card__title { font-size: 12.5px; line-height: 1.35; letter-spacing: -0.005em; color: #1f1f1f; }
-
-.card__tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.card__tags span {
-  font-size: 9.5px; padding: 1px 6px; border-radius: 5px;
-  background: #f4f4f5; color: #6b6b6b; letter-spacing: 0.01em;
-}
-
-.card__meta { display: flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
-.card__id {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: #b4b4b4;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-.card__pri { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-.card__time {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--font-mono); font-size: 10px; color: #9a9a9a;
-}
-.card__time svg { width: 10px; height: 10px; }
-
-.card__bar { height: 3px; border-radius: 999px; background: #ededee; overflow: hidden; }
-.card__bar i { display: block; height: 100%; background: #1f1f1f; border-radius: 999px; }
-
-.card--ghost {
-  border-style: dashed;
-  border-color: #d8d8d9;
-  background: transparent;
-  box-shadow: none;
-  min-height: 60px;
-}
-
-/* ── Хореографія дошки ────────────────────────────────────────────────────
-   Одна сцена, один раз: картка переїжджає рівно на одну колонку вправо
-   (188px = 176px колонка + 12px проміжок), місце під нею стуляється, а в
-   сусідній колонці розкривається слот. Нічого не крутиться в циклі —
-   сторінка після цього стоїть тихо.                                        */
-
-.fly-slot { overflow: visible; }
-.fly-slot .card { position: relative; z-index: 4; }
+.fly-slot { position: relative; }
+.fly-slot > * { position: relative; z-index: 4; }
 
 [data-play='true'] .fly-slot { animation: slot-close 1.5s var(--ease-out) 0.15s both; }
-[data-play='true'] .fly-slot .card { animation: fly 1.5s var(--ease-out) 0.15s both; }
+[data-play='true'] .fly-slot > * { animation: fly 1.5s var(--ease-out) 0.15s both; }
 [data-play='true'] .drop-slot { animation: slot-open 1.5s var(--ease-out) 0.15s both; }
 [data-play='true'] .pointer { animation: pointer-run 2s var(--ease-out) 0.05s both; }
 
-/* Відстань — крок сітки колонок, а не число. Ширина колонки залежить від
-   того, чи видно сайдбар, тож зашитий зсув на вузькому екрані клав картку
-   повз колонку. `--fly-x` вимірює landing.js перед показом сцени. */
 @keyframes fly {
-  0%   { transform: translate(0, 0) scale(1); box-shadow: 0 1px 1px rgba(0,0,0,0.02); }
-  14%  { transform: translate(0, -3px) scale(1.025) rotate(-1.1deg);
-         box-shadow: 0 12px 22px -8px rgba(0,0,0,0.28); }
-  70%  { transform: translate(var(--fly-x, 188px), -3px) scale(1.025) rotate(0.6deg);
-         box-shadow: 0 12px 22px -8px rgba(0,0,0,0.28); }
-  100% { transform: translate(var(--fly-x, 188px), 0) scale(1) rotate(0deg);
-         box-shadow: 0 1px 1px rgba(0,0,0,0.02); }
+  0%   { transform: translate(0, 0) scale(1); }
+  14%  { transform: translate(0, -3px) scale(1.02) rotate(-1deg);
+         box-shadow: 0 14px 26px -10px rgba(0,0,0,0.3); }
+  70%  { transform: translate(var(--fly-x, 292px), -3px) scale(1.02) rotate(0.5deg);
+         box-shadow: 0 14px 26px -10px rgba(0,0,0,0.3); }
+  100% { transform: translate(var(--fly-x, 292px), 0) scale(1) rotate(0deg); }
 }
 
-/* Разом із висотою складається й проміжок сітки: інакше на місці картки
-   лишається порожні 8px, і колонка виглядає так, ніби звідти щось зникло. */
 @keyframes slot-close {
-  0%, 58%  { height: var(--slot-h, 74px); margin-bottom: 0; }
-  100%     { height: 0px; margin-bottom: -8px; }
+  0%, 58%  { height: var(--slot-h, 120px); }
+  100%     { height: 0px; }
 }
 
 @keyframes slot-open {
-  0%   { height: 0px; margin-bottom: -8px; }
-  58%  { height: 0px; margin-bottom: -8px; }
-  100% { height: var(--slot-h, 74px); margin-bottom: 0; }
+  0%, 58%  { height: 0px; }
+  100%     { height: var(--slot-h, 120px); }
 }
+
+.drop-slot { height: 0; }
 
 .pointer {
   position: absolute;
-  left: 0; top: 0;
-  width: 17px; height: 17px;
+  left: 0;
+  top: 0;
+  width: 17px;
+  height: 17px;
   z-index: 6;
   opacity: 0;
   pointer-events: none;
@@ -731,176 +512,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 
 @keyframes pointer-run {
-  0%   { opacity: 0; transform: translate(var(--px, 300px) , calc(var(--py, 200px) + 34px)); }
+  0%   { opacity: 0; transform: translate(var(--px, 300px), calc(var(--py, 200px) + 34px)); }
   10%  { opacity: 1; transform: translate(var(--px, 300px), var(--py, 200px)); }
-  62%  { opacity: 1; transform: translate(calc(var(--px, 300px) + 188px), calc(var(--py, 200px) - 4px)); }
-  88%  { opacity: 1; transform: translate(calc(var(--px, 300px) + 188px), calc(var(--py, 200px) + 2px)); }
-  100% { opacity: 0; transform: translate(calc(var(--px, 300px) + 196px), calc(var(--py, 200px) + 14px)); }
+  62%  { opacity: 1; transform: translate(calc(var(--px, 300px) + var(--fly-x, 292px)), calc(var(--py, 200px) - 4px)); }
+  88%  { opacity: 1; transform: translate(calc(var(--px, 300px) + var(--fly-x, 292px)), calc(var(--py, 200px) + 2px)); }
+  100% { opacity: 0; transform: translate(calc(var(--px, 300px) + var(--fly-x, 292px) + 8px), calc(var(--py, 200px) + 14px)); }
 }
-
-/* Таймер у шапці дошки — єдине, що справді тікає, і тільки поки видиме. */
-.runner {
-  display: inline-flex; align-items: center; gap: 7px;
-  height: 26px; padding-inline: 9px;
-  border-radius: 8px;
-  border: 1px solid #eadfd0;
-  background: #fdf7ef;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: #8a5a1c;
-  letter-spacing: 0.02em;
-}
-.runner i {
-  width: 6px; height: 6px; border-radius: 50%; background: #cf7a22; flex: none;
-  animation: pulse 1.8s ease-in-out infinite;
-}
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.28; } }
-
-/* Слот, у який картка приїде: до сцени його немає — ні висоти, ні проміжку. */
-.drop-slot { height: 0; margin-bottom: -8px; }
-
-/* Стагер появи всередині мокапа.
-   Ховає лише те, що JS уже взяв під контроль (data-play='false'), тож без
-   скриптів мокап просто показаний цілим. */
-[data-play='false'][data-stagger] > * { opacity: 0; transform: translateY(6px); }
-[data-play='true'][data-stagger] > * {
-  animation: rise 0.5s var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 45ms);
-}
-@keyframes rise { to { opacity: 1; transform: none; } }
-
-/* ── Дрібні мокапи: спільні деталі ────────────────────────────────────── */
-
-.mk {
-  background: #f4f4f5;
-  color: #1f1f1f;
-  font-size: 13px;
-  line-height: 1.45;
-  border-radius: var(--r-surface);
-  overflow: hidden;
-}
-
-.panel {
-  background: #fff;
-  border: 1px solid #e9e9e9;
-  border-radius: 16px;
-  padding: 14px;
-  display: grid;
-  gap: 12px;
-}
-
-.panel__head { display: flex; align-items: center; gap: 8px; }
-.panel__head h4 { font-size: 13px; font-weight: 600; letter-spacing: -0.005em; }
-.panel__head span { margin-left: auto; font-size: 11px; color: #9a9a9a; }
-
-.row {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 0;
-  border-top: 1px solid #f0f0f0;
-  font-size: 12.5px;
-}
-.row:first-of-type { border-top: 0; }
-.row__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row__end { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
-.row__val { font-family: var(--font-mono); font-size: 11.5px; color: #6b6b6b; font-variant-numeric: tabular-nums; }
-
-.tick {
-  width: 15px; height: 15px; border-radius: 5px; flex: none;
-  border: 1.5px solid #d4d4d5; display: grid; place-items: center;
-}
-.tick[data-on='true'] { background: #1f1f1f; border-color: #1f1f1f; }
-.tick svg { width: 9px; height: 9px; color: #fff; }
-
-/* Показники */
-.stat { display: grid; gap: 2px; }
-.stat__label { font-size: 11px; color: #9a9a9a; letter-spacing: 0.01em; }
-.stat__value {
-  font-family: var(--font-display);
-  font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
-  line-height: 1.05; font-variant-numeric: tabular-nums;
-}
-.stat__value small { font-size: 14px; font-weight: 400; color: #9a9a9a; margin-left: 2px; }
-.stat__delta { font-size: 10.5px; font-family: var(--font-mono); color: #0e8f74; }
-.stat__delta[data-dir='down'] { color: #b4542f; }
-
-/* Смуги. Висота приходить інлайново, ширина — з --w, щоб JS міг «виростити»
-   їх при появі, не переписуючи розмітку.
-
-   Кожна колонка — сітка з двох рядків: `1fr` під саму смугу і `auto` під
-   підпис. Це не косметика: відсоткова висота смуги мусить мати від чого
-   рахуватись, а рядок `1fr` у сітці з заданою висотою — має. У попередній
-   версії смуги стояли в рядку auto й виходили нульової висоти, тобто
-   графіка просто не було видно.                                          */
-.bars { display: flex; align-items: stretch; gap: 8px; height: 108px; }
-.bars > div {
-  flex: 1;
-  height: 100%;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 6px;
-  justify-items: center;
-}
-.bars i {
-  display: block; width: 100%; align-self: end;
-  border-radius: 5px 5px 2px 2px;
-  background: #1f1f1f;
-  height: var(--h, 40%);
-  transition: height 0.9s var(--ease-out);
-}
-.bars i[data-tone='ctx'] { background: #d6d6d7; }
-.bars span { font-size: 9.5px; color: #b4b4b4; font-family: var(--font-mono); }
-
-.meter { display: block; height: 6px; border-radius: 999px; background: #ededee; overflow: hidden; }
-.meter i { display: block; height: 100%; border-radius: 999px; background: #1f1f1f;
-  width: var(--w, 50%); transition: width 1s var(--ease-out); }
-.meter i[data-tone='amber'] { background: #cf7a22; }
-.meter i[data-tone='teal'] { background: #0e8f74; }
-
-.donut {
-  width: 96px; height: 96px; border-radius: 50%; flex: none;
-  background: conic-gradient(#1f1f1f 0 var(--a, 62%), #cf7a22 var(--a, 62%) var(--b, 84%), #ededee var(--b, 84%) 100%);
-  display: grid; place-items: center;
-  transition: background 1s var(--ease-out);
-}
-.donut::after {
-  content: ''; width: 66px; height: 66px; border-radius: 50%; background: #fff;
-}
-.donut__mid {
-  position: absolute; text-align: center; font-family: var(--font-display);
-  font-weight: 700; font-size: 19px; letter-spacing: -0.02em;
-}
-.donut-wrap { position: relative; display: grid; place-items: center; }
-
-.legend { display: grid; gap: 7px; font-size: 11.5px; min-width: 130px; }
-.legend > * { display: flex; align-items: center; gap: 7px; }
-.legend i { width: 8px; height: 8px; border-radius: 3px; flex: none; }
-.legend b { margin-left: auto; font-family: var(--font-mono); font-weight: 500; color: #6b6b6b; }
-
-/* Календар */
-.cal { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.cal__day { display: grid; gap: 5px; align-content: start; }
-.cal__dow { font-size: 10px; color: #9a9a9a; font-family: var(--font-mono); letter-spacing: 0.04em; }
-.cal__dow b { color: #1f1f1f; font-weight: 600; }
-.cal__slot { height: 100%; min-height: 92px; border-radius: 10px; background: #fff;
-  border: 1px solid #e9e9e9; padding: 5px; display: grid; gap: 4px; align-content: start; }
-.ev { border-radius: 6px; padding: 4px 6px; font-size: 10px; line-height: 1.25;
-  border-left: 2px solid #1f1f1f; background: #f4f4f5; }
-.ev b { display: block; font-weight: 600; font-size: 10px; }
-.ev time { font-family: var(--font-mono); font-size: 9px; color: #9a9a9a; }
-.ev[data-tone='amber'] { border-left-color: #cf7a22; background: #fdf6ee; }
-.ev[data-tone='teal'] { border-left-color: #0e8f74; background: #eef6f4; }
-
-/* Чат */
-.msg { display: flex; gap: 8px; }
-.msg__body { display: grid; gap: 3px; min-width: 0; }
-.msg__who { font-size: 11px; font-weight: 600; }
-.msg__who time { font-family: var(--font-mono); font-size: 9.5px; color: #b4b4b4; font-weight: 400; margin-left: 5px; }
-.msg__text { font-size: 12px; line-height: 1.45; color: #3d3d3d; }
-.msg__text mark { background: #edf3f1; color: #0e8f74; padding: 0 3px; border-radius: 3px; font-weight: 500; }
-.msg__text a { color: #1f1f1f; border-bottom: 1px solid #d4d4d5; }
-.msg__ref {
-  margin-top: 3px; border: 1px solid #e9e9e9; border-radius: 9px; padding: 6px 8px;
-  background: #fff; display: grid; gap: 3px;
-}
-.msg__ref span { font-family: var(--font-mono); font-size: 9.5px; color: #b4b4b4; }
-.msg__ref b { font-size: 11.5px; font-weight: 500; }

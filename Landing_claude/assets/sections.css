@@ -133,6 +133,34 @@
    решта відрізана рамкою — так робить будь-який знімок у списку. */
 .cell__art--bleed { padding: 0; margin-inline: 0; margin-right: -34px; margin-bottom: -12px; }
 .cell__art--bleed .frame { border-radius: 14px 0 0 0; border-right: 0; border-bottom: 0; }
+.cell__art--bleed .shot { max-height: 320px; }
+
+/* Компонент продукту не носить із собою полотно, на якому стоїть: у
+   застосунку під ним сіре #f4f4f5, і саме воно відділяє картку від фону.
+   Без нього дрібні елементи — таймер, шкали бюджету — висять просто на
+   темному тлі сторінки й читаються як помилка верстки. Кадри, що бліду
+   ють за край комірки, полотна не потребують: там і так видно екран. */
+.cell__art .shot,
+.trail__art .shot,
+.feature__art .shot {
+  background: #f4f4f5;
+  border-radius: var(--r-surface);
+  padding: 16px;
+}
+
+.cell__art--bleed .shot { background: none; border-radius: 0; padding: 0; }
+
+/* Трекінг часу — контрол на 22px заввишки. У задачі він стоїть у смузі
+   атрибутів на білому; окремо йому потрібна така сама біла підкладка,
+   інакше в комірці лишається сірий прямокутник із крапкою посередині. */
+.shot[data-shot='time'] { display: flex; }
+.shot[data-shot='time'] > * {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
 
 /* ── 12. Підпис сторінки: шлях однієї години ──────────────────────────────
    Єдиний блок, де є нумерація, бо тут порядок справді щось означає: година
@@ -229,6 +257,14 @@
   align-items: center;
 }
 .feature--flip .feature__art { order: -1; }
+
+/* Смуга атрибутів задачі має ширину сторінки задачі, а не половини блока:
+   у вужчій колонці кожен підпис обрізається до однієї літери. Тому цей
+   блок кладе текст над кадром, а кадру віддає всю ширину. */
+.feature--stack { grid-template-columns: minmax(0, 1fr); gap: 34px; }
+.feature--stack .feature__text { max-width: 64ch; }
+.feature--stack .feature__list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 34px; }
+.feature--stack .feature__list li { max-width: none; }
 
 .feature__body { display: grid; gap: 20px; align-content: start; }
 .feature__title { color: var(--white); }
@@ -390,16 +426,12 @@
 }
 .foot__bottom span:last-child { margin-left: auto; }
 
-/* ── 16b. Дрібні правки поверх мокапів ─────────────────────────────────
-   Живуть тут, а не в landing.css, бо стосуються того, як мокап поводиться
-   всередині секції: якір для курсора на дошці й одиниці біля числа.      */
-
-/* Курсор у сцені на дошці позиціонується від самої дошки. */
-.board { position: relative; }
-
-/* Число рахується скриптом, підпис одиниць лишається в розмітці — тому
-   вони окремі елементи, а виглядають одним. */
-.stat__value b { font: inherit; letter-spacing: inherit; }
+/* ── 16b. Мокап усередині секції ───────────────────────────────────────
+   Слот навколо картки рахує власну висоту разом із нижнім відступом
+   картки. Без flow-root цей відступ проходить крізь слот назовні, слот
+   стає рівно заввишки з картку, і при стуленні в колонці лишається
+   порожня смуга там, звідки завдання поїхало.                            */
+.fly-slot { display: flow-root; }
 
 /* ── 17. Поява при скролі ─────────────────────────────────────────────── */
 
@@ -416,6 +448,7 @@
 @media (max-width: 1080px) {
   .feature { grid-template-columns: minmax(0, 1fr); gap: 34px; }
   .feature--flip .feature__art { order: 0; }
+  .feature--stack .feature__list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .feature__text, .feature__list li { max-width: 60ch; }
   .trail__step { grid-template-columns: 64px minmax(0, 1fr); }
   .trail__art { grid-column: 2; margin-top: 6px; }
@@ -453,11 +486,11 @@
 
   .hero { padding-top: 116px; }
 
-  /* Мокап на телефоні: не зменшуємо до нечитабельного, а обрізаємо. Сайдбар
-     ховається — так само, як його ховає сам продукт на вузькому екрані, —
-     і в кадр лишається те, заради чого мокап тут стоїть: картки. */
-  .shot { --s-min: 0.8; }
-  .shot .sb { display: none; }
+  /* Мокап на телефоні. Сайдбар ховається — так само, як його ховає сам
+     продукт на вузькому екрані, — і в кадрі лишається те, заради чого
+     мокап тут стоїть: самі задачі. */
+  .shot aside { display: none; }
+  .shot [class*="pl-[6px]"] { padding-left: 0; }
   .cell, .cell--wide, .cell--full { grid-column: span 6; min-height: 0; }
   .bento { grid-template-columns: repeat(6, 1fr); }
   .trail__step { grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 24px 0; }
@@ -488,7 +521,6 @@
   }
 
   [data-reveal] { opacity: 1; transform: none; }
-  [data-play='false'][data-stagger] > * { opacity: 1; transform: none; }
   .hero__frame-wrap { transform: none; }
   .pointer { display: none; }
 }
