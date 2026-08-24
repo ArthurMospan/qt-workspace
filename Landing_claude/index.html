@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickTeam — простір команди: задачі, час, календар і чат</title>
+<meta name="description" content="QuickTeam тримає дошки, спринти, облік часу, календар і чат в одному просторі. Година, яку списали на задачу, сама доходить до табеля, аналітики й рахунку.">
+<meta name="theme-color" content="#0c0c0d">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="uk_UA">
+<meta property="og:site_name" content="QuickTeam">
+<meta property="og:title" content="QuickTeam — від задачі до рахунку без пересадок">
+<meta property="og:description" content="Дошки, спринти, час, календар і чат в одному просторі команди.">
+
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/landing.css">
+<link rel="stylesheet" href="assets/sections.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Перейти до вмісту</a>
+
+<!-- Іконки одним спрайтом: дублювати <svg> у розмітці означає дублювати
+     й кожну правку до них. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="i-check"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <g id="i-arrow"><path d="M5 12h14m-6-7 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <g id="i-plus"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g>
+  <g id="i-lock"><rect x="4" y="10" width="16" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g id="i-clock"><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.6V12l3 1.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g id="i-doc"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+  <g id="i-chart"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g id="i-user"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g id="i-users"><circle cx="9.5" cy="8.4" r="3.3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 19.5c1.2-3.2 3.6-4.8 6.5-4.8s5.3 1.6 6.5 4.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M16.5 6.2a3 3 0 0 1 0 5.9M18 14.6c2 .6 3.4 2 4.2 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+  <g id="i-folder"><path d="M3.5 7.2A2.2 2.2 0 0 1 5.7 5h3.1l2 2.4h7.5a2.2 2.2 0 0 1 2.2 2.2v7.2a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+  <g id="i-task"><rect x="3.6" y="4.2" width="16.8" height="15.6" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 12.2l2.6 2.6L16 9.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <g id="i-board"><rect x="3" y="4" width="5" height="16" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="10" y="4" width="5" height="11" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="17" y="4" width="4" height="8" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.7"/></g>
+  <g id="i-cal"><rect x="3.5" y="5" width="17" height="16" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+  <g id="i-chat"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+  <g id="i-zap"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+  <g id="i-pie"><path d="M12 3.6a8.4 8.4 0 1 0 8.4 8.4H12z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14.6 2.2A8.4 8.4 0 0 1 21.8 9.4h-7.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+  <g id="i-gear"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 2.8v2.4M12 18.8v2.4M4.5 7.8l2 1.2M17.5 15l2 1.2M4.5 16.2l2-1.2M17.5 9l2-1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+  <g id="i-search"><circle cx="11" cy="11" r="6.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g id="i-menu"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g id="i-chev"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <g id="i-filter"><path d="M4 6h16l-6.2 7.2V19l-3.6-2v-3.8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+  <g id="i-cursor"><path d="M4 2.5 19 11l-6.6 1.6L9.6 19z" fill="#1f1f1f" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></g>
+</defs></svg>
+
+<header class="nav" id="nav" data-stuck="false">
+  <div class="nav__inner">
+    <a class="brand" href="#top" aria-label="QuickTeam, на початок">
+      <img class="brand__mark" src="assets/mark.svg" alt="" width="26" height="26">
+      <span class="brand__name">QuickTeam</span>
+    </a>
+    <nav class="nav__links" aria-label="Розділи сторінки">
+      <a class="nav__link" href="#screens">Екрани</a>
+      <a class="nav__link" href="#hour">Шлях години</a>
+      <a class="nav__link" href="#work">Робота</a>
+      <a class="nav__link" href="#trust">Безпека</a>
+      <a class="nav__link" href="#faq">Питання</a>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--quiet btn--sm" href="https://qt-workspace.vercel.app/login">Увійти</a>
+      <a class="btn btn--primary btn--sm" href="https://qt-workspace.vercel.app/register">Створити простір</a>
+      <button class="nav__burger" id="burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="sheet">
+        <svg width="18" height="18" viewBox="0 0 24 24"><use href="#i-menu"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="nav__sheet" id="sheet" data-open="false">
+  <a href="#screens">Екрани</a>
+  <a href="#hour">Шлях години</a>
+  <a href="#work">Робота</a>
+  <a href="#trust">Безпека</a>
+  <a href="#faq">Питання</a>
+  <a href="https://qt-workspace.vercel.app/login">Увійти</a>
+</div>
+
+<main id="main">
+
+<!-- ══════════════ Герой ══════════════════════════════════════════════ -->
+<section class="hero" id="top">
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient__grid"></div>
+    <div class="ambient__glow"></div>
+  </div>
+
+  <div class="wrap hero__inner">
+    <div class="hero__head">
+      <p class="eyebrow" data-reveal>Внутрішній простір команди</p>
+      <h1 class="display d-hero hero__title" data-reveal style="--d:60ms">
+        Від задачі<br>до рахунку —<br><em>без пересадок</em>
+      </h1>
+      <p class="lede" data-reveal style="--d:140ms">
+        Дошки, спринти, облік часу, календар і чат живуть в одному просторі.
+        Година, яку списали на задачу, сама доходить до табеля, аналітики
+        й рахунку — її не треба переносити руками з таблиці в таблицю.
+      </p>
+      <div class="hero__cta" data-reveal style="--d:200ms">
+        <a class="btn btn--primary btn--lg" href="https://qt-workspace.vercel.app/register">
+          Створити простір
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="btn btn--ghost btn--lg" href="#screens">Подивитись екрани</a>
+      </div>
+      <p class="hero__meta" data-reveal style="--d:260ms">
+        <span>Інтерфейс українською</span>
+        <span>Ролі та доступ за проєктами</span>
+        <span>Зараз у беті</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="wrap hero__stage" data-reveal style="--d:320ms">
+    <div class="hero__frame-wrap" id="heroTilt">
+      <div class="frame">
+        <div class="frame__bar" aria-hidden="true">
+          <span class="frame__dots"><i></i><i></i><i></i></span>
+          <span class="frame__url">
+            <svg viewBox="0 0 24 24"><use href="#i-lock"/></svg>
+            qt-workspace.vercel.app
+          </span>
+        </div>
+
+        <!-- SHOT: board -->
+        <div class="shot" data-shot="board" style="--shot-w:1180px">
+          <div class="shot__stage">
+            <div class="app" style="--app-h:600px" aria-hidden="true">
+
+              <aside class="sb">
+                <div class="sb__top">
+                  <img class="sb__logo" src="assets/mark.svg" alt="" width="22" height="22">
+                  <span class="sb__org">Студія<small>3 проєкти · 6 людей</small></span>
+                </div>
+                <div class="sb__search">
+                  <svg viewBox="0 0 24 24"><use href="#i-search"/></svg>
+                  Пошук
+                  <kbd>Ctrl K</kbd>
+                </div>
+                <nav class="sb__nav" data-stagger data-play="false">
+                  <span class="sb__item" style="--i:0"><svg viewBox="0 0 24 24"><use href="#i-folder"/></svg>Проєкти</span>
+                  <span class="sb__item" style="--i:1"><svg viewBox="0 0 24 24"><use href="#i-task"/></svg>Мої завдання<b>4</b></span>
+                  <span class="sb__item" style="--i:2"><svg viewBox="0 0 24 24"><use href="#i-zap"/></svg>Спринти</span>
+                  <span class="sb__item" style="--i:3"><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg>Календар</span>
+                  <span class="sb__item" style="--i:4"><svg viewBox="0 0 24 24"><use href="#i-chat"/></svg>Чат<b>2</b></span>
+                  <span class="sb__item" style="--i:5"><svg viewBox="0 0 24 24"><use href="#i-users"/></svg>Команда</span>
+                  <span class="sb__item" style="--i:6"><svg viewBox="0 0 24 24"><use href="#i-pie"/></svg>Аналітика</span>
+                </nav>
+                <div>
+                  <p class="sb__label">Проєкти</p>
+                  <span class="sb__project" data-active="true" style="background:rgba(255,255,255,.1);color:#fff"><i style="background:#cf7a22"></i>Мобільний застосунок</span>
+                  <span class="sb__project"><i style="background:#0e8f74"></i>Сайт клініки</span>
+                  <span class="sb__project"><i style="background:#6366f1"></i>Внутрішні інструменти</span>
+                </div>
+                <div class="sb__foot">
+                  <span class="av av--a">АМ</span>
+                  <span>Артур<small>Власник</small></span>
+                </div>
+              </aside>
+
+              <div class="pane">
+                <header class="pane__head">
+                  <span class="crumb">
+                    Проєкти <svg viewBox="0 0 24 24"><use href="#i-chev"/></svg> <b>Мобільний застосунок</b>
+                  </span>
+                  <span class="seg">
+                    <span data-active="true">Дошка</span><span>Список</span><span>Таблиця</span>
+                  </span>
+                  <span class="pane__actions">
+                    <span class="runner"><i></i><span id="ticker">01:12:40</span></span>
+                    <span class="stack">
+                      <span class="av av--b">ОК</span><span class="av av--c">ІП</span>
+                      <span class="av av--d">ЛС</span><span class="av av--e">+3</span>
+                    </span>
+                    <span class="mini-btn"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>Завдання</span>
+                  </span>
+                </header>
+
+                <div class="pane__filters">
+                  <span class="chip" data-on="true"><svg viewBox="0 0 24 24"><use href="#i-filter"/></svg>Спринт 24</span>
+                  <span class="chip"><i style="background:#f97316"></i>Високий</span>
+                  <span class="chip"><svg viewBox="0 0 24 24"><use href="#i-user"/></svg>Виконавець</span>
+                  <span class="chip">Мітки</span>
+                  <span class="chip">Дедлайн</span>
+                </div>
+
+                <div class="board" data-stagger data-play="false">
+                  <div class="col" style="--i:0">
+                    <div class="col__head"><i style="background:#9a9a9a"></i><span>Беклог</span><b>7</b><em>+</em></div>
+                    <div class="card">
+                      <p class="card__title">Перевести оплату на новий еквайринг</p>
+                      <div class="card__tags"><span>оплата</span><span>бекенд</span></div>
+                      <div class="card__meta"><i class="card__pri" style="background:#eab308"></i><span class="card__id">QT-318</span><span class="av av--sm av--b">ОК</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Сторінка тарифів</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#9a9a9a"></i><span class="card__id">QT-322</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Двофакторний вхід для адмінів</p>
+                      <div class="card__tags"><span>безпека</span></div>
+                      <div class="card__meta"><i class="card__pri" style="background:#f97316"></i><span class="card__id">QT-329</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Автозбереження чернетки коментаря</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#9a9a9a"></i><span class="card__id">QT-334</span></div>
+                    </div>
+                    <div class="card card--ghost"></div>
+                  </div>
+
+                  <div class="col" style="--i:1">
+                    <div class="col__head"><i style="background:#6366f1"></i><span>До виконання</span><b>4</b><em>+</em></div>
+                    <div class="card">
+                      <p class="card__title">Імпорт задач з YouTrack</p>
+                      <div class="card__tags"><span>міграція</span></div>
+                      <div class="card__meta"><i class="card__pri" style="background:#f97316"></i><span class="card__id">QT-301</span><span class="av av--sm av--c">ІП</span><span class="card__time"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>0:00</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Пуш-нагадування про дедлайни</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#eab308"></i><span class="card__id">QT-305</span><span class="av av--sm av--d">ЛС</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Експорт табеля в PDF</p>
+                      <div class="card__tags"><span>звіти</span></div>
+                      <div class="card__meta"><i class="card__pri" style="background:#eab308"></i><span class="card__id">QT-311</span><span class="av av--sm av--b">ОК</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Порожній стан для нового проєкту</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#9a9a9a"></i><span class="card__id">QT-314</span><span class="av av--sm av--d">ЛС</span></div>
+                    </div>
+                  </div>
+
+                  <div class="col" style="--i:2">
+                    <div class="col__head"><i style="background:#f59e0b"></i><span>У роботі</span><b data-after="2">3</b><em>+</em></div>
+                    <div class="fly-slot" style="--slot-h:86px">
+                      <div class="card">
+                        <p class="card__title">Виправити зсув табеля в Safari</p>
+                        <div class="card__meta"><i class="card__pri" style="background:#ef4444"></i><span class="card__id">QT-287</span><span class="av av--sm av--a">АМ</span><span class="card__time"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>3:20</span></div>
+                        <div class="card__bar"><i style="width:78%"></i></div>
+                      </div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Редизайн картки товару</p>
+                      <div class="card__tags"><span>дизайн</span></div>
+                      <div class="card__meta"><i class="card__pri" style="background:#f97316"></i><span class="card__id">QT-296</span><span class="av av--sm av--d">ЛС</span><span class="card__time"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>6:10</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Нагадування в Telegram</p>
+                      <div class="card__tags"><span>інтеграції</span></div>
+                      <div class="card__meta"><i class="card__pri" style="background:#eab308"></i><span class="card__id">QT-299</span><span class="av av--sm av--c">ІП</span><span class="card__time"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>1:45</span></div>
+                    </div>
+                  </div>
+
+                  <div class="col" style="--i:3">
+                    <div class="col__head"><i style="background:#8b5cf6"></i><span>На перевірці</span><b data-after="3">2</b><em>+</em></div>
+                    <div class="drop-slot" style="--slot-h:86px"></div>
+                    <div class="card">
+                      <p class="card__title">Онбординг нового дизайнера</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#9a9a9a"></i><span class="card__id">QT-274</span><span class="av av--sm av--c">ІП</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Пошук по коментарях</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#eab308"></i><span class="card__id">QT-281</span><span class="av av--sm av--b">ОК</span><span class="card__time"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>4:05</span></div>
+                    </div>
+                  </div>
+
+                  <div class="col" style="--i:4">
+                    <div class="col__head"><i style="background:#10b981"></i><span>Готово</span><b>12</b><em>+</em></div>
+                    <div class="card">
+                      <p class="card__title">Звіт по годинах за липень</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#9a9a9a"></i><span class="card__id">QT-262</span><span class="av av--sm av--a">АМ</span><span class="card__time"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>2:45</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Аудит доступів після звільнення</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#f97316"></i><span class="card__id">QT-255</span><span class="av av--sm av--b">ОК</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Імпорт учасників з таблиці</p>
+                      <div class="card__meta"><i class="card__pri" style="background:#9a9a9a"></i><span class="card__id">QT-248</span><span class="av av--sm av--c">ІП</span><span class="card__time"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>5:30</span></div>
+                    </div>
+                    <div class="card">
+                      <p class="card__title">Гарячі клавіші в дошці</p>
+                      <div class="card__tags"><span>ux</span></div>
+                      <div class="card__meta"><i class="card__pri" style="background:#9a9a9a"></i><span class="card__id">QT-241</span><span class="av av--sm av--d">ЛС</span></div>
+                    </div>
+                  </div>
+
+                  <svg class="pointer" viewBox="0 0 24 24" style="--px:466px;--py:74px"><use href="#i-cursor"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /SHOT -->
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ Що складається в один простір ══════════════════════ -->
+<section class="section section--tight">
+  <div class="wrap swap" data-reveal>
+    <p class="swap__lead">Скільки вкладок команда тримає відкритими, щоб зробити одну задачу</p>
+    <div class="swap__row">
+      <span class="swap__tab"><svg viewBox="0 0 24 24"><use href="#i-board"/></svg><s>трекер задач</s></span>
+      <span class="swap__tab"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg><s>трекер часу</s></span>
+      <span class="swap__tab"><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg><s>календар</s></span>
+      <span class="swap__tab"><svg viewBox="0 0 24 24"><use href="#i-chat"/></svg><s>месенджер</s></span>
+      <span class="swap__tab"><svg viewBox="0 0 24 24"><use href="#i-doc"/></svg><s>табель у таблиці</s></span>
+      <span class="swap__arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></span>
+      <span class="swap__one"><img src="assets/mark.svg" alt="" width="16" height="16">QuickTeam</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ Екрани ═════════════════════════════════════════════ -->
+<section class="section" id="screens">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">Розділи продукту</p>
+      <h2 class="display d-section">Сім місць, одна робота</h2>
+      <p class="section-head__note">
+        Один простір, одна навігація, одні й ті самі люди й задачі в кожному розділі.
+      </p>
+    </div>
+
+    <div class="bento" id="bento">
+
+      <article class="cell cell--wide" data-reveal>
+        <p class="cell__eyebrow">Проєкти · Дошка</p>
+        <h3 class="cell__title">Дошка, список і таблиця — на вибір</h3>
+        <p class="cell__text">Колонки — це статуси проєкту. Перетягнули картку — статус змінився, і всі, кого це стосується, побачили без оновлення сторінки.</p>
+        <div class="cell__art">
+          <!-- SHOT: board-slice -->
+          <div class="mk" style="padding:12px" aria-hidden="true">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="col">
+                <div class="col__head"><i style="background:#f59e0b"></i><span>У роботі</span><b>3</b></div>
+                <div class="card">
+                  <p class="card__title">Виправити зсув табеля в Safari</p>
+                  <div class="card__meta"><i class="card__pri" style="background:#ef4444"></i><span class="card__id">QT-287</span><span class="av av--sm av--a">АМ</span><span class="card__time"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>3:20</span></div>
+                </div>
+                <div class="card">
+                  <p class="card__title">Редизайн картки товару</p>
+                  <div class="card__meta"><i class="card__pri" style="background:#f97316"></i><span class="card__id">QT-296</span><span class="av av--sm av--d">ЛС</span></div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="col__head"><i style="background:#8b5cf6"></i><span>На перевірці</span><b>2</b></div>
+                <div class="card">
+                  <p class="card__title">Онбординг нового дизайнера</p>
+                  <div class="card__meta"><i class="card__pri" style="background:#9a9a9a"></i><span class="card__id">QT-274</span><span class="av av--sm av--c">ІП</span></div>
+                </div>
+                <div class="card card--ghost"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="cell cell--wide" data-reveal style="--d:70ms">
+        <p class="cell__eyebrow">Мої завдання</p>
+        <h3 class="cell__title">Усе своє — на одному екрані</h3>
+        <p class="cell__text">Завдання з усіх проєктів, де ви виконавець або спостерігач, згруповані так, щоб було видно, що горить сьогодні.</p>
+        <div class="cell__art">
+          <!-- SHOT: my -->
+          <div class="mk" style="padding:12px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>Сьогодні</h4><span>4 завдання · 6:40</span></div>
+              <div class="row"><span class="tick" data-on="true"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span><span class="row__title" style="color:#9a9a9a;text-decoration:line-through">Звіт по годинах за липень</span><span class="row__end"><span class="row__val">2:45</span></span></div>
+              <div class="row"><span class="tick"></span><span class="row__title">Виправити зсув табеля в Safari</span><span class="row__end"><i class="card__pri" style="background:#ef4444"></i><span class="row__val">3:20</span></span></div>
+              <div class="row"><span class="tick"></span><span class="row__title">Імпорт задач з YouTrack</span><span class="row__end"><i class="card__pri" style="background:#f97316"></i><span class="row__val">0:35</span></span></div>
+              <div class="row"><span class="tick"></span><span class="row__title">Погодити макет тарифів</span><span class="row__end"><i class="card__pri" style="background:#eab308"></i><span class="row__val">—</span></span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="cell" data-reveal>
+        <p class="cell__eyebrow">Спринти</p>
+        <h3 class="cell__title">Відрізок роботи з видимим кінцем</h3>
+        <p class="cell__text">Спринт належить організації, а не проєкту: в один можна скласти задачі з кількох проєктів.</p>
+        <div class="cell__art">
+          <!-- SHOT: sprint -->
+          <div class="mk" style="padding:12px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>Спринт 24</h4><span>до 29 серпня</span></div>
+              <div class="stat"><span class="stat__label">Завершено</span><span class="stat__value">18<small>/26</small></span></div>
+              <div class="meter"><i data-grow style="--w:69%"></i></div>
+              <div class="row"><span class="row__title">Мобільний застосунок</span><span class="row__end"><span class="row__val">11/14</span></span></div>
+              <div class="row"><span class="row__title">Сайт клініки</span><span class="row__end"><span class="row__val">7/12</span></span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="cell" data-reveal style="--d:70ms">
+        <p class="cell__eyebrow">Календар</p>
+        <h3 class="cell__title">Зустрічі й дедлайни поруч</h3>
+        <p class="cell__text">Події, повторення і дедлайни завдань в одній сітці. Нагадування приходять, навіть коли вкладка закрита.</p>
+        <div class="cell__art">
+          <!-- SHOT: calendar -->
+          <div class="mk" style="padding:12px" aria-hidden="true">
+            <div class="cal">
+              <div class="cal__day"><span class="cal__dow">ПН <b>25</b></span><div class="cal__slot"><span class="ev"><b>Стендап</b><time>09:30</time></span></div></div>
+              <div class="cal__day"><span class="cal__dow">ВТ <b>26</b></span><div class="cal__slot"><span class="ev"><b>Стендап</b><time>09:30</time></span><span class="ev" data-tone="amber"><b>Дедлайн QT-287</b><time>18:00</time></span></div></div>
+              <div class="cal__day"><span class="cal__dow">СР <b>27</b></span><div class="cal__slot"><span class="ev"><b>Стендап</b><time>09:30</time></span><span class="ev" data-tone="teal"><b>Демо клієнту</b><time>15:00</time></span></div></div>
+              <div class="cal__day"><span class="cal__dow">ЧТ <b>28</b></span><div class="cal__slot"><span class="ev"><b>Стендап</b><time>09:30</time></span></div></div>
+              <div class="cal__day"><span class="cal__dow">ПТ <b>29</b></span><div class="cal__slot"><span class="ev" data-tone="amber"><b>Кінець спринту</b><time>17:00</time></span></div></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="cell" data-reveal style="--d:140ms">
+        <p class="cell__eyebrow">Чат</p>
+        <h3 class="cell__title">Розмова поруч із задачею</h3>
+        <p class="cell__text">Канали й особисті переписки. «@» кличе людину, «#» вставляє завдання — і воно розкривається карткою.</p>
+        <div class="cell__art">
+          <!-- SHOT: chat -->
+          <div class="mk" style="padding:12px" aria-hidden="true">
+            <div class="panel" style="gap:14px">
+              <div class="panel__head"><h4># розробка</h4><span>6 учасників</span></div>
+              <div class="msg">
+                <span class="av av--sm av--c">ІП</span>
+                <span class="msg__body">
+                  <span class="msg__who">Ірина<time>11:04</time></span>
+                  <span class="msg__text"><mark>@Артур</mark> табель у Safari їде на 4 пікселі, глянеш?</span>
+                </span>
+              </div>
+              <div class="msg">
+                <span class="av av--sm av--a">АМ</span>
+                <span class="msg__body">
+                  <span class="msg__who">Артур<time>11:07</time></span>
+                  <span class="msg__text">Беру, вже в роботі</span>
+                  <span class="msg__ref"><span>QT-287</span><b>Виправити зсув табеля в Safari</b></span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="cell cell--wide" data-reveal>
+        <p class="cell__eyebrow">Аналітика</p>
+        <h3 class="cell__title">Числа, які можна пояснити</h3>
+        <p class="cell__text">Списаний час, завершені завдання, навантаження людей і прогрес проєктів — з тих самих записів, що й у задачах. Експорт у Excel, CSV і PDF.</p>
+        <div class="cell__art">
+          <!-- SHOT: analytics -->
+          <div class="mk" style="padding:12px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>Списаний час</h4><span>серпень</span></div>
+              <div class="bars">
+                <div><i data-grow style="--h:38%"></i><span>ПН</span></div>
+                <div><i data-grow style="--h:62%"></i><span>ВТ</span></div>
+                <div><i data-grow style="--h:54%"></i><span>СР</span></div>
+                <div><i data-grow style="--h:88%"></i><span>ЧТ</span></div>
+                <div><i data-grow style="--h:71%"></i><span>ПТ</span></div>
+                <div><i data-grow data-tone="ctx" style="--h:12%"></i><span>СБ</span></div>
+                <div><i data-grow data-tone="ctx" style="--h:6%"></i><span>НД</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="cell cell--wide" data-reveal style="--d:70ms">
+        <p class="cell__eyebrow">Команда</p>
+        <h3 class="cell__title">Видно, хто над чим</h3>
+        <p class="cell__text">Профілі, ролі, доступ до проєктів і історія змін. Прибрали людину — доступ закрився, а її записи в задачах лишились як факт.</p>
+        <div class="cell__art">
+          <!-- SHOT: team -->
+          <div class="mk" style="padding:12px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>Навантаження тижня</h4><span>6 людей</span></div>
+              <div class="row"><span class="av av--sm av--a">АМ</span><span class="row__title">Артур · власник</span><span class="row__end" style="width:120px"><span class="meter" style="width:82px"><i data-grow style="--w:86%"></i></span><span class="row__val">34 год</span></span></div>
+              <div class="row"><span class="av av--sm av--b">ОК</span><span class="row__title">Олена · адмін</span><span class="row__end" style="width:120px"><span class="meter" style="width:82px"><i data-grow style="--w:64%"></i></span><span class="row__val">26 год</span></span></div>
+              <div class="row"><span class="av av--sm av--c">ІП</span><span class="row__title">Ірина · учасниця</span><span class="row__end" style="width:120px"><span class="meter" style="width:82px"><i data-grow data-tone="amber" style="--w:97%"></i></span><span class="row__val">39 год</span></span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ Шлях однієї години ═════════════════════════════════ -->
+<section class="section" id="hour">
+  <div class="wrap">
+    <div class="section-head section-head--wide" data-reveal>
+      <p class="eyebrow">Наскрізний облік</p>
+      <h2 class="display d-section">Шлях однієї години</h2>
+      <p class="lede">
+        Це єдине місце на сторінці, де номери щось означають: година не може
+        потрапити в рахунок раніше, ніж її списали. Три кроки — і жодного
+        копіювання між інструментами.
+      </p>
+    </div>
+
+    <ol class="trail">
+      <li class="trail__step" data-reveal>
+        <span class="trail__index mono">01</span>
+        <div class="trail__body">
+          <h3 class="trail__title">Таймер у самій задачі</h3>
+          <p class="trail__text">
+            Запустили таймер на завданні або внесли години руками. Запис
+            прив'язаний до задачі, проєкту й людини — а не до памʼяті того,
+            хто в пʼятницю заповнює табель.
+          </p>
+          <p class="trail__where">Завдання → Час</p>
+        </div>
+        <div class="trail__art">
+          <!-- SHOT: issue-time -->
+          <div class="mk" style="padding:14px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>QT-287 · Час</h4><span>оцінка 4:00</span></div>
+              <div class="row" style="border:0;padding-top:0">
+                <span class="runner"><i></i>01:12:40</span>
+                <span class="row__end"><span class="mini-btn mini-btn--quiet">Зупинити</span></span>
+              </div>
+              <div class="meter"><i data-grow data-tone="amber" style="--w:83%"></i></div>
+              <div class="row"><span class="av av--sm av--a">АМ</span><span class="row__title">Сьогодні · верстка таблиці</span><span class="row__end"><span class="row__val">2:10</span></span></div>
+              <div class="row"><span class="av av--sm av--a">АМ</span><span class="row__title">Учора · пошук причини</span><span class="row__end"><span class="row__val">1:10</span></span></div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li class="trail__step" data-reveal>
+        <span class="trail__index mono">02</span>
+        <div class="trail__body">
+          <h3 class="trail__title">Табель збирається сам</h3>
+          <p class="trail__text">
+            Записи складаються по людях, проєктах і днях. Архівована задача
+            зникає з відкритої роботи, але лишається в табелі — інакше
+            години просто пропали б з рахунку.
+          </p>
+          <p class="trail__where">Аналітика → Час</p>
+        </div>
+        <div class="trail__art">
+          <!-- SHOT: timesheet -->
+          <div class="mk" style="padding:14px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>Табель · 1–25 серпня</h4><span>184:20</span></div>
+              <div class="row"><span class="row__title">Мобільний застосунок</span><span class="row__end"><span class="meter" style="width:70px"><i data-grow style="--w:74%"></i></span><span class="row__val">96:40</span></span></div>
+              <div class="row"><span class="row__title">Сайт клініки</span><span class="row__end"><span class="meter" style="width:70px"><i data-grow style="--w:46%"></i></span><span class="row__val">58:10</span></span></div>
+              <div class="row"><span class="row__title">Внутрішні інструменти</span><span class="row__end"><span class="meter" style="width:70px"><i data-grow style="--w:23%"></i></span><span class="row__val">29:30</span></span></div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li class="trail__step" data-reveal>
+        <span class="trail__index mono">03</span>
+        <div class="trail__body">
+          <h3 class="trail__title">Рахунок із тих самих годин</h3>
+          <p class="trail__text">
+            Рахунок збирається з реальних записів за період, а не з окремої
+            таблиці, яку хтось веде паралельно. Години, що вже потрапили
+            в рахунок, продукт захищає від скасування.
+          </p>
+          <p class="trail__where">Аналітика → Рахунки</p>
+        </div>
+        <div class="trail__art">
+          <!-- SHOT: invoice -->
+          <div class="mk" style="padding:14px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>Рахунок · серпень</h4><span class="chip">Чернетка</span></div>
+              <div class="row"><span class="row__title">Розробка</span><span class="row__end"><span class="row__val">96:40 год</span></span></div>
+              <div class="row"><span class="row__title">Дизайн</span><span class="row__end"><span class="row__val">31:15 год</span></span></div>
+              <div class="row"><span class="row__title">Менеджмент</span><span class="row__end"><span class="row__val">12:00 год</span></span></div>
+              <div class="row" style="border-top:1px solid #e9e9e9;padding-top:10px">
+                <span class="row__title" style="font-weight:600">До сплати</span>
+                <span class="row__end"><span class="stat__value" style="font-size:20px">139:55</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="fan" data-reveal>
+      <div class="fan__head">
+        <h3>Один запис часу — чотири адреси</h3>
+        <p>І жодної з них не треба оновлювати руками</p>
+      </div>
+      <div class="fan__grid">
+        <div class="fan__out">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-board"/></svg>
+          <b>Картка завдання</b>
+          <span>Скільки вже витрачено проти оцінки</span>
+        </div>
+        <div class="fan__out">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-user"/></svg>
+          <b>Профіль людини</b>
+          <span>Навантаження за тиждень і місяць</span>
+        </div>
+        <div class="fan__out">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chart"/></svg>
+          <b>Аналітика</b>
+          <span>Час по проєктах і динаміка</span>
+        </div>
+        <div class="fan__out">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-doc"/></svg>
+          <b>Рахунок</b>
+          <span>Позиції за період без ручного зведення</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ Робота ═════════════════════════════════════════════ -->
+<section class="section" id="work">
+  <div class="wrap">
+    <div class="feature" data-reveal>
+      <div class="feature__body">
+        <p class="feature__note">Статуси</p>
+        <h2 class="display d-block feature__title">Свої назви. Спільний зміст.</h2>
+        <p class="feature__text">
+          Кожен проєкт називає колонки так, як звик: «На ревʼю», «У тестуванні»,
+          «Чекає клієнта». Під назвою продукт бачить одну з пʼяти категорій —
+          і саме за нею рахує все, що стосується кількох проєктів одразу.
+        </p>
+        <ul class="feature__list">
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span><b>Беклог, До виконання, У роботі, На перевірці, Готово</b> — спільна мова між проєктами.</span></li>
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Наскрізні екрани групують за категорією, а не за назвою: колонка, якої немає в іншому проєкті, нікого не ламає.</span></li>
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Скасування — не статус, а властивість задачі. Скасоване не рахується ні як відкрите, ні як зроблене.</span></li>
+        </ul>
+      </div>
+      <div class="feature__art">
+        <div class="frame frame--flat">
+          <!-- SHOT: statuses -->
+          <div class="mk" style="padding:18px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>Статуси проєкту «Сайт клініки»</h4><span>6 колонок</span></div>
+              <div class="row"><i class="card__pri" style="background:#9a9a9a"></i><span class="row__title">Ідеї</span><span class="row__end"><span class="chip">Беклог</span></span></div>
+              <div class="row"><i class="card__pri" style="background:#6366f1"></i><span class="row__title">Готово до роботи</span><span class="row__end"><span class="chip">До виконання</span></span></div>
+              <div class="row"><i class="card__pri" style="background:#f59e0b"></i><span class="row__title">Пишемо</span><span class="row__end"><span class="chip">У роботі</span></span></div>
+              <div class="row"><i class="card__pri" style="background:#8b5cf6"></i><span class="row__title">На ревʼю</span><span class="row__end"><span class="chip">На перевірці</span></span></div>
+              <div class="row"><i class="card__pri" style="background:#8b5cf6"></i><span class="row__title">Чекає клієнта</span><span class="row__end"><span class="chip">На перевірці</span></span></div>
+              <div class="row"><i class="card__pri" style="background:#10b981"></i><span class="row__title">Викотили</span><span class="row__end"><span class="chip" data-on="true">Готово</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--flush-top">
+  <div class="wrap">
+    <div class="feature feature--flip" data-reveal>
+      <div class="feature__body">
+        <p class="feature__note">Планування</p>
+        <h2 class="display d-block feature__title">Спринт бере задачі з усіх проєктів</h2>
+        <p class="feature__text">
+          Спринт належить організації. Якщо тиждень команди складається
+          з двох клієнтських проєктів і внутрішнього — це один спринт,
+          а не три паралельні дошки.
+        </p>
+        <ul class="feature__list">
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Кілька активних спринтів одночасно, якщо команді так зручно.</span></li>
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Незавершене не зникає: повертається в беклог або переїжджає далі.</span></li>
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Підзавдання, звʼязки й дублювання — щоб велике розібрати на частини.</span></li>
+        </ul>
+      </div>
+      <div class="feature__art">
+        <div class="frame frame--flat">
+          <!-- SHOT: sprint-full -->
+          <div class="mk" style="padding:18px" aria-hidden="true">
+            <div class="panel">
+              <div class="panel__head"><h4>Спринт 24 · 18–29 серпня</h4><span class="chip" data-on="true">Активний</span></div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+                <div class="stat"><span class="stat__label">Завдань</span><span class="stat__value">26</span></div>
+                <div class="stat"><span class="stat__label">Завершено</span><span class="stat__value">18</span><span class="stat__delta">+4 за тиждень</span></div>
+                <div class="stat"><span class="stat__label">Списано</span><span class="stat__value">96<small>:40</small></span></div>
+              </div>
+              <div class="meter"><i data-grow style="--w:69%"></i></div>
+              <div class="row"><i class="card__pri" style="background:#cf7a22"></i><span class="row__title">Мобільний застосунок</span><span class="row__end"><span class="row__val">11 / 14</span></span></div>
+              <div class="row"><i class="card__pri" style="background:#0e8f74"></i><span class="row__title">Сайт клініки</span><span class="row__end"><span class="row__val">7 / 12</span></span></div>
+              <div class="row"><i class="card__pri" style="background:#6366f1"></i><span class="row__title">Внутрішні інструменти</span><span class="row__end"><span class="row__val">0 / 0</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--flush-top">
+  <div class="wrap">
+    <div class="feature" data-reveal>
+      <div class="feature__body">
+        <p class="feature__note">Аналітика</p>
+        <h2 class="display d-block feature__title">Числа, під якими видно записи</h2>
+        <p class="feature__text">
+          Кожен графік зібраний з тих самих задач і записів часу, які команда
+          бачить у роботі. Будь-яку цифру можна пояснити — і будь-яку можна
+          вивантажити.
+        </p>
+        <ul class="feature__list">
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Час, завершені завдання, навантаження людей, прогрес проєктів.</span></li>
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Excel, CSV і PDF — з однієї моделі даних, без розбіжностей між форматами.</span></li>
+          <li><svg viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Сторінка людини: чим саме зайнятий тиждень конкретного виконавця.</span></li>
+        </ul>
+      </div>
+      <div class="feature__art">
+        <div class="frame frame--flat">
+          <!-- SHOT: analytics-full -->
+          <div class="mk" style="padding:18px" aria-hidden="true">
+            <div style="display:grid;gap:14px">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+                <div class="panel" style="gap:4px"><div class="stat"><span class="stat__label">Списано за місяць</span><span class="stat__value"><b data-count="184">0</b><small>:20</small></span><span class="stat__delta">+12% до липня</span></div></div>
+                <div class="panel" style="gap:4px"><div class="stat"><span class="stat__label">Завершено задач</span><span class="stat__value"><b data-count="63">0</b></span><span class="stat__delta">+9 до липня</span></div></div>
+                <div class="panel" style="gap:4px"><div class="stat"><span class="stat__label">Середній цикл</span><span class="stat__value"><b data-count="3">0</b><small>,4 дн</small></span><span class="stat__delta" data-dir="down">−0,6 дн</span></div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:10px">
+                <div class="panel">
+                  <div class="panel__head"><h4>Час по тижнях</h4><span>серпень</span></div>
+                  <div class="bars">
+                    <div><i data-grow style="--h:46%"></i><span>Т31</span></div>
+                    <div><i data-grow style="--h:63%"></i><span>Т32</span></div>
+                    <div><i data-grow style="--h:52%"></i><span>Т33</span></div>
+                    <div><i data-grow style="--h:87%"></i><span>Т34</span></div>
+                    <div><i data-grow data-tone="ctx" style="--h:29%"></i><span>Т35</span></div>
+                  </div>
+                </div>
+                <div class="panel">
+                  <div class="panel__head"><h4>Розподіл</h4></div>
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <span class="donut-wrap"><span class="donut" data-donut style="--a:0%;--b:0%"></span><span class="donut__mid">52%</span></span>
+                    <span class="legend">
+                      <span><i style="background:#1f1f1f"></i>Розробка<b>96:40</b></span>
+                      <span><i style="background:#cf7a22"></i>Дизайн<b>31:15</b></span>
+                      <span><i style="background:#ededee"></i>Інше<b>56:25</b></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ Безпека ════════════════════════════════════════════ -->
+<section class="section" id="trust">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">Доступ і дані</p>
+      <h2 class="display d-section">Хто що бачить</h2>
+      <p class="section-head__note">
+        Доступ вирішується на сервері, а не тим, що інтерфейс щось приховав.
+      </p>
+    </div>
+    <div class="guards">
+      <div class="guard" data-reveal>
+        <p class="guard__key">Межа видимості</p>
+        <h4>Участь в організації плюс команда проєкту</h4>
+        <p>Учасник бачить проєкти, до яких його додали. Власник і адміністратор керують складом; більше нічого доступ не відкриває.</p>
+      </div>
+      <div class="guard" data-reveal style="--d:70ms">
+        <p class="guard__key">Правила на сервері</p>
+        <h4>Перевірка там, де її не обійти</h4>
+        <p>Створення проєктів, задач, запрошень і ключів іде через захищені серверні маршрути. Прихована кнопка — це зручність, а не захист.</p>
+      </div>
+      <div class="guard" data-reveal style="--d:140ms">
+        <p class="guard__key">Історія</p>
+        <h4>Видалення не переписує минуле</h4>
+        <p>Людину прибрали — доступ закрився, а її коментарі й списаний час лишились. Видалену задачу можна повернути протягом доби.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ Питання ════════════════════════════════════════════ -->
+<section class="section" id="faq">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">Питання</p>
+      <h2 class="display d-section">Коротко про головне</h2>
+    </div>
+
+    <div class="faq" id="faq-list" data-reveal>
+      <div class="faq__item" data-open="false">
+        <button class="faq__q" type="button" aria-expanded="false">
+          Чи можна перенести задачі з іншого трекера?
+          <svg class="faq__sign" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg>
+        </button>
+        <div class="faq__a"><div><p>Для YouTrack є імпорт: він переносить завдання разом зі статусами й не створює дублікатів під час повторного запуску. Для інших джерел перенесення поки що ручне.</p></div></div>
+      </div>
+
+      <div class="faq__item" data-open="false">
+        <button class="faq__q" type="button" aria-expanded="false">
+          Що приходить у сповіщеннях і куди?
+          <svg class="faq__sign" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg>
+        </button>
+        <div class="faq__a"><div><p>Призначення на задачу, згадки, коментарі, наближення дедлайнів і події календаря. Канали — дзвіночок у застосунку, пошта й Telegram; кожен вмикається окремо. Нагадування генерує розклад на сервері, тому вони приходять і з закритою вкладкою.</p></div></div>
+      </div>
+
+      <div class="faq__item" data-open="false">
+        <button class="faq__q" type="button" aria-expanded="false">
+          Клієнт бачить наш робочий простір?
+          <svg class="faq__sign" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg>
+        </button>
+        <div class="faq__a"><div><p>Ні. Всередині QuickTeam ролі тільки командні: власник, адміністратор, учасник. Спілкування з клієнтом живе в окремому продукті — QuickTeam+, і воно не змішується з внутрішньою дошкою.</p></div></div>
+      </div>
+
+      <div class="faq__item" data-open="false">
+        <button class="faq__q" type="button" aria-expanded="false">
+          Чи працює це з телефона?
+          <svg class="faq__sign" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg>
+        </button>
+        <div class="faq__a"><div><p>Так. Це вебзастосунок з окремим мобільним компонуванням і нижньою навігацією; його можна додати на домашній екран. Окремого застосунку в магазинах немає.</p></div></div>
+      </div>
+
+      <div class="faq__item" data-open="false">
+        <button class="faq__q" type="button" aria-expanded="false">
+          На якому етапі продукт?
+          <svg class="faq__sign" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg>
+        </button>
+        <div class="faq__a"><div><p>У беті. Основна робота — задачі, спринти, час, календар, чат і аналітика — уже працює щодня; частина розділів ще добудовується. Що саме вміє продукт сьогодні, описано в довідці.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ Заклик ═════════════════════════════════════════════ -->
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="close" data-reveal>
+      <div class="close__body">
+        <h2 class="display d-section close__title">Заведіть простір за пару хвилин</h2>
+        <p class="close__text">
+          Переносити все одразу не обовʼязково — почніть з одного тижня роботи.
+        </p>
+        <div class="close__row">
+          <a class="btn btn--primary btn--lg" href="https://qt-workspace.vercel.app/register">
+            Створити простір
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </a>
+          <a class="btn btn--ghost btn--lg" href="https://qt-workspace.vercel.app/help">Почитати довідку</a>
+        </div>
+      </div>
+      <ol class="close__steps">
+        <li><span class="mono">01</span> Створити організацію</li>
+        <li><span class="mono">02</span> Додати перший проєкт</li>
+        <li><span class="mono">03</span> Покликати команду</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__grid">
+      <div class="foot__about">
+        <a class="brand" href="#top">
+          <img class="brand__mark" src="assets/mark.svg" alt="" width="26" height="26">
+          <span class="brand__name">QuickTeam</span>
+        </a>
+        <p>Внутрішній простір команди: задачі, час, календар і чат в одному місці.</p>
+      </div>
+      <div class="foot__col">
+        <h5>Продукт</h5>
+        <a href="#screens">Екрани</a>
+        <a href="#hour">Шлях години</a>
+        <a href="#work">Робота</a>
+        <a href="#trust">Безпека</a>
+      </div>
+      <div class="foot__col">
+        <h5>Матеріали</h5>
+        <a href="https://qt-workspace.vercel.app/help">Довідка</a>
+        <a href="https://qt-workspace.vercel.app/news">Новини</a>
+      </div>
+      <div class="foot__col">
+        <h5>Правові</h5>
+        <a href="https://qt-workspace.vercel.app/terms">Умови</a>
+        <a href="https://qt-workspace.vercel.app/privacy">Приватність</a>
+        <a href="https://qt-workspace.vercel.app/offer">Оферта</a>
+      </div>
+    </div>
+    <div class="foot__bottom">
+      <span>© <span id="year">2026</span> QuickTeam</span>
+      <span>Продукт у беті</span>
+      <span>Зроблено в Україні</span>
+    </div>
+  </div>
+</footer>
+
+<div class="grain" aria-hidden="true"></div>
+<script src="assets/landing.js" defer></script>
+</body>
+</html>

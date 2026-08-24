@@ -1,0 +1,494 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   QuickTeam — лендінг, секції сторінки.
+   landing.css тримає токени, каркас і мокапи продукту. Цей файл — усе, що
+   навколо них: смуга заміщення, бенто, схема «години», великі блоки
+   можливостей, безпека, питання, підвал і рух.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 10. Смуга: що складається в один простір ──────────────────────────────
+   Замість чужих логотипів — перелік вкладок, які команда тримає відкритими
+   зараз. Це правда про читача, а не про нас, і її не треба вигадувати.     */
+
+.swap { display: grid; gap: 26px; }
+
+.swap__lead {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.swap__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.swap__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: var(--ctl-lg);
+  padding-inline: 14px;
+  border-radius: var(--r-action);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.02);
+  font-size: 13.5px;
+  color: #9d9da1;
+  transition: opacity 0.5s var(--ease), filter 0.5s var(--ease);
+}
+.swap__tab svg { width: 14px; height: 14px; opacity: 0.55; }
+.swap__tab s { text-decoration-color: rgba(255,255,255,0.28); }
+
+.swap__arrow { display: flex; align-items: center; gap: 12px; color: var(--faint); }
+.swap__arrow svg { width: 20px; height: 20px; }
+
+.swap__one {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--ctl-lg);
+  padding-inline: 16px;
+  border-radius: var(--r-action);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.swap__one svg { width: 16px; height: 16px; }
+
+/* ── 11. Бенто ────────────────────────────────────────────────────────────
+   Сітка з семи екранів продукту. Підсвітка рамки йде за курсором — один
+   ефект на всю сторінку, більше ніде.                                      */
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-top: 48px;
+}
+
+.cell {
+  position: relative;
+  grid-column: span 2;
+  border-radius: var(--r-dialog);
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012));
+  padding: 22px 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+  min-height: 268px;
+  transition: border-color 0.3s var(--ease), transform 0.3s var(--ease);
+}
+
+.cell:hover { border-color: rgba(255,255,255,0.17); }
+
+/* Тепла пляма під курсором. Малюється лише коли JS поклав координати. */
+.cell::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%),
+              rgba(207,122,34,0.16), transparent 62%);
+  pointer-events: none;
+}
+.cell:hover::before { opacity: 1; }
+
+.cell--wide { grid-column: span 3; }
+.cell--full { grid-column: span 6; }
+
+.cell__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.cell__title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--white);
+}
+
+.cell__text { font-size: 13.5px; line-height: 1.55; color: #a4a4a8; max-width: 42ch; }
+
+.cell__art {
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+  margin-inline: -22px;
+  padding: 0 22px 22px;
+}
+
+/* Мокап, що виїжджає за нижній край комірки: видно верхню частину екрана,
+   решта відрізана рамкою — так робить будь-який знімок у списку. */
+.cell__art--bleed { padding: 0; margin-inline: 0; margin-right: -34px; margin-bottom: -12px; }
+.cell__art--bleed .frame { border-radius: 14px 0 0 0; border-right: 0; border-bottom: 0; }
+
+/* ── 12. Підпис сторінки: шлях однієї години ──────────────────────────────
+   Єдиний блок, де є нумерація, бо тут порядок справді щось означає: година
+   не може потрапити в рахунок раніше, ніж її списали.                      */
+
+.trail { display: grid; gap: 0; margin-top: 54px; }
+
+.trail__step {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 28px;
+  align-items: start;
+  padding: 30px 0;
+  border-top: 1px solid var(--line-soft);
+  position: relative;
+}
+.trail__step:last-child { border-bottom: 1px solid var(--line-soft); }
+
+.trail__index {
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  color: rgba(255,255,255,0.13);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.4s var(--ease);
+}
+.trail__step:hover .trail__index { color: var(--amber); }
+
+.trail__body { display: grid; gap: 9px; }
+.trail__title {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--white);
+  line-height: 1.12;
+}
+.trail__text { font-size: 14px; line-height: 1.6; color: #a4a4a8; max-width: 46ch; }
+
+.trail__where {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.trail__art { align-self: center; }
+
+/* Наслідок: одна година, чотири адреси */
+.fan {
+  border-radius: var(--r-dialog);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.02);
+  padding: 26px;
+  margin-top: 34px;
+  display: grid;
+  gap: 22px;
+}
+
+.fan__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; }
+.fan__head h3 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+.fan__head p { font-size: 13.5px; color: var(--muted); }
+
+.fan__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+.fan__out {
+  border-radius: var(--r-inset);
+  border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,0.025);
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.fan__out svg { width: 16px; height: 16px; color: var(--amber-lift); }
+.fan__out b { font-size: 13.5px; font-weight: 600; color: var(--paper); }
+.fan__out span { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+/* ── 13. Великі блоки можливостей ─────────────────────────────────────── */
+
+.feature {
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  gap: clamp(32px, 5vw, 76px);
+  align-items: center;
+}
+.feature--flip .feature__art { order: -1; }
+
+.feature__body { display: grid; gap: 20px; align-content: start; }
+.feature__title { color: var(--white); }
+.feature__text { font-size: 15px; line-height: 1.65; color: #a8a8ac; max-width: 44ch; }
+
+.feature__list { display: grid; gap: 12px; margin-top: 2px; }
+.feature__list li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 12px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #a8a8ac;
+}
+.feature__list svg { width: 15px; height: 15px; color: var(--teal-lift); margin-top: 3px; }
+.feature__list b { color: var(--paper); font-weight: 500; }
+
+.feature__art { position: relative; }
+
+.feature__note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.feature__note::before {
+  content: '';
+  width: 14px; height: 1px; background: var(--line-strong); flex: none;
+}
+
+/* ── 14. Безпека ──────────────────────────────────────────────────────────
+   Без мокапа. Тут доречні самі формулювання — це розділ, який читають, а
+   не роздивляються.                                                        */
+
+.guards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--line-soft); border: 1px solid var(--line-soft);
+  border-radius: var(--r-surface); overflow: hidden; margin-top: 46px; }
+
+.guard { background: var(--void); padding: 26px 24px; display: grid; gap: 10px; align-content: start; }
+.guard__key {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+.guard h4 { font-size: 15.5px; font-weight: 600; color: var(--paper); letter-spacing: -0.005em; }
+.guard p { font-size: 13.5px; line-height: 1.6; color: var(--muted); }
+
+/* ── 15. Питання ──────────────────────────────────────────────────────── */
+
+.faq { display: grid; gap: 0; margin-top: 44px; border-top: 1px solid var(--line-soft); }
+
+.faq__item { border-bottom: 1px solid var(--line-soft); }
+
+.faq__q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 4px;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--paper);
+  transition: color 0.2s var(--ease);
+}
+.faq__q:hover { color: var(--white); }
+
+.faq__sign { margin-left: auto; flex: none; width: 16px; height: 16px; color: var(--muted);
+  transition: transform 0.3s var(--ease), color 0.2s var(--ease); }
+.faq__item[data-open='true'] .faq__sign { transform: rotate(45deg); color: var(--amber-lift); }
+
+.faq__a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.34s var(--ease); }
+.faq__item[data-open='true'] .faq__a { grid-template-rows: 1fr; }
+.faq__a > div { overflow: hidden; }
+.faq__a p { font-size: 14px; line-height: 1.65; color: var(--muted); max-width: 62ch; padding: 0 4px 24px; }
+
+/* ── 16. Заклик і підвал ──────────────────────────────────────────────── */
+
+.close {
+  position: relative;
+  border-radius: var(--r-dialog);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  padding: clamp(38px, 5vw, 64px) clamp(24px, 5vw, 60px);
+  background: linear-gradient(160deg, #1a1a1b 0%, #121213 62%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 40px;
+  align-items: center;
+}
+
+.close__body { display: grid; gap: 22px; justify-items: start; }
+
+/* Три кроки — саме той випадок, коли нумерація щось означає: організація
+   мусить існувати раніше за проєкт, а проєкт — раніше за запрошення. */
+.close__steps { display: grid; gap: 14px; align-content: center; }
+.close__steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14.5px;
+  color: #b6b6ba;
+  white-space: nowrap;
+}
+.close__steps span { color: var(--amber); font-size: 11.5px; letter-spacing: 0.06em; }
+
+.close::after {
+  content: '';
+  position: absolute;
+  right: -140px; top: -160px;
+  width: 560px; height: 460px;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(207,122,34,0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.close > * { position: relative; z-index: 1; }
+.close__title { color: var(--white); max-width: 16ch; }
+.close__text { font-size: 15px; color: #a8a8ac; max-width: 46ch; line-height: 1.6; }
+.close__row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.foot { border-top: 1px solid var(--line-soft); padding-block: 46px 40px; }
+.foot__grid { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 34px; }
+.foot__about { display: grid; gap: 14px; align-content: start; max-width: 34ch; }
+.foot__about p { font-size: 13px; color: var(--faint); line-height: 1.6; }
+
+.foot__col { display: grid; gap: 11px; align-content: start; }
+.foot__col h5 {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 400;
+  margin-bottom: 2px;
+}
+.foot__col a { font-size: 13.5px; color: #a4a4a8; transition: color 0.16s var(--ease); }
+.foot__col a:hover { color: var(--paper); }
+
+.foot__bottom {
+  margin-top: 42px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+  letter-spacing: 0.03em;
+}
+.foot__bottom span:last-child { margin-left: auto; }
+
+/* ── 16b. Дрібні правки поверх мокапів ─────────────────────────────────
+   Живуть тут, а не в landing.css, бо стосуються того, як мокап поводиться
+   всередині секції: якір для курсора на дошці й одиниці біля числа.      */
+
+/* Курсор у сцені на дошці позиціонується від самої дошки. */
+.board { position: relative; }
+
+/* Число рахується скриптом, підпис одиниць лишається в розмітці — тому
+   вони окремі елементи, а виглядають одним. */
+.stat__value b { font: inherit; letter-spacing: inherit; }
+
+/* ── 17. Поява при скролі ─────────────────────────────────────────────── */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+  transition-delay: var(--d, 0ms);
+}
+[data-reveal][data-shown='true'] { opacity: 1; transform: none; }
+
+/* ── 18. Вужчі екрани ─────────────────────────────────────────────────── */
+
+@media (max-width: 1080px) {
+  .feature { grid-template-columns: minmax(0, 1fr); gap: 34px; }
+  .feature--flip .feature__art { order: 0; }
+  .feature__text, .feature__list li { max-width: 60ch; }
+  .trail__step { grid-template-columns: 64px minmax(0, 1fr); }
+  .trail__art { grid-column: 2; margin-top: 6px; }
+  .trail__index { font-size: 34px; }
+  .fan__grid { grid-template-columns: repeat(2, 1fr); }
+  .guards { grid-template-columns: 1fr; }
+  .cell, .cell--wide { grid-column: span 3; }
+  .foot__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 860px) {
+  .nav__links { display: none; }
+  .nav__burger { display: inline-flex; }
+  .nav__actions .btn--quiet { display: none; }
+
+  .nav__sheet {
+    display: grid;
+    position: fixed;
+    inset: 64px 12px auto 12px;
+    z-index: 59;
+    background: rgba(18,18,19,0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--line);
+    border-radius: var(--r-surface);
+    padding: 10px;
+    gap: 2px;
+    transform-origin: top center;
+    transition: opacity 0.22s var(--ease), transform 0.22s var(--ease), visibility 0.22s;
+  }
+  .nav__sheet[data-open='false'] { opacity: 0; visibility: hidden; transform: translateY(-8px) scale(0.98); }
+  .nav__sheet[data-open='true'] { opacity: 1; visibility: visible; transform: none; }
+  .nav__sheet a { padding: 11px 12px; border-radius: 10px; font-size: 14.5px; color: #c3c3c6; }
+  .nav__sheet a:hover { background: rgba(255,255,255,0.05); color: var(--paper); }
+
+  .hero { padding-top: 116px; }
+
+  /* Мокап на телефоні: не зменшуємо до нечитабельного, а обрізаємо. Сайдбар
+     ховається — так само, як його ховає сам продукт на вузькому екрані, —
+     і в кадр лишається те, заради чого мокап тут стоїть: картки. */
+  .shot { --s-min: 0.8; }
+  .shot .sb { display: none; }
+  .cell, .cell--wide, .cell--full { grid-column: span 6; min-height: 0; }
+  .bento { grid-template-columns: repeat(6, 1fr); }
+  .trail__step { grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 24px 0; }
+  .trail__art { grid-column: 1 / -1; }
+  .fan__grid { grid-template-columns: 1fr; }
+  .foot__grid { grid-template-columns: 1fr; gap: 28px; }
+  .foot__bottom span:last-child { margin-left: 0; }
+  .close { grid-template-columns: minmax(0, 1fr); gap: 30px; }
+}
+
+@media (max-width: 560px) {
+  :root { --gutter: 18px; }
+  .hero__meta { font-size: 10.5px; gap: 6px 14px; }
+  .swap__arrow { display: none; }
+  .faq__q { font-size: 17px; }
+}
+
+/* ── 19. Менше руху ───────────────────────────────────────────────────────
+   Не «трохи повільніше», а вимкнено: сторінка одразу в кінцевому стані.    */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  [data-reveal] { opacity: 1; transform: none; }
+  [data-play='false'][data-stagger] > * { opacity: 1; transform: none; }
+  .hero__frame-wrap { transform: none; }
+  .pointer { display: none; }
+}
