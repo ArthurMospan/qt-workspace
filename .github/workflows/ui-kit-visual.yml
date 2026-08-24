@@ -88,6 +88,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history, because the push below may have to be replayed on top
+          # of whatever landed while the screenshots were being taken, and a
+          # shallow clone has no merge base to rebase onto.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -107,4 +112,20 @@ jobs:
             exit 0
           fi
           git commit -m 'Update /ui-kit screenshot baselines'
-          git push origin HEAD:${{ github.ref_name }}
+          # Taking forty screenshots takes minutes, and the branch can move
+          # while it happens — which is exactly how this step failed the first
+          # time somebody accepted a deliberate visual change. A plain push then
+          # loses the whole run to a race that has nothing to do with the
+          # pixels. These are PNGs no other commit touches, so replaying them on
+          # top of what landed is always the right answer; if it ever is not,
+          # the rebase conflicts and the job says so.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then
+              exit 0
+            fi
+            echo "Push rejected — ${{ github.ref_name }} moved. Replaying the baselines on top of it (attempt $attempt)."
+            git fetch origin ${{ github.ref_name }}
+            git rebase origin/${{ github.ref_name }}
+          done
+          echo "Could not push the baselines after three attempts."
+          exit 1
