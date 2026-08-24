@@ -13,6 +13,7 @@
 // two pseudo-classes are photographed without any baseline having to guess.
 import { test, expect } from '@playwright/test';
 import { SECTIONS, FORCED_STATE_SECTION } from './sections.mjs';
+import { openSection } from './hydration.mjs';
 import { layeredCompositionRules } from '../../scripts/kit-composition.mjs';
 import kitDrift from '../../src/app/ui-kit/kit-drift.generated.json' with { type: 'json' };
 
@@ -99,15 +100,7 @@ async function settle(page) {
 // puts the whole section in one frame — and it does it without overriding the
 // page's own overflow, which would change the very layout under test.
 async function showSection(page, id) {
-  const scroller = page.locator('[data-kit-scroll]');
-  // The server already renders the first section, so a click that lands before
-  // hydration changes nothing and leaves no trace. Retrying the click until the
-  // section actually switches is the honest way to wait for a live page — there
-  // is no earlier signal that the handler is attached.
-  await expect(async () => {
-    await page.locator(`[data-kit-nav="${id}"]`).click();
-    await expect(scroller).toHaveAttribute('data-kit-section', id, { timeout: 1_000 });
-  }).toPass({ timeout: 45_000 });
+  const scroller = await openSection(page, id);
 
   // A clicked nav button keeps focus, and the pointer would otherwise rest
   // wherever the click landed — both are visible states.

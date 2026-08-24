@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { searchHelpArticles } from '../../src/lib/content/helpArticles.mjs';
+import { openSection } from './hydration.mjs';
 
 const DEV_SERVER_NOISE = /webpack-hmr|WebSocket connection to 'ws:/;
 
@@ -130,10 +131,7 @@ test('bulk toolbar remains usable at phone width and opens its confirm flow', as
   const errors = await preparePage(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/ui-kit', { waitUntil: 'domcontentloaded' });
-  const scroller = page.locator('[data-kit-scroll]');
-  await scroller.waitFor();
-  await page.locator('select[aria-label="Секція UI Kit"]').selectOption('task-elements');
-  await expect(scroller).toHaveAttribute('data-kit-section', 'task-elements');
+  await openSection(page, 'task-elements', { via: 'select' });
 
   // The catalogue now shows the toolbar twice — idle, and mid-operation with
   // every control disabled. This flow is about the idle one.
@@ -160,10 +158,7 @@ test('bulk toolbar remains usable at phone width and opens its confirm flow', as
 test('a custom sheet traps focus, closes on Escape and restores its opener', async ({ page }) => {
   const errors = await preparePage(page);
   await page.goto('/ui-kit', { waitUntil: 'domcontentloaded' });
-  const scroller = page.locator('[data-kit-scroll]');
-  await scroller.waitFor();
-  await page.locator('[data-kit-nav="buttons"]').click();
-  await expect(scroller).toHaveAttribute('data-kit-section', 'buttons');
+  await openSection(page, 'buttons');
 
   const opener = page.locator('button[title^="Button:"]').first();
   await opener.click();
