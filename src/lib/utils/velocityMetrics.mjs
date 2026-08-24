@@ -24,10 +24,31 @@ export function issueCycleStartMillis(issue) {
   return importedAt > 0 ? Math.max(createdAt, importedAt) : createdAt;
 }
 
+// The value at a share of the way through a sorted list. Nearest-rank, not
+// interpolated: a cycle time is a whole number of days to the reader, and
+// inventing 4.3 days between two real tasks is precision the data does not have.
+function percentile(sortedValues, share) {
+  if (sortedValues.length === 0) return null;
+  const rank = Math.ceil(share * sortedValues.length);
+  return sortedValues[Math.min(sortedValues.length - 1, Math.max(0, rank - 1))];
+}
+
 /**
  * Build cycle-time metrics without allowing corrupted dates to disappear.
  * Imported YouTrack history starts no earlier than the first QuickTeam import;
  * a completion before that lower bound is reported as a data error.
+ *
+ * Three readings, because one of them was lying. Cycle time is the textbook
+ * skewed distribution: most tasks close in a few days and a handful sit open
+ * for months, and the mean is dragged by that tail until it describes no task
+ * anybody actually worked on. «Середній цикл 12д» in a team whose typical task
+ * closes in three is not a rounding error, it is the wrong sentence.
+ *
+ * `medianDays` is the typical task. `p85Days` is the promise you can make about
+ * the rest — "almost everything is done within" — which is the number a
+ * deadline is actually built from. `averageDays` stays because the exported
+ * file has always carried it and a report that changes its own history is
+ * worse than a mean nobody reads.
  */
 export function summarizeCycleTimes(issues, getCompletedAtMillis) {
   const values = [];
@@ -46,10 +67,16 @@ export function summarizeCycleTimes(issues, getCompletedAtMillis) {
     values.push(days);
   }
 
+  const sorted = [...values].sort((left, right) => left - right);
+  const round = value => (value === null ? null : Math.round(value));
+
   return {
     averageDays: values.length > 0
       ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
       : null,
+    medianDays: round(percentile(sorted, 0.5)),
+    p85Days: round(percentile(sorted, 0.85)),
+    sampleSize: values.length,
     invalidIssueIds,
   };
 }

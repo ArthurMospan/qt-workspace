@@ -15,7 +15,6 @@ import {
   LayoutDashboard,
   ListChecks,
   Target,
-  TrendingUp,
   Users,
 } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
@@ -50,13 +49,18 @@ import {
   calendarEventOccurrenceKey,
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
-import VelocityTab from '@/components/workspace/VelocityTab';
 import { sumRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
+import { summarizeCycleTimes } from '@/lib/utils/velocityMetrics.mjs';
 import { buildMemberExport, buildWorkloadExport } from '@/lib/utils/analyticsExport.mjs';
 import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
+
+// Eight weeks is what a sparkline on a tile can carry without the marks
+// touching, and it is the same window the velocity chart uses — so the two do
+// not disagree about how far back «нещодавно» reaches.
+const WEEKS_ON_A_TILE = 8;
 
 function fmtH(minutes) {
   if (!minutes) return '0г';
@@ -247,11 +251,14 @@ function TeamOverview({ stats, summary, period, positions, now }) {
   );
 }
 
+// Three, not four. «Продуктивність» used to mount the whole `VelocityTab` for
+// one person — burndown for a single member, and a bar list of every project in
+// the organization — to say two things about them that fit on the tiles they
+// already have: how their output is trending, and how long their tasks take.
 const MEMBER_VIEWS = [
   { id: 'overview', label: 'Огляд', description: 'Ключові показники', icon: LayoutDashboard },
   { id: 'work', label: 'Робота', description: 'Завдання й активність', icon: ListChecks },
   { id: 'timesheet', label: 'Табель', description: 'Робочий час', icon: Clock },
-  { id: 'productivity', label: 'Продуктивність', description: 'Динаміка роботи', icon: TrendingUp },
 ];
 
 // The right-hand slot carries the page's own filters when it has any. It used
@@ -415,15 +422,25 @@ function RecentTime({ logs, issues, events, projects, types = [] }) {
 }
 
 function MemberOverview({ stat, projects, members, events, types, period }) {
-  const completionRate = stat.done + stat.open > 0
-    ? Math.round((stat.done / (stat.done + stat.open)) * 100)
-    : 0;
   const averagePerDay = stat.minutes > 0 ? Math.round(stat.minutes / Math.max(period, 1)) : 0;
   return (
     <>
+      {/* The two facts the «Продуктивність» sub-tab existed to carry now ride on
+          the tile they belong to: the shape of this person's recent output, and
+          how long one of their tasks typically takes. A whole velocity screen
+          for one member drew a burndown of their own backlog and a bar list of
+          projects that were not about them. */}
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard icon={Clock} value={fmtH(stat.minutes)} label="Зафіксовано часу" sub={`≈ ${fmtH(averagePerDay)} на календарний день`} />
-        <KpiCard icon={CheckCircle2} value={stat.done} label="Завершено" sub={`${completionRate}% від активного набору`} />
+        <KpiCard
+          icon={CheckCircle2}
+          value={stat.done}
+          label={`Завершено за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
+          series={stat.weeklyDone}
+          sub={stat.medianCycleTime !== null
+            ? `типовий цикл — ${stat.medianCycleTime} ${plural(stat.medianCycleTime, ['день', 'дні', 'днів'])}`
+            : 'закритих задач ще замало для циклу'}
+        />
         <KpiCard icon={Target} value={stat.inProgress} label="Зараз у роботі" sub={`${stat.open} відкритих загалом`} />
         <KpiCard icon={AlertTriangle} value={stat.overdue} label="Прострочено" sub={stat.overdue ? 'потребує уваги' : 'затримок немає'} />
       </div>
@@ -591,9 +608,6 @@ function MemberDetail({
         {view === 'timesheet' && (
           <MemberTimesheet stat={stat} members={members} projects={projects} events={events} />
         )}
-        {view === 'productivity' && (
-          <VelocityTab issues={stat.issues} projects={projects} members={members} period={period} />
-        )}
       </div>
     </div>
   );
@@ -675,6 +689,21 @@ export default function WorkloadTab({
         .sort((a, b) => effectiveTimeLogMillis(b) - effectiveTimeLogMillis(a));
       const logs = allLogs.filter(log => effectiveTimeLogMillis(log) >= periodAgo);
       const minutes = sumRawTimeLogMinutes(logs);
+      // The shape of the last eight weeks, and how long one of this person's
+      // tasks typically takes. Both used to require opening a whole velocity
+      // screen scoped to one member — which also drew them a burndown of their
+      // own backlog and a chart of projects that were not about them.
+      const weeklyDone = Array.from({ length: WEEKS_ON_A_TILE }, (_, index) => {
+        const weeksBack = WEEKS_ON_A_TILE - 1 - index;
+        const from = now - (weeksBack + 1) * 7 * 86_400_000;
+        const to = now - weeksBack * 7 * 86_400_000;
+        return memberIssues.filter(issue => {
+          if (!deliveredSet.has(issue.columnId || issue.status)) return false;
+          const at = getCompletedAtMillis(issue);
+          return at >= from && at < to;
+        }).length;
+      });
+      const cycle = summarizeCycleTimes(doneItems, getCompletedAtMillis);
       return {
         member,
         uid,
@@ -692,6 +721,8 @@ export default function WorkloadTab({
         overdue: overdueItems.length,
         inProgress: inProgressItems.length,
         minutes,
+        weeklyDone,
+        medianCycleTime: cycle.medianDays,
         lastActivity: latestActivityMillis(timesheetIssues, allLogs),
       };
     }).sort((a, b) => {

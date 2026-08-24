@@ -58,8 +58,15 @@ test('YouTrack cycle time starts at import and exposes contradictory dates', () 
 
   assert.equal(issueCycleStartMillis(imported), 10 * day);
   assert.equal(issueCycleStartMillis(native), 5 * day);
+  // Two valid samples. The mean survives because the exported file has always
+  // carried it, but the readings the screen leads with are the median and the
+  // 85th percentile: a mean cycle time is dragged by the handful of tasks that
+  // sat open for months until it describes nothing anybody worked on.
   assert.deepEqual(summarizeCycleTimes([imported, native, invalid], completedAt), {
     averageDays: 3,
+    medianDays: 2,
+    p85Days: 3,
+    sampleSize: 2,
     invalidIssueIds: ['invalid'],
   });
 });

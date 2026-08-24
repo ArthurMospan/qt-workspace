@@ -612,14 +612,19 @@ export function buildVelocityExport({
         rows: [
           { label: `Закрито за ${period} днів`, value: String(stats.donePeriod) },
           { label: 'Створено за період', value: String(stats.createdPeriod) },
-          { label: 'Закрито всього', value: String(stats.totalDone) },
-          { label: 'Виконано', value: `${stats.completionPct}%` },
           ...(stats.velocityTrend === null || stats.velocityTrend === undefined
             ? []
             : [{ label: 'Зміна до попереднього періоду', value: `${stats.velocityTrend}%` }]),
-          ...(stats.avgCycleTime === null || stats.avgCycleTime === undefined
+          // Median first, and the 85th percentile beside it. A mean cycle time
+          // is dragged by the handful of tasks that sat open for months until
+          // it describes nothing anybody worked on; the file says what the
+          // screen says, and the screen stopped leading with the mean.
+          ...(stats.medianCycleTime === null || stats.medianCycleTime === undefined
             ? []
-            : [{ label: 'Середній цикл, днів', value: String(stats.avgCycleTime) }]),
+            : [{ label: 'Типовий цикл, днів', value: String(stats.medianCycleTime) }]),
+          ...(stats.p85CycleTime === null || stats.p85CycleTime === undefined
+            ? []
+            : [{ label: '85% закриваються за, днів', value: String(stats.p85CycleTime) }]),
         ],
       },
       {
@@ -652,16 +657,6 @@ export function buildVelocityExport({
           { id: 'pct', label: 'Виконано %', type: 'percent', width: 12, value: row => row.pct },
         ],
         rows: stats.byType,
-      },
-      {
-        id: 'by-project',
-        title: 'По проєктах',
-        columns: [
-          { id: 'project', label: 'Проєкт', width: 30, value: row => projectName(row.p) },
-          { id: 'count', label: 'Закрито за період', type: 'number', width: 18, value: row => row.count },
-          { id: 'total', label: 'Задач усього', type: 'number', width: 14, value: row => row.total },
-        ],
-        rows: stats.byProject,
       },
       {
         id: 'recently-closed',

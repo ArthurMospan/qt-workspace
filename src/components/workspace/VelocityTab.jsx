@@ -2,7 +2,7 @@
 // src/components/workspace/VelocityTab.jsx — Продуктивність: тренди, burndown, cycle time
 // Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Zap, TrendingUp, CheckCircle2, Calendar, Activity, Folders, Shapes, TrendingDown } from 'lucide-react';
+import { Zap, TrendingUp, CheckCircle2, Calendar, Activity, Shapes, TrendingDown } from 'lucide-react';
 import {
   Alert, BarList, ChartCard, ColumnChart, EmptyState, KpiCard, TaskListCard, TrendChart,
 } from '@/components/ui';
@@ -148,28 +148,17 @@ export default function VelocityTab({
       return { type, label, color, icon: taskTypeIcon(entry), total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
     }).filter(t => t.total > 0);
 
-    // Per-project velocity
-    const byProject = projects.map(p => {
-      const pIssues = issues.filter(i => i.projectId === p.id);
-      const pDone = pIssues.filter(i => deliveredSet.has(i.columnId || i.status) && getCompletedAtMillis(i) >= periodAgo);
-      return { p, count: pDone.length, total: pIssues.length };
-    }).filter(p => p.total > 0).sort((a, b) => b.count - a.count);
-
     return {
       donePeriod: donePeriod.length,
       velocityTrend,
       createdPeriod: createdPeriod.length,
-      totalDone: doneAll.length,
-      completionPct: issues.length > 0
-        ? Math.round((doneAll.length / issues.length) * 100)
-        : 0,
-      avgCycleTime: cycleSummary.averageDays,
+      medianCycleTime: cycleSummary.medianDays,
+      p85CycleTime: cycleSummary.p85Days,
       invalidCycleCount: cycleSummary.invalidIssueIds.length,
       days,
       byType,
-      byProject,
     };
-  }, [issues, projects, period, deliveredSet, now, types]);
+  }, [issues, period, deliveredSet, now, types]);
 
   const recentlyClosed = useMemo(
     () => issues
@@ -224,11 +213,20 @@ export default function VelocityTab({
             label={`Закрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
             series={stats.days.map(day => day.values[0])}
             sub="проти попереднього періоду" />
-          <KpiCard icon={CheckCircle2}
-            value={stats.totalDone} label="Всього закрито" sub={`${stats.completionPct}% від усіх завдань`} />
+          {/* «Всього закрито» stood here and counted every task the workspace
+              had ever finished — a number that only climbs, on the tab whose
+              entire subject is change. The tile it makes room for is the one
+              this tab was missing: how long a task actually takes. */}
           <KpiCard icon={Calendar}
-            value={stats.avgCycleTime !== null ? `${stats.avgCycleTime}д` : '—'}
-            label="Середній цикл" sub="від відкриття до закриття" />
+            value={stats.medianCycleTime !== null ? `${stats.medianCycleTime}д` : '—'}
+            label="Типовий цикл"
+            sub={stats.p85CycleTime !== null
+              ? `85% закриваються за ≤ ${stats.p85CycleTime}д`
+              : 'від відкриття до закриття'} />
+          <KpiCard icon={CheckCircle2}
+            value={stats.donePeriod > 0 ? Math.round((stats.donePeriod / Math.max(period, 1)) * 7) : 0}
+            label="Закривається за тиждень"
+            sub="середній темп за обраний період" />
           <KpiCard icon={stats.createdPeriod > stats.donePeriod ? TrendingUp : TrendingDown}
             value={stats.createdPeriod}
             label={`Відкрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
@@ -293,24 +291,14 @@ export default function VelocityTab({
           />
         </ChartCard>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <ChartCard icon={Zap} title="Velocity по тижнях" meta="8 тижнів">
-            <ColumnChart data={weeklyVelocity} series={FLOW_SERIES} height={130} />
-          </ChartCard>
-
-          {stats.byProject.length > 0 && (
-            <ChartCard
-              icon={Folders}
-              title="По проєктах"
-              meta={`закрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
-            >
-              <BarList
-                items={stats.byProject.map(({ p, count }) => ({ id: p.id, label: p.name, value: count }))}
-                emptyText="Немає закритих завдань"
-              />
-            </ChartCard>
-          )}
-        </div>
+        {/* «По проєктах» stood beside this as a bar list of what each project
+            closed — the same subject as the table on «Огляд», drawn a second
+            way, so the workspace answered "how are the projects doing" twice
+            and differently. The table won: it holds progress, open work,
+            overdue and time, where the bar list held one bar. */}
+        <ChartCard icon={Zap} title="Пропускна здатність по тижнях" meta="8 тижнів">
+          <ColumnChart data={weeklyVelocity} series={FLOW_SERIES} height={130} />
+        </ChartCard>
 
         {/* Recent done issues. These were the one list of tasks in the product
             you could not click: a title, a project and a cycle time, drawn by
