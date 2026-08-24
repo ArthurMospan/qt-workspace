@@ -403,7 +403,13 @@ test('what measures output reads delivered; what asks "is there work left" reads
 
   // Every percentage, every throughput number, and the invoice preset.
   assert.match(dashboard, /const deliveredSet = new Set\(deliveredStatusIds\)/);
-  assert.match(analytics, /const done\s+= issues\.filter\(i => deliveredSet\.has/);
+  // The workspace overview no longer carries an all-time «виконано»: a
+  // completion rate over the whole life of a workspace only ever climbs, and it
+  // sat in a row of period figures. What it does still measure as output —
+  // what closed inside the period, and each project's progress — reads
+  // delivered, and only delivered.
+  assert.match(analytics, /const recentDone = issues\.filter\([\s\S]{0,80}deliveredSet\.has/);
+  assert.match(analytics, /const pDone\s+= pIssues\.filter\(i => deliveredSet\.has/);
   assert.match(analyticsTab, /const done\s+= filteredIssues\.filter\(i => deliveredSet\.has/);
   // The weekly chart is a hook feeding the shared `ColumnChart` now, but the
   // set it reads is the same one: velocity measures output, and a task sitting

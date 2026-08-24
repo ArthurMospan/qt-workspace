@@ -17,7 +17,7 @@
 // with nothing wrong says so in one line rather than a green banner.
 
 import React from 'react';
-import { AlertTriangle, CheckCircle2, Info, OctagonAlert } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronRight, Info, OctagonAlert } from 'lucide-react';
 
 const TONES = {
   critical: { icon: OctagonAlert, color: '#ef4444', tint: '#fef2f2' },
@@ -39,11 +39,22 @@ const TONES = {
 /**
  * The short list of things worth a second look, ordered by how much they matter.
  *
+ * A finding is a question, and a question wants an answer: give it an `href` or
+ * an `onSelect` and the row becomes the way to the work behind the number.
+ * Without either it is a reading and nothing more — which is what every one of
+ * these was, on both analytics screens, for as long as they existed.
+ *
  * @param {Signal[]} props.signals What to show. An empty list draws `emptyText` instead.
+ * @param {(signal: Signal) => void} props.onSelect Opens a finding in place. `href` wins where a finding has a page of its own.
  * @param {string} props.emptyText The one line a workspace with nothing wrong gets.
  * @param {string} props.className Placement in the parent only.
  */
-export default function SignalList({ signals = [], emptyText = 'Усе гаразд', className = '' }) {
+export default function SignalList({
+  signals = [],
+  onSelect,
+  emptyText = 'Усе гаразд',
+  className = '',
+}) {
   if (signals.length === 0) {
     return (
       <div className={`flex items-center gap-2.5 py-2 ${className}`}>
@@ -82,15 +93,23 @@ export default function SignalList({ signals = [], emptyText = 'Усе гара�
             )}
           </>
         );
+        // A row that leads somewhere is a control, and the chevron says so
+        // before the pointer gets there — the hover tint alone was invisible
+        // until you were already on top of it.
+        const reach = 'group -mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-[10px] px-2 py-2.5 text-left transition-colors hover:bg-canvas/70';
+        const trail = <ChevronRight size={14} className="shrink-0 text-faint transition-colors group-hover:text-ink" />;
         return (
           <li key={signal.id} className="border-b border-[color:var(--color-chart-grid)] last:border-0">
             {signal.href ? (
-              <a
-                href={signal.href}
-                className="-mx-2 flex items-center gap-2.5 rounded-[10px] px-2 py-2.5 transition-colors hover:bg-canvas/70"
-              >
+              <a href={signal.href} className={reach}>
                 {body}
+                {trail}
               </a>
+            ) : onSelect ? (
+              <button type="button" onClick={() => onSelect(signal)} className={reach}>
+                {body}
+                {trail}
+              </button>
             ) : (
               <div className="flex items-center gap-2.5 py-2.5">{body}</div>
             )}

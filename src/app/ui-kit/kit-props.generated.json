@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 855,
-    "documentedProps": 855,
+    "props": 856,
+    "documentedProps": 856,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5167,6 +5167,13 @@
           "type": "string",
           "values": [],
           "description": "The one line a workspace with nothing wrong gets."
+        },
+        {
+          "name": "onSelect",
+          "default": "",
+          "type": "(signal: Signal) => void",
+          "values": [],
+          "description": "Opens a finding in place. `href` wins where a finding has a page of its own."
         },
         {
           "name": "signals",

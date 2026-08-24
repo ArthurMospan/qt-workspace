@@ -27,7 +27,11 @@ test('analytics counts every task, a parent with subtasks included', async () =>
     read('../src/lib/utils/teamAnalytics.mjs'),
   ]);
 
-  assert.match(analytics, /label="Задачі"/);
+  // The tile that anchors this used to read «Задачі 344 / 372» over all of
+  // time; it is «Відкрито зараз» since the row was put on one calendar. What is
+  // being asserted has not moved: whatever the headline counts, it counts a
+  // parent with subtasks like any other task.
+  assert.match(analytics, /label="Відкрито зараз"/);
   // The column header is «Задач»; the table it heads is `DataTable`, whose
   // columns are objects rather than a hand-written <thead>.
   assert.match(analytics, /header: 'Задач'/);

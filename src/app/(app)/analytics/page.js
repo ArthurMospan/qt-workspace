@@ -13,13 +13,14 @@ import {
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import { getCompletedAtMillis, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import AttentionPanel from '@/components/workspace/AttentionPanel';
 import BillingTab from '@/components/workspace/BillingTab';
 import TimesheetTab from '@/components/workspace/TimesheetTab';
 import WorkloadTab from '@/components/workspace/WorkloadTab';
 import VelocityTab from '@/components/workspace/VelocityTab';
 import {
   BarList, Button, ChartCard, DataTable, EmptyState, ExportMenu, KpiCard, LoadingSpinner,
-  Meter, PageHeader, Segmented, SignalList, Surface, TaskListCard,
+  Meter, PageHeader, Segmented, Surface, TaskListCard,
 } from '@/components/ui';
 import { useLocalization } from '@/lib/hooks/useLocalization';
 import { buildOverviewExport } from '@/lib/utils/analyticsExport.mjs';
@@ -151,27 +152,26 @@ function AnalyticsContent({
   const stats = useMemo(() => {
     const periodAgo = now - period * 24 * 3600 * 1000;
 
+    // Every finding keeps its tasks, not just its count. «Без виконавця 14»
+    // used to be the end of the sentence: the number was computed from a filter
+    // and the filter was thrown away, so the one screen that knew which
+    // fourteen tasks they were had no way to show them.
+    // `total` is read by one thing only — whether this screen has anything to
+    // show at all. It stopped being a headline figure when the tiles were put
+    // on one calendar: a completion rate over the whole life of a workspace
+    // only ever climbs, and it was sitting next to two figures for the period.
     const total      = issues.length;
-    const done       = issues.filter(i => deliveredSet.has(i.columnId || i.status)).length;
+    const open       = issues.filter(i => !closedSet.has(i.columnId || i.status));
     const inProgress = issues.filter(i => inProgressSet.has(i.columnId || i.status)).length;
-    const blockerPriority = issues.filter(i => (
-      i.priority === 'blocker'
-      && !closedSet.has(i.columnId || i.status)
-    )).length;
-    const dependencyBlocked = issues.filter(i => (
-      !closedSet.has(i.columnId || i.status)
-      && openBlockerIssues(
-        i.id,
-        issueReferenceIssues,
-        issueLinks,
-        closedSet,
-      ).length > 0
-    )).length;
+    const blockerPriority = open.filter(i => i.priority === 'blocker');
+    const dependencyBlocked = open.filter(i => openBlockerIssues(
+      i.id,
+      issueReferenceIssues,
+      issueLinks,
+      closedSet,
+    ).length > 0);
 
-    const overdue = issues.filter(i => (
-      isDueDateOverdue(i.dueDate, { now, timeZone })
-      && !closedSet.has(i.columnId || i.status)
-    ));
+    const overdue = open.filter(i => isDueDateOverdue(i.dueDate, { now, timeZone }));
 
     const recentDone = issues.filter(i => {
       if (!deliveredSet.has(i.columnId || i.status)) return false;
@@ -199,13 +199,13 @@ function AnalyticsContent({
       id, label, color, count: issues.filter(i => i.columnId === id).length,
     })).filter(s => s.count > 0);
 
-    const noAssignee  = issues.filter(i => !i.assigneeIds?.length && !closedSet.has(i.columnId || i.status)).length;
-    const unestimated = issues.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status) && !closedSet.has(i.columnId || i.status)).length;
+    const noAssignee  = open.filter(i => !i.assigneeIds?.length);
+    const unestimated = open.filter(i => !i.estimateMinutes && !backlogSet.has(i.columnId || i.status));
 
     return {
-      total, done, inProgress, blockerPriority, dependencyBlocked, overdue, recentDone, periodMin,
+      total, inProgress, blockerPriority, dependencyBlocked, overdue, recentDone, periodMin,
       byProject, byStatus, noAssignee, unestimated,
-      completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
+      open: open.length,
     };
   }, [
     closedSet,
@@ -280,13 +280,19 @@ function AnalyticsContent({
   // This was two stacks of `Alert` — a component built to interrupt — so five
   // findings arrived as five banners in four colours on the calmest screen in
   // the product. None of them interrupt anything; they are a reading.
+  //
+  // Each one now carries the tasks it counted. A finding that says «14» and
+  // gives you nowhere to go is a decoration: the reader is told there is a
+  // problem, told exactly how big it is, and left to go and rebuild the same
+  // filter by hand on another screen.
   const signals = [
-    stats.dependencyBlocked > 0 && {
+    stats.dependencyBlocked.length > 0 && {
       id: 'blocked',
       tone: 'critical',
-      count: stats.dependencyBlocked,
-      title: `${plural(stats.dependencyBlocked, ['Завдання заблоковане', 'Завдання заблоковані', 'Завдань заблоковано'])} залежностями`,
+      count: stats.dependencyBlocked.length,
+      title: `${plural(stats.dependencyBlocked.length, ['Завдання заблоковане', 'Завдання заблоковані', 'Завдань заблоковано'])} залежностями`,
       description: 'Їх стримують незавершені задачі',
+      issues: stats.dependencyBlocked,
     },
     stats.overdue.length > 0 && {
       id: 'overdue',
@@ -294,27 +300,31 @@ function AnalyticsContent({
       count: stats.overdue.length,
       title: 'Прострочені завдання',
       description: 'Дедлайн минув, робота відкрита',
+      issues: stats.overdue,
     },
-    stats.blockerPriority > 0 && {
+    stats.blockerPriority.length > 0 && {
       id: 'blocker-priority',
       tone: 'warning',
-      count: stats.blockerPriority,
+      count: stats.blockerPriority.length,
       title: 'Критичний пріоритет',
       description: 'Потребують негайної уваги',
+      issues: stats.blockerPriority,
     },
-    stats.noAssignee > 0 && {
+    stats.noAssignee.length > 0 && {
       id: 'no-assignee',
       tone: 'warning',
-      count: stats.noAssignee,
+      count: stats.noAssignee.length,
       title: 'Без виконавця',
       description: 'Ніхто не відповідає за результат',
+      issues: stats.noAssignee,
     },
-    stats.unestimated > 0 && {
+    stats.unestimated.length > 0 && {
       id: 'unestimated',
       tone: 'info',
-      count: stats.unestimated,
+      count: stats.unestimated.length,
       title: 'Без оцінки',
       description: 'Поза беклогом, але без плану за часом',
+      issues: stats.unestimated,
     },
   ].filter(Boolean);
 
@@ -322,19 +332,42 @@ function AnalyticsContent({
     <div className="flex-1 overflow-y-auto bg-transparent">
       <div className="flex w-full flex-col gap-4 pb-16">
 
-        {/* KPI */}
+        {/* KPI ─────────────────────────────────────────────────────────
+            Four tiles, and they used to be counted over three different
+            calendars with only two of them saying so: «Задачі 344 / 372 ·
+            92% виконано» was every task the workspace had ever had, sitting
+            next to two figures for the last thirty days and one for right now.
+            A completion rate over all of time only ever goes up, and next to a
+            period it reads as though it belongs to that period.
+
+            Now: two tiles are the state right now, two are the period, and
+            each says which. What is open and what is late are the pair a
+            morning starts with; what closed and what was logged are how the
+            month is going. */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <KpiCard icon={Target} label="Задачі"
-            value={`${stats.done} / ${stats.total}`} sub={`${stats.completionPct}% виконано`} />
+          <KpiCard icon={Target} label="Відкрито зараз"
+            value={stats.open} sub={`${stats.inProgress} у роботі`} />
+          <KpiCard icon={AlertTriangle} label="Прострочено зараз"
+            value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'усе вчасно'} />
           <KpiCard icon={Zap} label={`Закрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`} onClick={() => onTabChange('velocity')}
             value={stats.recentDone} series={closedTrend} sub="тренди — у Продуктивності" />
           <KpiCard icon={Clock} label={`Зафіксовано часу за ${period} ${plural(period, ['день', 'дні', 'днів'])}`} onClick={() => onTabChange('timesheet')}
             value={fmtH(stats.periodMin)} sub="деталі — у Табелі" />
-          <KpiCard icon={AlertTriangle} label="Прострочено"
-            value={stats.overdue.length} sub={stats.overdue.length > 0 ? 'потребують уваги' : 'усе вчасно'} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* The most actionable block on the screen used to be the narrowest
+            column of three, and every row in it was a dead end. It is the full
+            width now, directly under the numbers it explains, and each finding
+            opens onto the tasks it counted. */}
+        <AttentionPanel
+          signals={signals}
+          allIssues={issueReferenceIssues}
+          members={members}
+          projects={projects}
+          issueLinks={issueLinks}
+        />
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <ChartCard icon={BarChart2} title="По статусах">
             <BarList
               items={stats.byStatus.map(status => ({
@@ -354,24 +387,30 @@ function AnalyticsContent({
             title={`Куди пішов час · ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
             meta={fmtH(stats.periodMin)}
           >
+            {/* The footnote that used to close this card counted events still
+                to come and notes in the calendar — two facts about the calendar,
+                inside the one card on the screen about time already spent. It
+                was the last piece of a row of calendar tiles that was removed
+                for saying nothing anybody asks; it went the same way. */}
             <BarList
               scale="total"
               items={timeSplit}
               format={fmtH}
               emptyText="За період час не списували"
             />
-            <p className="mt-4 border-t border-[color:var(--color-chart-grid)] pt-3 text-[11px] leading-relaxed text-muted">
-              Попереду {calendarStats.upcoming} {plural(calendarStats.upcoming, ['подія', 'події', 'подій'])} на найближчі {period} {plural(period, ['день', 'дні', 'днів'])}
-              {calendarStats.notes > 0 ? ` · ${calendarStats.notes} ${plural(calendarStats.notes, ['нотатка', 'нотатки', 'нотаток'])} у календарі` : ''}
-            </p>
-          </ChartCard>
-
-          <ChartCard icon={AlertTriangle} title="Що потребує уваги">
-            <SignalList signals={signals} emptyText="Нічого термінового — усе під контролем" />
           </ChartCard>
         </div>
 
-        <ChartCard icon={Folders} title="По проєктах" count={stats.byProject.length}>
+        {/* The clause exists because the row does not read as one calendar:
+            «Задач» and «Прогрес» are the whole life of a project, «Відкрито»
+            and «Прострочено» are this minute, and «Час» is the period. A table
+            that mixes three and labels one is a table that misleads politely. */}
+        <ChartCard
+          icon={Folders}
+          title="По проєктах"
+          count={stats.byProject.length}
+          meta={`відкрито й прострочено — зараз, час — за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
+        >
           {/* «Внутрішній / Клієнтський» is gone. Client collaboration lives in
               QuickTeam+, not in the internal workspace, so every project in this
               table was "Внутрішній" — a column that answered a question nobody

@@ -1394,7 +1394,7 @@
     "CalendarEntry.tone.deadline": 1,
     "IconAction.size.xs": 6,
     "IconAction.appearance.quiet": 13,
-    "TextAction.tone.muted": 7,
+    "TextAction.tone.muted": 8,
     "TextAction.size.xs": 4,
     "CalendarDayCell.density.compact": 1,
     "EmptyState.density.compact": 3,
