@@ -35,24 +35,15 @@ const NAVIGATION = [
 
 // `permission` is checked against `can(orgRole, …)` by the caller, so this file
 // stays free of the permission model.
+//
+// The order here is the order somebody reads on an empty palette, and it is the
+// order these things actually get done in a week: a task most days, an event
+// most days, a sprint every fortnight, a project rarely, another organization
+// rarer still. «Гарячі клавіші» used to sit among them — a cheat sheet is not
+// an action, and it now lives behind «?» in the sidebar with the rest of the
+// help. Stopping a timer is first only while a timer is running: it is the one
+// entry that answers a question the workspace is already asking.
 const ACTIONS = [
-  {
-    id: 'action-new-project',
-    label: 'Новий проєкт',
-    hint: 'Створити проєкт',
-    href: '/?new=1',
-    icon: 'plus',
-    permission: 'create:project',
-    keywords: 'novyi proekt new project stvoryty create',
-  },
-  {
-    id: 'action-new-issue',
-    label: 'Нове завдання',
-    hint: 'Створити завдання',
-    href: '/my?new=1',
-    icon: 'plus',
-    keywords: 'nove zavdannya new task issue stvoryty create',
-  },
   {
     id: 'action-stop-timer',
     label: 'Зупинити таймер',
@@ -63,21 +54,46 @@ const ACTIONS = [
     keywords: 'zupynyty taymer stop timer time',
   },
   {
+    id: 'action-new-issue',
+    label: 'Нове завдання',
+    hint: 'Створити завдання',
+    href: '/my?new=1',
+    icon: 'plus',
+    keywords: 'nove zavdannya new task issue stvoryty create',
+  },
+  {
+    id: 'action-new-event',
+    label: 'Нова подія',
+    hint: 'Створити подію в календарі',
+    href: '/calendar?new=1',
+    icon: 'calendar',
+    keywords: 'nova podiya new event meeting zustrich calendar kalendar stvoryty create',
+  },
+  {
+    id: 'action-new-sprint',
+    label: 'Новий спринт',
+    hint: 'Створити спринт',
+    href: '/sprints?new=1',
+    icon: 'zap',
+    permission: 'manage:sprints',
+    keywords: 'novyi sprint new sprint stvoryty create',
+  },
+  {
+    id: 'action-new-project',
+    label: 'Новий проєкт',
+    hint: 'Створити проєкт',
+    href: '/?new=1',
+    icon: 'plus',
+    permission: 'create:project',
+    keywords: 'novyi proekt new project stvoryty create',
+  },
+  {
     id: 'action-switch-org',
     label: 'Змінити організацію',
     icon: 'building',
     action: 'switch-organization',
     requiresManyOrganizations: true,
     keywords: 'zminyty organizatsiyu switch organization workspace team',
-  },
-  {
-    id: 'action-shortcuts',
-    label: 'Гарячі клавіші',
-    // QUI-103. The hint used to read "?", advertising a global shortcut that
-    // ate every question mark anybody typed. The palette is the way in now.
-    icon: 'keyboard',
-    action: 'open-shortcuts',
-    keywords: 'garyachi klavishi shortcuts keyboard help dopomoga',
   },
 ];
 
@@ -157,14 +173,22 @@ function keywordScore(text, query) {
   return scores.length ? Math.max(...scores) : null;
 }
 
+// The empty menu shows every action and every destination. It used to share one
+// 12-row budget with the projects, so a full workspace — a running timer, two
+// organizations — pushed «Аналітика» and «Налаштування» off the bottom of a
+// menu whose whole job is to list where you can go. A menu that hides half of
+// itself is worse than no menu. Projects are the part that can be long, so they
+// are the part that is capped.
+const MENU_PROJECTS = 4;
+
 export function rankCommands(commands, query, { limit = 12 } = {}) {
   const term = String(query || '').trim();
   if (!term) {
-    // The empty palette is a menu, not a search result: actions first, because
-    // that is what someone who opened it without typing is looking for.
-    return [...(commands || [])]
-      .sort((a, b) => COMMAND_GROUPS.indexOf(a.group) - COMMAND_GROUPS.indexOf(b.group))
-      .slice(0, limit);
+    const menu = [...(commands || [])]
+      .sort((a, b) => COMMAND_GROUPS.indexOf(a.group) - COMMAND_GROUPS.indexOf(b.group));
+    const fixed = menu.filter(command => command.group === 'action' || command.group === 'navigation');
+    const rest = menu.filter(command => command.group !== 'action' && command.group !== 'navigation');
+    return [...fixed, ...rest.slice(0, MENU_PROJECTS)];
   }
 
   return (commands || [])

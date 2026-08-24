@@ -43,7 +43,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/sprints/page.js:873",
+      "location": "src/app/(app)/sprints/page.js:887",
       "attributes": [
         "title",
         "aria-label"
@@ -192,7 +192,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/Navigation/CommandPalette.jsx:176",
+      "location": "src/components/ui/Navigation/CommandPalette.jsx:178",
       "attributes": [
         "aria-label"
       ]

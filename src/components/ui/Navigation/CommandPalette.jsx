@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bell, Building2, ChevronRight, Folder,
-  Keyboard, PieChart, Plus, Search, Settings, Square, Sun, User, Users, X, Zap,
+  PieChart, Plus, Search, Settings, Square, Sun, User, Users, X, Zap,
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import Dialog from '../Dialog';
@@ -38,7 +38,6 @@ const ICONS = {
   stop: Square,
   bell: Bell,
   building: Building2,
-  keyboard: Keyboard,
   issue: TaskIcon,
   user: User,
 };
@@ -77,12 +76,15 @@ export default function CommandPalette({
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      title="Команди"
+      // No headline. «Команди» sat above a field that already says «Куди піти
+      // або що зробити…» and a list whose every group is captioned — a word
+      // spent on naming the window to somebody who just opened it on purpose.
+      // The name stays for a screen reader, which does need it announced.
+      ariaLabel="Команди й пошук"
       size="md"
       presentation="dialog"
       showCloseButton={false}
       bodyPadding="flush"
-      titleContext="eyebrow"
     >
       {/* The body only exists while the palette is open, which is what makes
           "reopening starts clean" a property of mounting rather than an effect

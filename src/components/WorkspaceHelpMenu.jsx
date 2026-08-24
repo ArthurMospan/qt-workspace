@@ -8,10 +8,11 @@ import {
   FileText,
   Headphones,
   Info,
+  Keyboard,
   Newspaper,
   ShieldCheck,
 } from 'lucide-react';
-import { Button, ContextMenu } from '@/components/ui';
+import { Button, ContextMenu, KeyboardShortcutsDialog } from '@/components/ui';
 import WorkspaceInfoCenter from '@/components/WorkspaceInfoCenter';
 import SupportDialog from '@/components/SupportDialog';
 
@@ -29,10 +30,15 @@ export function useWorkspaceHelp() {
   // away whatever the user had on screen to answer a question about it.
   // See `WorkspaceInfoCenter` for why the legal documents still do not.
   const [infoPane, setInfoPane] = useState(null);
+  // Гарячі клавіші жили в командній палітрі — серед «Створити проєкт» і
+  // «Змінити організацію», хоча самі нічого не роблять. Шпаргалку шукають там,
+  // де шукають довідку, і це «?».
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const items = [
     { label: 'Написати у підтримку', icon: Headphones, onClick: () => setSupportOpen(true) },
     { isDivider: true },
     { label: 'Довідка', icon: BookOpen, onClick: () => setInfoPane('help') },
+    { label: 'Гарячі клавіші', icon: Keyboard, onClick: () => setShortcutsOpen(true) },
     { label: 'Новини', icon: Newspaper, onClick: () => setInfoPane('news') },
     { isDivider: true },
     // A contract needs an address that can be linked, printed and cited, so
@@ -48,6 +54,11 @@ export function useWorkspaceHelp() {
         pane={infoPane}
         onPaneChange={setInfoPane}
         onClose={() => setInfoPane(null)}
+      />
+
+      <KeyboardShortcutsDialog
+        isOpen={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
       />
 
       <SupportDialog isOpen={supportOpen} onClose={() => setSupportOpen(false)} />

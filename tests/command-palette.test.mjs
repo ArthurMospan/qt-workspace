@@ -23,9 +23,14 @@ const projects = [
 test('the catalogue reflects what this person can actually do', () => {
   const member = buildCommands({ projects, allowedPermissions: [] });
   assert.equal(member.some(command => command.id === 'action-new-project'), false);
+  assert.equal(member.some(command => command.id === 'action-new-sprint'), false);
+  // A task and an event are everybody's work.
+  assert.equal(member.some(command => command.id === 'action-new-issue'), true);
+  assert.equal(member.some(command => command.id === 'action-new-event'), true);
 
-  const admin = buildCommands({ projects, allowedPermissions: ['create:project'] });
+  const admin = buildCommands({ projects, allowedPermissions: ['create:project', 'manage:sprints'] });
   assert.equal(admin.some(command => command.id === 'action-new-project'), true);
+  assert.equal(admin.some(command => command.id === 'action-new-sprint'), true);
 
   // Stopping a timer is not offered when none is running.
   assert.equal(admin.some(command => command.id === 'action-stop-timer'), false);
@@ -49,7 +54,8 @@ test('archived projects are not destinations', () => {
 test('a query finds the thing you were aiming at, not merely something matching', () => {
   const commands = buildCommands({ projects, allowedPermissions: ['create:project'] });
 
-  assert.equal(rankCommands(commands, 'нове')[0].id, 'action-new-issue');
+  assert.equal(rankCommands(commands, 'нове завдання')[0].id, 'action-new-issue');
+  assert.equal(rankCommands(commands, 'подія')[0].id, 'action-new-event');
   assert.equal(rankCommands(commands, 'кален')[0].id, 'nav-calendar');
   assert.equal(rankCommands(commands, 'retro')[0].id, 'project-p1');
 });
@@ -73,9 +79,53 @@ test('an empty query is a menu, with actions at the top', () => {
   const commands = buildCommands({ projects, allowedPermissions: ['create:project'] });
   const ranked = rankCommands(commands, '');
   assert.equal(ranked[0].group, 'action');
-  assert.ok(ranked.length <= 12);
   // And it never silently drops to nothing.
   assert.ok(ranked.length > 0);
+});
+
+// The menu used to share one 12-row budget between the actions, the
+// destinations and the projects, so a workspace with a running timer and a
+// second organization pushed «Аналітика» and «Налаштування» off the bottom —
+// of the one list whose whole job is to say where you can go.
+test('the menu never hides a destination behind a project', () => {
+  const commands = buildCommands({
+    projects: new Array(30).fill(0).map((_value, index) => ({ id: `p${index}`, name: `Проєкт ${index}` })),
+    allowedPermissions: ['create:project', 'manage:sprints'],
+    hasActiveTimer: true,
+    organizationCount: 2,
+  });
+  const ranked = rankCommands(commands, '');
+
+  const fixed = commands.filter(command => command.group === 'action' || command.group === 'navigation');
+  for (const command of fixed) {
+    assert.ok(ranked.some(entry => entry.id === command.id), `${command.id} is missing from the menu`);
+  }
+  // Projects are the part that can be arbitrarily long, so they are the part
+  // that is capped.
+  assert.ok(ranked.filter(entry => entry.group === 'project').length <= 4);
+});
+
+// Every action people asked for is one keystroke away, in the order these
+// things are actually done in a week.
+test('the actions are the things worth creating, in that order', () => {
+  const commands = buildCommands({
+    allowedPermissions: ['create:project', 'manage:sprints'],
+    hasActiveTimer: true,
+    organizationCount: 2,
+  });
+  assert.deepEqual(commands.filter(command => command.group === 'action').map(command => command.id), [
+    'action-stop-timer',
+    'action-new-issue',
+    'action-new-event',
+    'action-new-sprint',
+    'action-new-project',
+    'action-switch-org',
+  ]);
+  const byId = Object.fromEntries(commands.map(command => [command.id, command]));
+  assert.equal(byId['action-new-event'].href, '/calendar?new=1');
+  assert.equal(byId['action-new-sprint'].href, '/sprints?new=1');
+  // A cheat sheet is not an action.
+  assert.equal(commands.some(command => command.id === 'action-shortcuts'), false);
 });
 
 test('search results are a separate group, not mixed into the catalogue ranking', () => {
@@ -206,16 +256,91 @@ test('the palette is opened from one place and rendered from the kit', async () 
 // a help panel appeared instead.
 test('no printable character is a global shortcut', async () => {
   const host = await read('../src/components/WorkspaceCommandPalette.jsx');
-  const dialog = await read('../src/components/ui/Navigation/KeyboardShortcutsDialog.jsx');
+  const shortcuts = await read('../src/lib/content/shortcuts.mjs');
   const catalogue = await read('../src/lib/utils/commandPalette.mjs');
 
   assert.doesNotMatch(host, /event\.key === '\?'/);
   assert.doesNotMatch(host, /isTypingTarget/);
   // ⌘K/Ctrl+K stays: a modifier combination is nobody's typing.
   assert.match(host, /event\.metaKey \|\| event\.ctrlKey/);
-  // And the sheet stops advertising a key that no longer opens it.
-  assert.doesNotMatch(dialog, /keys: \['\?'\]/);
+  // And nothing advertises a key that no longer opens anything.
+  assert.doesNotMatch(shortcuts, /keys: \['\?'\]/);
   assert.doesNotMatch(catalogue, /hint: '\?'/);
-  // It is still reachable — from the palette, which is where it lives now.
-  assert.match(catalogue, /action: 'open-shortcuts'/);
+});
+
+// A keystroke a text field has already answered is answered. ⌘K in the markdown
+// editor inserts a link; it used to insert a link and then throw the palette
+// over the top of the sentence being written.
+test('the global keystroke yields to a field that already handled it', async () => {
+  const host = await read('../src/components/WorkspaceCommandPalette.jsx');
+  assert.match(host, /if \(event\.defaultPrevented\) return;/);
+});
+
+// The cheat sheet is looked up, not performed, so it sits with the help behind
+// «?» in the sidebar rather than among the palette's actions.
+test('the shortcuts sheet is opened from the help menu', async () => {
+  const menu = await read('../src/components/WorkspaceHelpMenu.jsx');
+  const host = await read('../src/components/WorkspaceCommandPalette.jsx');
+
+  assert.match(menu, /KeyboardShortcutsDialog/);
+  assert.match(menu, /label: 'Гарячі клавіші'/);
+  assert.doesNotMatch(host, /KeyboardShortcutsDialog/);
+  assert.doesNotMatch(host, /open-shortcuts/);
+});
+
+// The sheet describes the whole product now, not one window. A list that knows
+// only about the palette teaches that the keyboard does one thing.
+test('the cheat sheet covers more than the palette', async () => {
+  const { SHORTCUT_GROUPS } = await import('../src/lib/content/shortcuts.mjs');
+  const labels = SHORTCUT_GROUPS.map(group => group.label);
+
+  assert.ok(SHORTCUT_GROUPS.length >= 8, 'the sheet is a survey, not a footnote');
+  for (const group of SHORTCUT_GROUPS) {
+    assert.ok(group.items.length > 0, `${group.label} lists nothing`);
+    for (const item of group.items) {
+      assert.ok(item.label && item.keys?.length, `${group.label} has a row with no keys`);
+    }
+  }
+  // Each of these is a real handler in the product, and each was missing.
+  assert.ok(labels.some(label => label.includes('тексту')), 'the markdown editor keys');
+  assert.ok(labels.some(label => label.includes('чаті')), 'send, newline and mentions');
+  assert.ok(labels.some(label => label.includes('вкладення')), 'zooming an image');
+  assert.ok(labels.some(label => label.includes('вкладках')), 'moving between tabs');
+});
+
+// Closing the palette hands its history entry back with `history.back()`, and a
+// `router.push` issued in the same tick is the navigation that loses. Every row
+// in «Перейти» did nothing at all until the two were ordered.
+test('choosing a command waits for the palette to give its history entry back', async () => {
+  const host = await read('../src/components/WorkspaceCommandPalette.jsx');
+
+  assert.match(host, /navigateAfterOverlayClose/);
+  // No bare push survives: every one of them is wrapped.
+  for (const match of host.matchAll(/router\.push\(/g)) {
+    const before = host.slice(Math.max(0, match.index - 60), match.index);
+    assert.match(before, /navigateAfterOverlayClose\(\(\) => $/);
+  }
+});
+
+// The palette is the only way to «Новий спринт», so the sprints screen has to
+// understand the request the same way the other screens already do.
+test('every action the palette offers lands somewhere that answers it', async () => {
+  const sprints = await read('../src/app/(app)/sprints/page.js');
+  const calendar = await read('../src/app/(app)/calendar/page.js');
+  const my = await read('../src/app/(app)/my/page.js');
+
+  assert.match(sprints, /searchParams\.get\('new'\) !== '1'/);
+  assert.match(sprints, /setShowCreateSprintModal\(true\)/);
+  assert.match(calendar, /searchParams\.get\('new'\) !== '1'/);
+  assert.match(my, /searchParams\.get\('new'\) === '1'/);
+});
+
+// «Команди» sat above a field that already says what the window is for.
+test('the palette has no headline, and still has a name for a screen reader', async () => {
+  const palette = await read('../src/components/ui/Navigation/CommandPalette.jsx');
+  const dialog = await read('../src/components/ui/Dialog.jsx');
+
+  assert.doesNotMatch(palette, /title="Команди"/);
+  assert.match(palette, /ariaLabel="/);
+  assert.match(dialog, /aria-label=\{title \? undefined : ariaLabel\}/);
 });

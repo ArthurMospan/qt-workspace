@@ -71,8 +71,11 @@ const plannedIntegrations = INTEGRATIONS
   .filter(item => item.state === 'planned')
   .map(item => `${item.label} — ${INTEGRATION_STATES[item.state]}`);
 const bulkActionNames = ISSUE_BULK_ACTIONS.map(action => action.label);
+// Стаття не тримає власної копії списку клавіш: вона читає той самий, що й
+// вікно за «?». Група тут не декорація — «↵» у палітрі й «↵» у чаті роблять
+// різне, і без назви місця рядок нічого не означає.
 const shortcutNames = SHORTCUT_GROUPS.flatMap(group => group.items.map(item => (
-  `${item.label}: ${(item.alt || item.keys).join(' + ')}`
+  `${group.label} — ${item.label}: ${(item.alt || item.keys).join(' + ')}`
 )));
 
 export const HELP_ARTICLES = Object.freeze([
@@ -218,8 +221,8 @@ export const HELP_ARTICLES = Object.freeze([
     relatedRoutes: ['/my'], minimumRole: 'member', relatedIds: ['chat-and-mentions', 'profiles-and-activity'],
     sections: [
       { id: 'search', title: 'Пошук', paragraphs: ['Поле пошуку вгорі шукає завдання, проєкти, людей і події. Точний номер завдання завжди виходить першим, потім збіги в назві, потім в описі. Показується тільки те, до чого у вас є доступ.'] },
-      { id: 'palette', title: 'Командна палітра', paragraphs: ['Ctrl+K (на Mac ⌘K) відкриває палітру: звідти можна не лише знайти, а й перейти куди завгодно та виконати дію, не шукаючи кнопку.'] },
-      { id: 'shortcuts', title: 'Гарячі клавіші', paragraphs: ['Повний перелік — нижче, і той самий список показує «?» у самому застосунку.'], bullets: shortcutNames },
+      { id: 'palette', title: 'Командна палітра', paragraphs: ['Ctrl+K (на Mac ⌘K) відкриває палітру: звідти можна не лише знайти, а й перейти куди завгодно та виконати дію, не шукаючи кнопку. Стрілками ↑↓ вибираєте рядок, Enter відкриває його, Esc закриває вікно.'], bullets: ['Зверху — дії: створити завдання, подію, спринт чи проєкт, змінити організацію, зупинити таймер, якщо він іде.', 'Нижче — куди перейти: будь-який розділ і будь-який проєкт.', 'Далі — те, що знайшлось за вашим запитом: завдання, проєкти, люди, події.'] },
+      { id: 'shortcuts', title: 'Гарячі клавіші', paragraphs: ['Повний перелік — нижче, і той самий список відкриває «?» у нижньому куті бічної панелі, поруч із довідкою.'], bullets: shortcutNames },
     ],
   },
   {

@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 852,
-    "documentedProps": 852,
+    "props": 853,
+    "documentedProps": 853,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2349,6 +2349,13 @@
       "file": "src/components/ui/Dialog.jsx",
       "summary": "The kit's modal. Every dialog in the product is this component — the shell, the overlay, the focus trap and the escape key all live here, so no screen builds its own.",
       "props": [
+        {
+          "name": "ariaLabel",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "Name for a dialog that deliberately has no headline — the palette is one, its own search field says what it is."
+        },
         {
           "name": "bodyClassName",
           "default": "''",

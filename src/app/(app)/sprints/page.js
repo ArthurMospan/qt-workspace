@@ -1,7 +1,7 @@
 'use client';
 // src/app/workspace/sprints/page.js — Global Sprints & Planning styled like Project page
 import { useCallback, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -388,6 +388,20 @@ export default function GlobalSprintsPage() {
   const [backlogCollapsed, setBacklogCollapsed] = useState(false);
 
   const isManager = can(orgRole, 'manage:sprints');
+
+  // ?new=1 — те саме прохання, що вже розуміють «Мої завдання», календар і
+  // список проєктів: «Новий спринт» у командній палітрі не має власної кнопки
+  // на цій сторінці, він відкриває цю. Прапорець одразу знімається з адреси,
+  // щоб оновлення сторінки не відкрило діалог удруге.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('new') !== '1') return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('new');
+    router.replace(next.size ? `/sprints?${next}` : '/sprints', { scroll: false });
+    if (!can(orgRole, 'manage:sprints')) return;
+    queueMicrotask(() => setShowCreateSprintModal(true));
+  }, [orgRole, router, searchParams]);
   // `null` on the first render means desktop, which is the layout that has
   // room either way.
   const isPhone = useIsMobile() === true;

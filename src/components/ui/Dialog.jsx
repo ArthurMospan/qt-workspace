@@ -29,6 +29,7 @@ import { useOverlayHistory } from '@/lib/hooks/useOverlayHistory';
  * @param {boolean} props.isOpen Whether it is on screen. The dialog renders nothing when false.
  * @param {() => void} props.onClose Closes it: the ×, the overlay and Escape all call this.
  * @param {string} props.title Headline.
+ * @param {string} props.ariaLabel Name for a dialog that deliberately has no headline — the palette is one, its own search field says what it is.
  * @param {string} props.description Sentence under the headline.
  * @param {React.ReactNode} props.children Body.
  * @param {React.ReactNode} props.footer Actions along the bottom.
@@ -47,6 +48,7 @@ export default function Dialog({
   isOpen,
   onClose,
   title,
+  ariaLabel,
   description,
   headerAction,
   children,
@@ -141,6 +143,7 @@ export default function Dialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : ariaLabel}
         className={`
           bg-white shadow-[0_25px_70px_rgba(0,0,0,0.18)]
           w-full flex flex-col overflow-hidden

@@ -11,13 +11,14 @@ import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { useSearch } from '@/lib/hooks/useSearch';
-import { CommandPalette, KeyboardShortcutsDialog } from '@/components/ui';
+import { CommandPalette } from '@/components/ui';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { buildCommands } from '@/lib/utils/commandPalette.mjs';
 import { can } from '@/lib/utils/can';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
+import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 
-const PERMISSIONS = ['create:project'];
+const PERMISSIONS = ['create:project', 'manage:sprints'];
 
 // QUI-103. ⌘K/Ctrl+K is the only global keystroke this file claims.
 //
@@ -27,13 +28,14 @@ const PERMISSIONS = ['create:project'];
 // `<textarea>` or a contenteditable — a chat composer's own key handling, a
 // dialog that has focus on itself, the page between two clicks — swallowed the
 // character and put a help panel on screen instead. A printable character is
-// nobody's shortcut. The sheet is still reachable from the palette itself.
+// nobody's shortcut. The sheet is not here either any more: a cheat sheet is
+// something you look up, so it lives behind «?» in the sidebar with the help
+// centre, and the palette is left holding only things that do something.
 
 export default function WorkspaceCommandPalette() {
   const router = useRouter();
   const { projects, activeOrgId, orgRole, allOrgs } = useAppContext();
   const [open, setOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [orgSwitcherOpen, setOrgSwitcherOpen] = useState(false);
   const { results, matches, loading, search, clear } = useSearch();
 
@@ -61,6 +63,10 @@ export default function WorkspaceCommandPalette() {
 
   useEffect(() => {
     const onKeyDown = event => {
+      // A text field that has already answered this keystroke has answered it:
+      // ⌘K inside the markdown editor inserts a link, and used to insert a link
+      // *and* throw the palette over the top of what you were writing.
+      if (event.defaultPrevented) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         if (open) closePalette();
@@ -76,20 +82,25 @@ export default function WorkspaceCommandPalette() {
     else search(query, activeOrgId, scope);
   }, [activeOrgId, clear, search]);
 
+  // Choosing a command closes the palette and goes somewhere, and those are two
+  // navigations: the palette hands its history entry back with `history.back()`,
+  // which lands *after* a `router.push` issued in the same tick and undoes it.
+  // That is why every row in «Перейти» — and every search result reached with
+  // ↑↓ and Enter — appeared to do nothing at all. `navigateAfterOverlayClose`
+  // holds the push until the entry is genuinely back.
   const onSelect = useCallback(command => {
     if (command.href) {
-      router.push(command.href);
+      navigateAfterOverlayClose(() => router.push(command.href));
       return;
     }
     if (command.action === 'stop-timer') {
       // The minutes ride in the store, not in the URL — see `stopTimer`.
       const result = stopTimer();
       const href = timerTargetHref(result);
-      if (href) router.push(href);
+      if (href) navigateAfterOverlayClose(() => router.push(href));
       return;
     }
     if (command.action === 'switch-organization') setOrgSwitcherOpen(true);
-    if (command.action === 'open-shortcuts') setShortcutsOpen(true);
   }, [router, stopTimer]);
 
   return (
@@ -107,10 +118,6 @@ export default function WorkspaceCommandPalette() {
         initialQuery={paletteRequest.query}
         initialScope={paletteRequest.scope}
         requestKey={paletteRequest.id}
-      />
-      <KeyboardShortcutsDialog
-        isOpen={shortcutsOpen}
-        onClose={() => setShortcutsOpen(false)}
       />
       {orgSwitcherOpen && <OrgSwitcherScreen onClose={() => setOrgSwitcherOpen(false)} />}
     </>

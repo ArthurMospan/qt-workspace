@@ -6,9 +6,10 @@ import { SHORTCUT_GROUPS } from '@/lib/content/shortcuts.mjs';
 
 // ─── UI Kit: KeyboardShortcutsDialog ─────────────────────────────────────────
 // The app had shortcuts and no way to find out about them, which makes a
-// shortcut a secret rather than a feature. One list, opened from the command
-// palette — QUI-103 took "?" away, because a printable character cannot be a
-// global shortcut without eating the character.
+// shortcut a secret rather than a feature. One list, opened from «?» in the
+// sidebar, next to the help centre — where somebody looking for help looks.
+// QUI-103 took the "?" *key* away, because a printable character cannot be a
+// global shortcut without eating the character; the button is not a keystroke.
 
 export { SHORTCUT_GROUPS };
 
@@ -37,8 +38,8 @@ export default function KeyboardShortcutsDialog({ isOpen, onClose }) {
       isOpen={isOpen}
       onClose={onClose}
       title="Гарячі клавіші"
-      description="Працюють будь-де, крім полів вводу."
-      size="sm"
+      description="Перші дві групи працюють будь-де, решта — там, де написано."
+      size="md"
       presentation="dialog"
     >
       <div className="flex flex-col gap-[18px]">
@@ -49,7 +50,7 @@ export default function KeyboardShortcutsDialog({ isOpen, onClose }) {
             </p>
             <div className="flex flex-col gap-[8px]">
               {group.items.map(item => (
-                <div key={item.label} className="flex items-center justify-between gap-[16px]">
+                <div key={`${item.label}-${item.keys.join('+')}`} className="flex items-center justify-between gap-[16px]">
                   <span className="text-[13px] text-ink">{item.label}</span>
                   <span className="flex shrink-0 items-center gap-[4px]">
                     {(apple ? item.keys : item.alt || item.keys).map(key => <Key key={key}>{key}</Key>)}
