@@ -4,6 +4,11 @@ import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { v2 as cloudinary } from 'cloudinary';
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
+import {
+  organizationRollupTimeZone,
+  writeAnalyticsRollupDeltas,
+} from '@/lib/server/analyticsRollups';
+import { AnalyticsRollupDeltas } from '@/lib/utils/analyticsRollups.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import { youTrackClientFor } from '@/lib/server/youtrackIntegration';
 import {
@@ -927,6 +932,7 @@ async function importWorkItems({ job, issueId, projectId, workItems }) {
     return { actors: [], warnings: invalidWarnings };
   }
   const db = getAdminDb();
+  const rollupTimeZone = await organizationRollupTimeZone(db, job.organizationId);
   const issueRef = db.collection('issues').doc(issueId);
   const projectRef = db.collection('projects').doc(projectId);
   const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
@@ -1022,7 +1028,7 @@ async function importWorkItems({ job, issueId, projectId, workItems }) {
         }
         if (youTrackImportedWorkLogMatches(current, row.fields)) return;
         spentMinutesDelta += row.fields.spentMinutes - (current?.spentMinutes || 0);
-        changedRows.push(row);
+        changedRows.push({ ...row, previous: current });
       });
 
       const changedLogs = changedRows.length;
@@ -1072,9 +1078,20 @@ async function importWorkItems({ job, issueId, projectId, workItems }) {
           'Підсумок часу завдання потребує звірки перед імпортом',
         );
       }
+      // An import is an edit like any other, so the daily totals move by the
+      // difference: the row as it stood is taken out and the row as imported is
+      // put in. A re-import of the same worklog is not a second contribution —
+      // it does not reach here at all, because an unchanged row is skipped above.
+      const rollupDeltas = new AnalyticsRollupDeltas(rollupTimeZone);
+      const issueCancelled = Boolean(issue.cancelledAt);
       changedRows.forEach(row => {
+        if (row.previous) {
+          rollupDeltas.add(row.previous, -1, { cancelled: issueCancelled });
+        }
+        rollupDeltas.add(row.fields, 1, { cancelled: issueCancelled });
         transaction.set(row.ref, row.fields, { merge: true });
       });
+      writeAnalyticsRollupDeltas({ writer: transaction, db, deltas: rollupDeltas });
       transaction.update(issueRef, {
         spentMinutes: initializeSpentMinutesMirror
           ? mirrorTransition.next

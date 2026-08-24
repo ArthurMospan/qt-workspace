@@ -2,6 +2,10 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
+import {
+  analyticsRollupDeltasFor,
+  commitAnalyticsRollupDeltas,
+} from '@/lib/server/analyticsRollups';
 import { isBilledTimeLog } from '@/lib/utils/issueDeletion.mjs';
 
 const PURGE_BATCH_SIZE = 25;
@@ -27,6 +31,7 @@ async function loadIssueRelationsAndTimeLogs(db, issue) {
   ]);
   return {
     billedLogs: timeLogs.docs.filter(document => isBilledTimeLog(document.data())),
+    timeLogs: timeLogs.docs.map(document => ({ id: document.id, ...document.data() })),
     refs: [
       ...sourceLinks.docs
         .filter(document => document.data().organizationId === issue.organizationId)
@@ -115,12 +120,28 @@ async function purgeIssueTombstone(tombstoneDocument, nowMs) {
   });
   if (!prepared.proceed) return { purged: 0, failed: 0, related: 0 };
 
+  // The hours go with the task. Deleting is the one of the three that removes
+  // the record rather than moving it, so the days those hours were logged on
+  // stop counting them — «logged» and «cancelled» alike, because a purged task
+  // is not a task that was called off, it is a task that never existed.
+  await removePurgedTimeLogsFromRollups(db, issue, related.timeLogs);
   const relatedCount = await deleteRefsInBatches(db, related.refs);
   // The parent issue document is already absent, but recursiveDelete still
   // removes its retained comments and audit descendants.
   await db.recursiveDelete(issueRef);
   await tombstoneDocument.ref.delete();
   return { purged: 1, failed: 0, related: relatedCount };
+}
+
+async function removePurgedTimeLogsFromRollups(db, issue, timeLogs) {
+  if (!timeLogs?.length) return;
+  const deltas = await analyticsRollupDeltasFor(db, issue.organizationId);
+  const cancelled = Boolean(issue.cancelledAt);
+  for (const log of timeLogs) deltas.add(log, -1, { cancelled });
+  // Batches rather than a transaction: the log documents themselves are removed
+  // in batches too, and a task worked on for a year touches more days than one
+  // transaction may write.
+  await commitAnalyticsRollupDeltas(db, deltas);
 }
 
 export async function purgeExpiredDeletedIssues({ nowMs = Date.now() } = {}) {

@@ -3,6 +3,7 @@ import 'server-only';
 
 import { NextResponse } from 'next/server';
 import { readJsonBody } from '@/lib/server/apiErrors';
+import { writeAnalyticsRollupDeltas } from '@/lib/server/analyticsRollups';
 import { authorizeOrgRequest } from '@/lib/server/firebaseAdmin';
 import { isBilledTimeLog } from '@/lib/utils/issueDeletion.mjs';
 import {
@@ -243,14 +244,33 @@ export function readMutableTaskTimeLog({
   return log;
 }
 
+/**
+ * The one place a task's hours change, and therefore the one place the daily
+ * rollup has to change with them.
+ *
+ * `rollupDeltas` is not optional. Create, edit and delete all pass through
+ * here, so a path that forgot the aggregate would be a path that silently
+ * drifted it — and drift in a derived number is the failure that is hardest to
+ * notice, because nothing is broken until somebody reads a total and believes
+ * it. Requiring the argument makes forgetting a build error instead.
+ */
 export function applyTaskTimeLogMutation({
   transaction,
+  db,
   issueRef,
   issue,
   projectRef,
   spentMinutesDelta,
+  rollupDeltas,
   initializeSpentMinutesMirror = false,
 }) {
+  if (!rollupDeltas || !db) {
+    throw taskTimeLogError(
+      'TASK_TIME_ROLLUP_MISSING',
+      500,
+      'Внутрішня помилка обліку часу',
+    );
+  }
   const mirrorTransition = taskTimeLogMirrorTransition({
     currentSpentMinutes: issue.spentMinutes,
     spentMinutesDelta,
@@ -278,4 +298,5 @@ export function applyTaskTimeLogMutation({
   transaction.update(projectRef, {
     invoiceMutationVersion: FieldValue.increment(1),
   });
+  writeAnalyticsRollupDeltas({ writer: transaction, db, deltas: rollupDeltas });
 }

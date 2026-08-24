@@ -522,6 +522,77 @@ test('plain members cannot read or write time logs outside their project team', 
   await assertSucceeds(getDoc(doc(ownerDb, 'timeLogs', 'private-log')));
 });
 
+// A summary of hours you may not see is still those hours. The daily totals
+// repeat the raw log's rule rather than relaxing it, and nothing in a browser
+// may write one — they are derived by server transactions and rebuilt by
+// scripts/backfill-analytics-rollups.mjs.
+test('daily analytics totals are readable exactly where their logs are, and writable nowhere', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'projects', 'rollup-private-project'), {
+      organizationId: 'org-a',
+      name: 'Rollup private project',
+      status: 'active',
+      team: ['owner-a'],
+    });
+    await setDoc(doc(db, 'analyticsRollups', 'org-a_project-a_2026-08-24'), {
+      organizationId: 'org-a', projectId: 'project-a', day: '2026-08-24',
+      version: 1, taskMinutes: 120, eventMinutes: 30, cancelledTaskMinutes: 0,
+      minutesByUser: { 'member-a': 150 }, cancelledMinutesByUser: {},
+    });
+    await setDoc(doc(db, 'analyticsRollups', 'org-a__2026-08-24'), {
+      organizationId: 'org-a', projectId: '', day: '2026-08-24',
+      version: 1, taskMinutes: 0, eventMinutes: 45, cancelledTaskMinutes: 0,
+      minutesByUser: { 'member-a': 45 }, cancelledMinutesByUser: {},
+    });
+    await setDoc(doc(db, 'analyticsRollups', 'org-a_rollup-private-project_2026-08-24'), {
+      organizationId: 'org-a', projectId: 'rollup-private-project', day: '2026-08-24',
+      version: 1, taskMinutes: 60, eventMinutes: 0, cancelledTaskMinutes: 0,
+      minutesByUser: { 'owner-a': 60 }, cancelledMinutesByUser: {},
+    });
+  });
+
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(getDoc(doc(memberDb, 'analyticsRollups', 'org-a_project-a_2026-08-24')));
+  // Team calendar time hangs off no project and any member may already read it
+  // one log at a time.
+  await assertSucceeds(getDoc(doc(memberDb, 'analyticsRollups', 'org-a__2026-08-24')));
+  await assertFails(getDoc(doc(memberDb, 'analyticsRollups', 'org-a_rollup-private-project_2026-08-24')));
+  await assertFails(getDoc(doc(
+    environment.authenticatedContext('outsider').firestore(),
+    'analyticsRollups',
+    'org-a_project-a_2026-08-24',
+  )));
+
+  // A window over the days a member may see is one query.
+  await assertSucceeds(getDocs(query(
+    collection(memberDb, 'analyticsRollups'),
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', ['project-a']),
+    where('day', '>=', '2026-08-01'),
+    where('day', '<=', '2026-08-31'),
+  )));
+  // Asking for a project the member is not on fails the whole query, exactly as
+  // it does for the logs behind it.
+  await assertFails(getDocs(query(
+    collection(memberDb, 'analyticsRollups'),
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', ['project-a', 'rollup-private-project']),
+    where('day', '>=', '2026-08-01'),
+  )));
+
+  // Nobody writes a total from a browser, not even the owner of the workspace.
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  await assertFails(updateDoc(
+    doc(ownerDb, 'analyticsRollups', 'org-a_project-a_2026-08-24'),
+    { taskMinutes: 9_999 },
+  ));
+  await assertFails(setDoc(doc(ownerDb, 'analyticsRollups', 'org-a_project-a_2026-08-25'), {
+    organizationId: 'org-a', projectId: 'project-a', day: '2026-08-25', taskMinutes: 1,
+  }));
+  await assertFails(deleteDoc(doc(ownerDb, 'analyticsRollups', 'org-a_project-a_2026-08-24')));
+});
+
 test('time log queries prove their project or organization-calendar scope', async () => {
   await environment.withSecurityRulesDisabled(async context => {
     const db = context.firestore();

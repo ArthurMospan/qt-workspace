@@ -2,6 +2,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { deleteProjectAnalyticsRollups } from '@/lib/server/analyticsRollups';
 import { introducedIssueExecutionViolations } from '@/lib/utils/issueStatusTransition.mjs';
 import {
   DEFAULT_STATUS_IDS,
@@ -454,6 +455,10 @@ export async function DELETE(request, context) {
       simpleRefs.slice(offset, offset + 400).forEach(documentRef => batch.delete(documentRef));
       await batch.commit();
     }
+    // The project's days go with the project. Correcting each day's totals
+    // would be arithmetic in service of documents that no longer describe
+    // anything — there is no project left for them to be about.
+    await deleteProjectAnalyticsRollups(db, project.organizationId, projectId);
     for (const issue of issues.docs) await db.recursiveDelete(issue.ref);
     for (const stage of stages.docs) await db.recursiveDelete(stage.ref);
 

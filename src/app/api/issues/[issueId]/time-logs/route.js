@@ -5,6 +5,7 @@ import {
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { analyticsRollupDeltasFor } from '@/lib/server/analyticsRollups';
 import { invoiceSourcelessReservationId } from '@/lib/server/invoicePayload.mjs';
 import {
   applyTaskTimeLogMutation,
@@ -77,6 +78,10 @@ export async function POST(request, context) {
       invoiceSourcelessReservationId(organizationId, projectId, issueId),
     );
     const logRef = db.collection('timeLogs').doc();
+    // Read outside the transaction: the timezone decides which day this hour is
+    // filed under and changes approximately never, so it is not worth making
+    // every time entry contend on the organization document.
+    const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
       const {
         initializeSpentMinutesMirror,
@@ -119,6 +124,12 @@ export async function POST(request, context) {
         );
       }
       const now = FieldValue.serverTimestamp();
+      // The day this hour is filed under. When the request carried no date the
+      // stored `loggedAt` is the server's clock and this is the request's, which
+      // differ by the round trip — enough to land either side of midnight only
+      // in the rarest case, and the backfill re-derives the day from the stored
+      // value when it does.
+      const loggedAtMillis = loggedAt.millis === null ? Date.now() : loggedAt.millis;
       transaction.create(logRef, {
         organizationId,
         projectId,
@@ -132,12 +143,25 @@ export async function POST(request, context) {
         createdAt: now,
         updatedAt: now,
       });
+      // Hours logged against a task somebody has already called off are counted
+      // and corrected in the same breath, so that «logged» and «still counts»
+      // stay two independent figures whichever order the two events happen in.
+      rollupDeltas.add({
+        organizationId,
+        projectId,
+        issueId,
+        userId: authorization.user.uid,
+        spentMinutes,
+        loggedAt: new Date(loggedAtMillis),
+      }, 1, { cancelled: Boolean(issue.cancelledAt) });
       applyTaskTimeLogMutation({
         transaction,
+        db,
         issueRef,
         issue,
         projectRef,
         spentMinutesDelta: spentMinutes,
+        rollupDeltas,
         initializeSpentMinutesMirror,
       });
     });

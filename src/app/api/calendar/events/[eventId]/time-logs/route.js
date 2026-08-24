@@ -7,6 +7,10 @@ import {
 } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
+  analyticsRollupDeltasFor,
+  writeAnalyticsRollupDeltas,
+} from '@/lib/server/analyticsRollups';
+import {
   canAccessCalendarEventProject,
   canViewCalendarEvent,
 } from '@/lib/server/calendarEvents';
@@ -246,6 +250,24 @@ function incrementMutationLocks(transaction, eventRef, projectRef) {
   }
 }
 
+// Event hours land in the same daily document as task hours and in a different
+// figure, because «Куди пішов час» is one total split three ways and a meeting
+// is not a task. The day comes from the occurrence, which is also what the raw
+// log stores in `loggedAt`, so the aggregate and the timesheet bucket a
+// recurring Monday stand-up identically.
+function calendarRollupLog({ organizationId, event, eventId, occurrenceStartAt, userId, spentMinutes }) {
+  return {
+    organizationId,
+    projectId: event.projectId || '',
+    issueId: '',
+    sourceType: 'calendar_event',
+    eventId,
+    occurrenceStartAt,
+    userId,
+    spentMinutes,
+  };
+}
+
 export async function GET(request, context) {
   try {
     const { eventId: rawEventId } = await context.params;
@@ -360,6 +382,7 @@ export async function POST(request, context) {
     const db = getAdminDb();
     const eventRef = db.collection('calendarEvents').doc(eventId);
     const logRef = db.collection('timeLogs').doc();
+    const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
       const { event, projectRef, canTrackTime, trackingDisabledReason } = await readLiveEventContext({
         transaction,
@@ -398,6 +421,15 @@ export async function POST(request, context) {
         createdAt: now,
         updatedAt: now,
       });
+      rollupDeltas.add(calendarRollupLog({
+        organizationId,
+        event,
+        eventId,
+        occurrenceStartAt,
+        userId: authResult.authorization.user.uid,
+        spentMinutes: minutes,
+      }), 1);
+      writeAnalyticsRollupDeltas({ writer: transaction, db, deltas: rollupDeltas });
       incrementMutationLocks(transaction, eventRef, projectRef);
     });
 
@@ -448,6 +480,7 @@ export async function PATCH(request, context) {
     const db = getAdminDb();
     const eventRef = db.collection('calendarEvents').doc(eventId);
     const logRef = db.collection('timeLogs').doc(logId);
+    const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
       const { event, projectRef, canTrackTime, trackingDisabledReason } = await readLiveEventContext({
         transaction,
@@ -495,6 +528,13 @@ export async function PATCH(request, context) {
         calendarOrganizerId: event.organizerId,
         updatedAt: FieldValue.serverTimestamp(),
       });
+      // The stored record out, the corrected one in. An occurrence cannot move
+      // — changing an event's dates is refused outright while it has hours —
+      // so both land on the same day, and the day's figure moves by the
+      // difference rather than by the new value.
+      rollupDeltas.add(log, -1);
+      rollupDeltas.add({ ...log, spentMinutes: minutes }, 1);
+      writeAnalyticsRollupDeltas({ writer: transaction, db, deltas: rollupDeltas });
       incrementMutationLocks(transaction, eventRef, projectRef);
     });
 
@@ -531,6 +571,7 @@ export async function DELETE(request, context) {
     const db = getAdminDb();
     const eventRef = db.collection('calendarEvents').doc(eventId);
     const logRef = db.collection('timeLogs').doc(logId);
+    const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
       const { event, projectRef } = await readLiveEventContext({
         transaction,
@@ -561,6 +602,8 @@ export async function DELETE(request, context) {
       }
       ensureLogIsMutable(log);
       transaction.delete(logRef);
+      rollupDeltas.add(log, -1);
+      writeAnalyticsRollupDeltas({ writer: transaction, db, deltas: rollupDeltas });
       incrementMutationLocks(transaction, eventRef, projectRef);
     });
 

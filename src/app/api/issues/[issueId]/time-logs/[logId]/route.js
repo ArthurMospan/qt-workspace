@@ -5,6 +5,7 @@ import {
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { analyticsRollupDeltasFor } from '@/lib/server/analyticsRollups';
 import {
   applyTaskTimeLogMutation,
   authorizeTaskTimeLogRequest,
@@ -88,6 +89,7 @@ export async function PATCH(request, context) {
     const db = getAdminDb();
     const issueRef = db.collection('issues').doc(issueId);
     const logRef = db.collection('timeLogs').doc(logId);
+    const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
       const {
         initializeSpentMinutesMirror,
@@ -119,12 +121,24 @@ export async function PATCH(request, context) {
         updatedAt: FieldValue.serverTimestamp(),
         updatedBy: authorization.user.uid,
       });
+      // The old record out, the new record in — a difference, never an
+      // increment of the new figure. Thirty minutes corrected to forty-five is
+      // +15 to the day, and the day that used to say seventy-five after two
+      // such edits is exactly the bug this shape prevents. The date is not
+      // editable, so both sides land on the same day; writing it as two
+      // opposite contributions rather than one arithmetic delta keeps that a
+      // property of the data instead of an assumption in the caller.
+      const cancelled = Boolean(issue.cancelledAt);
+      rollupDeltas.add(log, -1, { cancelled });
+      rollupDeltas.add({ ...log, spentMinutes: nextMinutes }, 1, { cancelled });
       applyTaskTimeLogMutation({
         transaction,
+        db,
         issueRef,
         issue,
         projectRef,
         spentMinutesDelta: nextMinutes - log.spentMinutes,
+        rollupDeltas,
         initializeSpentMinutesMirror,
       });
     });
@@ -164,6 +178,7 @@ export async function DELETE(request, context) {
     const db = getAdminDb();
     const issueRef = db.collection('issues').doc(issueId);
     const logRef = db.collection('timeLogs').doc(logId);
+    const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
       const {
         initializeSpentMinutesMirror,
@@ -189,12 +204,15 @@ export async function DELETE(request, context) {
         membership,
       });
       transaction.delete(logRef);
+      rollupDeltas.add(log, -1, { cancelled: Boolean(issue.cancelledAt) });
       applyTaskTimeLogMutation({
         transaction,
+        db,
         issueRef,
         issue,
         projectRef,
         spentMinutesDelta: -log.spentMinutes,
+        rollupDeltas,
         initializeSpentMinutesMirror,
       });
     });

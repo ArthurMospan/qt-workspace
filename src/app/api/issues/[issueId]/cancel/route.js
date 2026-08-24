@@ -2,6 +2,10 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  analyticsRollupDeltasFor,
+  writeAnalyticsRollupDeltas,
+} from '@/lib/server/analyticsRollups';
 import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
 import { rolesFor } from '@/lib/utils/can';
 import {
@@ -61,6 +65,7 @@ export async function PATCH(request, context) {
     const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
       invoiceSourcelessReservationId(issue.organizationId, issue.projectId, issueId),
     );
+    const rollupDeltas = await analyticsRollupDeltasFor(db, issue.organizationId);
     const result = await db.runTransaction(async transaction => {
       const [currentSnap, projectSnap, estimateReservationSnap] = await Promise.all([
         transaction.get(issueRef),
@@ -99,6 +104,20 @@ export async function PATCH(request, context) {
         return { changed: false, issueKey: current.issueKey || issueId };
       }
 
+      // Cancelling and un-cancelling both move this task's hours across the
+      // line between «logged» and «still counts», so both need the hours. The
+      // read used to happen only on the way in, because only the billing guard
+      // needed it.
+      const timeLogs = await transaction.get(
+        db.collection('timeLogs').where('issueId', '==', issueId),
+      );
+      const ownLogs = timeLogs.docs
+        .map(document => ({ id: document.id, ...document.data() }))
+        .filter(log => (
+          log.organizationId === current.organizationId
+          && log.projectId === current.projectId
+        ));
+
       // The same two guards deletion has, and for a stronger reason. Deleting a
       // task with billed hours would remove the evidence behind an invoice;
       // cancelling one would leave the evidence in place and quietly stop
@@ -115,17 +134,7 @@ export async function PATCH(request, context) {
             { invoiceIds: reservation.invoiceId ? [reservation.invoiceId] : [] },
           );
         }
-        const timeLogs = await transaction.get(
-          db.collection('timeLogs').where('issueId', '==', issueId),
-        );
-        const billedLogs = timeLogs.docs
-          .filter(document => {
-            const data = document.data();
-            return data.organizationId === current.organizationId
-              && data.projectId === current.projectId
-              && isBilledTimeLog(data);
-          })
-          .map(document => ({ id: document.id, ...document.data() }));
+        const billedLogs = ownLogs.filter(isBilledTimeLog);
         if (billedLogs.length > 0) {
           throw cancelError(
             'ISSUE_HAS_BILLED_TIME',
@@ -137,6 +146,16 @@ export async function PATCH(request, context) {
             },
           );
         }
+      }
+
+      // The daily totals keep «what was logged» and «what somebody has since
+      // called off» as two figures, so this moves hours from one to the other
+      // and back without ever rewriting what the day recorded. One write per
+      // distinct day this task has hours on — which is a property of one task,
+      // not of the workspace, and rides inside the same transaction as the flag
+      // itself so the two can never disagree.
+      for (const log of ownLogs) {
+        rollupDeltas.addCancellation(log, cancelled ? 1 : -1);
       }
 
       const now = FieldValue.serverTimestamp();
@@ -156,6 +175,7 @@ export async function PATCH(request, context) {
         action: cancelled ? 'cancelled' : 'uncancelled',
         createdAt: now,
       });
+      writeAnalyticsRollupDeltas({ writer: transaction, db, deltas: rollupDeltas });
       return { changed: true, issueKey: current.issueKey || issueId };
     });
 

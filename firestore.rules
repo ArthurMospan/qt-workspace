@@ -410,6 +410,25 @@ service cloud.firestore {
       allow create, update, delete: if false; // Server APIs own logs and accounting mirrors.
     }
 
+    // ── analyticsRollups/{organizationId}_{projectId}_{day} ──────────────
+    // Denormalized daily totals of logged time, written only by the server
+    // transactions that write the logs themselves (and rebuilt from those logs
+    // by scripts/backfill-analytics-rollups.mjs). Derived data, never a source
+    // of truth — and never money: an invoice reads exact sourceTimeLogIds.
+    //
+    // Read access repeats the raw log's rule rather than relaxing it. A rollup
+    // carries per-person minutes for one project, so whoever may not see that
+    // project's time logs may not see its totals either; a summary of data you
+    // cannot read is still that data. Project-less rollups hold team calendar
+    // time, which any member may already read one log at a time.
+    match /analyticsRollups/{id} {
+      allow read: if isOrgMember(resource.data.organizationId) && (
+        resource.data.get('projectId', '') == '' ||
+        canAccessProject(resource.data.projectId, resource.data.organizationId)
+      );
+      allow create, update, delete: if false;
+    }
+
     // ── invoices/{id} ────────────────────────────────────────────────────
     match /invoices/{id} {
       allow read: if isOrgAdminOrOwner(resource.data.organizationId);

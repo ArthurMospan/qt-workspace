@@ -36,7 +36,8 @@
     "migrate:image-assets": "node scripts/migrate-image-assets.mjs",
     "migrate:chat-attachments": "node scripts/migrate-chat-attachments.mjs",
     "migrate:issue-keys": "node scripts/migrate-issue-keys.mjs",
-    "reconcile:issue-time": "node scripts/reconcile-issue-spent-minutes.mjs"
+    "reconcile:issue-time": "node scripts/reconcile-issue-spent-minutes.mjs",
+    "backfill:analytics-rollups": "node scripts/backfill-analytics-rollups.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

@@ -83,7 +83,7 @@ test('work already fixed into an invoice cannot be cancelled out of the record',
   // would disagree with nothing on screen having changed.
   assert.match(route, /ISSUE_HAS_INVOICE_ESTIMATE/);
   assert.match(route, /ISSUE_HAS_BILLED_TIME/);
-  assert.match(route, /isBilledTimeLog\(data\)/);
+  assert.match(route, /ownLogs\.filter\(isBilledTimeLog\)/);
   // Both name the way out, which is the other action.
   assert.match(route, /Його можна архівувати, але не скасувати/);
   // Un-cancelling is never blocked by them: taking a task back into the record
