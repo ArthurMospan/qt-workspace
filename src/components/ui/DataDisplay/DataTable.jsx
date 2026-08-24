@@ -23,6 +23,8 @@
 // they were designed for, and nothing is allowed to overrun its track.
 
 import React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Surface from '@/components/ui/Surface';
 
 const ALIGN = { left: 'text-left', right: 'text-right', center: 'text-center' };
@@ -35,7 +37,18 @@ const ALIGN = { left: 'text-left', right: 'text-right', center: 'text-center' };
 // that is the part `TaskTableView` was built for — but a row of figures is now
 // read at the same weight in both places.
 const HEADER_CELL = 'h-9 bg-canvas px-[10px] shadow-[inset_0_-1px_0_var(--color-line)]';
-const BODY_CELL = 'h-9 px-[10px] py-0 align-middle';
+const BODY_CELL = 'px-[10px] py-0 align-middle';
+
+// Two kinds of row, and they were both 36px. A row of figures is 36px because
+// that is a line of text with air around it. A row that carries a person — a
+// face, a name and what they were doing three days ago — is two lines and a
+// picture, and forcing that into 36px is what put a 40px avatar inside a 36px
+// row: the avatar won, the row grew anyway, and the result looked like a
+// mistake because it was one.
+const DENSITIES = {
+  compact: 'h-9',
+  comfortable: 'h-[52px]',
+};
 
 // One rhythm, three tracks. The four tables using this component had written
 // eight different widths between them — 88, 90, 92, 96, 100, 110, 112, 150 —
@@ -82,7 +95,8 @@ const FIGURE_TYPE = 'ui-type-figure';
  * @param {DataTableColumn[]} props.columns What the table has.
  * @param {object[]} props.rows What it shows.
  * @param {(row: object) => string} props.rowKey Stable key per row.
- * @param {(row: object) => string} props.rowHref Makes the whole row a link, which is what a row in analytics almost always wants to be.
+ * @param {(row: object) => string} props.rowHref Makes the whole row a link, which is what a row in analytics almost always wants to be. The identifying cell is a real link; the rest of the row follows it on click.
+ * @param {'compact'|'comfortable'} props.density Row height. `compact` is a row of figures; `comfortable` is a row carrying a face and two lines of text.
  * @param {string} props.emptyText Shown instead of an empty table.
  * @param {string} props.className Placement in the parent only.
  */
@@ -91,9 +105,12 @@ export default function DataTable({
   rows = [],
   rowKey = row => row.id,
   rowHref,
+  density = 'compact',
   emptyText = 'Немає даних',
   className = '',
 }) {
+  const router = useRouter();
+
   if (rows.length === 0) {
     return <p className={`py-6 text-center text-[12px] text-faint ${className}`}>{emptyText}</p>;
   }
@@ -103,6 +120,22 @@ export default function DataTable({
   const trackOf = column => TRACKS[column.size];
   const alignOf = column => column.align || DEFAULT_ALIGN[column.size] || 'left';
   const typeOf = column => (column.size === 'figure' ? FIGURE_TYPE : '');
+  const rowHeight = DENSITIES[density] || DENSITIES.compact;
+
+  // A row that leads somewhere is clickable along its whole width. It used to
+  // be clickable on the first cell only, so the way to open a person's analytics
+  // was to find their name and hit that — which reads as a broken row, because
+  // everything about the row says it is one thing.
+  //
+  // The identifying cell stays a real link, so the keyboard reaches it, the
+  // middle button opens a tab and the context menu offers to copy the address.
+  // The row handler is the shortcut on top of that, and it steps aside for
+  // anything the reader actually aimed at.
+  const followRow = href => event => {
+    if (event.defaultPrevented) return;
+    if (event.target.closest('a, button, input, select, textarea, [role="button"]')) return;
+    router.push(href);
+  };
 
   return (
     <div className={`min-w-0 ${className}`}>
@@ -129,7 +162,10 @@ export default function DataTable({
               return (
                 <tr
                   key={rowKey(row)}
-                  className="group border-b border-[#f4f4f5] transition-colors last:border-0 hover:bg-[#fafafa]"
+                  onClick={href ? followRow(href) : undefined}
+                  className={`group border-b border-[#f4f4f5] transition-colors last:border-0 hover:bg-[#fafafa] ${
+                    href ? 'cursor-pointer' : ''
+                  }`}
                 >
                   {columns.map(column => (
                     <td
@@ -140,12 +176,15 @@ export default function DataTable({
                       // as the larger thing on the row. `column` steps them
                       // back to 500 and lets the name lead its own row.
                       data-ui-density={column.size === 'figure' ? 'column' : undefined}
-                      className={`${BODY_CELL} ${typeOf(column)} ${ALIGN[alignOf(column)]}`}
+                      className={`${rowHeight} ${BODY_CELL} ${typeOf(column)} ${ALIGN[alignOf(column)]}`}
                     >
                       {column === leadColumn && href ? (
-                        <a href={href} className="block min-w-0 group-hover:underline">
+                        // `Link`, not a bare anchor: these rows point at other
+                        // workspace screens, and a plain href reloaded the whole
+                        // application to move between two analytics tabs.
+                        <Link href={href} className="block min-w-0 group-hover:underline">
                           {column.cell(row)}
-                        </a>
+                        </Link>
                       ) : column.cell(row)}
                     </td>
                   ))}
@@ -172,7 +211,7 @@ export default function DataTable({
               data-ui-padding="sm"
               className="ui-surface flex min-w-0 flex-col gap-2.5"
             >
-              {href ? <a href={href} className="block min-w-0">{lead}</a> : lead}
+              {href ? <Link href={href} className="block min-w-0">{lead}</Link> : lead}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
                 {restColumns.map(column => ((column.wide || column.size === 'meter' || column.size === 'chip') ? (
                   <div key={column.id} className="col-span-2 flex min-w-0 flex-col gap-1">

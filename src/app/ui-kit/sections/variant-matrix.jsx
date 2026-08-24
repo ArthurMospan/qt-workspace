@@ -150,6 +150,7 @@ const VARIANT_BASE = {
 
 // Why a component has no standalone example, and where to look instead.
 const VARIANT_ELSEWHERE = {
+  DataTable: 'Потрібні колонки й рядки — див. «Графіки й таблиці»',
   Dialog: 'Потребує відкритого стану — див. «Dialogs & Modals»',
   FilterBar: 'Живе всередині PageHeader — див. «Filter Bar»',
   TaskAttributesPanel: 'Потребує задачі — див. «Task Attributes Panel»',

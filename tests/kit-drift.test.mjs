@@ -128,9 +128,12 @@ test('the variant matrix renders every component that can stand alone', () => {
 // Raised 111 → 112 by the meter's inline layout. `Meter layout="inline"` is
 // what a table row uses and three call sites pass it; `stack` is the value you
 // get by writing nothing, and a default has no call site by definition.
+// Raised 112 → 113 by the table's row density, for the same reason: a row
+// carrying a face is `comfortable` and says so, a row of figures is `compact`
+// and says nothing, because that is what it gets by default.
 test('promoting a component to the kit does not orphan the variants it used', () => {
   assert.ok(
-    committed.totals.declaredUnused <= 112,
+    committed.totals.declaredUnused <= 113,
     `declaredUnused grew to ${committed.totals.declaredUnused}: a call site that evidenced a variant has gone out of the scan's view`,
   );
   for (const key of ['Input.composition.status-entry', 'Button.composition.status-submit', 'Dialog.size.status']) {

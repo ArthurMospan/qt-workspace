@@ -2352,7 +2352,8 @@
       "count": 5,
       "showcased": true,
       "usedByKit": [
-        "ChannelInfoPanel"
+        "ChannelInfoPanel",
+        "TaskListCard"
       ],
       "routes": [
         "/[projectId]",
@@ -2724,9 +2725,9 @@
             "src/components/WorkspaceHeader.jsx:329",
             "src/components/workspace/BillingTab.jsx:1271",
             "src/components/workspace/BillingTab.jsx:1282",
-            "src/components/workspace/WorkloadTab.jsx:259",
-            "src/components/workspace/WorkloadTab.jsx:488",
-            "src/components/workspace/WorkloadTab.jsx:490"
+            "src/components/workspace/WorkloadTab.jsx:265",
+            "src/components/workspace/WorkloadTab.jsx:512",
+            "src/components/workspace/WorkloadTab.jsx:514"
           ]
         },
         "sm": {
@@ -2789,7 +2790,7 @@
             "src/components/workspace/IssueDetail.jsx:2265",
             "src/components/workspace/IssueDetail.jsx:2275",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:489",
+            "src/components/workspace/WorkloadTab.jsx:513",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1105",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1275"
@@ -3188,10 +3189,10 @@
             "src/components/workspace/IssueDetail.jsx:2100",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/UnifiedTimeline.jsx:1027",
-            "src/components/workspace/WorkloadTab.jsx:259",
-            "src/components/workspace/WorkloadTab.jsx:488",
-            "src/components/workspace/WorkloadTab.jsx:489",
-            "src/components/workspace/WorkloadTab.jsx:490",
+            "src/components/workspace/WorkloadTab.jsx:265",
+            "src/components/workspace/WorkloadTab.jsx:512",
+            "src/components/workspace/WorkloadTab.jsx:513",
+            "src/components/workspace/WorkloadTab.jsx:514",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:604"
           ]
         },
@@ -3389,10 +3390,10 @@
             "src/components/workspace/TimesheetTab.jsx:492",
             "src/components/workspace/TimesheetTab.jsx:493",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:259",
-            "src/components/workspace/WorkloadTab.jsx:488",
-            "src/components/workspace/WorkloadTab.jsx:489",
-            "src/components/workspace/WorkloadTab.jsx:490",
+            "src/components/workspace/WorkloadTab.jsx:265",
+            "src/components/workspace/WorkloadTab.jsx:512",
+            "src/components/workspace/WorkloadTab.jsx:513",
+            "src/components/workspace/WorkloadTab.jsx:514",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
@@ -3617,10 +3618,10 @@
             "src/components/workspace/TimesheetTab.jsx:493",
             "src/components/workspace/UnifiedTimeline.jsx:1027",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:259",
-            "src/components/workspace/WorkloadTab.jsx:488",
-            "src/components/workspace/WorkloadTab.jsx:489",
-            "src/components/workspace/WorkloadTab.jsx:490",
+            "src/components/workspace/WorkloadTab.jsx:265",
+            "src/components/workspace/WorkloadTab.jsx:512",
+            "src/components/workspace/WorkloadTab.jsx:513",
+            "src/components/workspace/WorkloadTab.jsx:514",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
@@ -3819,10 +3820,10 @@
             "src/components/workspace/TimesheetTab.jsx:493",
             "src/components/workspace/UnifiedTimeline.jsx:1027",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:259",
-            "src/components/workspace/WorkloadTab.jsx:488",
-            "src/components/workspace/WorkloadTab.jsx:489",
-            "src/components/workspace/WorkloadTab.jsx:490",
+            "src/components/workspace/WorkloadTab.jsx:265",
+            "src/components/workspace/WorkloadTab.jsx:512",
+            "src/components/workspace/WorkloadTab.jsx:513",
+            "src/components/workspace/WorkloadTab.jsx:514",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
@@ -4065,10 +4066,10 @@
             "src/components/workspace/TimesheetTab.jsx:492",
             "src/components/workspace/TimesheetTab.jsx:493",
             "src/components/workspace/UnifiedTimeline.jsx:920",
-            "src/components/workspace/WorkloadTab.jsx:259",
-            "src/components/workspace/WorkloadTab.jsx:488",
-            "src/components/workspace/WorkloadTab.jsx:489",
-            "src/components/workspace/WorkloadTab.jsx:490",
+            "src/components/workspace/WorkloadTab.jsx:265",
+            "src/components/workspace/WorkloadTab.jsx:512",
+            "src/components/workspace/WorkloadTab.jsx:513",
+            "src/components/workspace/WorkloadTab.jsx:514",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:573",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:574",
@@ -5633,7 +5634,7 @@
             "src/components/workspace/BillingTab.jsx:472",
             "src/components/workspace/IssueCard.jsx:331",
             "src/components/workspace/IssueCard.jsx:387",
-            "src/components/workspace/WorkloadTab.jsx:126",
+            "src/components/workspace/WorkloadTab.jsx:127",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:369",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819"
           ]
@@ -5724,7 +5725,7 @@
           ],
           "files": [
             "src/components/workspace/BillingTab.jsx:240",
-            "src/components/workspace/WorkloadTab.jsx:125"
+            "src/components/workspace/WorkloadTab.jsx:126"
           ]
         },
         "danger": {
@@ -5746,7 +5747,7 @@
           "files": [
             "src/components/workspace/IssueCard.jsx:317",
             "src/components/workspace/IssueDetail.jsx:1543",
-            "src/components/workspace/WorkloadTab.jsx:124"
+            "src/components/workspace/WorkloadTab.jsx:125"
           ]
         },
         "success": {
@@ -5756,7 +5757,7 @@
             "/analytics/team/[memberId]"
           ],
           "files": [
-            "src/components/workspace/WorkloadTab.jsx:127"
+            "src/components/workspace/WorkloadTab.jsx:128"
           ]
         },
         "dark": {
@@ -5841,10 +5842,10 @@
             "src/components/workspace/AgileBoard.jsx:639",
             "src/components/workspace/BillingTab.jsx:267",
             "src/components/workspace/IssueCard.jsx:387",
-            "src/components/workspace/WorkloadTab.jsx:124",
             "src/components/workspace/WorkloadTab.jsx:125",
             "src/components/workspace/WorkloadTab.jsx:126",
-            "src/components/workspace/WorkloadTab.jsx:127"
+            "src/components/workspace/WorkloadTab.jsx:127",
+            "src/components/workspace/WorkloadTab.jsx:128"
           ]
         },
         "sm": {
@@ -5992,10 +5993,10 @@
             "src/components/workspace/IssueCard.jsx:387",
             "src/components/workspace/IssueDetail.jsx:1543",
             "src/components/workspace/UnifiedTimeline.jsx:161",
-            "src/components/workspace/WorkloadTab.jsx:124",
             "src/components/workspace/WorkloadTab.jsx:125",
             "src/components/workspace/WorkloadTab.jsx:126",
             "src/components/workspace/WorkloadTab.jsx:127",
+            "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:277",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:281",
@@ -6059,10 +6060,10 @@
             "src/components/workspace/IssueCard.jsx:387",
             "src/components/workspace/IssueDetail.jsx:1543",
             "src/components/workspace/UnifiedTimeline.jsx:161",
-            "src/components/workspace/WorkloadTab.jsx:124",
             "src/components/workspace/WorkloadTab.jsx:125",
             "src/components/workspace/WorkloadTab.jsx:126",
             "src/components/workspace/WorkloadTab.jsx:127",
+            "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:277",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:369",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819",
@@ -6149,10 +6150,10 @@
             "src/components/workspace/IssueCard.jsx:331",
             "src/components/workspace/IssueDetail.jsx:1543",
             "src/components/workspace/UnifiedTimeline.jsx:161",
-            "src/components/workspace/WorkloadTab.jsx:124",
             "src/components/workspace/WorkloadTab.jsx:125",
             "src/components/workspace/WorkloadTab.jsx:126",
             "src/components/workspace/WorkloadTab.jsx:127",
+            "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:277",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:281",
@@ -6241,10 +6242,10 @@
             "src/components/workspace/BillingTab.jsx:472",
             "src/components/workspace/IssueCard.jsx:387",
             "src/components/workspace/IssueDetail.jsx:1543",
-            "src/components/workspace/WorkloadTab.jsx:124",
             "src/components/workspace/WorkloadTab.jsx:125",
             "src/components/workspace/WorkloadTab.jsx:126",
             "src/components/workspace/WorkloadTab.jsx:127",
+            "src/components/workspace/WorkloadTab.jsx:128",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:277",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:281",
@@ -6287,9 +6288,10 @@
     "UserAvatar": {
       "size": {
         "md": {
-          "count": 4,
+          "count": 5,
           "routes": [
             "/analytics",
+            "/analytics/team/[memberId]",
             "/calendar",
             "/calendar/event/[eventId]",
             "/chat"
@@ -6298,6 +6300,7 @@
             "src/app/(app)/chat/page.js:404",
             "src/app/(app)/chat/page.js:435",
             "src/components/workspace/BillingTab.jsx:99",
+            "src/components/workspace/WorkloadTab.jsx:187",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:326"
           ]
         },
@@ -6311,7 +6314,7 @@
           "files": [
             "src/app/(app)/page.js:198",
             "src/components/WorkspaceHeader.jsx:85",
-            "src/components/workspace/WorkloadTab.jsx:261"
+            "src/components/workspace/WorkloadTab.jsx:267"
           ]
         },
         "sm": {
@@ -6340,7 +6343,7 @@
           ]
         },
         "lg": {
-          "count": 3,
+          "count": 2,
           "routes": [
             "/",
             "/[projectId]",
@@ -6357,8 +6360,7 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:3539",
-            "src/components/workspace/HoverCard.jsx:181",
-            "src/components/workspace/WorkloadTab.jsx:181"
+            "src/components/workspace/HoverCard.jsx:181"
           ]
         },
         "xs": {
@@ -7087,8 +7089,8 @@
             "src/components/profile/ProfileView.jsx:457",
             "src/components/workspace/TimesheetTab.jsx:686",
             "src/components/workspace/VelocityTab.jsx:207",
-            "src/components/workspace/WorkloadTab.jsx:731",
-            "src/components/workspace/WorkloadTab.jsx:743",
+            "src/components/workspace/WorkloadTab.jsx:756",
+            "src/components/workspace/WorkloadTab.jsx:768",
             "src/components/workspace/calendar/CalendarEventPage.jsx:750"
           ]
         },
@@ -7173,8 +7175,8 @@
             "src/components/workspace/TimesheetTab.jsx:686",
             "src/components/workspace/UnifiedTimeline.jsx:751",
             "src/components/workspace/VelocityTab.jsx:207",
-            "src/components/workspace/WorkloadTab.jsx:731",
-            "src/components/workspace/WorkloadTab.jsx:743",
+            "src/components/workspace/WorkloadTab.jsx:756",
+            "src/components/workspace/WorkloadTab.jsx:768",
             "src/components/workspace/calendar/CalendarEventPage.jsx:750"
           ]
         },
@@ -7219,8 +7221,8 @@
             "src/components/workspace/TimesheetTab.jsx:686",
             "src/components/workspace/UnifiedTimeline.jsx:751",
             "src/components/workspace/VelocityTab.jsx:207",
-            "src/components/workspace/WorkloadTab.jsx:731",
-            "src/components/workspace/WorkloadTab.jsx:743",
+            "src/components/workspace/WorkloadTab.jsx:756",
+            "src/components/workspace/WorkloadTab.jsx:768",
             "src/components/workspace/calendar/CalendarEventPage.jsx:750",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:92"
           ]
@@ -7403,8 +7405,8 @@
             "src/app/(app)/analytics/page.js:812",
             "src/app/(app)/analytics/page.js:824",
             "src/app/(app)/analytics/team/[memberId]/page.js:138",
-            "src/components/workspace/WorkloadTab.jsx:440",
-            "src/components/workspace/WorkloadTab.jsx:479"
+            "src/components/workspace/WorkloadTab.jsx:467",
+            "src/components/workspace/WorkloadTab.jsx:503"
           ]
         },
         "canvas": {
@@ -7438,8 +7440,8 @@
             "src/app/(app)/analytics/team/[memberId]/page.js:138",
             "src/components/WorkspaceHeader.jsx:345",
             "src/components/workspace/BillingTab.jsx:292",
-            "src/components/workspace/WorkloadTab.jsx:440",
-            "src/components/workspace/WorkloadTab.jsx:479"
+            "src/components/workspace/WorkloadTab.jsx:467",
+            "src/components/workspace/WorkloadTab.jsx:503"
           ]
         },
         "dialog-tabs": {
@@ -8230,6 +8232,31 @@
         }
       }
     },
+    "DataTable": {
+      "density": {
+        "(default)": {
+          "count": 2,
+          "routes": [
+            "/[projectId]",
+            "/analytics"
+          ],
+          "files": [
+            "src/app/(app)/analytics/page.js:379",
+            "src/components/workspace/AnalyticsTab.jsx:317"
+          ]
+        },
+        "comfortable": {
+          "count": 1,
+          "routes": [
+            "/analytics",
+            "/analytics/team/[memberId]"
+          ],
+          "files": [
+            "src/components/workspace/WorkloadTab.jsx:167"
+          ]
+        }
+      }
+    },
     "Meter": {
       "tone": {
         "(default)": {
@@ -8242,7 +8269,7 @@
           "files": [
             "src/app/(app)/analytics/page.js:399",
             "src/components/workspace/AnalyticsTab.jsx:241",
-            "src/components/workspace/WorkloadTab.jsx:225"
+            "src/components/workspace/WorkloadTab.jsx:231"
           ]
         }
       },
@@ -8255,7 +8282,7 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:399",
-            "src/components/workspace/WorkloadTab.jsx:225"
+            "src/components/workspace/WorkloadTab.jsx:231"
           ]
         },
         "(default)": {
@@ -8445,7 +8472,7 @@
     "Кількість у часі": "<ChartCard icon={BarChart2} title=\"Активність\" meta=\"7 днів\" className=\"w-full\">\n  <ColumnChart data={DEMO_DAYS} series={DEMO_FLOW} height={130} />\n</ChartCard>",
     "Тренд із опорною лінією": "<ChartCard icon={TrendingDown} title=\"Скільки роботи лишилось\" meta=\"12 днів\" className=\"w-full\">\n  <TrendChart data={DEMO_BURNDOWN} valueLabel=\"Фактично лишилось\" referenceLabel=\"Рівний темп\" height={140} />\n</ChartCard>",
     "Частка від межі": "<div className=\"grid w-full grid-cols-1 gap-5 sm:grid-cols-3\">\n  <Meter value={0.42} label=\"Бюджет у нормі\" reading=\"42%\" />\n  <Meter value={0.78} tone=\"warning\" label=\"Наближається до межі\" reading=\"78%\" />\n  <Meter value={0.96} tone=\"danger\" label=\"Майже вичерпано\" reading=\"96%\" />\n</div>\n{/* Без підпису — так смуга стоїть у колонці таблиці, де заголовок\n    колонки вже сказав, що вимірюється. Показник усе одно тримається\n    правого краю смуги, а не лівого. */}\n<div className=\"mt-5 grid w-full grid-cols-1 gap-5 sm:grid-cols-3\">\n  <Meter value={0} reading=\"Готово: 0/1\" height={6} />\n  <Meter value={0.5} reading=\"Готово: 3/6\" height={6} />\n  <Meter value={1} reading=\"Готово: 8/8\" height={6} />\n</div>",
-    "Таблиця показників": "<ChartCard icon={Users} title=\"Навантаження по виконавцях\" count={3} className=\"w-full\">\n  <DataTable\n    rows={DEMO_MEMBERS}\n    rowKey={row => row.id}\n    columns={[\n      {\n        id: 'member',\n        header: 'Учасник',\n        lead: true,\n        cell: row => (\n          <span className=\"flex min-w-0 items-center gap-2\">\n            <UserAvatar user={{ id: row.id, name: row.name }} size=\"sm\" />\n            <span className=\"min-w-0 truncate text-[13px] font-semibold text-ink\">{row.name}</span>\n          </span>\n        ),\n      },\n      {\n        id: 'focus',\n        header: 'Поточний фокус',\n        wide: true,\n        cell: row => (row.focus\n          ? <span className=\"block truncate text-[12px] font-medium text-ink\">{row.focus}</span>\n          : <span className=\"text-[12px] text-faint\">Немає задач у роботі</span>),\n      },\n      {\n        id: 'progress',\n        header: 'Прогрес',\n        size: 'meter',\n        cell: row => <Meter value={row.done / (row.done + row.open)} reading={`${row.done}/${row.done + row.open}`} layout=\"inline\" height={6} />,\n      },\n      { id: 'done', header: 'Готово', size: 'figure', cell: row => row.done },\n      { id: 'time', header: 'Час', size: 'figure', cell: row => `${Math.round(row.minutes / 60)}г` },\n      {\n        id: 'state',\n        header: 'Стан',\n        size: 'chip',\n        cell: row => (row.state === 'Стабільно'\n          ? <Pill tone=\"success\" size=\"md\">{row.state}</Pill>\n          : <Pill tone=\"warning\" size=\"md\">{row.state}</Pill>),\n      },\n    ]}\n  />\n</ChartCard>",
+    "Таблиця показників": "<ChartCard icon={Users} title=\"Навантаження по виконавцях\" count={3} className=\"w-full\">\n  <DataTable\n    rows={DEMO_MEMBERS}\n    rowKey={row => row.id}\n    density=\"comfortable\"\n    // Points back at this section on purpose: the catalogue has nowhere\n    // real to send anybody, and the row's affordance — pointer, hover,\n    // a link the keyboard reaches — is the thing being shown.\n    rowHref={() => '/ui-kit?section=charts'}\n    columns={[\n      {\n        id: 'member',\n        header: 'Учасник',\n        lead: true,\n        cell: row => (\n          <span className=\"flex min-w-0 items-center gap-3\">\n            <UserAvatar user={{ id: row.id, name: row.name }} size=\"md\" />\n            <span className=\"min-w-0\">\n              <span className=\"block truncate text-[13px] font-semibold text-ink\">{row.name}</span>\n              <span className=\"mt-0.5 block truncate text-[11px] text-muted\">Розробник · 3 дн. тому</span>\n            </span>\n          </span>\n        ),\n      },\n      {\n        id: 'focus',\n        header: 'Поточний фокус',\n        wide: true,\n        cell: row => (row.focus\n          ? <span className=\"block truncate text-[12px] font-medium text-ink\">{row.focus}</span>\n          : <span className=\"text-[12px] text-faint\">Немає задач у роботі</span>),\n      },\n      {\n        id: 'progress',\n        header: 'Прогрес',\n        size: 'meter',\n        cell: row => <Meter value={row.done / (row.done + row.open)} reading={`${row.done}/${row.done + row.open}`} layout=\"inline\" height={6} />,\n      },\n      { id: 'done', header: 'Готово', size: 'figure', cell: row => row.done },\n      { id: 'time', header: 'Час', size: 'figure', cell: row => `${Math.round(row.minutes / 60)}г` },\n      {\n        id: 'state',\n        header: 'Стан',\n        size: 'chip',\n        cell: row => (row.state === 'Стабільно'\n          ? <Pill tone=\"success\" size=\"md\">{row.state}</Pill>\n          : <Pill tone=\"warning\" size=\"md\">{row.state}</Pill>),\n      },\n    ]}\n  />\n</ChartCard>",
     "Що потребує уваги": "<div className=\"grid w-full grid-cols-1 gap-6 md:grid-cols-2\">\n  <ChartCard icon={AlertTriangle} title=\"Що потребує уваги\">\n    <SignalList\n      signals={[\n        { id: '1', tone: 'critical', count: 4, title: 'Завдання заблоковані залежностями', description: 'Їх стримують незавершені задачі' },\n        { id: '2', tone: 'critical', count: 3, title: 'Прострочені завдання', description: 'Дедлайн минув, робота відкрита' },\n        { id: '3', tone: 'warning', count: 2, title: 'Без виконавця', description: 'Ніхто не відповідає за результат' },\n        { id: '4', tone: 'info', count: 11, title: 'Без оцінки', description: 'Поза беклогом, але без плану за часом' },\n      ]}\n    />\n  </ChartCard>\n  <ChartCard icon={AlertTriangle} title=\"Що потребує уваги\">\n    <SignalList signals={[]} emptyText=\"Нічого термінового — усе під контролем\" />\n  </ChartCard>\n</div>",
     "Alerts": "<div className=\"flex flex-col gap-[12px] max-w-[600px]\">\n  <Alert variant=\"success\" title=\"Операція успішна\">Проєкт успішно створено та додано до бази даних.</Alert>\n  <Alert variant=\"info\" title=\"Потребує уваги\">Будь ласка, перевірте правильність введених даних.</Alert>\n  <Alert variant=\"warning\" title=\"Попередження\">Термін виконання завдання спливає сьогодні.</Alert>\n  <Alert variant=\"error\" title=\"Не вдалося завантажити проєкти\">Спробуйте оновити сторінку.</Alert>\n</div>",
     "Loading Spinner": "<div className=\"flex items-center gap-[24px]\">\n  <LoadingSpinner size=\"sm\" />\n  <LoadingSpinner size=\"md\" />\n</div>",
@@ -8478,7 +8505,7 @@
     "Task List View — групування за категоріями": "<TaskListView\n  issues={demoIssues}\n  allIssues={demoIssues}\n  members={demoMembers}\n  labels={demoLabels}\n  sprints={demoSprints}\n  projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n  showProjectName\n  groupBy=\"category\"\n  onBulkUpdate={() => {}}\n  canArchive\n/>",
     "Task Table View — таблиця з редагуванням у клітинці": "<div className=\"h-[420px] min-w-0\">\n  <TaskTableView\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectId=\"ui-kit-project\"\n    columns={tableColumns}\n    sort={tableSort.sort}\n    dir={tableSort.dir}\n    onSortChange={setTableSort}\n    onColumnsChange={toggleTableColumn}\n    onOpenIssue={() => {}}\n    onUpdateIssue={async () => {}}\n    onBulkUpdate={() => {}}\n    canArchive\n  />\n</div>",
     "Task Table View — без групування, свій набір колонок": "<div className=\"h-[340px] min-w-0\">\n  <TaskTableView\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projectId=\"ui-kit-project\"\n    sort=\"priority\"\n    dir=\"asc\"\n    columns={['type', 'title', 'labels', 'estimate', 'subtasks', 'due']}\n    onSortChange={() => {}}\n  />\n</div>",
-    "Task List Card — плоский список задач": "<div className=\"grid gap-4 lg:grid-cols-2\">\n  <TaskListCard\n    title=\"Прострочені\"\n    icon={AlertTriangle}\n    iconClassName=\"text-red-500\"\n    issues={demoIssues.slice(0, 3)}\n    allIssues={demoIssues}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n  />\n  <TaskListCard\n    title=\"Нещодавно закриті завдання\"\n    icon={CheckCircle2}\n    iconClassName=\"text-emerald-600\"\n    issues={[]}\n    members={demoMembers}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    emptyText=\"За вказаний період завдань не закрито\"\n  />\n</div>",
+    "Task List Card — плоский список задач": "<div className=\"grid gap-4 lg:grid-cols-2\">\n  <TaskListCard\n    title=\"Прострочені\"\n    icon={AlertTriangle}\n    iconClassName=\"text-red-500\"\n    issues={demoLongList}\n    allIssues={demoLongList}\n    members={demoMembers}\n    labels={demoLabels}\n    sprints={demoSprints}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n  />\n  <TaskListCard\n    title=\"Нещодавно закриті завдання\"\n    icon={CheckCircle2}\n    iconClassName=\"text-emerald-600\"\n    issues={[]}\n    members={demoMembers}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    emptyText=\"За вказаний період завдань не закрито\"\n  />\n</div>",
     "Agile Board — живий shared organism": "<div className=\"h-[520px] min-w-0 overflow-hidden rounded-[16px] bg-white p-4\">\n  <AgileBoard\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    projectId=\"ui-kit-project\"\n    project={{ id: 'ui-kit-project', name: 'QuickTeam', hiddenColumns: [] }}\n    sprints={demoSprints}\n    onAddIssue={() => {}}\n    onMoveIssue={() => {}}\n    onBulkUpdate={() => {}}\n    canArchive\n  />\n</div>",
     "Agile Board — колонки-категорії": "<div className=\"h-[520px] min-w-0 overflow-hidden rounded-[16px] bg-white p-4\">\n  <AgileBoard\n    issues={demoIssues}\n    allIssues={demoIssues}\n    members={demoMembers}\n    projects={[{ id: 'ui-kit-project', name: 'QuickTeam' }]}\n    projectId=\"ui-kit-my\"\n    sprints={demoSprints}\n    showProjectName\n    groupBy=\"category\"\n    showHiddenLane\n    onAddIssue={() => {}}\n    onMoveIssue={() => {}}\n    onBulkUpdate={() => {}}\n    canArchive\n  />\n</div>",
     "Назва завдання в режимі редагування": "<TitleInput value={title} onChange={e => setTitle(e.target.value)} placeholder=\"Назва завдання...\" />",

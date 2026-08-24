@@ -8,14 +8,14 @@
     "usedWithoutPreview": "Every variant the product ships should be visible somewhere in /ui-kit. Tracked against a baseline, not zero."
   },
   "totals": {
-    "componentsWithVariants": 45,
-    "declaredValues": 374,
+    "componentsWithVariants": 46,
+    "declaredValues": 376,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 232,
+    "usedAndPreviewed": 233,
     "usedWithoutPreview": 0,
-    "declaredUnused": 112
+    "declaredUnused": 113
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -230,6 +230,12 @@
       "component": "Counter",
       "prop": "variant",
       "value": "count",
+      "namespace": null
+    },
+    {
+      "component": "DataTable",
+      "prop": "density",
+      "value": "compact",
       "namespace": null
     },
     {
@@ -1300,6 +1306,12 @@
         "section"
       ]
     },
+    "DataTable": {
+      "density": [
+        "comfortable",
+        "compact"
+      ]
+    },
     "Meter": {
       "tone": [
         "danger",
@@ -1382,7 +1394,7 @@
     "CalendarEntry.tone.deadline": 1,
     "IconAction.size.xs": 6,
     "IconAction.appearance.quiet": 13,
-    "TextAction.tone.muted": 5,
+    "TextAction.tone.muted": 7,
     "TextAction.size.xs": 4,
     "CalendarDayCell.density.compact": 1,
     "EmptyState.density.compact": 3,
@@ -1394,7 +1406,7 @@
     "Counter.size.sm": 13,
     "Counter.appearance.subtle": 3,
     "IconAction.composition.chat-panel-action": 3,
-    "UserAvatar.size.md": 5,
+    "UserAvatar.size.md": 6,
     "IconAction.shape.compact": 2,
     "IconAction.appearance.quiet-danger": 3,
     "IconAction.composition.chat-micro-action": 4,
@@ -1441,7 +1453,7 @@
     "Pill.appearance.outline": 2,
     "Surface.preset.card": 1,
     "Surface.padding.none": 4,
-    "UserAvatar.size.lg": 3,
+    "UserAvatar.size.lg": 2,
     "Pill.size.sm": 23,
     "Pill.tone.ink-subtle": 3,
     "Button.composition.settings-row-action": 4,
@@ -1549,6 +1561,7 @@
     "ChatComposerCore.variant.timeline": 1,
     "Button.composition.chat-composer-action": 1,
     "Pill.tone.success": 1,
+    "DataTable.density.comfortable": 1,
     "Pill.tone.dark": 1,
     "Pill.size.wide-sm": 5,
     "ResponseChoice.size.tile": 1,
@@ -1687,6 +1700,8 @@
     "Counter.status.success",
     "Counter.variant.count",
     "Counter.variant.dot",
+    "DataTable.density.comfortable",
+    "DataTable.density.compact",
     "DetailLayout.context.event",
     "DetailLayout.context.task",
     "DetailSection.density.group",

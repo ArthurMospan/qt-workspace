@@ -95,7 +95,14 @@ test('the known board controls, tab icons, headings and breadcrumbs carry access
   // the target is the row, and it is there whether or not a pointer is.
   assert.match(analytics, /<DataTable[\s\S]{0,400}rowHref=/);
   const dataTable = await read('src/components/ui/DataDisplay/DataTable.jsx');
-  assert.match(dataTable, /column === leadColumn && href \?[\s\S]{0,120}<a href=\{href\}/);
+  // The identifying cell stays a real link — that is what the keyboard tabs to,
+  // what the middle button opens in a tab, and what the context menu can copy.
+  // The row-wide click sits on top of it and must never replace it.
+  assert.match(dataTable, /column === leadColumn && href \?[\s\S]{0,400}<Link href=\{href\}/);
+  assert.match(dataTable, /onClick=\{href \? followRow\(href\) : undefined\}/);
+  // And the shortcut steps aside for anything the reader actually aimed at,
+  // so a control inside a row is still its own target.
+  assert.match(dataTable, /event\.target\.closest\('a, button, input, select, textarea/);
   assert.doesNotMatch(analytics, /sm:opacity-0 sm:group-hover:opacity-100/);
 });
 

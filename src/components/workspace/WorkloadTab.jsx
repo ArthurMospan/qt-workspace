@@ -7,7 +7,6 @@ import { isActiveMember } from '@/lib/utils/orgMembership.mjs';
 import {
   AlertTriangle,
   ArrowLeft,
-  BriefcaseBusiness,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -20,6 +19,7 @@ import {
   Users,
 } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
+import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import {
   BarList,
@@ -55,6 +55,7 @@ import { sumRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 import { inProgressStatusIds } from '@/lib/utils/statusCategories.mjs';
 import { buildMemberExport, buildWorkloadExport } from '@/lib/utils/analyticsExport.mjs';
+import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 
 function fmtH(minutes) {
@@ -127,7 +128,7 @@ function RiskPill({ stat }) {
   return <Pill tone="success" size="md">{label}</Pill>;
 }
 
-function TeamOverview({ stats, summary, period, positions, now, onSelectMember }) {
+function TeamOverview({ stats, summary, period, positions, now }) {
   return (
     <div className="flex w-full flex-col gap-4 pb-16">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -166,6 +167,15 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
         <DataTable
           rows={stats}
           rowKey={row => row.uid}
+          // A person's row is two lines and a face, which is not the shape a row
+          // of figures has. It used to be a 40px avatar inside a 36px row: the
+          // avatar won, the row grew under it, and nothing on the screen agreed
+          // about how tall a row was.
+          density="comfortable"
+          // And the whole row goes there. It used to be a button around the name
+          // only, so the way to open somebody's analytics was to hit their name
+          // — everything else on the row was dead, including their own face.
+          rowHref={row => memberAnalyticsHref(row.uid)}
           emptyText="У команді ще немає учасників із задачами"
           columns={[
             {
@@ -173,12 +183,8 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
               header: 'Учасник',
               lead: true,
               cell: row => (
-                <button
-                  type="button"
-                  onClick={() => onSelectMember(row.uid)}
-                  className="flex min-w-0 items-center gap-3 text-left"
-                >
-                  <UserAvatar user={row.member} size="lg" />
+                <span className="flex min-w-0 items-center gap-3">
+                  <UserAvatar user={row.member} size="md" />
                   <span className="min-w-0">
                     <span className="block truncate text-[13px] font-semibold text-ink">
                       {memberName(row.member)}
@@ -187,7 +193,7 @@ function TeamOverview({ stats, summary, period, positions, now, onSelectMember }
                       {positionLabel(row.member, positions)} · {relativeActivity(row.lastActivity, now)}
                     </span>
                   </span>
-                </button>
+                </span>
               ),
             },
             {
@@ -323,10 +329,21 @@ function IssueList({ title, issues, projects, members, emptyText }) {
   );
 }
 
-function RecentTime({ logs, issues, events, projects }) {
+// An hour was recorded against something, and the square on the left says what
+// kind of something. It used to say it with a briefcase — a glyph that stands
+// for a task nowhere else in this product, against events that got the calendar
+// they actually use. A task already has a mark the reader has learnt on its
+// card, in search and in every selector: its type. So the row shows that, in
+// the type's own colour, and the square steps down from 32px to 24px because it
+// is a mark beside a sentence, not a thumbnail.
+function RecentTime({ logs, issues, events, projects, types = [] }) {
   const issuesById = useMemo(
     () => new Map(issues.map(issue => [issue.id, issue])),
     [issues],
+  );
+  const typesById = useMemo(
+    () => new Map(types.map(type => [type.id, type])),
+    [types],
   );
   const eventsByKey = useMemo(() => {
     const map = new Map();
@@ -352,10 +369,16 @@ function RecentTime({ logs, issues, events, projects }) {
             const issue = log.issueId ? issuesById.get(log.issueId) : null;
             const project = projects.find(item => item.id === log.projectId);
             const date = effectiveTimeLogDate(log);
+            const issueType = issue ? typesById.get(issue.type) : null;
+            const TypeGlyph = issue ? taskTypeIcon(issueType || issue.type) : null;
             const content = (
               <>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-canvas text-muted">
-                  {event ? <CalendarIcon size={14} /> : <BriefcaseBusiness size={14} />}
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-canvas text-muted">
+                  {event
+                    ? <CalendarIcon size={13} />
+                    : TypeGlyph
+                      ? <TypeGlyph size={13} style={issueType?.color ? { color: issueType.color } : undefined} />
+                      : <Clock size={13} />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[12px] font-semibold text-ink">
@@ -391,7 +414,7 @@ function RecentTime({ logs, issues, events, projects }) {
   );
 }
 
-function MemberOverview({ stat, projects, members, events, period }) {
+function MemberOverview({ stat, projects, members, events, types, period }) {
   const completionRate = stat.done + stat.open > 0
     ? Math.round((stat.done / (stat.done + stat.open)) * 100)
     : 0;
@@ -420,13 +443,17 @@ function MemberOverview({ stat, projects, members, events, period }) {
           members={members}
           emptyText="За вибраний період задач не завершено"
         />
-        <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} />
+        <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} types={types} />
       </div>
     </>
   );
 }
 
-function MemberWork({ stat, projects, members, events }) {
+// This tab is that person's tasks, and only that. «Останні записи часу» used to
+// sit beside the list here as well as in «Огляд» — the same card, twice, two
+// clicks apart — while the tab next to both of them is the timesheet, which is
+// the question that card half answers.
+function MemberWork({ stat, projects, members }) {
   const [filter, setFilter] = useState('open');
   const visibleIssues = useMemo(() => {
     if (filter === 'done') return stat.doneItems;
@@ -448,16 +475,13 @@ function MemberWork({ stat, projects, members, events }) {
           ]}
         />
       </div>
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <IssueList
-          title="Завдання"
-          issues={visibleIssues}
-          projects={projects}
-          members={members}
-          emptyText="За цим фільтром завдань немає"
-        />
-        <RecentTime logs={stat.logs} issues={stat.referenceIssues} events={events} projects={projects} />
-      </div>
+      <IssueList
+        title="Завдання"
+        issues={visibleIssues}
+        projects={projects}
+        members={members}
+        emptyText="За цим фільтром завдань немає"
+      />
     </div>
   );
 }
@@ -509,6 +533,7 @@ function MemberDetail({
   positions,
   projects,
   events,
+  types,
   period,
   onBack,
   standalone = false,
@@ -558,10 +583,10 @@ function MemberDetail({
 
       <div key={view}>
         {view === 'overview' && (
-          <MemberOverview stat={stat} projects={projects} members={members} events={events} period={period} />
+          <MemberOverview stat={stat} projects={projects} members={members} events={events} types={types} period={period} />
         )}
         {view === 'work' && (
-          <MemberWork stat={stat} projects={projects} members={members} events={events} />
+          <MemberWork stat={stat} projects={projects} members={members} />
         )}
         {view === 'timesheet' && (
           <MemberTimesheet stat={stat} members={members} projects={projects} events={events} />
@@ -601,7 +626,7 @@ export default function WorkloadTab({
   const { activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
   const [now, setNow] = useState(() => Date.now());
-  const { closedStatusIds, deliveredStatusIds, positions = [], statuses } = useWorkflowConfig();
+  const { closedStatusIds, deliveredStatusIds, positions = [], statuses, types = [] } = useWorkflowConfig();
   // What is left to do reads the closed set; what a person actually finished in
   // the period reads the delivered one — a task they cancelled is not output.
   const closedSet = useMemo(() => new Set(closedStatusIds), [closedStatusIds]);
@@ -761,6 +786,7 @@ export default function WorkloadTab({
           positions={positions}
           projects={projects}
           events={events}
+          types={types}
           period={period}
           onBack={() => onSelectMember?.('all')}
           standalone={standaloneDetail}
@@ -773,7 +799,6 @@ export default function WorkloadTab({
           positions={positions}
           period={period}
           now={now}
-          onSelectMember={onSelectMember}
         />
       )}
     </div>

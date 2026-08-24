@@ -109,6 +109,14 @@ export default function TaskCRMSection() {
     labelIds: ['frontend']
   };
   const demoIssues = [task1, task2, task3, task4, task5];
+  // Fourteen rows out of five, so the catalogue shows the state that matters:
+  // the card stops at ten and offers the rest, instead of drawing whatever
+  // length of list it happens to be handed.
+  const demoLongList = Array.from({ length: 14 }, (_, index) => ({
+    ...demoIssues[index % demoIssues.length],
+    id: `kit-long-${index}`,
+    issueKey: `QT-${200 + index}`,
+  }));
 
   return (
     <div className="flex flex-col gap-[32px]">
@@ -326,7 +334,7 @@ export default function TaskCRMSection() {
 
       <PreviewBlock
         title="Task List Card — плоский список задач"
-        description="Один вигляд для всіх списків задач в аналітиці: «Прострочені» в Огляді, «Поточний фокус» і «Завершено» в Команді, «Нещодавно закриті» в Продуктивності. На відміну від Task List View тут немає групування за статусом — набір уже визначив той, хто його показує. Рядки ті самі TaskRow, тож задача клікабельна скрізь однаково."
+        description="Один вигляд для всіх списків задач в аналітиці: «Прострочені» в Огляді, «Поточний фокус» і «Завершено» в Команді, «Нещодавно закриті» в Продуктивності. На відміну від Task List View тут немає групування за статусом — набір уже визначив той, хто його показує. Рядки ті самі TaskRow, тож задача клікабельна скрізь однаково. Картка показує десять рядків і пропонує решту: раніше вона малювала все, що їй дали, а «Усі задачі» одного учасника — це буквально всі його задачі за весь час. Лічильник біля заголовка завжди повний, тож число не розходиться з тим, що за ним."
         filePath="src/components/ui/TaskManagement/TaskListCard.jsx"
       >
         <div className="grid gap-4 lg:grid-cols-2">
@@ -334,8 +342,8 @@ export default function TaskCRMSection() {
             title="Прострочені"
             icon={AlertTriangle}
             iconClassName="text-red-500"
-            issues={demoIssues.slice(0, 3)}
-            allIssues={demoIssues}
+            issues={demoLongList}
+            allIssues={demoLongList}
             members={demoMembers}
             labels={demoLabels}
             sprints={demoSprints}

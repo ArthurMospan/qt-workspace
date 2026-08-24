@@ -16,7 +16,7 @@
     "components": 114,
     "stateful": 102,
     "hover": 68,
-    "focus": 69,
+    "focus": 68,
     "disabled": 35,
     "loading": 6,
     "error": 6,
@@ -162,8 +162,7 @@
     },
     "Counter": {},
     "DataTable": {
-      "hover": "own",
-      "focus": "global"
+      "hover": "own"
     },
     "DatePicker": {
       "disabled": "prop",

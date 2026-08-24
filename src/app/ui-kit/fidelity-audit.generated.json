@@ -11,10 +11,10 @@
     "productFiles": 242,
     "parsedFiles": 242,
     "parseErrors": 0,
-    "nativeControls": 21,
+    "nativeControls": 20,
     "structures": {
       "chat": 1,
-      "analytics": 2,
+      "analytics": 1,
       "qtplus": 1,
       "settings": 1,
       "shell": 13,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 21,
+    "button": 20,
     "input": 0,
     "textarea": 0,
     "select": 0
@@ -306,26 +306,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:176",
-      "className": "flex min-w-0 items-center gap-3 text-left",
-      "text": "",
-      "childElements": [
-        "UserAvatar",
-        "span"
-      ],
-      "ariaLabel": "",
-      "styled": false,
-      "reviewed": "",
-      "resembles": "IconAction",
-      "structure": "analytics",
-      "routes": [
-        "/analytics",
-        "/analytics/team/[memberId]"
-      ]
-    },
-    {
-      "tag": "button",
-      "location": "src/components/workspace/WorkloadTab.jsx:536",
+      "location": "src/components/workspace/WorkloadTab.jsx:561",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
       "childElements": [
@@ -432,10 +413,6 @@
       "count": 2
     },
     {
-      "file": "src/components/workspace/WorkloadTab.jsx",
-      "count": 2
-    },
-    {
       "file": "src/components/OrgSwitcherScreen.jsx",
       "count": 1
     },
@@ -457,6 +434,10 @@
     },
     {
       "file": "src/components/workspace/qtplus/cards/FileCard.jsx",
+      "count": 1
+    },
+    {
+      "file": "src/components/workspace/WorkloadTab.jsx",
       "count": 1
     }
   ],
@@ -714,7 +695,7 @@
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
     {
-      "location": "src/components/workspace/WorkloadTab.jsx:478",
+      "location": "src/components/workspace/WorkloadTab.jsx:502",
       "tag": "div",
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },

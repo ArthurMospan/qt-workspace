@@ -1,9 +1,21 @@
 'use client';
 
+import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import Card from '@/components/ui/Layout/Card';
 import DetailSection from '@/components/ui/Layout/DetailSection';
+import TextAction from '@/components/ui/TextAction';
 import TaskRow from './TaskRow';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+
+// How much of a list a card shows before it asks. Not props: a card that could
+// be told to show 5 here and 50 there is a decision back at the call sites,
+// which is where every other inconsistency on these screens came from.
+//
+// Ten is what fits on a screen next to the block beside it. Twenty is the step
+// after that, because somebody who asked for more is no longer skimming.
+const INITIAL_ROWS = 10;
+const MORE_ROWS = 20;
 
 /**
  * A titled card holding a flat list of tasks — "Прострочені", "Поточний фокус",
@@ -53,6 +65,21 @@ export default function TaskListCard({
   const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
   const total = typeof count === 'number' ? count : issues.length;
 
+  // The card used to draw every row it was handed, on the reasoning that a
+  // number you cannot get to the rows behind is worse than a long list. The
+  // reasoning is right and the conclusion was not: a member's «Усі» is every
+  // task they have ever been given, and a thousand of them is not a report —
+  // it is a page nobody reaches the bottom of, built out of a thousand rows the
+  // browser has to lay out before it can draw the block underneath.
+  //
+  // The answer is the same one the board reached: show a screenful, and keep a
+  // way to the rest. The count beside the title is always the whole set, so the
+  // number never disagrees with what is behind it.
+  const [shown, setShown] = useState(INITIAL_ROWS);
+  const visible = issues.slice(0, shown);
+  const remaining = issues.length - visible.length;
+  const expanded = shown > INITIAL_ROWS;
+
   return (
     <Card preset="borderless" padding="lg" className={className}>
       {/* The same heading every other block on the screen has. This card used to
@@ -68,12 +95,8 @@ export default function TaskListCard({
         {issues.length === 0 ? (
           <p className="py-6 text-center text-[12px] text-faint">{emptyText}</p>
         ) : (
-          // Every row, always. Analytics does not fetch a set and then hide part
-          // of it — see tests/query-completeness.test.mjs. A shorter card would
-          // be quieter, but a number you cannot get to the rows behind is worse
-          // than a long list.
           <div className="flex flex-col gap-2">
-            {issues.map(issue => {
+            {visible.map(issue => {
               const project = projects.find(item => item.id === issue.projectId);
               return (
                 <TaskRow
@@ -95,6 +118,28 @@ export default function TaskListCard({
                 />
               );
             })}
+
+            {(remaining > 0 || expanded) && (
+              <div className="mt-1 flex justify-center border-t border-[color:var(--color-chart-grid)] pt-2">
+                {remaining > 0 ? (
+                  <TextAction
+                    tone="muted"
+                    icon={ChevronDown}
+                    onClick={() => setShown(value => value + MORE_ROWS)}
+                  >
+                    Показати ще {Math.min(MORE_ROWS, remaining)}
+                  </TextAction>
+                ) : (
+                  <TextAction
+                    tone="muted"
+                    icon={ChevronUp}
+                    onClick={() => setShown(INITIAL_ROWS)}
+                  >
+                    Згорнути
+                  </TextAction>
+                )}
+              </div>
+            )}
           </div>
         )}
       </DetailSection>

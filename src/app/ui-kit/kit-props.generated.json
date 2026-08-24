@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 854,
-    "documentedProps": 854,
+    "props": 855,
+    "documentedProps": 855,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2034,6 +2034,16 @@
           "description": "What the table has."
         },
         {
+          "name": "density",
+          "default": "'compact'",
+          "type": "'compact'|'comfortable'",
+          "values": [
+            "comfortable",
+            "compact"
+          ],
+          "description": "Row height. `compact` is a row of figures; `comfortable` is a row carrying a face and two lines of text."
+        },
+        {
           "name": "emptyText",
           "default": "'Немає даних'",
           "type": "string",
@@ -2045,7 +2055,7 @@
           "default": "",
           "type": "(row: object) => string",
           "values": [],
-          "description": "Makes the whole row a link, which is what a row in analytics almost always wants to be."
+          "description": "Makes the whole row a link, which is what a row in analytics almost always wants to be. The identifying cell is a real link; the rest of the row follows it on click."
         },
         {
           "name": "rowKey",

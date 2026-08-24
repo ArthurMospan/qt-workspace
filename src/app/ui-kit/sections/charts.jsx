@@ -169,7 +169,7 @@ export default function ChartsSection() {
 
       <PreviewBlock
         title="Таблиця показників"
-        description="Аналітика мала три таблиці, і кожну писали з нуля: різні лінійки, різні кеглі заголовків, різні кольори чисел, а одна з них узагалі була шестиколонковою CSS-сіткою, продубльованою двічі. Це справжня <table>, тож скрінрідер отримує таблицю; нижче брейкпоінта кожен рядок згортається в підписаний стос, бо шість колонок на телефоні — це горизонтальний скрол, якого ніхто не знаходить. Значення, яке не є короткою цифрою — назва, смуга, чіп — позначається `wide` і в стосі займає рядок цілком: інакше воно малювалось поверх сусідньої колонки, а власний підпис обрізало до нуля."
+        description="Аналітика мала три таблиці, і кожну писали з нуля: різні лінійки, різні кеглі заголовків, різні кольори чисел, а одна з них узагалі була шестиколонковою CSS-сіткою, продубльованою двічі. Це справжня <table>, тож скрінрідер отримує таблицю; нижче брейкпоінта кожен рядок згортається в підписаний стос, бо шість колонок на телефоні — це горизонтальний скрол, якого ніхто не знаходить. Колонка каже, що саме тримає (`figure`, `meter`, `chip`), а ширину доріжки вирішує таблиця — інакше та сама «Прострочено» має різну ширину на сусідніх вкладках. Рядок із людиною — це обличчя й два рядки тексту, тож у нього своя щільність (`comfortable`): 40-піксельний аватар у 36-піксельному рядку просто розпирав рядок. І якщо рядок кудись веде, веде він увесь, а не лише перша комірка."
         filePath="src/components/ui/DataDisplay/DataTable.jsx"
         component="DataTable"
         fullWidth
@@ -178,15 +178,23 @@ export default function ChartsSection() {
           <DataTable
             rows={DEMO_MEMBERS}
             rowKey={row => row.id}
+            density="comfortable"
+            // Points back at this section on purpose: the catalogue has nowhere
+            // real to send anybody, and the row's affordance — pointer, hover,
+            // a link the keyboard reaches — is the thing being shown.
+            rowHref={() => '/ui-kit?section=charts'}
             columns={[
               {
                 id: 'member',
                 header: 'Учасник',
                 lead: true,
                 cell: row => (
-                  <span className="flex min-w-0 items-center gap-2">
-                    <UserAvatar user={{ id: row.id, name: row.name }} size="sm" />
-                    <span className="min-w-0 truncate text-[13px] font-semibold text-ink">{row.name}</span>
+                  <span className="flex min-w-0 items-center gap-3">
+                    <UserAvatar user={{ id: row.id, name: row.name }} size="md" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[13px] font-semibold text-ink">{row.name}</span>
+                      <span className="mt-0.5 block truncate text-[11px] text-muted">Розробник · 3 дн. тому</span>
+                    </span>
                   </span>
                 ),
               },
