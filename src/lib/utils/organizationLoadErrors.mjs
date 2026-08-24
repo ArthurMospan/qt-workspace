@@ -12,6 +12,7 @@ export function organizationLoadErrorKind(error) {
     || code.includes('network')
     || message.includes('offline')
     || message.includes('network')
+    || message.includes('failed to fetch')
   ) {
     return 'retryable';
   }

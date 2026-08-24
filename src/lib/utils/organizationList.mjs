@@ -2,9 +2,9 @@
 // The workspaces a person belongs to, assembled from their memberships.
 
 /**
- * Order asynchronous membership snapshots without mistaking arrival order for
- * authority. Cached snapshots may race each other until a server snapshot has
- * started; after that, only the newest server snapshot may publish.
+ * Order asynchronous membership publications without mistaking arrival order
+ * for authority. Browser-backed results may race until a verified directory
+ * response starts; after that, only the newest verified response may publish.
  */
 export function createMembershipSnapshotGate() {
   let sequence = 0;
@@ -26,6 +26,48 @@ export function createMembershipSnapshotGate() {
       };
     },
   };
+}
+
+/**
+ * Stable identity of the access-relevant part of a membership snapshot.
+ * Firestore may emit metadata-only snapshots repeatedly; the directory route
+ * only needs another verification when an organization or role actually moved.
+ */
+export function organizationMembershipSignature(memberships = []) {
+  return memberships
+    .filter(membership => membership?.orgId)
+    .map(membership => `${membership.orgId}:${membership.role || ''}`)
+    .sort()
+    .join('|');
+}
+
+/**
+ * Validate the server directory before it is allowed to replace visible state.
+ * A malformed successful response is a load failure, never proof that the
+ * account has zero organizations.
+ */
+export function parseOrganizationDirectory(payload) {
+  const memberships = payload?.memberships;
+  const organizations = payload?.organizations;
+  const validMemberships = Array.isArray(memberships) && memberships.every(membership => (
+    membership
+    && typeof membership.orgId === 'string'
+    && membership.orgId.length > 0
+    && (membership.role == null || typeof membership.role === 'string')
+  ));
+  const validOrganizations = Array.isArray(organizations) && organizations.every(organization => (
+    organization
+    && typeof organization.id === 'string'
+    && organization.id.length > 0
+  ));
+
+  if (!validMemberships || !validOrganizations) {
+    const error = new Error('Organization directory response is invalid');
+    error.code = 'invalid-organization-directory';
+    throw error;
+  }
+
+  return { memberships, organizations };
 }
 
 /**

@@ -9,6 +9,8 @@ import {
 import {
   buildOrganizationList,
   createMembershipSnapshotGate,
+  organizationMembershipSignature,
+  parseOrganizationDirectory,
 } from '../src/lib/utils/organizationList.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
@@ -119,7 +121,7 @@ test('an organization list published late cannot overwrite a newer one', async (
   // The publish is guarded, not merely the unmount.
   assert.match(
     context,
-    /if \(!current\(\)\) return;\s*\n\s*if \(authoritative\) hasAuthoritativeMemberships = true;\s*\n\s*publishedOrgs = organizations;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(organizations\);/,
+    /if \(!current\(\)\) return;\s*\n\s*if \(authoritative\) hasVerifiedDirectory = true;\s*\n\s*publishedOrgs = organizations;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(organizations\);/,
   );
 
   // The list itself is still built from memberships alone — access is
@@ -185,6 +187,46 @@ test('a membership names its workspace once, whatever the snapshot holds', () =>
   assert.deepEqual(roles, { 'org-one': 'owner' });
 });
 
+test('membership signatures ignore snapshot order but notice access changes', () => {
+  const memberships = [
+    { orgId: 'org-two', role: 'member' },
+    { orgId: 'org-one', role: 'owner' },
+  ];
+
+  assert.equal(
+    organizationMembershipSignature(memberships),
+    organizationMembershipSignature([...memberships].reverse()),
+  );
+  assert.notEqual(
+    organizationMembershipSignature(memberships),
+    organizationMembershipSignature([
+      { orgId: 'org-two', role: 'admin' },
+      { orgId: 'org-one', role: 'owner' },
+    ]),
+  );
+});
+
+test('only a valid server directory may replace the visible organization list', () => {
+  assert.deepEqual(
+    parseOrganizationDirectory({
+      memberships: [{ orgId: 'org-one', role: 'owner' }],
+      organizations: [{ id: 'org-one', name: 'OneB' }],
+    }),
+    {
+      memberships: [{ orgId: 'org-one', role: 'owner' }],
+      organizations: [{ id: 'org-one', name: 'OneB' }],
+    },
+  );
+  assert.throws(
+    () => parseOrganizationDirectory({ memberships: [], organizations: null }),
+    error => error?.code === 'invalid-organization-directory',
+  );
+  assert.throws(
+    () => parseOrganizationDirectory({ memberships: [{ role: 'owner' }], organizations: [] }),
+    error => error?.code === 'invalid-organization-directory',
+  );
+});
+
 test('no memberships is the only thing that means no workspace', () => {
   const { organizations, roles } = buildOrganizationList([], []);
   assert.deepEqual(organizations, []);
@@ -211,31 +253,36 @@ test('a short organizations read is asked again, of the server', async () => {
   assert.match(layout, /if \(activeOrg\.pending\) return;/);
 });
 
-test('a short membership cache is verified against the server before it can mean no workspace', async () => {
+test('every browser membership list is verified through the independent server directory', async () => {
   const [context, route] = await Promise.all([
     read('../src/lib/context/OrgContext.js'),
     read('../src/app/api/organizations/route.js'),
   ]);
 
-  // The previous fix forced only organization-document reads. It could not
-  // recover an organization whose membership itself had never reached this
-  // browser's cache, because its id was absent before those reads even began.
-  assert.match(context, /getDocsFromServer\(membershipsQuery\)/);
-  assert.match(context, /refreshMembershipsFromServer\(\);/);
+  // A browser-SDK query can complete successfully while its persistent target
+  // is short. The Admin SDK directory is therefore unconditional and primary,
+  // rather than a fallback that only runs after getDocsFromServer throws.
+  assert.match(context, /refreshOrganizationDirectory\(\);/);
+  assert.match(context, /authenticatedRequest\(\s*'\/api\/organizations',\s*\{ cache: 'no-store', signal: controller\.signal \}/);
+  assert.doesNotMatch(context, /getDocsFromServer\(membershipsQuery\)/);
   assert.match(context, /window\.addEventListener\('focus', refreshOnFocus\)/);
   assert.match(context, /window\.addEventListener\('online', refreshOnFocus\)/);
+  assert.match(context, /directoryAbortController\?\.abort\(\)/);
+  assert.doesNotMatch(context, /ORG_DIRECTORY_REFRESH_MS|membershipServerRefreshInterval/);
+  assert.match(context, /const verified = parseOrganizationDirectory\(directory\);/);
 
   // A stuck Firestore client has an independent recovery channel through the
   // authenticated app server. The token supplies the uid; a caller cannot ask
   // this route for somebody else's directory.
-  assert.match(context, /authenticatedRequest\(\s*'\/api\/organizations'/);
   assert.match(route, /const authorization = await authenticateRequest\(request\);/);
   assert.match(route, /\.where\('userId', '==', uid\)/);
   assert.doesNotMatch(route, /searchParams|request\.json\(/);
+  assert.match(route, /'Cache-Control': 'private, no-store, max-age=0'/);
 
   // Cache results remain useful for a fast first paint, but only a server result
   // can prove that zero memberships really means zero workspaces.
-  assert.match(context, /authoritative = !memSnap\.metadata\?\.fromCache/);
+  assert.match(context, /return applyMembershipDocuments\(memberships, false\);/);
+  assert.doesNotMatch(context, /authoritative = !memSnap\.metadata\?\.fromCache/);
   assert.match(context, /const snapshotTicket = membershipSnapshotGate\.begin\(authoritative\);\s*if \(!snapshotTicket\) return;/);
   assert.match(context, /if \(!authoritative\) \{\s*setNoOrg\(false\);\s*setOrgLoading\(true\);\s*return;/);
   assert.match(context, /\{ includeMetadataChanges: true \}/);

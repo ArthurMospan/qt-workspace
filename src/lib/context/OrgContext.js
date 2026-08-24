@@ -13,6 +13,8 @@ import { reportLoadError } from '@/lib/utils/errors';
 import {
   buildOrganizationList,
   createMembershipSnapshotGate,
+  organizationMembershipSignature,
+  parseOrganizationDirectory,
 } from '@/lib/utils/organizationList.mjs';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import {
@@ -91,28 +93,27 @@ export function OrgProvider({ user, children }) {
     let retryAttempt = 0;
     let retryTimer = null;
     let unsubscribe = () => {};
-    // Which membership snapshot this is. The handler below is `async`: it
-    // receives a snapshot and then goes back to Firestore for the organization
-    // documents, so two snapshots can be in flight at once and finish in either
-    // order.
+    // The browser listener is a provisional, cache-backed view. The Admin SDK
+    // directory is the verified view. Both reads are asynchronous, so their
+    // publication order must preserve that source hierarchy rather than merely
+    // trusting whichever callback happened to finish last.
     //
-    // They often arrive in pairs. Firestore's persistent cache — on in
-    // production — answers the listener from IndexedDB first and the server may
-    // answer a moment later. The two do not have to agree: a browser whose cache
-    // never held one of the memberships emits the shorter list first. The server
-    // half is not guaranteed while the SDK considers itself offline, which is
-    // why the explicit server read below is part of this path rather than an
-    // assumption about listener ordering.
+    // Firestore often emits the listener first from IndexedDB and then after a
+    // remote sync. Those snapshots do not have to agree, and the remote-marked
+    // one still shares the browser SDK's persistent target state. Neither is
+    // allowed to overrule the independent directory response.
     //
-    // A cached snapshot may publish as a fast provisional answer, but it can
-    // never supersede a server snapshot. Sequence alone is not enough: an old
-    // cache callback can start after a forced server read and would once again
-    // become "newer" merely by arriving later.
+    // A browser snapshot may publish as a fast provisional answer, but it can
+    // never supersede the verified directory. Sequence alone is not enough: an
+    // old callback can start after verification and would otherwise become
+    // "newer" merely by arriving later.
     const membershipSnapshotGate = createMembershipSnapshotGate();
-    let hasAuthoritativeMemberships = false;
-    let membershipServerRequest = 0;
-    let membershipServerRetryAttempt = 0;
-    let membershipServerRetryTimer = null;
+    let hasVerifiedDirectory = false;
+    let directoryRequest = 0;
+    let directoryRetryAttempt = 0;
+    let directoryRetryTimer = null;
+    let directoryAbortController = null;
+    let lastLiveMembershipSignature = null;
     // The list this listener last put on screen. A workspace whose organization
     // document a read failed to return keeps the name it already had instead of
     // going blank while the document is fetched again.
@@ -174,7 +175,7 @@ export function OrgProvider({ user, children }) {
         const { organizations, roles } = buildOrganizationList(memberships, documents, publishedOrgs);
 
         if (!current()) return;
-        if (authoritative) hasAuthoritativeMemberships = true;
+        if (authoritative) hasVerifiedDirectory = true;
         publishedOrgs = organizations;
         setOrgError(null);
         setAllOrgs(organizations);
@@ -223,12 +224,31 @@ export function OrgProvider({ user, children }) {
       }
     };
 
-    const applyMembershipSnapshot = (memSnap, authoritative = !memSnap.metadata?.fromCache) => (
-      applyMembershipDocuments(
-        memSnap.docs.map(document => document.data()),
-        authoritative,
-      )
-    );
+    const applyMembershipSnapshot = memSnap => {
+      const memberships = memSnap.docs.map(document => document.data());
+
+      // Even a snapshot marked `fromCache: false` still travels through the
+      // browser SDK, its persistent target state and its existing listener. It
+      // can complete without an error while that local target is incomplete, so
+      // it is a useful fast/live hint but never the authority that may shorten
+      // the directory.
+      //
+      // A changed live snapshot asks the independent Admin SDK route to verify
+      // the directory. The snapshot itself remains provisional; after the
+      // first verified directory the gate refuses every browser-only result.
+      if (!memSnap.metadata?.fromCache) {
+        const signature = organizationMembershipSignature(memberships);
+        if (signature !== lastLiveMembershipSignature) {
+          lastLiveMembershipSignature = signature;
+          if (hasVerifiedDirectory) {
+            directoryRetryAttempt = 0;
+            refreshOrganizationDirectory();
+          }
+        }
+      }
+
+      return applyMembershipDocuments(memberships, false);
+    };
 
     const handleLoadError = (scope, err) => {
       reportLoadError(scope, err);
@@ -253,57 +273,55 @@ export function OrgProvider({ user, children }) {
       setOrgLoading(false);
     };
 
-    const refreshMembershipsFromServer = async () => {
-      const request = ++membershipServerRequest;
+    const refreshOrganizationDirectory = async () => {
+      const request = ++directoryRequest;
+      if (directoryRetryTimer) {
+        window.clearTimeout(directoryRetryTimer);
+        directoryRetryTimer = null;
+      }
+      directoryAbortController?.abort();
+      const controller = new AbortController();
+      directoryAbortController = controller;
       try {
-        let serverSnapshot = null;
-        try {
-          serverSnapshot = await getDocsFromServer(membershipsQuery);
-        } catch (error) {
-          reportLoadError('[OrgContext] memberships Firestore server refresh', error);
-        }
-        if (cancelled || request !== membershipServerRequest) return;
-        if (serverSnapshot) {
-          membershipServerRetryAttempt = 0;
-          await applyMembershipSnapshot(serverSnapshot, true);
-          return;
-        }
-
-        // Firestore and the app are separate network paths. If the persistent
-        // client thinks it is offline, ask the authenticated Next.js server for
-        // the same token-scoped directory through the Admin SDK. This is what
-        // lets one poisoned browser repair itself without clearing IndexedDB.
+        // The Admin SDK route is deliberately the primary read, not a fallback
+        // after `getDocsFromServer`. The browser SDK can return a successful but
+        // short query from a poisoned persistent target; waiting for it to throw
+        // meant this recovery route was never called in exactly the browser it
+        // existed to repair.
         const directory = await authenticatedRequest(
           '/api/organizations',
-          {},
+          { cache: 'no-store', signal: controller.signal },
           'Не вдалося перевірити список організацій',
         );
-        if (cancelled || request !== membershipServerRequest) return;
-        membershipServerRetryAttempt = 0;
+        if (cancelled || request !== directoryRequest) return;
+        const verified = parseOrganizationDirectory(directory);
+        directoryRetryAttempt = 0;
         await applyMembershipDocuments(
-          Array.isArray(directory.memberships) ? directory.memberships : [],
+          verified.memberships,
           true,
-          Array.isArray(directory.organizations) ? directory.organizations : [],
+          verified.organizations,
         );
       } catch (err) {
-        if (cancelled || request !== membershipServerRequest) return;
+        if (cancelled || request !== directoryRequest) return;
         reportLoadError('[OrgContext] memberships server refresh', err);
         if (
-          (shouldRetryOrganizationLoad(err) || Number(err?.status) >= 500)
-          && membershipServerRetryAttempt < ORG_LOAD_RETRY_LIMIT
+          (
+            shouldRetryOrganizationLoad(err)
+            || Number(err?.status) >= 500
+          )
+          && directoryRetryAttempt < ORG_LOAD_RETRY_LIMIT
         ) {
-          membershipServerRetryAttempt += 1;
-          if (membershipServerRetryTimer) window.clearTimeout(membershipServerRetryTimer);
-          membershipServerRetryTimer = window.setTimeout(
-            refreshMembershipsFromServer,
-            organizationLoadRetryDelay(membershipServerRetryAttempt),
+          directoryRetryAttempt += 1;
+          directoryRetryTimer = window.setTimeout(
+            refreshOrganizationDirectory,
+            organizationLoadRetryDelay(directoryRetryAttempt),
           );
           return;
         }
         // A cache-only empty list is not permission to create a replacement
         // organization. If the server cannot verify it after retries, show the
         // recoverable load error instead of silently claiming there is no org.
-        if (!hasAuthoritativeMemberships && publishedOrgs.length === 0) {
+        if (!hasVerifiedDirectory && publishedOrgs.length === 0) {
           setOrgError(err);
           setOrgLoading(false);
         }
@@ -322,18 +340,19 @@ export function OrgProvider({ user, children }) {
     };
 
     subscribe();
-    refreshMembershipsFromServer();
+    refreshOrganizationDirectory();
     const refreshOnFocus = () => {
-      membershipServerRetryAttempt = 0;
-      refreshMembershipsFromServer();
+      directoryRetryAttempt = 0;
+      refreshOrganizationDirectory();
     };
     window.addEventListener('focus', refreshOnFocus);
     window.addEventListener('online', refreshOnFocus);
     return () => {
       cancelled = true;
       if (retryTimer) window.clearTimeout(retryTimer);
-      if (membershipServerRetryTimer) window.clearTimeout(membershipServerRetryTimer);
-      membershipServerRequest += 1;
+      if (directoryRetryTimer) window.clearTimeout(directoryRetryTimer);
+      directoryAbortController?.abort();
+      directoryRequest += 1;
       window.removeEventListener('focus', refreshOnFocus);
       window.removeEventListener('online', refreshOnFocus);
       unsubscribe();

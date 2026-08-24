@@ -3,6 +3,10 @@ import { authenticateRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 
 const GET_ALL_CHUNK = 100;
+const DIRECTORY_RESPONSE_HEADERS = {
+  'Cache-Control': 'private, no-store, max-age=0',
+  Vary: 'Authorization',
+};
 
 /**
  * Server-authoritative organization directory for the signed-in account.
@@ -40,9 +44,12 @@ export async function GET(request) {
     const organizations = documentChunks
       .flat()
       .filter(document => document.exists)
-      .map(document => ({ id: document.id, ...document.data() }));
+      .map(document => ({ ...document.data(), id: document.id }));
 
-    return NextResponse.json({ memberships, organizations });
+    return NextResponse.json(
+      { memberships, organizations },
+      { headers: DIRECTORY_RESPONSE_HEADERS },
+    );
   } catch (error) {
     return routeErrorResponse(error, {
       context: 'organization-directory',
