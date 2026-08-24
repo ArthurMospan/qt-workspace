@@ -571,27 +571,6 @@ export default function WorkspaceAnalyticsPage() {
     [activeTab, periodRange, tsAnchor, tsMode],
   );
 
-  // The period's hours, read as one small document per project per day.
-  //
-  // This is the whole point of the daily totals: «за 90 днів» across an active
-  // team is thousands of time logs and at most ninety documents per project.
-  // The tiles, «Куди пішов час» and the time column of «По проєктах» are sums
-  // over days, and days are what this reads.
-  //
-  // «Табель» and «Рахунок» are about records rather than sums, so while one of
-  // them is open there is no day range to read and nothing is read. A total
-  // nothing on screen will draw is still a document somebody paid for.
-  const summedTabs = activeTab === 'overview' || activeTab === 'workload';
-  const {
-    rollups,
-    loading: rollupsLoading,
-    refreshing: rollupsRefreshing,
-    readAt,
-    refresh: refreshRollups,
-  } = useAnalyticsRollups(activeProjectIds, {
-    dayRange: summedTabs ? periodRange : null,
-  });
-
   // A day's total knows the project, the date and who logged the hour. It does
   // not know which task the hour was against, so it cannot answer «час на
   // задачах, призначених Анні», a search, or a filter by priority or type —
@@ -606,13 +585,32 @@ export default function WorkspaceAnalyticsPage() {
     || assigneeFilter !== 'all'
     || priorityFilter !== 'all'
     || typeFilter !== 'all';
-  // «Табель» is the records themselves — a grid of who logged what against
-  // which task — so it reads them. Everything else on this screen is a sum, and
-  // a sum is what the daily totals are. «Команда» included: selecting a person
-  // navigates to their own page, so the tab here is always the team table, and
-  // a team table needs figures per person rather than the entries behind them.
+  // Exactly one of the two, on every tab. «Табель» is the records themselves —
+  // a grid of who logged what against which task. «Команда» is figures per
+  // person, and always the team table, because selecting somebody navigates to
+  // their own page. «Огляд» is figures until a task-scoped filter makes it a
+  // question the figures cannot answer. «Рахунок» reads neither: an invoice is
+  // every unbilled hour ever recorded, not a period, and it has its own hook.
   const needsRawTimeLogs = activeTab === 'timesheet'
     || (activeTab === 'overview' && taskScopedTimeFilter);
+  const needsSummedTime = activeTab === 'workload'
+    || (activeTab === 'overview' && !taskScopedTimeFilter);
+
+  // The period's hours, read as one small document per project per day.
+  //
+  // This is the whole point of the daily totals: «за 90 днів» across an active
+  // team is thousands of time logs and at most ninety documents per project.
+  // The tiles, «Куди пішов час», the time column of «По проєктах» and every
+  // figure in the team table are sums over days, and days are what this reads.
+  const {
+    rollups,
+    loading: rollupsLoading,
+    refreshing: rollupsRefreshing,
+    readAt,
+    refresh: refreshRollups,
+  } = useAnalyticsRollups(activeProjectIds, {
+    dayRange: needsSummedTime ? periodRange : null,
+  });
 
   const {
     issues,

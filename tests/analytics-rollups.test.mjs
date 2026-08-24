@@ -321,8 +321,12 @@ test('the analytics screens read days, and open records only when a day cannot a
 
   // A total nothing on screen will draw is still a document somebody paid for,
   // so the tabs that are about records read no days at all.
-  assert.match(page, /const summedTabs = activeTab === 'overview' \|\| activeTab === 'workload'/);
-  assert.match(page, /dayRange: summedTabs \? periodRange : null/);
+  assert.match(page, /const needsSummedTime = activeTab === 'workload'/);
+  assert.match(page, /dayRange: needsSummedTime \? periodRange : null/);
+  // Exactly one of the two on every tab — never both, which would be paying
+  // twice for one figure.
+  assert.match(page, /needsRawTimeLogs[\s\S]{0,120}activeTab === 'overview' && taskScopedTimeFilter/);
+  assert.match(page, /needsSummedTime[\s\S]{0,120}activeTab === 'overview' && !taskScopedTimeFilter/);
 
   // Asking a new question clears the screen; asking the same one again does
   // not. A report that blanks itself every time somebody checks for newer
