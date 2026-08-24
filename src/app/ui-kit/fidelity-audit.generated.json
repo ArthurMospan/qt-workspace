@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 243,
-    "parsedFiles": 243,
+    "productFiles": 245,
+    "parsedFiles": 245,
     "parseErrors": 0,
     "nativeControls": 20,
     "structures": {
@@ -680,12 +680,12 @@
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:159",
+      "location": "src/components/workspace/TimesheetTab.jsx:160",
       "tag": "div",
       "className": "bg-white border border-line rounded-[12px] px-[10px] py-[8px] hover:border-[#d0d0d0] transition-colors"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:669",
+      "location": "src/components/workspace/TimesheetTab.jsx:668",
       "tag": "div",
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },

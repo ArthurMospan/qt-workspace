@@ -17,7 +17,9 @@ test('a hook that has not subscribed yet reports loading, not emptiness', async 
   const cases = [
     ['../src/lib/hooks/useIssues.js', /const stillResolving = authLoading \|\| orgLoading \|\| !currentUserId \|\| !activeOrgId;/],
     ['../src/lib/hooks/useCalendarEvents.js', /setLoading\(Boolean\(authLoading \|\| orgLoading\)\);/],
-    ['../src/lib/hooks/useWorkspaceAnalytics.js', /setLoading\(Boolean\(authLoading \|\| orgLoading\)\);/],
+    // Two subscriptions, two flags: the task set and the windowed time logs
+    // move on different clocks, and `loading` is their union.
+    ['../src/lib/hooks/useWorkspaceAnalytics.js', /setIssuesLoading\(Boolean\(authLoading \|\| orgLoading\)\);/],
     ['../src/lib/hooks/useAllMyTasks.js', /setLoading\(Boolean\(authLoading \|\| orgLoading \|\| projectsLoading\)\);/],
   ];
   for (const [file, pattern] of cases) {

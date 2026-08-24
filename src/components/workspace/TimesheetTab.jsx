@@ -18,6 +18,7 @@ import {
   calendarEventOccurrenceKey,
 } from '@/lib/utils/calendarEventNavigation.mjs';
 import { effectiveTimeLogDate } from '@/lib/utils/timeLogDates.mjs';
+import { timesheetRange } from '@/lib/utils/analyticsWindow.mjs';
 import { buildTimesheetExport, fileNameDate } from '@/lib/utils/analyticsExport.mjs';
 import { createTaskTimeLogViaApi } from '@/lib/services/timeLogs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
@@ -29,12 +30,12 @@ const WEEK_MIN = 5 * DAY_MIN;
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+// The week and the month this grid lays out are the same week and month the
+// page bounded its Firestore query with — one definition, in
+// `analyticsWindow.mjs`, so the range that was read and the range that is drawn
+// cannot become two different answers.
 function getWeekStart(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return timesheetRange('week', date).start;
 }
 
 function addDays(date, n) {
@@ -593,16 +594,14 @@ export default function TimesheetTab({
   // Range for the current view
   const { rangeStart, rangeEnd, days, rangeLabel, capacity } = useMemo(() => {
     if (mode === 'week') {
-      const start = getWeekStart(anchor);
-      const end = addDays(start, 7);
+      const { start, end } = timesheetRange('week', anchor);
       const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
       const endDay = addDays(start, 6);
       const sameMonth = start.getMonth() === endDay.getMonth();
       const label = `${start.toLocaleDateString('uk-UA', { day: 'numeric', month: sameMonth ? undefined : 'long' })} – ${endDay.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}`;
       return { rangeStart: start, rangeEnd: end, days, rangeLabel: label, capacity: WEEK_MIN };
     }
-    const start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-    const end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1);
+    const { start, end } = timesheetRange('month', anchor);
     let workdays = 0;
     for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
       const wd = d.getDay();

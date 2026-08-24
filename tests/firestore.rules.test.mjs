@@ -6,7 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
 let environment;
 
@@ -611,6 +611,45 @@ test('time log queries prove their project or organization-calendar scope', asyn
     where('projectId', '==', ''),
     where('sourceType', '==', 'calendar_event'),
     where('eventVisibility', '==', 'team'),
+  )));
+
+  // The same three queries the analytics screen actually issues, bounded to the
+  // period it is drawing. Adding a date range must neither widen what a member
+  // may see nor make the query illegal: `issueId != ''` beside a range on
+  // `loggedAt` is two inequality fields, and that combination has to be one
+  // query rather than a rejection.
+  const since = Timestamp.fromMillis(Date.parse('2026-07-01T00:00:00.000Z'));
+  const until = Timestamp.fromMillis(Date.parse('2026-08-01T00:00:00.000Z'));
+  await assertSucceeds(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', ['project-a']),
+    where('issueId', '!=', ''),
+    where('loggedAt', '>=', since),
+    where('loggedAt', '<', until),
+  )));
+  await assertSucceeds(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', ['project-a']),
+    where('sourceType', '==', 'calendar_event'),
+    where('eventVisibility', '==', 'team'),
+    where('loggedAt', '>=', since),
+  )));
+  await assertSucceeds(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', ''),
+    where('sourceType', '==', 'calendar_event'),
+    where('eventVisibility', '==', 'team'),
+    where('loggedAt', '>=', since),
+  )));
+  // A window is a bound on cost, never a way past the scope rule.
+  await assertFails(getDocs(query(
+    logs,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', 'in', ['project-a']),
+    where('loggedAt', '>=', since),
   )));
   await assertFails(getDoc(doc(memberDb, 'timeLogs', 'query-private-log')));
   await assertFails(getDocs(query(

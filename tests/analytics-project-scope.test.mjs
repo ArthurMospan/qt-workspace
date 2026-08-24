@@ -12,7 +12,14 @@ test('workspace analytics excludes archived projects before subscribing to their
 
   for (const source of [workspaceAnalytics, memberAnalytics]) {
     assert.match(source, /const activeProjects = useMemo\([\s\S]{0,160}project\.status !== 'archived'/);
-    assert.match(source, /useWorkspaceAnalytics\(activeProjects\.map\(project => project\.id\)\)/);
+    // The id list is memoized rather than rebuilt inline: the hook subscribes
+    // on it, and a fresh array on every render would resubscribe on every
+    // render. It still comes from `activeProjects`, which is the point here.
+    assert.match(
+      source,
+      /const activeProjectIds = useMemo\(\s*\(\) => activeProjects\.map\(project => project\.id\)/,
+    );
+    assert.match(source, /useWorkspaceAnalytics\(activeProjectIds[,)]/);
   }
 
   assert.doesNotMatch(workspaceAnalytics, /useWorkspaceAnalytics\(projects\.map/);

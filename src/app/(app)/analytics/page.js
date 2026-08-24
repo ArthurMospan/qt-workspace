@@ -10,6 +10,7 @@ import {
   BarChart2, AlertTriangle, Clock, Folders, Users, Zap, Target, Receipt,
   ChevronLeft, ChevronRight, Plus,
 } from 'lucide-react';
+import { useLocalDayStart } from '@/lib/hooks/useLocalDayStart';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import { getCompletedAtMillis, useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -42,6 +43,11 @@ import {
   filterTeamTimeLogs,
   memberAnalyticsHref,
 } from '@/lib/utils/teamAnalytics.mjs';
+import {
+  ANALYTICS_PERIOD_DAYS,
+  periodTimeLogWindow,
+  timesheetTimeLogWindow,
+} from '@/lib/utils/analyticsWindow.mjs';
 import { sumRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import {
@@ -477,6 +483,13 @@ export default function WorkspaceAnalyticsPage() {
     () => projects.filter(project => project.status !== 'archived'),
     [projects],
   );
+  // A stable identity for the project scope: the array is rebuilt on every
+  // render, and the subscription keys off what is in it, not off which array it
+  // is.
+  const activeProjectIds = useMemo(
+    () => activeProjects.map(project => project.id),
+    [activeProjects],
+  );
   const analyticsSearch = useWorkspaceStore(state => state.analyticsSearch);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -514,15 +527,6 @@ export default function WorkspaceAnalyticsPage() {
   const buildActiveExport = useCallback(() => exportBuilderRef.current?.() || null, []);
   const exportMenu = <ExportMenu build={buildActiveExport} className="ml-auto max-md:hidden" />;
 
-  const {
-    issues,
-    allIssues,
-    timeLogs,
-    issueLinks,
-    loading,
-  } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
-  const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
-
   // Shared filters (one FilterBar under the tabs; each tab adds its own controls)
   const [projectFilters, setProjectFilters] = useState([]);
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -538,6 +542,33 @@ export default function WorkspaceAnalyticsPage() {
   const [tsAnchor, setTsAnchor] = useState(() => new Date());
   const [tsLogOpen, setTsLogOpen] = useState(false);
   const effectiveTsMember = tsMember ?? (canSeeTeamTimesheet ? 'all' : selfUid);
+
+  // Which stretch of time this screen is currently about — and therefore how
+  // much of `timeLogs` it is allowed to read. «Табель» owns a week or a month
+  // and pages through them; every other tab is the trailing period. Reading the
+  // union of the two would mean that paging the timesheet back to March pulled
+  // every log written since March, so the window follows the tab instead.
+  const dayStart = useLocalDayStart();
+  const timeLogWindow = useMemo(
+    () => (activeTab === 'timesheet'
+      ? timesheetTimeLogWindow(tsMode, tsAnchor)
+      : periodTimeLogWindow(dayStart, period)),
+    [activeTab, dayStart, period, tsAnchor, tsMode],
+  );
+  const {
+    issues,
+    allIssues,
+    timeLogs,
+    issueLinks,
+    loading,
+  } = useWorkspaceAnalytics(activeProjectIds, {
+    // «Рахунок» reads raw logs of its own project through `useProjectAllTimeLogs`
+    // — an invoice is about every unbilled hour ever recorded, not about a
+    // period — so this subscription has nothing to do while that tab is open.
+    includeTimeLogs: activeTab !== 'billing',
+    timeLogWindow,
+  });
+  const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
 
   const shiftAnchor = dir => {
     setTsAnchor(prev => {
@@ -702,7 +733,7 @@ export default function WorkspaceAnalyticsPage() {
   // quietly bill the client for less than was done.
   const billingIssues = allIssues.filter(i => i.projectId === billingProject?.id);
 
-  const periodOptions = [7, 14, 30, 90].map(d => ({ value: d, label: `${d}д` }));
+  const periodOptions = ANALYTICS_PERIOD_DAYS.map(d => ({ value: d, label: `${d}д` }));
 
   return (
     <div className="qt-nav-scroll flex-1 h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-transparent">

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Users } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
+import { useLocalDayStart } from '@/lib/hooks/useLocalDayStart';
 import { useWorkspaceAnalytics } from '@/lib/hooks/useWorkspaceAnalytics';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -22,8 +23,12 @@ import {
   filterTeamIssues,
   filterTeamTimeLogs,
 } from '@/lib/utils/teamAnalytics.mjs';
+import {
+  ANALYTICS_PERIOD_DAYS,
+  periodTimeLogWindow,
+} from '@/lib/utils/analyticsWindow.mjs';
 
-const PERIOD_OPTIONS = [7, 14, 30, 90].map(days => ({ value: days, label: `${days}д` }));
+const PERIOD_OPTIONS = ANALYTICS_PERIOD_DAYS.map(days => ({ value: days, label: `${days}д` }));
 
 function memberName(member) {
   return member?.name || member?.displayName || member?.email || 'Учасник';
@@ -38,15 +43,27 @@ export default function MemberAnalyticsPage() {
     [projects],
   );
   const { members = [], loading: membersLoading } = useOrganization();
+  const [projectFilters, setProjectFilters] = useState([]);
+  const [period, setPeriod] = useState(30);
+  const activeProjectIds = useMemo(
+    () => activeProjects.map(project => project.id),
+    [activeProjects],
+  );
+  // One person's hours over the chosen period — so that is what is read. This
+  // screen used to open the whole organization's time-log history to draw a
+  // thirty-day bar chart.
+  const dayStart = useLocalDayStart();
+  const timeLogWindow = useMemo(
+    () => periodTimeLogWindow(dayStart, period),
+    [dayStart, period],
+  );
   const {
     issues,
     allIssues,
     timeLogs,
     loading,
-  } = useWorkspaceAnalytics(activeProjects.map(project => project.id));
+  } = useWorkspaceAnalytics(activeProjectIds, { timeLogWindow });
   const { events, loading: calendarLoading } = useCalendarEvents();
-  const [projectFilters, setProjectFilters] = useState([]);
-  const [period, setPeriod] = useState(30);
 
   const member = members.find(item => (item.id || item.uid) === memberId);
   const visibleProjects = useMemo(

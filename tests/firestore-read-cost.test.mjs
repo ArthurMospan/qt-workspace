@@ -85,7 +85,7 @@ const BOUNDED_WITHOUT_LIMIT = new Map([
   // a ceiling as the workspace ages. See docs/ARCHITECTURE.md → «Вартість читання».
   ['lib/hooks/useIssues.js', 'tasks and links of one project — the board itself'],
   ['lib/hooks/useAllMyTasks.js', 'tasks assigned to one person'],
-  ['lib/hooks/useWorkspaceAnalytics.js', 'the datasets an analytics page is'],
+  ['lib/hooks/useWorkspaceAnalytics.js', 'tasks of the authorized projects; the time logs ARE windowed by loggedAt'],
   ['app/(app)/page.js', 'tasks of the projects this user can open — the dashboard'],
   ['lib/hooks/useTimeLogs.js', 'time logged against one task'],
   ['lib/hooks/useProjectTimeLogs.js', 'time logged against one project'],
@@ -142,4 +142,87 @@ test('nothing that renders per element resolves itself through search', () => {
     const source = readFileSync(join(root, file.split('/').join(sep)), 'utf8');
     assert.doesNotMatch(source, /api\/search/, `${file} must not ask search to draw itself`);
   }
+});
+
+// A report is a window, not a history.
+//
+// Tasks are bounded by the work: one document per thing somebody is doing, and
+// a workspace has as many as it has work. Time logs are not bounded by
+// anything. One is written every time a timer stops — by every person, every
+// day — and none is ever removed. The analytics screen said «за 30 днів» and
+// read every one of them, then dropped the rest in the browser, so the cost of
+// opening it grew with the age of the workspace rather than with the period
+// being shown. That is the same shape as both outages: a query with no edge.
+//
+// The period is therefore a bound in the query. These tests hold that edge in
+// place: the hook cannot read logs without a window, the screens have to say
+// which window they are drawing, and the composite indexes those queries need
+// have to exist, because a missing index is a query that fails in production
+// and nowhere else.
+test('the analytics time-log queries are bounded by the period being drawn', async () => {
+  const source = readFileSync(join(root, 'lib', 'hooks', 'useWorkspaceAnalytics.js'), 'utf8');
+
+  // Every timeLogs query in the hook carries the window — counted rather than
+  // parsed, because the thing that must never happen is one more query than
+  // there are bounds.
+  const timeLogQueries = source.match(/collection\(db, 'timeLogs'\)/g) || [];
+  const boundedQueries = source.match(/\.\.\.windowBounds,/g) || [];
+  assert.ok(timeLogQueries.length >= 3, 'expected the task, calendar and org-calendar queries');
+  assert.equal(
+    boundedQueries.length,
+    timeLogQueries.length,
+    'every timeLogs query in this hook must spread the window into itself',
+  );
+  assert.match(source, /where\('loggedAt', '>=', Timestamp\.fromMillis\(sinceMillis\)\)/);
+  assert.match(source, /where\('loggedAt', '<', Timestamp\.fromMillis\(untilMillis\)\)/);
+
+  // …and there is no path that reads them without one. A default window would
+  // be the bug wearing a parameter name.
+  assert.match(source, /const windowedTimeLogs = includeTimeLogs && isTimeLogWindow\(timeLogWindow\)/);
+  assert.match(source, /timeLogWindow is required whenever includeTimeLogs is on/);
+  assert.doesNotMatch(source, /timeLogWindow = \{/);
+});
+
+test('every screen that reads time logs says which window it is drawing', async () => {
+  const callers = [
+    'app/(app)/analytics/page.js',
+    'app/(app)/analytics/team/[memberId]/page.js',
+  ];
+  for (const file of callers) {
+    const source = readFileSync(join(root, file.split('/').join(sep)), 'utf8');
+    assert.match(source, /timeLogWindow/, `${file} must bound its time-log read`);
+    assert.match(
+      source,
+      /periodTimeLogWindow|timesheetTimeLogWindow/,
+      `${file} must take its window from analyticsWindow.mjs, not invent one`,
+    );
+  }
+
+  // The screens that do not need hours do not pay for them.
+  const settings = readFileSync(join(root, 'app', '(app)', 'settings', 'page.js'), 'utf8');
+  assert.match(settings, /includeTimeLogs: false/);
+  const sprints = readFileSync(join(root, 'app', '(app)', 'sprints', 'page.js'), 'utf8');
+  assert.match(sprints, /includeTimeLogs: false/);
+});
+
+test('the windowed time-log queries have the composite indexes they need', () => {
+  const indexes = JSON.parse(
+    readFileSync(fileURLToPath(new URL('../firestore.indexes.json', import.meta.url)), 'utf8'),
+  ).indexes;
+  const paths = indexes
+    .filter(entry => entry.collectionGroup === 'timeLogs')
+    .map(entry => entry.fields.map(field => field.fieldPath).join(','));
+
+  // A range on `loggedAt` next to `issueId != ''` is two inequality fields, so
+  // the index has to carry both. `loggedAt` comes first because the date range
+  // is the selective one — it should bound the scan, with the issue filter
+  // skipping calendar rows inside it.
+  assert.ok(
+    paths.includes('organizationId,projectId,loggedAt,issueId'),
+    'task logs in a window need (organizationId, projectId, loggedAt, issueId)',
+  );
+  assert.ok(
+    paths.includes('organizationId,projectId,sourceType,eventVisibility,loggedAt'),
+    'team calendar logs in a window need their own index ending in loggedAt',
+  );
 });
