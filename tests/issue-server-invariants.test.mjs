@@ -92,10 +92,7 @@ test('actual task time cannot race a source-less estimate invoice reservation', 
   const transactionStart = postRoute.indexOf(
     'await db.runTransaction(async transaction =>',
   );
-  const reservationRead = postRoute.indexOf(
-    'transaction.get(\n        estimateReservationRef,',
-    transactionStart,
-  );
+  const reservationRead = postRoute.search(/transaction\.get\(\s*estimateReservationRef,/);
   const logWrite = postRoute.indexOf(
     'transaction.create(logRef,',
     transactionStart,

@@ -11,6 +11,7 @@ import {
   countedTaskMinutes,
   rebuildRollupTotals,
   rollupTotalsMatch,
+  summarizeRawTimeLogs,
   summarizeRollups,
 } from '../src/lib/utils/analyticsRollups.mjs';
 
@@ -282,6 +283,22 @@ test('a period is the sum of its days, per project and per person', () => {
   assert.deepEqual(Object.keys(alphaOnly.minutesByProject), ['alpha']);
 });
 
+test('raw period logs keep task time separate from calendar-event time', () => {
+  const summary = summarizeRawTimeLogs([
+    taskLog({ projectId: 'puy', spentMinutes: 1 }),
+    eventLog({ projectId: 'puy', spentMinutes: 3000 }),
+    // A scheduled event's duration is deliberately absent here. Analytics is
+    // about the time somebody logged, not how long the calendar slot was.
+    taskLog({ projectId: 'other', spentMinutes: -15 }),
+  ]);
+
+  assert.equal(summary.taskMinutes, 1);
+  assert.equal(summary.eventMinutes, 3000);
+  assert.equal(summary.totalMinutes, 3001);
+  assert.deepEqual(summary.minutesByProject, { puy: 3001 });
+  assert.deepEqual(summary.minutesByUser, { anna: 3001 });
+});
+
 test('the analytics screens read days, and open records only when a day cannot answer', async () => {
   const [page, workload, memberPage, hook] = await Promise.all([
     read('src/app/(app)/analytics/page.js'),
@@ -300,7 +317,7 @@ test('the analytics screens read days, and open records only when a day cannot a
   // question about tasks (a search, an assignee, a priority, a type) falls back
   // to the records, over exactly the same days.
   assert.match(page, /const taskScopedTimeFilter = /);
-  assert.match(page, /const needsRawTimeLogs = activeTab === 'timesheet'/);
+  assert.match(page, /const needsRawTimeLogs = urlReady && \(activeTab === 'timesheet'/);
   assert.match(page, /activeTab === 'overview' && taskScopedTimeFilter/);
   assert.match(page, /source: 'rollups'/);
   assert.match(page, /source: 'logs'/);
@@ -321,8 +338,9 @@ test('the analytics screens read days, and open records only when a day cannot a
 
   // A total nothing on screen will draw is still a document somebody paid for,
   // so the tabs that are about records read no days at all.
-  assert.match(page, /const needsSummedTime = activeTab === 'workload'/);
+  assert.match(page, /const needsSummedTime = urlReady && \(activeTab === 'workload'/);
   assert.match(page, /dayRange: needsSummedTime \? periodRange : null/);
+  assert.match(page, /useCalendarEvents\(\{ enabled: calendarIsRequired \}\)/);
   // Exactly one of the two on every tab — never both, which would be paying
   // twice for one figure.
   assert.match(page, /needsRawTimeLogs[\s\S]{0,120}activeTab === 'overview' && taskScopedTimeFilter/);

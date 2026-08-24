@@ -11,7 +11,6 @@ import {
   RefreshStamp,
   SignalList,
   Sparkline,
-  TrendChart,
   UserAvatar,
 } from '@/components/ui';
 import { PreviewBlock } from '../preview';
@@ -40,12 +39,6 @@ const DEMO_FLOW = [
   { label: 'Закрито', color: 'var(--color-chart-1)' },
   { label: 'Відкрито', color: 'var(--color-chart-context)' },
 ];
-
-const DEMO_BURNDOWN = Array.from({ length: 12 }, (_, index) => ({
-  label: `${index + 1} трав`,
-  value: Math.max(0, 40 - index * 3 - (index % 3)),
-  reference: Math.round(40 - (40 / 11) * index),
-}));
 
 const DEMO_MEMBERS = [
   { id: 'a', name: 'Артур Моспан', done: 12, open: 4, minutes: 640, focus: 'Переписати імпорт клієнтських даних із YouTrack', state: 'Стабільно' },
@@ -131,18 +124,6 @@ export default function ChartsSection() {
       >
         <ChartCard icon={BarChart2} title="Активність" meta="7 днів" className="w-full">
           <ColumnChart data={DEMO_DAYS} series={DEMO_FLOW} height={130} />
-        </ChartCard>
-      </PreviewBlock>
-
-      <PreviewBlock
-        title="Тренд із опорною лінією"
-        description="Пунктир тут — єдиний пунктир у продукті, і він його заслуговує: пунктир означає «розрахунок, а не вимір», що для «рівного темпу» саме так. Сітка й осі пунктиром не бувають ніколи. Точки лежать у власному пікселевому просторі SVG, тому лінія завтовшки рівно стільки, скільки написано — попередня версія розтягувала систему координат і на різних пропорціях малювала то 2px, то волосину."
-        filePath="src/components/ui/Charts/TrendChart.jsx"
-        component="TrendChart"
-        fullWidth
-      >
-        <ChartCard icon={TrendingDown} title="Скільки роботи лишилось" meta="12 днів" className="w-full">
-          <TrendChart data={DEMO_BURNDOWN} valueLabel="Фактично лишилось" referenceLabel="Рівний темп" height={140} />
         </ChartCard>
       </PreviewBlock>
 

@@ -4,7 +4,7 @@
 // Команда = навантаження; Рахунок = клієнтські рахунки. Всі контроли табу (період,
 // тиждень/місяць, учасник, навігація) живуть в ОДНОМУ FilterBar під табами.
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import {
   BarChart2, AlertTriangle, Clock, Folders, Users, Zap, Target, Receipt,
@@ -49,11 +49,10 @@ import {
   periodDayRange,
   timesheetTimeLogWindow,
 } from '@/lib/utils/analyticsWindow.mjs';
-import { summarizeRollups } from '@/lib/utils/analyticsRollups.mjs';
 import {
-  isValidRawTimeLogMinutes,
-  sumRawTimeLogMinutes,
-} from '@/lib/utils/issueAccounting.mjs';
+  summarizeRawTimeLogs,
+  summarizeRollups,
+} from '@/lib/utils/analyticsRollups.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
 import {
   backlogStatusIds,
@@ -62,18 +61,21 @@ import {
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
+import {
+  analyticsDateKey,
+  analyticsDateParam,
+  analyticsPeriodParam,
+  analyticsTabParam,
+  commaListParam,
+  setSearchParam,
+  timesheetModeParam,
+} from '@/lib/utils/analyticsUrlState.mjs';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function fmtH(min) {
   if (!min) return '0г';
   const h = Math.floor(min / 60), m = min % 60;
   return h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : `${m}хв`;
-}
-
-// The same gate the invoice and the rollups use, so one log cannot be worth
-// thirty minutes in a total and nothing in the table beside it.
-function validPeriodMinutes(log) {
-  return isValidRawTimeLogMinutes(log?.spentMinutes) ? Number(log.spentMinutes) : 0;
 }
 
 function FilterDivider() {
@@ -94,7 +96,6 @@ function AnalyticsContent({
   // «скільки часу за 30 днів» is a question the records should not have to be
   // opened to answer.
   periodTime,
-  events,
   members,
   loading,
   now,
@@ -119,36 +120,6 @@ function AnalyticsContent({
   // «У роботі» is a category, never the literal id 'in-progress': an org that
   // renamed or split that column used to report zero here.
   const inProgressSet = useMemo(() => new Set(inProgressStatusIds(statuses)), [statuses]);
-  const calendarStats = useMemo(() => {
-    const periodStart = now - period * 24 * 3600 * 1000;
-    const periodEnd = now + period * 24 * 3600 * 1000;
-    const completedWindow = events.filter(event => {
-      const start = new Date(event.startAt).getTime();
-      return Number.isFinite(start) && start >= periodStart && start <= now;
-    });
-    const durationMinutes = event => Math.max(
-      0,
-      (new Date(event.endAt).getTime() - new Date(event.startAt).getTime()) / 60_000,
-    );
-    return {
-      upcoming: events.filter(event => {
-        const start = new Date(event.startAt).getTime();
-        return event.type !== 'birthday' && start >= now && start <= periodEnd;
-      }).length,
-      meetings: completedWindow.filter(event => event.type === 'meeting').length,
-      meetingMinutes: completedWindow
-        .filter(event => event.type === 'meeting')
-        .reduce((sum, event) => sum + durationMinutes(event), 0),
-      focusMinutes: completedWindow
-        .filter(event => event.type === 'focus')
-        .reduce((sum, event) => sum + durationMinutes(event), 0),
-      notes: events.filter(event =>
-        event.type === 'note' &&
-        new Date(event.startAt).getTime() >= periodStart &&
-        new Date(event.startAt).getTime() <= periodEnd).length,
-    };
-  }, [events, now, period]);
-
   // The shape behind the headline figure. A tile that says "18 closed" and a
   // tile that says "18 closed, and it was 3 all of last week" are different
   // facts, and the row only ever showed the first.
@@ -248,17 +219,16 @@ function AnalyticsContent({
   // export has to be registered by every render, not only the ones that draw a
   // chart.
   //
-  // Three shares of one total, and they were drawn as three kinds of thing:
-  // «Завдання» plain, «Мітинги» amber with a dot beside it, «Фокус-час» a third
-  // hue. A colour on a row of a chart is a claim that the row belongs to a
+  // Two shares of one total used to be inferred from different sources:
+  // «Завдання» was logged time, while calendar rows were scheduled duration.
+  // A colour on a row of a chart is a claim that the row belongs to a
   // series the reader is meant to recognise elsewhere — a status, a task type.
-  // These are three labelled slices of one figure, the label says which is
+  // These are two labelled slices of one figure, the label says which is
   // which, and the length says how much. Nothing here needs a second alphabet.
   const timeSplit = useMemo(() => [
-    { id: 'tasks', label: 'Завдання', value: Math.max(0, Math.round(stats.periodMin - calendarStats.meetingMinutes - calendarStats.focusMinutes)) },
-    { id: 'meetings', label: 'Мітинги', value: Math.round(calendarStats.meetingMinutes), meta: `${calendarStats.meetings} ${plural(calendarStats.meetings, ['подія', 'події', 'подій'])}` },
-    { id: 'focus', label: 'Фокус-час', value: Math.round(calendarStats.focusMinutes) },
-  ].filter(row => row.value > 0), [calendarStats, stats.periodMin]);
+    { id: 'tasks', label: 'Завдання', value: Math.round(periodTime.taskMinutes || 0) },
+    { id: 'events', label: 'Події календаря', value: Math.round(periodTime.eventMinutes || 0) },
+  ].filter(row => row.value > 0), [periodTime.eventMinutes, periodTime.taskMinutes]);
 
   // The file is this screen, so it is offered only once the screen has one.
   const buildExport = useCallback(() => buildOverviewExport({
@@ -281,7 +251,7 @@ function AnalyticsContent({
     );
   }
 
-  if (stats.total === 0 && stats.periodMin === 0 && events.length === 0) {
+  if (stats.total === 0 && stats.periodMin === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center">
         <EmptyState
@@ -489,6 +459,8 @@ function AnalyticsContent({
 // ── PAGE ─────────────────────────────────────────────────────────────
 export default function WorkspaceAnalyticsPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { activeOrg, projects = [], orgRole, currentUser } = useAppContext();
   const activeProjects = useMemo(
     () => projects.filter(project => project.status !== 'archived'),
@@ -545,6 +517,8 @@ export default function WorkspaceAnalyticsPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [period, setPeriod] = useState(30);
   const [teamMemberFilter, setTeamMemberFilter] = useState('all');
+  const [billingProjectId, setBillingProjectId] = useState('');
+  const [urlReady, setUrlReady] = useState(false);
 
   // Табель state
   const selfUid = currentUser?.uid || currentUser?.id;
@@ -553,6 +527,102 @@ export default function WorkspaceAnalyticsPage() {
   const [tsAnchor, setTsAnchor] = useState(() => new Date());
   const [tsLogOpen, setTsLogOpen] = useState(false);
   const effectiveTsMember = tsMember ?? (canSeeTeamTimesheet ? 'all' : selfUid);
+
+  // The address is the durable copy of a report view: refresh, Back/Forward and
+  // a pasted link must ask the same question. Read it first, then let state
+  // changes replace the current URL; tab changes push a history entry below.
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const projectsFromUrl = commaListParam(params.get('projects'));
+    const nextAnchor = analyticsDateParam(params.get('anchor'), new Date());
+    const legacyMember = params.get('teamMember');
+
+    if (legacyMember) {
+      router.replace(memberAnalyticsHref(legacyMember, {
+        projectIds: projectsFromUrl,
+        period: analyticsPeriodParam(params.get('period')),
+      }));
+      return;
+    }
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setActiveTab(analyticsTabParam(params.get('tab'), { billing: canSeeBilling }));
+      setProjectFilters(previous => (
+        previous.join(',') === projectsFromUrl.join(',') ? previous : projectsFromUrl
+      ));
+      setAssigneeFilter(params.get('assignee') || 'all');
+      setPriorityFilter(params.get('priority') || 'all');
+      setTypeFilter(params.get('type') || 'all');
+      setPeriod(analyticsPeriodParam(params.get('period')));
+      setTsMember(params.get('member') || null);
+      setTsMode(timesheetModeParam(params.get('mode')));
+      setTsAnchor(previous => (
+        analyticsDateKey(previous) === analyticsDateKey(nextAnchor) ? previous : nextAnchor
+      ));
+      setBillingProjectId(params.get('billingProject') || '');
+      useWorkspaceStore.setState({ analyticsSearch: params.get('q') || '' });
+      setUrlReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [canSeeBilling, router, searchParams]);
+
+  useEffect(() => {
+    if (!urlReady || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setSearchParam(params, 'tab', activeTab, 'overview');
+    setSearchParam(params, 'projects', projectFilters);
+    setSearchParam(params, 'assignee', assigneeFilter, 'all');
+    setSearchParam(params, 'priority', priorityFilter, 'all');
+    setSearchParam(params, 'type', typeFilter, 'all');
+    setSearchParam(params, 'period', period, 30);
+    setSearchParam(params, 'q', analyticsSearch.trim());
+    params.delete('teamMember');
+    if (activeTab === 'timesheet') {
+      setSearchParam(params, 'member', effectiveTsMember, 'all');
+      setSearchParam(params, 'mode', tsMode, 'week');
+      setSearchParam(params, 'anchor', analyticsDateKey(tsAnchor));
+    } else {
+      params.delete('member');
+      params.delete('mode');
+      params.delete('anchor');
+    }
+    if (activeTab === 'billing') setSearchParam(params, 'billingProject', billingProjectId);
+    else params.delete('billingProject');
+
+    const query = params.toString();
+    const href = `${pathname}${query ? `?${query}` : ''}`;
+    if (`${window.location.pathname}${window.location.search}` !== href) {
+      window.history.replaceState(null, '', href);
+    }
+  }, [
+    activeTab,
+    analyticsSearch,
+    assigneeFilter,
+    billingProjectId,
+    effectiveTsMember,
+    pathname,
+    period,
+    priorityFilter,
+    projectFilters,
+    tsAnchor,
+    tsMode,
+    typeFilter,
+    urlReady,
+  ]);
+
+  const changeActiveTab = useCallback(nextTab => {
+    const safeTab = analyticsTabParam(nextTab, { billing: canSeeBilling });
+    setActiveTab(safeTab);
+    if (!urlReady || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setSearchParam(params, 'tab', safeTab, 'overview');
+    const query = params.toString();
+    const href = `${pathname}${query ? `?${query}` : ''}`;
+    if (`${window.location.pathname}${window.location.search}` !== href) {
+      window.history.pushState(null, '', href);
+    }
+  }, [canSeeBilling, pathname, urlReady]);
 
   // Which stretch of time this screen is currently about — and therefore how
   // much of `timeLogs` it is allowed to read. «Табель» owns a week or a month
@@ -591,10 +661,10 @@ export default function WorkspaceAnalyticsPage() {
   // their own page. «Огляд» is figures until a task-scoped filter makes it a
   // question the figures cannot answer. «Рахунок» reads neither: an invoice is
   // every unbilled hour ever recorded, not a period, and it has its own hook.
-  const needsRawTimeLogs = activeTab === 'timesheet'
-    || (activeTab === 'overview' && taskScopedTimeFilter);
-  const needsSummedTime = activeTab === 'workload'
-    || (activeTab === 'overview' && !taskScopedTimeFilter);
+  const needsRawTimeLogs = urlReady && (activeTab === 'timesheet'
+    || (activeTab === 'overview' && taskScopedTimeFilter));
+  const needsSummedTime = urlReady && (activeTab === 'workload'
+    || (activeTab === 'overview' && !taskScopedTimeFilter));
 
   // The period's hours, read as one small document per project per day.
   //
@@ -606,6 +676,7 @@ export default function WorkspaceAnalyticsPage() {
     rollups,
     loading: rollupsLoading,
     refreshing: rollupsRefreshing,
+    error: rollupsError,
     readAt,
     refresh: refreshRollups,
   } = useAnalyticsRollups(activeProjectIds, {
@@ -619,6 +690,7 @@ export default function WorkspaceAnalyticsPage() {
     issueLinks,
     loading,
     refreshing: recordsRefreshing,
+    error: recordsError,
     readAt: recordsReadAt,
     refresh: refreshRecords,
   } = useWorkspaceAnalytics(activeProjectIds, {
@@ -633,13 +705,20 @@ export default function WorkspaceAnalyticsPage() {
     // largest collections in the product for as long as the tab is left up.
     live: false,
   });
+  const calendarIsRequired = urlReady && (activeTab === 'timesheet'
+    || activeTab === 'billing'
+    || (activeTab === 'overview' && Boolean(analyticsSearch.trim())));
   const {
     events: calendarEvents,
     loading: calendarLoading,
+    error: calendarError,
     refresh: refreshCalendar,
-  } = useCalendarEvents();
+  } = useCalendarEvents({ enabled: calendarIsRequired });
+  const analyticsReadError = recordsError
+    || (needsSummedTime ? rollupsError : null)
+    || (calendarIsRequired ? calendarError : null);
 
-  // One reading, one timestamp: the oldest of the three sources, because that
+  // One reading, one timestamp: the oldest of the timestamped sources, because that
   // is the age of the least fresh number on screen.
   const readingTakenAt = useMemo(() => {
     const stamps = [recordsReadAt, readAt].filter(value => typeof value === 'number');
@@ -673,7 +752,10 @@ export default function WorkspaceAnalyticsPage() {
   };
   const selectTeamMember = memberId => {
     if (memberId !== 'all') {
-      router.push(memberAnalyticsHref(memberId));
+      router.push(memberAnalyticsHref(memberId, {
+        projectIds: projectFilters,
+        period,
+      }));
       return;
     }
     setTeamMemberFilter(memberId);
@@ -686,20 +768,6 @@ export default function WorkspaceAnalyticsPage() {
       window.history.replaceState(null, '', `${url.pathname}${url.search}`);
     }
   };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      const member = searchParams.get('teamMember');
-      if (member) {
-        router.replace(memberAnalyticsHref(member));
-        return;
-      }
-      const tab = searchParams.get('tab');
-      if (tab) queueMicrotask(() => setActiveTab(tab));
-      else if (member) queueMicrotask(() => setActiveTab('workload'));
-    }
-  }, [router]);
 
   const searchQuery = analyticsSearch.trim().toLocaleLowerCase('uk-UA');
   const searchMatchedProjectIds = useMemo(() => new Set(
@@ -729,17 +797,29 @@ export default function WorkspaceAnalyticsPage() {
       return true;
   }, [searchQuery, searchMatchedProjectIds, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
   const filteredIssues = useMemo(() => issues.filter(filterIssue), [issues, filterIssue]);
-  const filteredIssuesWithArchived = useMemo(
-    () => allIssues.filter(filterIssue),
-    [allIssues, filterIssue],
+  // A time-log title is reference data, not a task result. Search, assignee,
+  // priority and type filters may decide which figures are drawn; they must not
+  // make the task behind an otherwise visible log disappear from the Tabular
+  // view or a member's recent-time list.
+  const projectScopedIssueReferences = useMemo(
+    () => allIssues.filter(issue => (
+      projectFilters.length === 0 || projectFilters.includes(issue.projectId)
+    )),
+    [allIssues, projectFilters],
   );
   usePublishLocalSearchResults(analyticsSearch, filteredIssues.length);
 
   const visibleProjects = useMemo(() => {
-    if (!searchQuery) return activeProjects;
+    const inSelectedProjects = project => (
+      projectFilters.length === 0 || projectFilters.includes(project.id)
+    );
+    if (!searchQuery) return activeProjects.filter(inSelectedProjects);
     const issueProjectIds = new Set(filteredIssues.map(issue => issue.projectId));
-    return activeProjects.filter(project => searchMatchedProjectIds.has(project.id) || issueProjectIds.has(project.id));
-  }, [activeProjects, filteredIssues, searchMatchedProjectIds, searchQuery]);
+    return activeProjects.filter(project => (
+      inSelectedProjects(project)
+      && (searchMatchedProjectIds.has(project.id) || issueProjectIds.has(project.id))
+    ));
+  }, [activeProjects, filteredIssues, projectFilters, searchMatchedProjectIds, searchQuery]);
 
   const filteredIssueIds = useMemo(() => new Set(filteredIssues.map(i => i.id)), [filteredIssues]);
   const calendarEventsByKey = useMemo(() => {
@@ -802,21 +882,14 @@ export default function WorkspaceAnalyticsPage() {
   const periodTime = useMemo(() => {
     if (!taskScopedTimeFilter) {
       return {
+        taskMinutes: teamPeriodTime.taskMinutes,
+        eventMinutes: teamPeriodTime.eventMinutes,
         totalMinutes: teamPeriodTime.totalMinutes,
         minutesByProject: teamPeriodTime.minutesByProject,
         source: 'rollups',
       };
     }
-    const minutesByProject = {};
-    let totalMinutes = 0;
-    for (const log of filteredTimeLogs) {
-      const minutes = validPeriodMinutes(log);
-      if (!minutes) continue;
-      totalMinutes += minutes;
-      const projectId = log.projectId || '';
-      minutesByProject[projectId] = (minutesByProject[projectId] || 0) + minutes;
-    }
-    return { totalMinutes, minutesByProject, source: 'logs' };
+    return { ...summarizeRawTimeLogs(filteredTimeLogs), source: 'logs' };
   }, [filteredTimeLogs, taskScopedTimeFilter, teamPeriodTime]);
 
   // Табель фільтрується лише по проєктах — вимір «хто» задає селектор учасника
@@ -845,7 +918,6 @@ export default function WorkspaceAnalyticsPage() {
   ];
 
   // Рахунок — один конкретний проєкт
-  const [billingProjectId, setBillingProjectId] = useState('');
   const billingProject = activeProjects.find(project => project.id === billingProjectId) || activeProjects[0];
   // Archived included on purpose: an hour recorded against a task somebody
   // later put aside is still an hour that was worked, and leaving it out would
@@ -862,7 +934,7 @@ export default function WorkspaceAnalyticsPage() {
           title="Аналітика"
           tabs={TABS}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={changeActiveTab}
           mobileActions={
             activeTab === 'timesheet' ? (
               <Button style="primary" size="icon-lg" icon={Plus} onClick={() => setTsLogOpen(true)} title="Зафіксувати час" />
@@ -1024,6 +1096,18 @@ export default function WorkspaceAnalyticsPage() {
         {/* Content — сіра панель з відступами і скругленнями, як на сторінці
             проєктів; на ній білі картки без обводок */}
         <Surface preset="panel" padding="lg" composition="chart-panel" className="flex-1 flex flex-col">
+        {analyticsReadError ? (
+          <div className="flex min-h-[420px] flex-1 items-center justify-center">
+            <EmptyState
+              icon={AlertTriangle}
+              title="Не вдалося завантажити аналітику"
+              description="Цифри не показуємо, бо вони могли б бути неповними. Перевірте з’єднання та спробуйте ще раз."
+              action="Спробувати ще"
+              onAction={refreshReading}
+            />
+          </div>
+        ) : (
+        <>
         {activeTab === 'overview' && (
           <AnalyticsContent
             projects={visibleProjects}
@@ -1031,12 +1115,11 @@ export default function WorkspaceAnalyticsPage() {
             issueReferenceIssues={issues}
             issueLinks={issueLinks}
             periodTime={periodTime}
-            events={calendarEvents}
             members={members}
             loading={loading || rollupsLoading || calendarLoading}
             now={now}
             period={period}
-            onTabChange={setActiveTab}
+            onTabChange={changeActiveTab}
             onExportReady={registerExport}
             selectedProjectIds={projectFilters}
           />
@@ -1044,7 +1127,7 @@ export default function WorkspaceAnalyticsPage() {
 
         {activeTab === 'timesheet' && (
           <TimesheetTab
-            issues={filteredIssuesWithArchived}
+            issues={projectScopedIssueReferences}
             events={calendarEvents}
             timeLogs={projectScopedTimeLogs}
             members={members}
@@ -1078,7 +1161,7 @@ export default function WorkspaceAnalyticsPage() {
             members={members}
             issues={teamIssues}
             scopedIssues={teamScopedIssues}
-            logIssues={filteredIssuesWithArchived}
+            logIssues={projectScopedIssueReferences}
             periodTime={teamPeriodTime}
             events={calendarEvents}
             projects={activeProjects}
@@ -1099,6 +1182,8 @@ export default function WorkspaceAnalyticsPage() {
             project={billingProject}
             projectId={billingProject?.id}
           />
+        )}
+        </>
         )}
         </Surface>
       </div>

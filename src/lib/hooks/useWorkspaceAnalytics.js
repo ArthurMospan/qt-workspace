@@ -96,6 +96,8 @@ export function useWorkspaceAnalytics(projectIds = [], {
   const [timeLogsLoading, setTimeLogsLoading] = useState(true);
   const [issuesReadAt, setIssuesReadAt] = useState(null);
   const [timeLogsReadAt, setTimeLogsReadAt] = useState(null);
+  const [issuesError, setIssuesError] = useState(null);
+  const [timeLogsError, setTimeLogsError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   // Bumped by `refresh`. In live mode nothing reads it, because there is
   // nothing to refresh.
@@ -137,6 +139,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
       queueMicrotask(() => {
         setAllIssues([]);
         setIssueLinks([]);
+        setIssuesError(null);
         // Still resolving the organization is not the same as having read it
         // and found nothing — the difference is a spinner versus an empty
         // state that says the workspace has no data.
@@ -151,6 +154,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
         setIssuesLoading(true);
         setAllIssues([]);
         setIssueLinks([]);
+        setIssuesError(null);
       });
     }
 
@@ -173,6 +177,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
         setIssuesReadAt(Date.now());
         setRefreshing(false);
       },
+      onError: setIssuesError,
     }));
 
     chunks.forEach((chunk, chunkIndex) => {
@@ -213,6 +218,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
       timeTargetRef.current = '';
       queueMicrotask(() => {
         setTimeLogs([]);
+        setTimeLogsError(null);
         setTimeLogsLoading(!activeOrgId && Boolean(authLoading || orgLoading));
       });
       return undefined;
@@ -223,6 +229,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
       queueMicrotask(() => {
         setTimeLogsLoading(true);
         setTimeLogs([]);
+        setTimeLogsError(null);
       });
     }
 
@@ -253,6 +260,7 @@ export function useWorkspaceAnalytics(projectIds = [], {
         setTimeLogsReadAt(Date.now());
         setRefreshing(false);
       },
+      onError: setTimeLogsError,
     }));
 
     // Projectless team events are organization analytics only and cannot be
@@ -336,6 +344,8 @@ export function useWorkspaceAnalytics(projectIds = [], {
     issueLinks,
     loading: issuesLoading || (windowedTimeLogs && timeLogsLoading),
     refreshing: live ? false : refreshing,
+    error: issuesError || (windowedTimeLogs ? timeLogsError : null),
+    errors: { issues: issuesError, timeLogs: windowedTimeLogs ? timeLogsError : null },
     // When the reading was taken, and how to take another. Null while this is a
     // live subscription, because «оновлено о» would be a lie about data that is
     // never more than a moment old.
@@ -366,6 +376,7 @@ function readBucket({
   readyStreams,
   expectedStreamCount,
   onReady,
+  onError,
 }) {
   const markReady = () => {
     readyStreams.add(key);
@@ -378,6 +389,7 @@ function readBucket({
   };
   const fail = error => {
     reportLoadError(`[useWorkspaceAnalytics:${key}]`, error);
+    onError?.(error);
     buckets.set(key, []);
     publish(flattenDocumentBuckets(buckets));
     markReady();

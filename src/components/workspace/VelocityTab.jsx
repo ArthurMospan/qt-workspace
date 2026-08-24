@@ -1,10 +1,10 @@
 'use client';
-// src/components/workspace/VelocityTab.jsx — Продуктивність: тренди, burndown, cycle time
+// src/components/workspace/VelocityTab.jsx — Продуктивність: потік роботи й час завершення
 // Період керується з фільтрів сторінки (prop `period`), власного селектора немає.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Zap, TrendingUp, CheckCircle2, Calendar, Activity, Shapes, TrendingDown } from 'lucide-react';
 import {
-  Alert, BarList, ChartCard, ColumnChart, EmptyState, KpiCard, TaskListCard, TrendChart,
+  Alert, BarList, ChartCard, ColumnChart, EmptyState, KpiCard, TaskListCard,
 } from '@/components/ui';
 import { useWorkflowConfig, getCompletedAtMillis } from '@/lib/hooks/useWorkflowConfig';
 import { plural } from '@/lib/utils/plural.mjs';
@@ -24,31 +24,8 @@ function fmtShortDate(date) {
 // invented by an opacity.
 const FLOW_SERIES = [
   { label: 'Закрито', color: 'var(--color-chart-1)' },
-  { label: 'Відкрито', color: 'var(--color-chart-context)' },
+  { label: 'Створено', color: 'var(--color-chart-context)' },
 ];
-
-// ── Burndown ─────────────────────────────────────────────────────────────────
-// The work remaining, against the pace that would have finished it evenly. The
-// dashed line is the only dashed stroke in the product, and it earns that:
-// dashing means "projected, not measured", which is exactly what it is.
-function useBurndown(issues, days, closedSet, now) {
-  return useMemo(() => {
-    const total = issues.length;
-    if (total === 0) return [];
-    const span = Math.min(days, 30);
-    return Array.from({ length: span }, (_, index) => {
-      const dayEnd = new Date(now - (span - 1 - index) * 86400000).setHours(23, 59, 59, 999);
-      const label = new Date(now - (span - 1 - index) * 86400000).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
-      const remaining = issues.filter(issue => {
-        const created = issue.createdAt?.toMillis?.() ?? 0;
-        if (created > dayEnd) return false;
-        if (!closedSet.has(issue.columnId || issue.status)) return true;
-        return getCompletedAtMillis(issue) > dayEnd;
-      }).length;
-      return { label, value: remaining, reference: Math.round(total - (total / span) * index) };
-    });
-  }, [issues, days, closedSet, now]);
-}
 
 function useWeeklyVelocity(issues, weeksBack, deliveredSet, now) {
   return useMemo(() => Array.from({ length: weeksBack }, (_, index) => {
@@ -82,9 +59,9 @@ export default function VelocityTab({
   formatDate,
 }) {
   const { closedStatusIds, deliveredStatusIds, types = [] } = useWorkflowConfig();
-  // The burndown draws work *remaining*, so a cancelled task leaves the line the
-  // same way a finished one does — that is the closed set. Everything else here
-  // measures output, and cancelling something produces none of it.
+  // The oldest-work list asks what is still open, so it reads the closed set.
+  // Everything else here measures output, and cancelling something produces
+  // none of it.
   const closedSet = useMemo(() => new Set(closedStatusIds), [closedStatusIds]);
   const deliveredSet = useMemo(() => new Set(deliveredStatusIds), [deliveredStatusIds]);
   const [now, setNow] = useState(() => Date.now());
@@ -121,7 +98,7 @@ export default function VelocityTab({
     const cycleSummary = summarizeCycleTimes(donePeriod, getCompletedAtMillis);
 
     // Daily activity
-    const dayCount = Math.min(period, 30);
+    const dayCount = period;
     const days = Array.from({ length: dayCount }, (_, i) => {
       const daysBack = dayCount - 1;
       const dayStart = new Date(now - (daysBack - i) * 86400000).setHours(0, 0, 0, 0);
@@ -143,15 +120,16 @@ export default function VelocityTab({
     // on a card, in search and in the selector.
     const byType = types.map(entry => {
       const { id: type, label, color } = entry;
-      const typeIssues = issues.filter(i => i.type === type);
-      const typeDone = typeIssues.filter(i => deliveredSet.has(i.columnId || i.status));
-      return { type, label, color, icon: taskTypeIcon(entry), total: typeIssues.length, done: typeDone.length, pct: typeIssues.length > 0 ? Math.round((typeDone.length / typeIssues.length) * 100) : 0 };
-    }).filter(t => t.total > 0);
+      const created = createdPeriod.filter(issue => issue.type === type).length;
+      const done = donePeriod.filter(issue => issue.type === type).length;
+      return { type, label, color, icon: taskTypeIcon(entry), created, done, net: created - done };
+    }).filter(row => row.created > 0 || row.done > 0);
 
     return {
       donePeriod: donePeriod.length,
       velocityTrend,
       createdPeriod: createdPeriod.length,
+      netBacklog: createdPeriod.length - donePeriod.length,
       medianCycleTime: cycleSummary.medianDays,
       p85CycleTime: cycleSummary.p85Days,
       invalidCycleCount: cycleSummary.invalidIssueIds.length,
@@ -170,7 +148,17 @@ export default function VelocityTab({
     [issues, deliveredSet, now, period],
   );
 
-  const burndown = useBurndown(issues, period, closedSet, now);
+  const openIssues = useMemo(
+    () => issues
+      .filter(issue => !closedSet.has(issue.columnId || issue.status))
+      .sort((left, right) => {
+        const leftCreated = left.createdAt?.toMillis?.() ?? Number.POSITIVE_INFINITY;
+        const rightCreated = right.createdAt?.toMillis?.() ?? Number.POSITIVE_INFINITY;
+        return leftCreated - rightCreated;
+      }),
+    [closedSet, issues],
+  );
+
   const weeklyVelocity = useWeeklyVelocity(issues, 8, deliveredSet, now);
 
   // Every chart here is a count, so the file is those counts: the same days,
@@ -195,8 +183,8 @@ export default function VelocityTab({
       <div className="flex flex-1 items-center justify-center">
         <EmptyState
           icon={Zap}
-          title="Немає даних про швидкість"
-          description="Завершені завдання сформують velocity, cycle time та інші тренди."
+          title="Немає даних про потік роботи"
+          description="Створені й завершені завдання сформують активність та час завершення."
         />
       </div>
     );
@@ -219,17 +207,17 @@ export default function VelocityTab({
               this tab was missing: how long a task actually takes. */}
           <KpiCard icon={Calendar}
             value={stats.medianCycleTime !== null ? `${stats.medianCycleTime}д` : '—'}
-            label="Типовий цикл"
+            label="Від створення до завершення"
             sub={stats.p85CycleTime !== null
               ? `85% закриваються за ≤ ${stats.p85CycleTime}д`
-              : 'від відкриття до закриття'} />
-          <KpiCard icon={CheckCircle2}
-            value={stats.donePeriod > 0 ? Math.round((stats.donePeriod / Math.max(period, 1)) * 7) : 0}
-            label="Закривається за тиждень"
-            sub="середній темп за обраний період" />
+              : 'потрібні завершені задачі'} />
+          <KpiCard icon={stats.netBacklog > 0 ? TrendingUp : stats.netBacklog < 0 ? TrendingDown : Activity}
+            value={stats.netBacklog > 0 ? `+${stats.netBacklog}` : stats.netBacklog}
+            label="Зміна беклогу"
+            sub={`створено ${stats.createdPeriod} · закрито ${stats.donePeriod}`} />
           <KpiCard icon={stats.createdPeriod > stats.donePeriod ? TrendingUp : TrendingDown}
             value={stats.createdPeriod}
-            label={`Відкрито за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
+            label={`Створено за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
             series={stats.days.map(day => day.values[1])}
             sub={stats.createdPeriod > stats.donePeriod
               ? 'Більше відкривається, ніж закривається'
@@ -239,8 +227,8 @@ export default function VelocityTab({
         </div>
 
         {stats.invalidCycleCount > 0 && (
-          <Alert variant="error" title="Помилка даних cycle time">
-            Виявлено {stats.invalidCycleCount} {plural(stats.invalidCycleCount, ['завдання', 'завдання', 'завдань'])} з датою закриття раніше за початок циклу. Некоректні значення не включено в середнє.
+          <Alert variant="error" title="Помилка дат завершення">
+            Виявлено {stats.invalidCycleCount} {plural(stats.invalidCycleCount, ['завдання', 'завдання', 'завдань'])} з датою завершення раніше за дату створення. Некоректні значення не включено в розрахунок.
           </Alert>
         )}
 
@@ -265,31 +253,28 @@ export default function VelocityTab({
                 way of naming the same thing, and one that says nothing at all
                 to a reader who cannot separate the hues. */}
             <BarList
-              items={stats.byType.map(({ type, label, color, icon: TypeGlyph, total, done }) => ({
+              items={stats.byType.map(({ type, label, color, icon: TypeGlyph, created, done }) => ({
                 id: type,
                 label,
                 value: done,
                 color,
                 leading: <TypeGlyph size={14} className="shrink-0" style={{ color }} />,
-                meta: `з ${total}`,
+                meta: `створено ${created}`,
               }))}
-              emptyText="Немає даних"
+              emptyText="За період задач не створювали й не закривали"
             />
           </ChartCard>
         </div>
 
-        <ChartCard
+        <TaskListCard
+          title="Найстаріші відкриті завдання"
           icon={TrendingDown}
-          title="Скільки роботи лишилось"
-          meta={`${period} ${plural(period, ['день', 'дні', 'днів'])}`}
-        >
-          <TrendChart
-            data={burndown}
-            valueLabel="Фактично лишилось"
-            referenceLabel="Рівний темп"
-            height={140}
-          />
-        </ChartCard>
+          count={openIssues.length}
+          issues={openIssues}
+          members={members}
+          projects={projects}
+          emptyText="Відкритих завдань немає"
+        />
 
         {/* «По проєктах» stood beside this as a bar list of what each project
             closed — the same subject as the table on «Огляд», drawn a second

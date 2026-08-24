@@ -13,7 +13,7 @@
     "long-text"
   ],
   "totals": {
-    "components": 115,
+    "components": 114,
     "stateful": 103,
     "hover": 68,
     "focus": 68,
@@ -485,7 +485,6 @@
       "hover": "own",
       "focus": "own"
     },
-    "TrendChart": {},
     "TypeBadge": {
       "long-text": "label"
     },
@@ -931,9 +930,6 @@
     ],
     "TopHeader": [
       "headers"
-    ],
-    "TrendChart": [
-      "charts"
     ],
     "TypeBadge": [
       "badges"

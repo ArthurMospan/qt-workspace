@@ -420,13 +420,10 @@ test('what measures output reads delivered; what asks "is there work left" reads
   assert.match(billing, /deliveredStatusIds\.includes\(issue\.columnId \|\| issue\.status\)/);
 
   // And the ones that must stay closed: an unfinished task is overdue when its
-  // date passes, blocks what it blocked, and is work remaining on a burndown —
+  // date passes, blocks what it blocked, and belongs in the list of open work —
   // «На перевірці» included, which is exactly why it does not close a task.
   assert.match(analytics, /isDueDateOverdue\(i\.dueDate, \{ now, timeZone \}\)[\s\S]{0,80}&& !closedSet\.has/);
-  // The burndown draws work *remaining*, so it reads the closed set rather than
-  // the delivered one. It feeds the shared `TrendChart` now; the set it reads is
-  // unchanged.
-  assert.match(velocity, /function useBurndown\([^)]*closedSet/);
+  assert.match(velocity, /const openIssues = useMemo\([\s\S]{0,120}!closedSet\.has/);
   assert.match(workload, /const openItems = memberIssues\.filter\(issue => !closedSet\.has/);
 });
 

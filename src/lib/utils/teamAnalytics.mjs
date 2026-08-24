@@ -14,7 +14,17 @@ export function filterTeamTimeLogs(timeLogs = [], projectIds = [], memberId = 'a
   });
 }
 
-export function memberAnalyticsHref(memberId) {
+export function memberAnalyticsHref(memberId, {
+  projectIds = [],
+  period = 30,
+  view = 'overview',
+} = {}) {
   const normalizedId = typeof memberId === 'string' ? memberId.trim() : '';
-  return normalizedId ? `/analytics/team/${encodeURIComponent(normalizedId)}` : '/analytics?tab=workload';
+  if (!normalizedId) return '/analytics?tab=workload';
+  const params = new URLSearchParams();
+  if (projectIds.length > 0) params.set('projects', [...new Set(projectIds)].join(','));
+  if (period !== 30) params.set('period', String(period));
+  if (view !== 'overview') params.set('view', view);
+  const query = params.toString();
+  return `/analytics/team/${encodeURIComponent(normalizedId)}${query ? `?${query}` : ''}`;
 }

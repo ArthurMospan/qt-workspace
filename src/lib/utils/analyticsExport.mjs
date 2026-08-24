@@ -334,14 +334,14 @@ export function buildOverviewExport({
           { id: 'value', label: 'Значення', width: 16, value: row => row.value },
         ],
         rows: [
-          { label: 'Робочі задачі', value: `${stats.done} / ${stats.total}` },
-          { label: 'Виконано', value: `${stats.completionPct}%` },
+          { label: 'Відкрито зараз', value: String(stats.open) },
+          { label: 'У роботі зараз', value: String(stats.inProgress) },
           { label: `Закрито за ${period} днів`, value: String(stats.recentDone) },
+          { label: 'Прострочено зараз', value: String(stats.overdue.length) },
           { label: 'Зафіксовано часу', value: durationLabel(stats.periodMin) },
           { label: 'Зафіксовано годин', value: String(hoursValue(stats.periodMin)).replace('.', ',') },
-          { label: 'Прострочено', value: String(stats.overdue.length) },
-          { label: 'Без виконавця', value: String(stats.noAssignee) },
-          { label: 'Без оцінки', value: String(stats.unestimated) },
+          { label: 'Без виконавця', value: String(stats.noAssignee.length) },
+          { label: 'Без оцінки', value: String(stats.unestimated.length) },
         ],
       },
       {
@@ -612,6 +612,10 @@ export function buildVelocityExport({
         rows: [
           { label: `Закрито за ${period} днів`, value: String(stats.donePeriod) },
           { label: 'Створено за період', value: String(stats.createdPeriod) },
+          {
+            label: 'Зміна беклогу',
+            value: `${stats.netBacklog > 0 ? '+' : ''}${stats.netBacklog || 0}`,
+          },
           ...(stats.velocityTrend === null || stats.velocityTrend === undefined
             ? []
             : [{ label: 'Зміна до попереднього періоду', value: `${stats.velocityTrend}%` }]),
@@ -621,7 +625,7 @@ export function buildVelocityExport({
           // screen says, and the screen stopped leading with the mean.
           ...(stats.medianCycleTime === null || stats.medianCycleTime === undefined
             ? []
-            : [{ label: 'Типовий цикл, днів', value: String(stats.medianCycleTime) }]),
+            : [{ label: 'Від створення до завершення, днів', value: String(stats.medianCycleTime) }]),
           ...(stats.p85CycleTime === null || stats.p85CycleTime === undefined
             ? []
             : [{ label: '85% закриваються за, днів', value: String(stats.p85CycleTime) }]),
@@ -639,7 +643,7 @@ export function buildVelocityExport({
       },
       {
         id: 'weeks',
-        title: 'Velocity по тижнях',
+        title: 'Пропускна здатність по тижнях',
         columns: [
           { id: 'label', label: 'Тиждень з', width: 14, value: row => row.label },
           { id: 'closed', label: 'Закрито', type: 'number', width: 10, value: row => row.values[0] },
@@ -649,12 +653,12 @@ export function buildVelocityExport({
       },
       {
         id: 'types',
-        title: 'По типах',
+        title: 'Потік по типах',
         columns: [
           { id: 'label', label: 'Тип', width: 20, value: row => row.label },
-          { id: 'total', label: 'Задач', type: 'number', width: 9, value: row => row.total },
+          { id: 'created', label: 'Створено', type: 'number', width: 10, value: row => row.created },
           { id: 'done', label: 'Закрито', type: 'number', width: 10, value: row => row.done },
-          { id: 'pct', label: 'Виконано %', type: 'percent', width: 12, value: row => row.pct },
+          { id: 'net', label: 'Зміна беклогу', type: 'number', width: 14, value: row => row.net },
         ],
         rows: stats.byType,
       },

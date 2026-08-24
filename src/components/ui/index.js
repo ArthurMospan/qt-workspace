@@ -73,7 +73,6 @@ export { default as DataTable } from './DataDisplay/DataTable'
 // track colour or what a full bar meant.
 export { default as BarList } from './Charts/BarList'
 export { default as ColumnChart } from './Charts/ColumnChart'
-export { default as TrendChart } from './Charts/TrendChart'
 export { default as Meter } from './Charts/Meter'
 export { default as Sparkline } from './Charts/Sparkline'
 export { default as MarkdownViewer, setTaskChecked } from './DataDisplay/MarkdownViewer'

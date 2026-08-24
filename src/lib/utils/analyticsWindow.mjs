@@ -90,6 +90,24 @@ export function timesheetTimeLogWindow(mode, anchor) {
 }
 
 /**
+ * A member detail has two different time questions behind one route.
+ * Overview/work use the trailing analytics period; Timesheet owns the week or
+ * month its grid is showing. Keeping the switch here makes it impossible for
+ * the child grid to page to March while the parent still queries August.
+ */
+export function memberAnalyticsTimeLogWindow({
+  view,
+  mode,
+  anchor,
+  nowMillis,
+  periodDays,
+  timeZone,
+}) {
+  if (view === 'timesheet') return timesheetTimeLogWindow(mode, anchor);
+  return dayRangeTimeLogWindow(periodDayRange(nowMillis, periodDays, timeZone));
+}
+
+/**
  * The same period as a bound on raw records, for the readings a per-day total
  * cannot answer — «час на задачах, призначених Анні», a search, a filter by
  * priority. One definition of the period, two ways of asking it, so the fast

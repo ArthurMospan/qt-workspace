@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 115,
-    "props": 861,
-    "documentedProps": 861,
+    "components": 114,
+    "props": 856,
+    "documentedProps": 856,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -6971,47 +6971,6 @@
           "type": "number",
           "values": [],
           "description": "Number on the bell."
-        }
-      ]
-    },
-    "TrendChart": {
-      "file": "src/components/ui/Charts/TrendChart.jsx",
-      "summary": "A measured series over time, optionally against a reference.",
-      "props": [
-        {
-          "name": "className",
-          "default": "''",
-          "type": "string",
-          "values": [],
-          "description": "Placement in the parent only."
-        },
-        {
-          "name": "data",
-          "default": "[]",
-          "type": "{label: string, value: number, reference?: number}[]",
-          "values": [],
-          "description": "One entry per time slot."
-        },
-        {
-          "name": "height",
-          "default": "130",
-          "type": "number",
-          "values": [],
-          "description": "Plot height in pixels, excluding the axis band below it."
-        },
-        {
-          "name": "referenceLabel",
-          "default": "",
-          "type": "string",
-          "values": [],
-          "description": "What the reference line means. Omit it and no reference is drawn."
-        },
-        {
-          "name": "valueLabel",
-          "default": "'Фактично'",
-          "type": "string",
-          "values": [],
-          "description": "What the measured line means. Named in the legend and the tooltip."
         }
       ]
     },

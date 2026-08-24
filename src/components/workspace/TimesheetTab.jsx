@@ -11,7 +11,7 @@ import { CalendarIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Dialog, Button, CalendarDayCell, CalendarDayNumber, Card, FormGroup, Select, Input, EmptyState } from '@/components/ui';
+import { Alert, Dialog, Button, CalendarDayCell, CalendarDayNumber, Card, FormGroup, Select, Input, EmptyState } from '@/components/ui';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
 import {
   calendarEventHref,
@@ -23,6 +23,7 @@ import { buildTimesheetExport, fileNameDate } from '@/lib/utils/analyticsExport.
 import { createTaskTimeLogViaApi } from '@/lib/services/timeLogs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { isArchivedIssue, withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
+import { findTimeLogAnomalies } from '@/lib/utils/timeLogAnomalies.mjs';
 
 // ── Working-time constants (like YouTrack: 1д = 8г, 1т = 5д) ────────────────
 const DAY_MIN = 8 * 60;
@@ -647,6 +648,10 @@ export default function TimesheetTab({
   }, [timeLogs, rangeStart, rangeEnd, isTeam, member]);
 
   const totalMin = rangeLogs.reduce((s, l) => s + (l.spentMinutes || 0), 0);
+  const anomalousLogs = useMemo(
+    () => findTimeLogAnomalies(rangeLogs, events),
+    [events, rangeLogs],
+  );
   const selectedMember = !isTeam ? members.find(m => (m.id || m.uid) === member) : null;
   const teamCapacity = isTeam ? capacity * Math.max(members.length, 1) : capacity;
 
@@ -700,6 +705,16 @@ export default function TimesheetTab({
             {isTeam && <span className="text-faint"> · {members.length} учасн.</span>}
           </p>
         </div>
+
+        {anomalousLogs.length > 0 && (
+          <Alert
+            variant="warning"
+            title="Перевірте незвично довгі записи часу"
+            className="mb-4"
+          >
+            Знайдено записів: {anomalousLogs.length}. Вони враховані в підсумку, але їхня тривалість значно перевищує звичайний робочий день або тривалість події в календарі.
+          </Alert>
+        )}
 
         {/* Grid */}
         {timeLogs.length === 0 ? (

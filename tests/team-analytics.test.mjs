@@ -74,6 +74,10 @@ test('team analytics counts every task in scope, a parent with subtasks included
 
 test('employee analytics opens as a dedicated encoded route', () => {
   assert.equal(memberAnalyticsHref('user/42'), '/analytics/team/user%2F42');
+  assert.equal(
+    memberAnalyticsHref('user/42', { projectIds: ['p1', 'p2', 'p1'], period: 14 }),
+    '/analytics/team/user%2F42?projects=p1%2Cp2&period=14',
+  );
   assert.equal(memberAnalyticsHref(''), '/analytics?tab=workload');
 });
 

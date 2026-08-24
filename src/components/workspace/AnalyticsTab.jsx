@@ -13,7 +13,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import {
-  BarList, ChartCard, DataTable, Meter, TaskListCard,
+  BarList, ChartCard, DataTable, LoadingSpinner, Meter, TaskListCard,
 } from '@/components/ui';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import AttentionPanel from '@/components/workspace/AttentionPanel';
@@ -42,7 +42,13 @@ export default function AnalyticsTab({
 }) {
   const { activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
-  const { totalMinutes, byUser } = useProjectTimeLogs(projectId);
+  const {
+    totalMinutes,
+    byUser,
+    loading: timeLoading,
+    error: timeError,
+    refresh: refreshTime,
+  } = useProjectTimeLogs(projectId);
   const { statuses, closedStatusIds, deliveredStatusIds, priorities } = useWorkflowConfig();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -204,6 +210,32 @@ export default function AnalyticsTab({
       issues: stats.unestimated,
     },
   ].filter(Boolean);
+
+  if (timeLoading) {
+    return (
+      <div className="flex min-h-[360px] flex-1 items-center justify-center">
+        <LoadingSpinner size="md" />
+      </div>
+    );
+  }
+
+  if (timeError) {
+    return (
+      <div className="flex-1 pb-8">
+        <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface min-h-[360px]">
+          <EmptyState
+            icon={AlertTriangle}
+            title="Не вдалося завантажити час проєкту"
+            description="Показники не показуємо як нулі, бо журнали часу недоступні. Спробуйте ще раз."
+            action="Спробувати ще"
+            onAction={refreshTime}
+            context="page"
+            surface="card"
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (filteredIssues.length === 0) {
     return (

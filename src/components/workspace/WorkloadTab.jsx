@@ -513,9 +513,22 @@ function MemberWork({ stat, projects, members }) {
   );
 }
 
-function MemberTimesheet({ stat, members, projects, events }) {
-  const [mode, setMode] = useState('week');
-  const [anchor, setAnchor] = useState(() => new Date());
+function MemberTimesheet({
+  stat,
+  members,
+  projects,
+  events,
+  controlledMode,
+  onModeChange,
+  controlledAnchor,
+  onAnchorChange,
+}) {
+  const [localMode, setLocalMode] = useState('week');
+  const [localAnchor, setLocalAnchor] = useState(() => new Date());
+  const mode = controlledMode ?? localMode;
+  const anchor = controlledAnchor ?? localAnchor;
+  const setMode = onModeChange || setLocalMode;
+  const setAnchor = onAnchorChange || setLocalAnchor;
   const shift = direction => {
     setAnchor(previous => {
       const next = new Date(previous);
@@ -575,8 +588,16 @@ function MemberDetail({
   onBack,
   standalone = false,
   filters,
+  controlledView,
+  onViewChange,
+  timesheetMode,
+  onTimesheetModeChange,
+  timesheetAnchor,
+  onTimesheetAnchorChange,
 }) {
-  const [view, setView] = useState('overview');
+  const [localView, setLocalView] = useState('overview');
+  const view = controlledView ?? localView;
+  const setView = onViewChange || setLocalView;
 
   return (
     <div className="w-full pb-16">
@@ -626,7 +647,16 @@ function MemberDetail({
           <MemberWork stat={stat} projects={projects} members={members} />
         )}
         {view === 'timesheet' && (
-          <MemberTimesheet stat={stat} members={members} projects={projects} events={events} />
+          <MemberTimesheet
+            stat={stat}
+            members={members}
+            projects={projects}
+            events={events}
+            controlledMode={timesheetMode}
+            onModeChange={onTimesheetModeChange}
+            controlledAnchor={timesheetAnchor}
+            onAnchorChange={onTimesheetAnchorChange}
+          />
         )}
       </div>
     </div>
@@ -664,6 +694,12 @@ export default function WorkloadTab({
   // Rendered in the member header. The standalone member page owns the filter
   // controls but has no header row of its own to put them in.
   detailFilters,
+  detailView,
+  onDetailViewChange,
+  timesheetMode,
+  onTimesheetModeChange,
+  timesheetAnchor,
+  onTimesheetAnchorChange,
   onExportReady,
   selectedProjectIds = [],
   formatDate,
@@ -863,6 +899,12 @@ export default function WorkloadTab({
           onBack={() => onSelectMember?.('all')}
           standalone={standaloneDetail}
           filters={detailFilters}
+          controlledView={detailView}
+          onViewChange={onDetailViewChange}
+          timesheetMode={timesheetMode}
+          onTimesheetModeChange={onTimesheetModeChange}
+          timesheetAnchor={timesheetAnchor}
+          onTimesheetAnchorChange={onTimesheetAnchorChange}
         />
       ) : (
         <TeamOverview

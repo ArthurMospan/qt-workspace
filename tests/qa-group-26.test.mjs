@@ -117,7 +117,7 @@ test('sprint labels and YouTrack import metadata use the new contracts everywher
   }
   assert.match(importer, /importedAt: firstImportedAt/);
   assert.match(importer, /importedAt: currentImportAt/);
-  assert.match(velocity, /Помилка даних cycle time/);
+  assert.match(velocity, /Помилка дат завершення/);
   assert.doesNotMatch(velocity, /\.filter\(v => v !== null && v >= 0\)/);
   assert.doesNotMatch(issueDetail, /length === 1 \? 'запис'/);
   assert.doesNotMatch(chatSearch, /count < 5/);

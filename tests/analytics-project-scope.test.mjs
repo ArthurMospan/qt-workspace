@@ -63,3 +63,20 @@ test('billing never turns an estimate into money', async () => {
   // a new position may never be created with it.
   assert.match(payload, /const SOURCE_KINDS = new Set\(\['actual', 'manual', 'none'\]\);/);
 });
+
+test('timesheet task names use the project scope, not hidden overview filters', async () => {
+  const analytics = await read('../src/app/(app)/analytics/page.js');
+
+  assert.match(
+    analytics,
+    /const projectScopedIssueReferences = useMemo\([\s\S]{0,260}allIssues\.filter/,
+  );
+  assert.match(
+    analytics,
+    /<TimesheetTab[\s\S]{0,180}issues=\{projectScopedIssueReferences\}/,
+  );
+  assert.doesNotMatch(
+    analytics,
+    /<TimesheetTab[\s\S]{0,180}issues=\{filteredIssuesWithArchived\}/,
+  );
+});

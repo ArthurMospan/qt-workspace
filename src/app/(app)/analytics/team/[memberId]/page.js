@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Users } from 'lucide-react';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { AlertTriangle, Users } from 'lucide-react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMinuteClock } from '@/lib/hooks/useMinuteClock';
@@ -26,10 +26,18 @@ import {
 } from '@/lib/utils/teamAnalytics.mjs';
 import {
   ANALYTICS_PERIOD_DAYS,
-  dayRangeTimeLogWindow,
-  periodDayRange,
+  memberAnalyticsTimeLogWindow,
 } from '@/lib/utils/analyticsWindow.mjs';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
+import {
+  analyticsDateKey,
+  analyticsDateParam,
+  analyticsPeriodParam,
+  commaListParam,
+  memberViewParam,
+  setSearchParam,
+  timesheetModeParam,
+} from '@/lib/utils/analyticsUrlState.mjs';
 
 const PERIOD_OPTIONS = ANALYTICS_PERIOD_DAYS.map(days => ({ value: days, label: `${days}д` }));
 
@@ -40,6 +48,8 @@ function memberName(member) {
 export default function MemberAnalyticsPage() {
   const { memberId } = useParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { activeOrg, projects = [] } = useAppContext();
   // Which day an hour belongs to is a fact about the workspace, so the period
   // is measured in the workspace's own days — the same ones the daily totals
@@ -52,6 +62,10 @@ export default function MemberAnalyticsPage() {
   const { members = [], loading: membersLoading } = useOrganization();
   const [projectFilters, setProjectFilters] = useState([]);
   const [period, setPeriod] = useState(30);
+  const [detailView, setDetailView] = useState('overview');
+  const [timesheetMode, setTimesheetMode] = useState('week');
+  const [timesheetAnchor, setTimesheetAnchor] = useState(() => new Date());
+  const [urlReady, setUrlReady] = useState(false);
   const activeProjectIds = useMemo(
     () => activeProjects.map(project => project.id),
     [activeProjects],
@@ -61,21 +75,95 @@ export default function MemberAnalyticsPage() {
   // thirty-day bar chart.
   const now = useMinuteClock();
   const timeLogWindow = useMemo(
-    () => dayRangeTimeLogWindow(periodDayRange(now, period, timeZone)),
-    [now, period, timeZone],
+    () => (urlReady ? memberAnalyticsTimeLogWindow({
+      view: detailView,
+      mode: timesheetMode,
+      anchor: timesheetAnchor,
+      nowMillis: now,
+      periodDays: period,
+      timeZone,
+    }) : null),
+    [detailView, now, period, timeZone, timesheetAnchor, timesheetMode, urlReady],
   );
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const projectsFromUrl = commaListParam(params.get('projects'));
+    const nextAnchor = analyticsDateParam(params.get('anchor'), new Date());
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setProjectFilters(previous => (
+        previous.join(',') === projectsFromUrl.join(',') ? previous : projectsFromUrl
+      ));
+      setPeriod(analyticsPeriodParam(params.get('period')));
+      setDetailView(memberViewParam(params.get('view')));
+      setTimesheetMode(timesheetModeParam(params.get('mode')));
+      setTimesheetAnchor(previous => (
+        analyticsDateKey(previous) === analyticsDateKey(nextAnchor) ? previous : nextAnchor
+      ));
+      setUrlReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!urlReady || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setSearchParam(params, 'projects', projectFilters);
+    setSearchParam(params, 'period', period, 30);
+    setSearchParam(params, 'view', detailView, 'overview');
+    if (detailView === 'timesheet') {
+      setSearchParam(params, 'mode', timesheetMode, 'week');
+      setSearchParam(params, 'anchor', analyticsDateKey(timesheetAnchor));
+    } else {
+      params.delete('mode');
+      params.delete('anchor');
+    }
+    const query = params.toString();
+    const href = `${pathname}${query ? `?${query}` : ''}`;
+    if (`${window.location.pathname}${window.location.search}` !== href) {
+      window.history.replaceState(null, '', href);
+    }
+  }, [detailView, pathname, period, projectFilters, timesheetAnchor, timesheetMode, urlReady]);
+
+  const changeDetailView = useCallback(nextView => {
+    const safeView = memberViewParam(nextView);
+    setDetailView(safeView);
+    if (!urlReady || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setSearchParam(params, 'view', safeView, 'overview');
+    const query = params.toString();
+    const href = `${pathname}${query ? `?${query}` : ''}`;
+    if (`${window.location.pathname}${window.location.search}` !== href) {
+      window.history.pushState(null, '', href);
+    }
+  }, [pathname, urlReady]);
+
+  const teamHref = useMemo(() => {
+    const params = new URLSearchParams({ tab: 'workload' });
+    setSearchParam(params, 'projects', projectFilters);
+    setSearchParam(params, 'period', period, 30);
+    return `/analytics?${params.toString()}`;
+  }, [period, projectFilters]);
   const {
     issues,
     allIssues,
     timeLogs,
     loading,
     refreshing,
+    error: recordsError,
     readAt,
     refresh: refreshRecords,
-  } = useWorkspaceAnalytics(activeProjectIds, { timeLogWindow, live: false });
+  } = useWorkspaceAnalytics(activeProjectIds, {
+    includeLinks: false,
+    includeTimeLogs: urlReady,
+    timeLogWindow,
+    live: false,
+  });
   const {
     events,
     loading: calendarLoading,
+    error: calendarError,
     refresh: refreshCalendar,
   } = useCalendarEvents();
   const refreshReading = useCallback(() => {
@@ -109,18 +197,32 @@ export default function MemberAnalyticsPage() {
     useWorkspaceStore.setState({
       breadcrumbs: [
         { label: 'Аналітика', href: '/analytics' },
-        { label: 'Команда', href: '/analytics?tab=workload' },
+        { label: 'Команда', href: teamHref },
         { label: memberName(member), href: null },
       ],
     });
     return () => useWorkspaceStore.setState({ breadcrumbs: [] });
-  }, [member]);
+  }, [member, teamHref]);
 
   // The member list has to have arrived before "not found" can mean anything.
-  if (loading || calendarLoading || membersLoading) {
+  if (!urlReady || loading || calendarLoading || membersLoading) {
     return (
       <div className="flex min-h-[360px] flex-1 items-center justify-center">
         <LoadingSpinner size="md" />
+      </div>
+    );
+  }
+
+  if (recordsError || calendarError) {
+    return (
+      <div className="flex min-h-[440px] flex-1 items-center justify-center bg-white">
+        <EmptyState
+          icon={AlertTriangle}
+          title="Не вдалося завантажити аналітику учасника"
+          description="Цифри не показуємо, бо частина даних недоступна. Спробуйте завантажити їх ще раз."
+          action="Спробувати ще"
+          onAction={refreshReading}
+        />
       </div>
     );
   }
@@ -133,7 +235,7 @@ export default function MemberAnalyticsPage() {
           title="Учасника не знайдено"
           description="Можливо, ця людина більше не входить до організації."
           action="Повернутися до команди"
-          onAction={() => router.push('/analytics?tab=workload')}
+          onAction={() => router.push(teamHref)}
         />
       </div>
     );
@@ -154,7 +256,13 @@ export default function MemberAnalyticsPage() {
             period={period}
             selectedMemberId={memberId}
             standaloneDetail
-            onSelectMember={() => router.push('/analytics?tab=workload')}
+            detailView={detailView}
+            onDetailViewChange={changeDetailView}
+            timesheetMode={timesheetMode}
+            onTimesheetModeChange={setTimesheetMode}
+            timesheetAnchor={timesheetAnchor}
+            onTimesheetAnchorChange={setTimesheetAnchor}
+            onSelectMember={() => router.push(teamHref)}
             // The filters live in the member header rather than in a page
             // header of their own — they read as controls for the analytics
             // they actually scope, next to the person being analysed.

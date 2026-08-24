@@ -90,8 +90,9 @@ test('an archived task keeps its hours in the timesheet and on the invoice', asy
   // still an hour that was worked, and dropping it would bill less than was done.
   assert.match(page, /const billingIssues = allIssues\.filter/);
   // The timesheet has to be able to name the task an old entry belongs to.
-  assert.match(page, /<TimesheetTab\s+issues=\{filteredIssuesWithArchived\}/);
-  assert.match(page, /logIssues=\{filteredIssuesWithArchived\}/);
+  assert.match(page, /const projectScopedIssueReferences = useMemo/);
+  assert.match(page, /<TimesheetTab\s+issues=\{projectScopedIssueReferences\}/);
+  assert.match(page, /logIssues=\{projectScopedIssueReferences\}/);
   // …while new time is still booked only against tasks that are in use.
   assert.match(timesheet, /const projectIssues = useMemo\(\s*[\s\S]{0,80}withoutArchivedIssues\(issues\)/);
   // «Остання активність» reads the project-wide list, so a person's last touch

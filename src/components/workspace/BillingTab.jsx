@@ -10,12 +10,12 @@ import {
   collection, query, where, onSnapshot,
 } from 'firebase/firestore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Ban, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
+import { AlertTriangle, Ban, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
 import { Select } from '@/components/ui/Select';
 import {
   Button, Surface, LoadingSpinner, Input, Textarea, Tabs, Checkbox,
-  Dialog, Card, Alert, ExportMenu, Label, Pill, PriorityBadge, Segmented, TypeBadge,
+  Dialog, Card, Alert, EmptyState, ExportMenu, Label, Pill, PriorityBadge, Segmented, TypeBadge,
   useConfirm,
 } from '@/components/ui';
 import { buildInvoiceExport } from '@/lib/utils/analyticsExport.mjs';
@@ -578,7 +578,12 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
   const billingProjectKey = `${activeOrgId || ''}:${projectId || ''}`;
   const showToast = useWorkspaceStore(state => state.showToast);
   const confirmDialog = useConfirm();
-  const { logs, loading: logsLoading } = useProjectAllTimeLogs(projectId);
+  const {
+    logs,
+    loading: logsLoading,
+    error: logsError,
+    refresh: refreshLogs,
+  } = useProjectAllTimeLogs(projectId);
   const { statuses, deliveredStatusIds, types = [], priorities = [] } = useWorkflowConfig();
   const [savedInvoiceState, setSavedInvoiceState] = useState({
     projectKey: '',
@@ -1077,6 +1082,20 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
     });
   };
   const closeInvoicePreview = () => setInvoicePreviewState(null);
+
+  if (logsError) {
+    return (
+      <div className="flex min-h-[440px] flex-1 items-center justify-center">
+        <EmptyState
+          icon={AlertTriangle}
+          title="Не вдалося завантажити час для рахунку"
+          description="Рахунок не формуємо з неповних даних. Перевірте з’єднання та спробуйте ще раз."
+          action="Спробувати ще"
+          onAction={refreshLogs}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">

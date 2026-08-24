@@ -40,6 +40,7 @@ export function useAnalyticsRollups(projectIds = [], { dayRange = null } = {}) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [readAt, setReadAt] = useState(null);
+  const [error, setError] = useState(null);
   const [nonce, setNonce] = useState(0);
   const projectScope = [...new Set(projectIds.filter(Boolean))].sort().join(',');
   const startDay = dayRange?.startDay || '';
@@ -56,6 +57,7 @@ export function useAnalyticsRollups(projectIds = [], { dayRange = null } = {}) {
       queueMicrotask(() => {
         setRollups([]);
         setReadAt(null);
+        setError(null);
         setRefreshing(false);
         // Still resolving the organization is not the same as having read it
         // and found nothing. Nothing asked for is neither: a screen that wants
@@ -78,6 +80,7 @@ export function useAnalyticsRollups(projectIds = [], { dayRange = null } = {}) {
       } else {
         setRefreshing(true);
       }
+      setError(null);
     });
 
     const chunks = chunkProjectIds(projectScope ? projectScope.split(',') : []);
@@ -103,15 +106,22 @@ export function useAnalyticsRollups(projectIds = [], { dayRange = null } = {}) {
       )),
     ];
 
-    Promise.all(queries.map(sourceQuery => getDocs(sourceQuery).catch(error => {
-      reportLoadError('[useAnalyticsRollups]', error);
-      return { docs: [] };
-    }))).then(snapshots => {
+    Promise.allSettled(queries.map(sourceQuery => getDocs(sourceQuery))).then(results => {
       if (cancelled || requestRef.current !== request) return;
+      const failures = results.filter(result => result.status === 'rejected');
+      if (failures.length > 0) {
+        failures.forEach(result => reportLoadError('[useAnalyticsRollups]', result.reason));
+        setError(failures[0].reason || new Error('Не вдалося завантажити підсумки'));
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      const snapshots = results.map(result => result.value);
       setRollups(snapshots.flatMap(snapshot => snapshot.docs.map(document => ({
         id: document.id,
         ...document.data(),
       }))));
+      setError(null);
       setReadAt(Date.now());
       setLoading(false);
       setRefreshing(false);
@@ -122,5 +132,5 @@ export function useAnalyticsRollups(projectIds = [], { dayRange = null } = {}) {
     };
   }, [activeOrgId, authLoading, orgLoading, projectScope, startDay, endDay, target, nonce]);
 
-  return { rollups, loading, refreshing, readAt, refresh };
+  return { rollups, loading, refreshing, error, readAt, refresh };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -12,6 +12,9 @@ export function useProjectTimeLogs(projectId) {
   const [totalMinutes, setTotalMinutes] = useState(0);
   const [byUser, setByUser] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [nonce, setNonce] = useState(0);
+  const refresh = useCallback(() => setNonce(value => value + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -19,6 +22,7 @@ export function useProjectTimeLogs(projectId) {
       if (cancelled) return;
       setTotalMinutes(0);
       setByUser({});
+      setError(null);
       setLoading(Boolean(projectId && activeOrgId));
     });
 
@@ -64,6 +68,7 @@ export function useProjectTimeLogs(projectId) {
       error => {
         if (cancelled) return;
         reportLoadError(`[useProjectTimeLogs:${key}]`, error);
+        setError(error);
         buckets[key] = [];
         ready.add(key);
         publish();
@@ -90,7 +95,7 @@ export function useProjectTimeLogs(projectId) {
       cancelled = true;
       unsubs.forEach(unsubscribe => unsubscribe());
     };
-  }, [activeOrgId, projectId]);
+  }, [activeOrgId, projectId, nonce]);
 
-  return { totalMinutes, byUser, loading };
+  return { totalMinutes, byUser, loading, error, refresh };
 }

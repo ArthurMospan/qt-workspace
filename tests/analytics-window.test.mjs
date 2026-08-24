@@ -6,6 +6,7 @@ import {
   DAY_MS,
   dayRangeTimeLogWindow,
   isTimeLogWindow,
+  memberAnalyticsTimeLogWindow,
   periodDayRange,
   timeLogWindowKey,
   timesheetRange,
@@ -82,6 +83,21 @@ test('the timesheet window is the week or month on screen, and moves with it', (
   // A window in the past is bounded on both sides.
   const march = timesheetTimeLogWindow('month', new Date(2026, 2, 15));
   assert.ok(march.untilMillis < week.sinceMillis);
+});
+
+test('member analytics reads the period on overview and the visible range on timesheet', () => {
+  const now = Date.parse('2026-08-24T10:00:00.000Z');
+  const anchor = new Date(2026, 2, 15);
+  const overview = memberAnalyticsTimeLogWindow({
+    view: 'overview', mode: 'month', anchor, nowMillis: now, periodDays: 30, timeZone: KYIV,
+  });
+  const timesheet = memberAnalyticsTimeLogWindow({
+    view: 'timesheet', mode: 'month', anchor, nowMillis: now, periodDays: 30, timeZone: KYIV,
+  });
+
+  assert.deepEqual(overview, dayRangeTimeLogWindow(periodDayRange(now, 30, KYIV)));
+  assert.deepEqual(timesheet, timesheetTimeLogWindow('month', anchor));
+  assert.ok(timesheet.untilMillis < overview.sinceMillis);
 });
 
 test('a window has an identity, so a moved window re-reads and a re-render does not', () => {

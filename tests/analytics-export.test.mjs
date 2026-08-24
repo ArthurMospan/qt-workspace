@@ -5,6 +5,7 @@ import {
   buildInvoiceExport,
   buildOverviewExport,
   buildTimesheetExport,
+  buildVelocityExport,
   buildWorkloadExport,
   cellText,
   cellValue,
@@ -186,8 +187,10 @@ test('the timesheet is one row per record, newest first, and its total is the su
 test('the overview file carries the figures its charts draw', () => {
   const document = buildOverviewExport({
     stats: {
-      total: 42, done: 18, completionPct: 43, recentDone: 7, periodMin: 380,
-      overdue: [{ id: 'a' }, { id: 'b' }], noAssignee: 3, unestimated: 5,
+      total: 42, open: 24, inProgress: 6, recentDone: 7, periodMin: 380,
+      overdue: [{ id: 'a' }, { id: 'b' }],
+      noAssignee: [{ id: 'c' }, { id: 'd' }, { id: 'e' }],
+      unestimated: [{ id: 'f' }, { id: 'g' }, { id: 'h' }, { id: 'i' }, { id: 'j' }],
       byStatus: [{ id: 'todo', label: 'До виконання', count: 12 }],
       byProject: [{ p: { id: 'p1', name: 'Сайт' }, total: 20, pct: 50, open: 10, overdue: 2, minutes: 380 }],
     },
@@ -206,8 +209,42 @@ test('the overview file carries the figures its charts draw', () => {
     { label: 'Проєкти', value: 'Сайт' },
   ]);
   assert.deepEqual(document.blocks.map(block => block.id), ['kpi', 'statuses', 'time-split', 'projects']);
+  const kpis = document.blocks.find(block => block.id === 'kpi');
+  assert.deepEqual(kpis.rows.slice(0, 4), [
+    { label: 'Відкрито зараз', value: '24' },
+    { label: 'У роботі зараз', value: '6' },
+    { label: 'Закрито за 30 днів', value: '7' },
+    { label: 'Прострочено зараз', value: '2' },
+  ]);
+  assert.ok(kpis.rows.every(row => !String(row.value).includes('undefined')));
+  assert.ok(kpis.rows.every(row => row.value !== '[object Object]'));
   const timeSplit = document.blocks.find(block => block.id === 'time-split');
   assert.equal(timeSplit.total.value, 380, 'the split totals the period, not its own rows');
+});
+
+test('the productivity file compares created and closed flow without a fake completion rate', () => {
+  const document = buildVelocityExport({
+    stats: {
+      donePeriod: 3,
+      createdPeriod: 5,
+      netBacklog: 2,
+      velocityTrend: null,
+      medianCycleTime: 4,
+      p85CycleTime: 9,
+      days: [{ label: '24 серп.', values: [3, 5] }],
+      byType: [{ label: 'Задача', created: 5, done: 3, net: 2 }],
+    },
+    weeklyVelocity: [],
+    recentlyClosed: [],
+    period: 30,
+    today: new Date(2026, 7, 24),
+  });
+
+  const kpis = document.blocks.find(block => block.id === 'kpi');
+  assert.ok(kpis.rows.some(row => row.label === 'Зміна беклогу' && row.value === '+2'));
+  const types = document.blocks.find(block => block.id === 'types');
+  assert.deepEqual(types.columns.map(column => column.label), ['Тип', 'Створено', 'Закрито', 'Зміна беклогу']);
+  assert.ok(!types.columns.some(column => column.label.includes('%')));
 });
 
 test('the team file states each reading in the words the screen used', () => {

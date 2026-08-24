@@ -55,7 +55,7 @@ function expandRecurringEvents(sourceEvents) {
   });
 }
 
-export function useCalendarEvents() {
+export function useCalendarEvents({ enabled = true } = {}) {
   const { activeOrgId, authLoading, orgLoading } = useAppContext();
   const [events, setEvents] = useState([]);
   const [deadlines, setDeadlines] = useState([]);
@@ -63,6 +63,13 @@ export function useCalendarEvents() {
   const [error, setError] = useState(null);
 
   const refresh = useCallback(async ({ silent = false } = {}) => {
+    if (!enabled) {
+      setEvents([]);
+      setDeadlines([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     if (!activeOrgId) {
       setEvents([]);
       setDeadlines([]);
@@ -89,7 +96,7 @@ export function useCalendarEvents() {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [activeOrgId, authLoading, orgLoading]);
+  }, [activeOrgId, authLoading, enabled, orgLoading]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(refresh, 0);

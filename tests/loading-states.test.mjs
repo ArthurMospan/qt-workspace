@@ -57,5 +57,5 @@ test('an unloaded membership list is not treated as a denied organization', asyn
 test('the member page waits for the member list before saying "not found"', async () => {
   const page = await read('../src/app/(app)/analytics/team/[memberId]/page.js');
   assert.match(page, /loading: membersLoading/);
-  assert.match(page, /if \(loading \|\| calendarLoading \|\| membersLoading\)/);
+  assert.match(page, /if \(!urlReady \|\| loading \|\| calendarLoading \|\| membersLoading\)/);
 });

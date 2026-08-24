@@ -3,7 +3,7 @@
 // Loads task logs plus explicitly team-visible calendar logs for one project.
 // Keeping these as separate Firestore queries lets security rules prove that a
 // broad analytics subscription can never return a restricted calendar log.
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -43,6 +43,9 @@ export function useProjectAllTimeLogs(projectId) {
   const [logs, setLogs] = useState([]);
   const [byIssue, setByIssue] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [nonce, setNonce] = useState(0);
+  const refresh = useCallback(() => setNonce(value => value + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +53,7 @@ export function useProjectAllTimeLogs(projectId) {
       if (cancelled) return;
       setLogs([]);
       setByIssue({});
+      setError(null);
       setLoading(Boolean(projectId && activeOrgId));
     });
 
@@ -83,6 +87,7 @@ export function useProjectAllTimeLogs(projectId) {
       error => {
         if (cancelled) return;
         reportLoadError(`[useProjectAllTimeLogs:${key}]`, error);
+        setError(error);
         buckets[key] = [];
         ready.add(key);
         publish();
@@ -109,7 +114,7 @@ export function useProjectAllTimeLogs(projectId) {
       cancelled = true;
       unsubs.forEach(unsubscribe => unsubscribe());
     };
-  }, [activeOrgId, projectId]);
+  }, [activeOrgId, projectId, nonce]);
 
-  return { logs, byIssue, loading };
+  return { logs, byIssue, loading, error, refresh };
 }

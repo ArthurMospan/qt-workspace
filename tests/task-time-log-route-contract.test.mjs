@@ -34,7 +34,7 @@ test('task time-log POST is authenticated, bounded, scoped, and transactional', 
   assert.match(route, /userId: authorization\.user\.uid/);
   assert.match(route, /applyTaskTimeLogMutation\(/);
 
-  const reservationRead = route.indexOf('transaction.get(\n        estimateReservationRef,');
+  const reservationRead = route.search(/transaction\.get\(\s*estimateReservationRef,/);
   const logWrite = route.indexOf('transaction.create(logRef,');
   assert.ok(reservationRead > 0 && reservationRead < logWrite);
 

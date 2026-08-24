@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { Check, Mail, Phone, Search, UserPlus, Users } from 'lucide-react';
+import { AlertTriangle, Check, Mail, Phone, Search, UserPlus, Users } from 'lucide-react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
 import { activeMembers, organizationRoleLabel } from '@/lib/utils/orgMembership.mjs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/Input';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import Pill from '@/components/ui/DataDisplay/Pill';
+import Alert from '@/components/ui/Feedback/Alert';
 
 export default function ProjectTeamTab({
   members = [],
@@ -38,7 +39,7 @@ export default function ProjectTeamTab({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const showToast = useWorkspaceStore(state => state.showToast);
-  const { byUser } = useProjectTimeLogs(projectId);
+  const { byUser, error: timeError, refresh: refreshTime } = useProjectTimeLogs(projectId);
   const { closedStatusIds, deliveredStatusIds } = useWorkflowConfig();
   // Workload counts what is still open; the badge counts what was delivered.
   const deliveredSet = new Set(deliveredStatusIds);
@@ -89,6 +90,16 @@ export default function ProjectTeamTab({
   return (
     <div className="flex flex-1 flex-col pb-8">
       <div data-ui-surface="panel" data-ui-padding="md" className="ui-surface w-full">
+        {timeError && (
+          <Alert variant="error" title="Не вдалося завантажити час команди" className="mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span>Час не показуємо як нуль, бо журнали зараз недоступні.</span>
+              <Button style="secondary" size="sm" icon={AlertTriangle} onClick={refreshTime}>
+                Спробувати ще
+              </Button>
+            </div>
+          </Alert>
+        )}
         {members.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -110,10 +121,14 @@ export default function ProjectTeamTab({
               const memberIssues = issues.filter(issue => issue.assigneeIds?.includes(uid));
               const done = memberIssues.filter(issue => deliveredSet.has(issue.columnId || issue.status)).length;
               const open = memberIssues.length - done;
-              const mins = byUser[uid] || 0;
-              const h = Math.floor(mins / 60);
-              const m = mins % 60;
-              const timeStr = h > 0 ? (m > 0 ? `${h}г ${m}хв` : `${h}г`) : (m > 0 ? `${m}хв` : null);
+               const mins = timeError ? null : (byUser[uid] || 0);
+               const h = Math.floor(mins / 60);
+               const m = mins % 60;
+               const timeStr = timeError
+                 ? 'Недоступно'
+                 : h > 0
+                   ? (m > 0 ? `${h}г ${m}хв` : `${h}г`)
+                   : (m > 0 ? `${m}хв` : null);
 
               return (
                 <button
