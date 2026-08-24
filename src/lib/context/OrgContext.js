@@ -32,6 +32,16 @@ function persistTabOrganization(orgId) {
 
 export function OrgProvider({ user, children }) {
   const [allOrgs,     setAllOrgs]     = useState([]);    // all orgs user belongs to
+  // The role this user holds in each of them, keyed by organization id.
+  //
+  // `orgRole` answers only for the active organization, so the switcher — which
+  // draws every organization at once — had nowhere to ask and read the legacy
+  // `members` array denormalized onto the organization document instead. That
+  // array stopped being maintained: OneB has three members in `orgMemberships`
+  // and one entry there, so the lookup missed and fell through to «member»,
+  // and the owner of a workspace was shown as a plain participant in it.
+  // Access is `orgMemberships` and nothing else (AGENTS.md); so is the label.
+  const [orgRoles,    setOrgRoles]    = useState({});
   const [activeOrgId, setActiveOrgId] = useState(null);
   const [activeOrg,   setActiveOrg]   = useState(null);
   const [orgRole,     setOrgRole]     = useState(null);  // role inside the active org
@@ -69,6 +79,7 @@ export function OrgProvider({ user, children }) {
     if (!user) {
       queueMicrotask(() => {
         setAllOrgs([]);
+        setOrgRoles({});
         setActiveOrgId(null);
         setActiveOrg(null);
         setOrgRole(null);
@@ -110,8 +121,15 @@ export function OrgProvider({ user, children }) {
         if (cancelled) return;
         setOrgError(null);
         setAllOrgs(orgs);
+        setOrgRoles(Object.fromEntries(
+          memSnap.docs
+            .map(document => document.data())
+            .filter(membership => membership.orgId && membership.role)
+            .map(membership => [membership.orgId, membership.role]),
+        ));
 
         if (orgs.length === 0) {
+          setOrgRoles({});
           setNoOrg(true);
           setActiveOrgId(null);
           setActiveOrg(null);
@@ -233,7 +251,7 @@ export function OrgProvider({ user, children }) {
 
   return (
     <OrgContext.Provider value={{
-      allOrgs, activeOrgId, activeOrg, orgRole,
+      allOrgs, orgRoles, activeOrgId, activeOrg, orgRole,
       orgLoading, orgError, noOrg,
       setActiveOrgId, switchOrg,
     }}>

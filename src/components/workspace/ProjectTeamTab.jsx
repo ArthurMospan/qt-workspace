@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { Check, Mail, Phone, Search, UserPlus, Users } from 'lucide-react';
 import { useProjectTimeLogs } from '@/lib/hooks/useProjectTimeLogs';
-import { activeMembers } from '@/lib/utils/orgMembership.mjs';
+import { activeMembers, organizationRoleLabel } from '@/lib/utils/orgMembership.mjs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { updateProjectTeam } from '@/lib/services/projects';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -133,7 +133,7 @@ export default function ProjectTeamTab({
                         <h3 className="ui-type-card-title text-ink truncate">{member.name || 'Анонім'}</h3>
                         {member.role && (
                           <Pill tone="neutral" size="sm" uppercase>
-                            {member.role === 'admin' ? 'Адмін' : member.role === 'owner' ? 'Власник' : 'Учасник'}
+                            {organizationRoleLabel(member.role)}
                           </Pill>
                         )}
                       </div>

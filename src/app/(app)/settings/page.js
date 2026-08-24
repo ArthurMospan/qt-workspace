@@ -13,7 +13,7 @@ import { fetchWorkflowViaApi, updateWorkflowViaApi } from '@/lib/services/workfl
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { deleteAccount, fetchAccountDeletionImpact } from '@/lib/services/account';
 import { plural } from '@/lib/utils/plural.mjs';
-import { isActiveMember } from '@/lib/utils/orgMembership.mjs';
+import { isActiveMember, organizationRoleLabel } from '@/lib/utils/orgMembership.mjs';
 import { can } from '@/lib/utils/can';
 import { archivedIssuesOf } from '@/lib/utils/issueArchive.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
@@ -121,13 +121,6 @@ import { isSystemTaskTypeId } from '@/lib/utils/taskTypes.mjs';
 // ── Constants ────────────────────────────────────────────────────────
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || '';
 const NOOP = () => {};
-// Інлайниться на білді, тому зміна цієї змінної потребує redeploy, не просто
-// рестарту.
-const ROLE_LABELS = {
-  owner: 'Власник',
-  admin: 'Адміністратор',
-  member: 'Учасник'
-};
 // Workflow defaults live in useWorkflowConfig (single source of truth for
 // the board, this page and every other consumer) — never redeclare them here:
 // a local copy is exactly the bug where Settings showed one set of statuses
@@ -3548,7 +3541,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Pill size="lg" className="hidden sm:inline-flex">{positionLabel}</Pill>
-                      <Pill tone="ink-subtle" size="lg">{ROLE_LABELS[member.role] || member.role}</Pill>
+                      <Pill tone="ink-subtle" size="lg">{organizationRoleLabel(member.role)}</Pill>
                       {isAdmin && (
                         <Button
                           onClick={() => setMemberSettingsId(member.id || member.uid)}

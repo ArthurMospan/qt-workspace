@@ -14,6 +14,7 @@ import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 import { useAppContext } from '@/lib/context/AppContext';
 import useFittedLabel from '@/lib/hooks/useFittedLabel';
+import { ORGANIZATION_ROLE_LABELS } from '@/lib/utils/orgMembership.mjs';
 
 /**
  * The one shape a mention has, whoever it names. `IssueMentionChip` and the
@@ -66,11 +67,8 @@ export const MENTION_CHIP_BADGE = 'absolute left-[3px] top-1/2 flex h-4 w-4 -tra
 
 export const MENTION_CHIP = mentionChipClass();
 
-const ORGANIZATION_ROLE_LABELS = {
-  owner: 'Власник',
-  admin: 'Адміністратор',
-  member: 'Учасник',
-};
+// Imported rather than repeated: see `orgMembership.mjs` for why the same
+// three words used to be written out in four files with three spellings.
 
 function findMember(members, value) {
   const normalizedValue = decodeURIComponent(String(value || ''))

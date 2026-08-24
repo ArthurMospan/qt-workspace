@@ -20,6 +20,28 @@ export function membershipId(organizationId, userId) {
   return `${organizationId}_${userId}`;
 }
 
+/**
+ * What a role is called on screen.
+ *
+ * `owner`, `admin` and `member` are stored ids — business semantics that rules,
+ * routes and `can.js` all key off, and that must never be translated in the
+ * database. What a person reads is a different thing, and it was written out by
+ * hand in four places with three different words: «Адміністратор» in the
+ * settings, «Адмін» on a project's team tab, and nothing at all in the
+ * organization switcher, which showed the raw `owner` and `member` capitalised
+ * into English. One map, so a workspace does not call the same role three
+ * things depending on which screen you are looking at.
+ */
+export const ORGANIZATION_ROLE_LABELS = Object.freeze({
+  owner: 'Власник',
+  admin: 'Адміністратор',
+  member: 'Учасник',
+});
+
+export function organizationRoleLabel(role) {
+  return ORGANIZATION_ROLE_LABELS[role] || ORGANIZATION_ROLE_LABELS.member;
+}
+
 export const MEMBER_STATUS = {
   active: 'active',
   deactivated: 'deactivated',

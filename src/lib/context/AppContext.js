@@ -25,7 +25,7 @@ function AppProviderInner({
   signOut,
   children,
 }) {
-  const { allOrgs, activeOrgId, activeOrg, orgRole, orgLoading, orgError, noOrg, switchOrg, setActiveOrgId } = useOrg();
+  const { allOrgs, orgRoles, activeOrgId, activeOrg, orgRole, orgLoading, orgError, noOrg, switchOrg, setActiveOrgId } = useOrg();
   const userId = authLoading ? undefined : (user?.id || user?.uid || null);
   const invitationUid = user?.id || user?.uid;
   const invitationEmail = user?.email;
@@ -111,6 +111,7 @@ function AppProviderInner({
     orgRole,
     noOrg,
     allOrgs,
+    orgRoles,
     switchOrg,
     setActiveOrgId,
     invitationChecked,
@@ -170,6 +171,7 @@ export const useAppContext = () => {
       orgRole: null,
       noOrg: false,
       allOrgs: [],
+      orgRoles: {},
       switchOrg: () => {},
       setActiveOrgId: () => {},
       invitationChecked: false,

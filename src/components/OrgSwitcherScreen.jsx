@@ -9,6 +9,7 @@ import AuthLayout from '@/components/AuthLayout';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { Counter } from '@/components/ui';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
+import { organizationRoleLabel } from '@/lib/utils/orgMembership.mjs';
 
 // Логотипи бувають темні/прозорі (png, svg) і зливаються з темним фоном
 // пікера. Тому під лого завжди є підложка: біла за замовчуванням, або колір
@@ -53,14 +54,14 @@ function OrgBigCard({ org, role, unreadCount, onClick }) {
       </div>
       <div className="flex flex-col items-center min-w-0 w-full text-center mt-2">
         <p className="text-[16px] font-bold text-white w-full truncate transition-transform group-hover/item:scale-105">{org.name || 'Без назви'}</p>
-        <span className="text-[13px] font-medium text-white/50 mt-1 capitalize transition-transform group-hover/item:scale-105">{role || 'Користувач'}</span>
+        <span className="text-[13px] font-medium text-white/50 mt-1 transition-transform group-hover/item:scale-105">{role}</span>
       </div>
     </button>
   );
 }
 
 export default function OrgSwitcherScreen({ onClose }) {
-  const { allOrgs, switchOrg, currentUser } = useAppContext();
+  const { allOrgs, orgRoles, switchOrg, currentUser } = useAppContext();
   const router = useRouter();
   const [expandingOrg, setExpandingOrg] = useState(null);
   const dialogRef = useModalFocus({ isOpen: Boolean(onClose), onClose });
@@ -102,10 +103,13 @@ export default function OrgSwitcherScreen({ onClose }) {
     }, 700); // 700ms for smooth transition
   };
 
-  const getRoleInOrg = (org) => {
-    const memData = org.members?.find(m => m.uid === (currentUser?.id || currentUser?.uid));
-    return memData?.role || 'member';
-  };
+  // The role comes from this user's membership documents, which is where
+  // access lives. It used to come from a `members` array denormalized onto the
+  // organization document — a field nothing maintains any more, so the lookup
+  // missed and quietly fell back to «member»: the owner of a workspace was
+  // labelled a participant in it, in English, because the raw id was printed
+  // with `capitalize`.
+  const roleLabel = (org) => organizationRoleLabel(orgRoles?.[org.id]);
 
   const isExpanding = !!expandingOrg;
 
@@ -132,7 +136,7 @@ export default function OrgSwitcherScreen({ onClose }) {
               <OrgBigCard
                 key={org.id}
                 org={org}
-                role={getRoleInOrg(org)}
+                role={roleLabel(org)}
                 unreadCount={unreadByOrg[org.id] || 0}
                 onClick={(e) => handleSelect(e, org)}
               />
