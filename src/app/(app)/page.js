@@ -15,7 +15,7 @@ import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import { withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, ListTodo, CircleDotDashed, CalendarClock, MessageSquare, Settings2 } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, CalendarClock, Settings2 } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -44,6 +44,11 @@ import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import {
+  entryStatusId,
+  STATUS_CATEGORIES,
+  STATUS_CATEGORY_IDS,
+} from '@/lib/utils/statusCategories.mjs';
 import { isDueDateOverdue } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useSprints } from '@/lib/hooks/useSprints';
@@ -80,32 +85,28 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
   const stackChip = isLarge ? 30 : 24;
   const stackOverlap = isLarge ? '-space-x-[10px]' : '-space-x-[8px]';
 
-  // The two badges on a project card, and what they used to cost.
+  // The one badge on a project card, and what it used to cost.
   //
-  // They were fed by two live listeners *per card*: one over the entire message
+  // It was fed by two live listeners *per card*: one over the entire message
   // history of `project_<id>` and one over its read cursor. That channel is
   // legacy — `isVisibleChatChannel` has excluded `project_*` rooms for a while
   // and nothing in the product writes to one any more — so opening the
   // dashboard read a dead conversation's whole history, once per project, to
   // draw a number that could only ever be zero.
   //
-  // Both facts are already in the workspace's notification stream, which is
+  // Being named is already in the workspace's notification stream, which is
   // subscribed once at the layout and shared by the sidebar's project dot. The
   // card reads the same stream: no listener, no document, and a number that is
-  // about something that actually happens.
-  const projectNotices = useMemo(() => {
-    const mine = notifications.filter(item => (
-      !item.read
-      && item.projectId === project.id
-      && item.organizationId === activeOrgId
-    ));
-    return {
-      unread: mine.filter(item => item.type === 'chat_message').length,
-      mentions: mine.filter(item => item.type === 'mentioned').length,
-    };
-  }, [activeOrgId, notifications, project.id]);
-  const unreadCount = projectNotices.unread;
-  const mentionCount = projectNotices.mentions;
+  // about something that actually happens. Unread project chat is counted there
+  // too, and the sidebar's dot is where it is said — the card's last row is the
+  // status band now, and a second number beside it was the row this change
+  // exists to stop.
+  const mentionCount = useMemo(() => notifications.filter(item => (
+    !item.read
+    && item.type === 'mentioned'
+    && item.projectId === project.id
+    && item.organizationId === activeOrgId
+  )).length, [activeOrgId, notifications, project.id]);
 
   const handleCardClick = (e) => {
     if (e.target.closest('.no-nav')) return;
@@ -263,7 +264,6 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
           now={now}
           currentUser={currentUser}
           orgLoading={orgLoading}
-          unreadCount={unreadCount}
           mentionCount={mentionCount}
         />
       </div>
@@ -304,8 +304,73 @@ const ISSUE_ACTIVITY_EVENTS = {
   updated: 'Оновлено завдання',
 };
 
-function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, unreadCount = 0, mentionCount = 0 }) {
-  const { closedStatusIds } = useWorkflowConfig();
+/**
+ * Where a project's work is sitting, as one band.
+ *
+ * The card used to end in five numbers set identically — total, active,
+ * overdue, unread, mentions — so nothing on it was the point and the row had to
+ * be read left to right or not at all. A distribution says more in less space:
+ * a project stuck in its backlog and a project jammed on review are different
+ * shapes, and neither is «84 завдань».
+ *
+ * The band is deliberately not the full width of the card. It is a reading, not
+ * a rule under the text, and a bar that runs edge to edge reads as furniture.
+ * The large card gets a slightly heavier one and names the segments on hover;
+ * the small card is a glance and carries no labels at all — the numbers are one
+ * click away on the project itself.
+ *
+ * Segment colours are the categories' own, from `STATUS_CATEGORIES` — the same
+ * colours the cross-project board columns and the list's section dots use, so
+ * one colour means one thing everywhere.
+ */
+function ProjectStatusBand({ segments, total, isLarge }) {
+  if (!total) return null;
+  const label = segments.map(segment => `${segment.label}: ${segment.count}`).join(', ');
+
+  return (
+    <div className={`group/band relative min-w-[64px] flex-1 ${isLarge ? 'max-w-[240px]' : 'max-w-[148px]'}`}>
+      <div
+        role="img"
+        aria-label={`Розподіл завдань за статусом — ${label}`}
+        title={isLarge ? undefined : label}
+        className={`flex w-full gap-[2px] overflow-hidden rounded-full bg-chart-track ${
+          isLarge ? 'h-[7px]' : 'h-[5px]'
+        }`}
+      >
+        {segments.map(segment => (
+          <span
+            key={segment.id}
+            aria-hidden
+            className="block h-full"
+            style={{ width: `${(segment.count / total) * 100}%`, background: segment.color }}
+          />
+        ))}
+      </div>
+      {/* Absolutely placed, so naming the segments costs the card no height and
+          moves nothing when it appears. There is room for it in both
+          directions: the large card carries 40px of bottom padding under this
+          row, and `w-max` lets one line of names run past the band's own width
+          into the card rather than wrapping into that padding. */}
+      {isLarge && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-full mt-[7px] flex w-max gap-[10px] whitespace-nowrap text-[10px] font-medium text-muted opacity-0 transition-opacity duration-200 group-hover/band:opacity-100"
+        >
+          {segments.map(segment => (
+            <span key={segment.id} className="flex items-center gap-[4px]">
+              <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: segment.color }} />
+              <strong className="font-bold text-ink">{segment.count}</strong>
+              {segment.label.toLowerCase()}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, mentionCount = 0 }) {
+  const { closedStatusIds, statusCategoryById, statuses } = useWorkflowConfig();
   const { activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
 
@@ -314,9 +379,21 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     let overdueCount = 0;
     let newestIssue = null;
     let newestActivity = null;
+    // Canonical order, so the band reads the same way on every card and in
+    // every organization — a workflow orders the names inside a category, never
+    // the categories themselves.
+    const byCategory = new Map(STATUS_CATEGORY_IDS.map(categoryId => [categoryId, 0]));
+    const entryStatus = entryStatusId(statuses);
 
     for (const issue of issues) {
       const statusId = issue.columnId || issue.status;
+      // The one place that decides what a status means, asked the same way the
+      // list view asks it. A status the workflow no longer has answers with
+      // nothing and is left out of the band rather than guessed into a segment.
+      const categoryId = statusCategoryById.get(statusId || entryStatus);
+      if (categoryId && byCategory.has(categoryId)) {
+        byCategory.set(categoryId, byCategory.get(categoryId) + 1);
+      }
       // «в роботі» read as the status «В роботі» and counted only that
       // category, so the card and the board disagreed about the same project:
       // everything in «До виконання» was work the project still owed and the
@@ -398,13 +475,27 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
       }
     }
 
+    const segments = STATUS_CATEGORY_IDS
+      .filter(categoryId => byCategory.get(categoryId) > 0)
+      .map(categoryId => ({
+        id: categoryId,
+        label: STATUS_CATEGORIES[categoryId].label,
+        color: STATUS_CATEGORIES[categoryId].color,
+        count: byCategory.get(categoryId),
+      }));
+
     return {
       total: issues.length,
       active: activeCount,
       overdue: overdueCount,
-      lastAction: lastActionStr
+      lastAction: lastActionStr,
+      segments,
+      // Widths come from what the band actually draws, so the segments always
+      // fill it: a task whose status the workflow has dropped is not in any
+      // category and must not leave a gap standing for it.
+      banded: segments.reduce((sum, segment) => sum + segment.count, 0),
     };
-  }, [closedStatusIds, currentUser, issues, members, orgLoading, timeZone]);
+  }, [closedStatusIds, currentUser, issues, members, orgLoading, statusCategoryById, statuses, timeZone]);
 
   const timeAgoString = (ts) => {
     if (!ts) return '';
@@ -454,39 +545,35 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
         </Link>
       )}
       
-      {/* No rule above this row. The card is one object and the counts are the
-          last line of it, not a second panel. */}
-      <div className="flex w-full flex-wrap items-center gap-x-[18px] gap-y-[8px] text-[11px]">
-        <span className="flex items-center gap-[6px] text-muted" title="Усі завдання проєкту, разом із закритими">
-          <ListTodo size={14} strokeWidth={1.9} aria-hidden />
-          <strong className="text-ink">{stats.total}</strong>
-          <span>завдань</span>
-        </span>
-        <span className="flex items-center gap-[6px] text-muted" title="Незакриті завдання — усе, крім «Готово»">
-          <CircleDotDashed size={14} strokeWidth={1.9} aria-hidden />
-          <strong className="text-ink">{stats.active}</strong>
-          <span>активних</span>
-        </span>
+      {/* No rule above this row. The card is one object and the band is the
+          last line of it, not a second panel.
+
+          Two marks used to live here that the band does not carry, and they are
+          kept because neither is a status: a deadline that has passed is a fact
+          about time, and being named is the one fact on the card addressed to
+          you. Both are drawn only when they are true, so a project with nothing
+          wrong ends in the band alone. Everything else the row used to count —
+          the total, the open count, unread chat — the band already shows or the
+          project itself answers in one click. */}
+      <div className="flex w-full items-center gap-[12px] text-[11px]">
+        <ProjectStatusBand segments={stats.segments} total={stats.banded} isLarge={isLarge} />
+        {/* Coloured now, where the same figure among four neutral counts was
+            deliberately not. It used to be one of four things set identically,
+            and colouring one of four is shouting; it is now the only thing
+            beside a neutral band, and it is an exception rather than a
+            measurement — the colour is what says which of the two it is. It
+            appears only when something is actually late, so a project with
+            nothing wrong ends in the band alone. */}
         {stats.overdue > 0 && (
-          // Same ink as the counts beside it. A card that lists three facts
-          // does not need one of them shouting — the word already says it.
-          <span className="flex items-center gap-[6px] text-muted" title="Завдання, у яких минув дедлайн">
-            <CalendarClock size={14} strokeWidth={1.9} aria-hidden />
-            <strong className="text-ink">{stats.overdue}</strong>
+          <span
+            className="flex shrink-0 items-center gap-[5px] text-danger"
+            title="Завдання, у яких минув дедлайн"
+          >
+            <CalendarClock size={13} strokeWidth={2} aria-hidden />
+            <strong className="font-bold">{stats.overdue}</strong>
             <span>прострочено</span>
           </span>
         )}
-        {unreadCount > 0 && (
-          <span className="flex items-center gap-[6px] text-muted" title="Непрочитані повідомлення в чаті проєкту">
-            <MessageSquare size={14} strokeWidth={1.9} aria-hidden />
-            <strong className="text-ink">{unreadCount}</strong>
-            <span>нових</span>
-          </span>
-        )}
-
-        {/* Being named is the one fact on this card addressed to you, so it
-            sits where the task card puts it: at the far right of the last row,
-            in the same mark. */}
         <TaskCounters mentions={mentionCount} className="ml-auto" />
       </div>
     </div>

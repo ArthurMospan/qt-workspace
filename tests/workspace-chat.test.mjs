@@ -501,9 +501,11 @@ test('a project card counts what is new without reading anything', async () => {
   assert.match(chatUtils, /channel\.id\.startsWith\('project_'\)/);
   assert.doesNotMatch(dashboard, /project_\$\{project\.id\}/);
   assert.doesNotMatch(dashboard, /onSnapshot\(query\(messagesRef\)/);
-  // Both facts are already in the notification stream the layout subscribes to
-  // once and the sidebar's project dot already reads.
-  assert.match(dashboard, /item\.type === 'chat_message'/);
+  // The fact the card still draws is already in the notification stream the
+  // layout subscribes to once and the sidebar's project dot already reads.
+  // Unread project chat is no longer among them: the card's last row is a
+  // status band, and the sidebar's dot is where that number is said.
+  assert.doesNotMatch(dashboard, /item\.type === 'chat_message'/);
   assert.match(dashboard, /item\.type === 'mentioned'/);
   assert.match(dashboard, /const notifications = useWorkspaceStore\(state => state\.notifications\)/);
 });

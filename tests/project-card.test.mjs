@@ -15,19 +15,29 @@ test('project cards keep the familiar team-first composition', () => {
   assert.match(projectPage, /<UserAvatar key=\{uid\}[^/]*tooltip/);
 });
 
-test('project-card footer uses literal task, progress and assignee semantics', () => {
-  assert.match(projectPage, /ListTodo[\s\S]{0,300}\{stats\.total\}[\s\S]{0,100}завдань/);
-  // Not «в роботі»: that is the name of a status category, and the card was
-  // read as counting only that category rather than everything still open.
-  assert.match(projectPage, /CircleDotDashed[\s\S]{0,300}\{stats\.active\}[\s\S]{0,100}активних/);
+test('the card ends in a status distribution, not a row of counts', () => {
+  // Five numbers set identically meant nothing on the card was the point. The
+  // last row is one band now: where this project's work is sitting, in the
+  // categories' own colours, so a colour means the same thing here as on a
+  // board column and a list section dot.
+  assert.match(projectPage, /function ProjectStatusBand/);
+  assert.match(projectPage, /<ProjectStatusBand segments=\{stats\.segments\} total=\{stats\.banded\} isLarge=\{isLarge\} \/>/);
+  assert.match(projectPage, /STATUS_CATEGORIES\[categoryId\]\.color/);
+  assert.match(projectPage, /STATUS_CATEGORY_IDS/);
+  // Never re-derived: the one module that decides what a status means is asked,
+  // and a status the workflow no longer has is left out rather than guessed at.
+  assert.match(projectPage, /statusCategoryById\.get\(statusId \|\| entryStatus\)/);
   assert.doesNotMatch(projectPage, /\{stats\.inProgress\}/);
-  // «N моїх» counted something nobody acts on. What is late, who named you and
-  // what is unread are the three facts that make a card worth opening — the
-  // same ones a task card carries.
+  // Not the full width of the card: a bar that runs edge to edge reads as a
+  // rule under the text rather than as a reading. The large one is heavier and
+  // names its segments on hover; the small one is a glance and says nothing.
+  assert.match(projectPage, /max-w-\[240px\]' : 'max-w-\[148px\]/);
+  assert.match(projectPage, /isLarge \? 'h-\[7px\]' : 'h-\[5px\]'/);
+  assert.match(projectPage, /group-hover\/band:opacity-100/);
+  assert.match(projectPage, /role="img"[\s\S]{0,200}Розподіл завдань за статусом/);
+  // Two marks survive the row because neither is a status: what is late, and
+  // who named you. Both only when they are true.
   assert.match(projectPage, /CalendarClock[\s\S]{0,300}\{stats\.overdue\}[\s\S]{0,100}прострочено/);
-  assert.match(projectPage, /MessageSquare[\s\S]{0,300}\{unreadCount\}[\s\S]{0,100}нових/);
-  // Mentions are the task card's own mark, at the end of the row where the eye
-  // stops — not a second hand-drawn «вам» counter.
   assert.match(projectPage, /<TaskCounters mentions=\{mentionCount\} className="ml-auto" \/>/);
   assert.doesNotMatch(projectPage, /AtSign/);
 });

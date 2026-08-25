@@ -221,7 +221,8 @@ test('a project card offers no action the role cannot perform', async () => {
   assert.match(projects, /const canDeleteProject = can\(orgRole, 'delete:project'\)/);
   assert.match(projects, /\{projectMenuItems\.length > 0 && \(/);
   // «N моїх» is not something anyone acts on; what is late and what is waiting
-  // for you is.
+  // for you is. It survived the card's last row becoming a status band, because
+  // a passed deadline is a fact about time rather than a place in the workflow.
   assert.doesNotMatch(projects, /<span>моїх<\/span>/);
   assert.match(projects, /<span>прострочено<\/span>/);
 });
