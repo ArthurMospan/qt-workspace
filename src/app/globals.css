@@ -1660,3 +1660,30 @@
    version of this silently lost `scrollbar-width` on Firefox. */
 .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .hide-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* iOS Safari zooms the whole page in whenever a focused form control's computed
+   font-size is under 16px, and it never zooms back out — the reason a tap on
+   any field on a phone shoves the layout sideways with the header cut off.
+   `maximum-scale=1` (see IOS_FOCUS_ZOOM_SCRIPT in app/layout.js) suppresses the
+   zoom, but only for as long as that meta survives, and it says nothing about
+   the actual cause. The cause is the type size, and 16px is the threshold the
+   browser reads.
+
+   So below md every control you can type into is 16px. Nothing else changes:
+   `.ui-control` states its height and its line box as `--ui-control-height`, so
+   the boxes are exactly the boxes they were and only the glyphs inside them
+   grow — which on a phone is the size that field text should have been anyway.
+   Desktop keeps the product's own scale untouched.
+
+   Must stay outside @layer, and for the reason the block above gives: the size
+   classes are Tailwind utilities, and only an unlayered rule beats them. The
+   :not() chain skips the controls that are not text entry — a checkbox or a
+   range slider never triggers the zoom and would only be resized for nothing. */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']):not([type='button']):not([type='submit']):not([type='reset']),
+  textarea,
+  select,
+  [contenteditable]:not([contenteditable='false']) {
+    font-size: 16px;
+  }
+}

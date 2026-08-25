@@ -133,9 +133,13 @@ function UpcomingProviderCard({ provider }) {
  *
  * @param {string} props.selectedProviderId Which source is open; empty is the list.
  * @param {(providerId: string) => void} props.onSelectProvider Opens a source.
+ * @param {string} props.currentUserId Who is reading — an import is driven only by the person who started it.
+ * @param {boolean} props.isOrganizationOwner Whether they may stop an import somebody else started.
  */
 export default function DataMigrationSettings({
   organizationId,
+  currentUserId = '',
+  isOrganizationOwner = false,
   members = [],
   projects = [],
   showToast,
@@ -235,6 +239,8 @@ export default function DataMigrationSettings({
         <YouTrackImportCard
           key={organizationId}
           organizationId={organizationId}
+          currentUserId={currentUserId}
+          isOrganizationOwner={isOrganizationOwner}
           members={members}
           projects={projects}
           showToast={showToast}

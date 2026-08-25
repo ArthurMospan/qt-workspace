@@ -34,16 +34,39 @@ export function seal(plaintext) {
   };
 }
 
-export function open(box) {
-  if (!box || box.v !== 1) throw new Error('Unsupported sealed box.');
+/** Thrown when a sealed box cannot be opened: a rotated key, or tampering. */
+export class SealedBoxUnreadableError extends Error {
+  constructor(cause) {
+    super('Sealed box could not be opened.');
+    this.name = 'SealedBoxUnreadableError';
+    this.code = 'SEALED_BOX_UNREADABLE';
+    this.cause = cause;
+  }
+}
 
-  const decipher = createDecipheriv(ALGO, getKey(), Buffer.from(box.iv, 'base64'));
-  decipher.setAuthTag(Buffer.from(box.tag, 'base64'));
-  // GCM: a wrong key or a single flipped byte makes final() throw. That is the
-  // point — a tampered token must be an error, never a different value that
-  // quietly gets used.
-  return Buffer.concat([
-    decipher.update(Buffer.from(box.data, 'base64')),
-    decipher.final(),
-  ]).toString('utf8');
+export function open(box) {
+  if (!box || box.v !== 1) throw new SealedBoxUnreadableError();
+
+  // Outside the try on purpose: a missing or malformed QTPLUS_TOKEN_KEY is an
+  // operator error, not an unreadable box, and «reconnect it» would be the
+  // wrong advice for it — reconnecting cannot seal a token either.
+  const key = getKey();
+  try {
+    const decipher = createDecipheriv(ALGO, key, Buffer.from(box.iv, 'base64'));
+    decipher.setAuthTag(Buffer.from(box.tag, 'base64'));
+    // GCM: a wrong key or a single flipped byte makes final() throw. That is the
+    // point — a tampered token must be an error, never a different value that
+    // quietly gets used.
+    return Buffer.concat([
+      decipher.update(Buffer.from(box.data, 'base64')),
+      decipher.final(),
+    ]).toString('utf8');
+  } catch (error) {
+    // Node's own words for a failed GCM tag are «Unsupported state or unable to
+    // authenticate data», and that sentence was reaching people: the importer
+    // stores whatever an error says onto the job, and the settings screen prints
+    // it. A caller can say what this means in the language of the thing it was
+    // opening; the crypto layer cannot, so it raises a type instead of prose.
+    throw new SealedBoxUnreadableError(error);
+  }
 }

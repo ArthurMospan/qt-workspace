@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckSquare, ChevronDown, ChevronRight, MoreVertical } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, ChevronUp, MoreVertical } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
 import Button from '@/components/ui/Button';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -10,6 +10,7 @@ import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import Counter from '@/components/ui/DataDisplay/Counter';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import Surface from '@/components/ui/Surface';
+import TextAction from '@/components/ui/TextAction';
 import TaskRow from './TaskRow';
 import ContextMenu from '@/components/ui/ContextMenu';
 import BulkActionBar from './BulkActionBar';
@@ -17,6 +18,19 @@ import { prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { useIssueSelection } from '@/lib/hooks/useIssueSelection';
 import { compareIssues } from '@/lib/utils/optimistic.mjs';
+
+// How much of one section this view draws before it asks. The board answers the
+// same question by virtualizing — a column keeps a viewport of cards in the DOM
+// and every task stays inside the scroll range — but a section here is a block
+// in a stacked page, not a scroller of its own, so there is no viewport to
+// window against. It pages instead, the way `TaskListCard` does.
+//
+// Without a limit «Мої завдання» laid out every task a person has ever been
+// given, in one go, each row scanning the whole set for its parent and its
+// links. The count beside a section heading is always the whole section, so the
+// number never disagrees with what is behind it.
+const INITIAL_ROWS = 25;
+const MORE_ROWS = 25;
 
 /**
  * The list view of a board: tasks grouped by status — or, on a list that spans
@@ -68,6 +82,10 @@ export default function TaskListView({
 }) {
   const { statuses, categoryColumns, statusCategoryById, priorities, types } = useWorkflowConfig();
   const [collapsedSections, setCollapsedSections] = useState([]);
+  // Keyed by the scope, not reset by an effect: changing project, filter or
+  // grouping makes this a different list, and a row budget carried across from
+  // the previous one is a number about tasks that are no longer here.
+  const [paging, setPaging] = useState({ scope: '', shown: {} });
   const toggleSection = sectionId => setCollapsedSections(current => (
     current.includes(sectionId)
       ? current.filter(id => id !== sectionId)
@@ -119,6 +137,17 @@ export default function TaskListView({
     }] : []),
   ].filter(section => section.issues.length > 0);
   const selectionOrder = sections.flatMap(section => section.issues.map(issue => issue.id));
+  const pagingScope = selectionScopeKey || `${projectId || 'cross-project'}:${groupBy}`;
+  const rowsShownIn = sectionId => (
+    paging.scope === pagingScope ? paging.shown[sectionId] : undefined
+  ) ?? INITIAL_ROWS;
+  const setRowsShownIn = (sectionId, rows) => setPaging(current => ({
+    scope: pagingScope,
+    shown: {
+      ...(current.scope === pagingScope ? current.shown : {}),
+      [sectionId]: rows,
+    },
+  }));
   const {
     active: selectionActive,
     activeSelectedIds: activeSelectedIssueIds,
@@ -158,6 +187,9 @@ export default function TaskListView({
     <div className="flex w-full flex-col gap-6">
       {sections.map(section => {
         const isCollapsed = collapsedSections.includes(section.id);
+        const shown = rowsShownIn(section.id);
+        const drawnIssues = section.issues.slice(0, shown);
+        const remaining = section.issues.length - drawnIssues.length;
         return (
           <Surface key={section.id} preset="panel" padding="lg" className="w-full">
             {/* No rule under the heading — the panel edge already separates the
@@ -216,7 +248,7 @@ export default function TaskListView({
 
             {!isCollapsed && (
             <div className="flex flex-col gap-2">
-              {section.issues.map(issue => {
+              {drawnIssues.map(issue => {
                 const resolvedProject = projects.find(project => project.id === issue.projectId);
                 const resolvedProjectId = issue.projectId || projectId;
                 const resolvedProjectName = resolvedProject?.name || projectName;
@@ -241,6 +273,28 @@ export default function TaskListView({
                   />
                 );
               })}
+
+              {(remaining > 0 || shown > INITIAL_ROWS) && (
+                <div className="mt-1 flex justify-center border-t border-line pt-2">
+                  {remaining > 0 ? (
+                    <TextAction
+                      tone="muted"
+                      icon={ChevronDown}
+                      onClick={() => setRowsShownIn(section.id, shown + MORE_ROWS)}
+                    >
+                      Показати ще {Math.min(MORE_ROWS, remaining)}
+                    </TextAction>
+                  ) : (
+                    <TextAction
+                      tone="muted"
+                      icon={ChevronUp}
+                      onClick={() => setRowsShownIn(section.id, INITIAL_ROWS)}
+                    >
+                      Згорнути
+                    </TextAction>
+                  )}
+                </div>
+              )}
             </div>
             )}
           </Surface>

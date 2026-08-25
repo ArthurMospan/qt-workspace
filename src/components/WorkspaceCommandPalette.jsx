@@ -6,7 +6,7 @@
 // (lib/utils/commandPalette.mjs) and the surface is a kit component; this is the
 // only piece that knows about the router, the store and the search API.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -57,8 +57,16 @@ export default function WorkspaceCommandPalette() {
     clear();
   }, [clear]);
 
+  // A request that predates this mount is not a request to open. The whole
+  // authenticated tree is keyed by the active organization, so switching one
+  // unmounts this component and mounts a new one — while the store, which is
+  // not keyed, still holds the id of whatever opened the palette earlier in the
+  // session. Reading "id > 0" as "open" therefore threw the palette on screen
+  // every time somebody changed organization after having used ⌘K once.
+  const handledRequestId = useRef(paletteRequest.id);
   useEffect(() => {
-    if (!paletteRequest.id) return;
+    if (paletteRequest.id === handledRequestId.current) return;
+    handledRequestId.current = paletteRequest.id;
     queueMicrotask(() => setOpen(true));
   }, [paletteRequest.id]);
 

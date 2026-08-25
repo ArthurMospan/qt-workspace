@@ -104,14 +104,25 @@ test('the table header selects what is on screen, and asks about the rest', () =
 });
 
 // A subtask names the task it hangs under. That slot is for an identifier, and
-// a noun phrase in it does not read as «unknown» — it reads as the number.
+// a noun phrase in it does not read as «unknown» — it reads as the number. Nor
+// does an empty slot: an arrow pointing at nothing is a relation that is
+// somehow both stated and missing, so the relation is drawn only when it can
+// be named. A cancelled parent is the common way to reach that state — it is
+// filtered out of every stream that publishes issues.
 test('a subtask never prints prose where its parent’s key goes', () => {
   const identity = read('components/ui/TaskManagement/TaskIdentity.jsx');
+  const detail = read('components/workspace/IssueDetail.jsx');
   const createRoute = read('app/api/issues/route.js');
   const parentRoute = read('app/api/issues/[issueId]/parent/route.js');
 
   assert.doesNotMatch(identity, /parentIssue\.issueKey \|\| parentIssue\.title \|\| 'Батьківське завдання'/);
-  assert.match(identity, /\{parentKey && <span className="min-w-0 truncate">\{parentKey\}<\/span>\}/);
+  assert.match(identity, /const showsParent = Boolean\(parentIssue\) && Boolean\(parentKey\)/);
+  assert.match(identity, /\{showsParent && \(/);
+  assert.match(identity, /<span className="min-w-0 truncate">\{parentKey\}<\/span>/);
+  // The task's own screen states the relation in full, so it may not fall back
+  // to the raw Firestore document id when the parent is not in what it loaded.
+  assert.doesNotMatch(detail, /\{parentIssue\?\.issueKey \|\| parentIssueId\}/);
+  assert.match(detail, /parentIssue\?\.issueKey \|\| issue\?\.parentIssueKey/);
   // Through `taskDisplayKey`, like the card's own key: a parent still stored
   // under the pre-prefix `WS-7` was printed raw beside a child called
   // `DESIGN-363`, as though they belonged to different projects.

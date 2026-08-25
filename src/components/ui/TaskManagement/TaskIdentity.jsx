@@ -62,9 +62,15 @@ export default function TaskIdentity({
     : '';
   const parentTitle = parentIssue?.title
     ? `Батьківське завдання: ${parentIssue.title}`
-    : (parentKey ? `Батьківське завдання ${parentKey}` : 'Це підзавдання');
+    : `Батьківське завдання ${parentKey}`;
+  // An arrow with nothing after it is not a quieter fact, it is a broken one:
+  // it takes up the room a relation would take and names nothing, so the line
+  // reads as a parent that is somehow both there and not. The relation is drawn
+  // when it can be said and left out when it cannot — the task's own screen is
+  // where a subtask's parent is always stated in full.
+  const showsParent = Boolean(parentIssue) && Boolean(parentKey);
   const showsProject = showProjectName && Boolean(projectName);
-  if (!key && !showsProject && !parentIssue) return null;
+  if (!key && !showsProject && !showsParent) return null;
 
   // One line-height for every fragment. Without it each one sizes its own line
   // box from its own font — monospace and sans do not agree — and centring
@@ -83,7 +89,7 @@ export default function TaskIdentity({
           {key}
         </span>
       )}
-      {parentIssue && (
+      {showsParent && (
         <>
           {key && divider}
           {/* A real icon, drawn on the same grid as every other glyph. This was
@@ -97,23 +103,21 @@ export default function TaskIdentity({
             title={parentTitle}
           >
             <ParentTaskIcon size={11} strokeWidth={2} className="shrink-0" />
-            {/* The key, or nothing at all.
-                This slot printed «Батьківське завдання» whenever the parent
-                could not be named — and a noun phrase where an identifier goes
-                does not read as «unknown», it reads as the task's number. The
-                parent is usually unnameable from the card's own data: it lives
-                in another sprint, another column, or past the loaded page, and
-                the card was searching the issues that happened to be on screen.
-                Tasks written since carry `parentIssueKey`; for older ones the
-                icon alone still says «this hangs under something», which is the
-                whole truth the card has. */}
-            {parentKey && <span className="min-w-0 truncate">{parentKey}</span>}
+            {/* Always a key here, never a noun phrase and never an empty slot.
+                The parent is often unnameable from the card's own data: it may
+                be in another sprint, another column, past the loaded page, or
+                cancelled — cancelled work is filtered out of every stream that
+                publishes issues, so the card searching the issues on screen
+                will not find it. Tasks written since carry `parentIssueKey`,
+                which is what names it in all of those cases; where even that is
+                missing there is nothing to say, and `showsParent` says it. */}
+            <span className="min-w-0 truncate">{parentKey}</span>
           </span>
         </>
       )}
       {showsProject && (
         <>
-          {(key || parentIssue) && divider}
+          {(key || showsParent) && divider}
           <span className="min-w-0 truncate font-mono text-[10px] font-medium tracking-wide text-faint">
             {projectName}
           </span>

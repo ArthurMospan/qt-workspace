@@ -113,6 +113,10 @@ function serializeJob(snapshot) {
   return {
     id: snapshot.id,
     organizationId: data.organizationId,
+    // Who this import belongs to. The screen needs it to say whose it is and to
+    // stop offering somebody else's import a «Продовжити» button; the server
+    // does not trust that and checks the same field again on every step.
+    createdBy: data.createdBy || '',
     status: data.status,
     phase: data.phase,
     totalIssues: data.totalIssues || 0,
@@ -130,7 +134,56 @@ function serializeJob(snapshot) {
   };
 }
 
-async function claimImportStep(jobRef, organizationId) {
+// One import belongs to one person, and it is the person who started it.
+//
+// Every owner and admin of an organization could previously drive any import
+// job it had: continue one somebody else had paused halfway, or stop one that
+// was running. A migration is not a shared control surface — it writes projects,
+// tasks, comments, attachments and time into the workspace from a mapping only
+// its author chose, and two people stepping the same job take turns writing over
+// each other's idea of where it had got to.
+//
+// Continuing is therefore the author's alone. Stopping is the author's or the
+// organization owner's: an import whose author has gone home must still be
+// stoppable by somebody, and the owner is who that is.
+const IMPORT_NOT_YOURS = 'Імпорт запустив інший учасник';
+
+function assertImportControl(data, { userId, isOrganizationOwner = false, action }) {
+  const createdBy = data?.createdBy || '';
+  // A job written before this field existed has no author to defer to, so it
+  // stays available to whoever the route already let through.
+  if (!createdBy || createdBy === userId) return;
+  if (action === 'cancel' && isOrganizationOwner) return;
+  throw new Error(action === 'cancel'
+    ? `${IMPORT_NOT_YOURS}. Зупинити його може той, хто розпочав, або власник організації.`
+    : `${IMPORT_NOT_YOURS}. Продовжити його може лише той, хто розпочав.`);
+}
+
+async function assertNoForeignActiveImport(organizationId, userId) {
+  // The same query shape the job listing uses, so this rides the one composite
+  // index `imports` already has instead of asking for a second one for a check
+  // that runs once per prepare. An unfinished import is the newest thing in
+  // this collection in every case that matters.
+  const snapshot = await getAdminDb().collection('imports')
+    .where('organizationId', '==', organizationId)
+    .where('provider', '==', 'youtrack')
+    .orderBy('createdAt', 'desc')
+    .limit(10)
+    .get();
+  const foreign = snapshot.docs.find(doc => {
+    const data = doc.data();
+    if (data.status !== 'prepared' && data.status !== 'running') return false;
+    const createdBy = data.createdBy || '';
+    return createdBy && createdBy !== userId;
+  });
+  if (foreign) {
+    throw new Error(
+      `${IMPORT_NOT_YOURS} і він ще не завершений. Дочекайтеся його завершення або попросіть зупинити.`,
+    );
+  }
+}
+
+async function claimImportStep(jobRef, organizationId, control) {
   const leaseId = randomUUID();
   const now = Date.now();
   let claimedJob = null;
@@ -144,6 +197,7 @@ async function claimImportStep(jobRef, organizationId) {
     }
 
     const data = snapshot.data();
+    assertImportControl(data, { ...control, action: 'run' });
     if (data.status === 'completed') {
       terminalSnapshot = snapshot;
       return;
@@ -1491,6 +1545,11 @@ export async function prepareYouTrackImport({
 }) {
   const selected = [...new Set((selectedProjectIds || []).filter(Boolean))].slice(0, 20);
   if (!selected.length) throw new Error('Оберіть хоча б один проєкт YouTrack');
+  // The same rule from the other side. Refusing to let somebody continue or
+  // stop another person's import means nothing if they can simply start a
+  // second one on top of it — two importers writing the same projects from two
+  // mappings is the collision the rule exists to prevent.
+  await assertNoForeignActiveImport(organizationId, userId);
   const { client, connection } = await youTrackClientFor(organizationId);
   const allProjects = await client.projects();
   const sourceProjects = allProjects
@@ -1636,14 +1695,14 @@ export async function prepareYouTrackImport({
   return serializeJob(await jobRef.get());
 }
 
-export async function runYouTrackImportStep({ organizationId, jobId }) {
+export async function runYouTrackImportStep({ organizationId, jobId, userId }) {
   const jobRef = importJobRef(jobId);
   const {
     leaseId,
     claimedJob: job,
     terminalSnapshot,
     busySnapshot,
-  } = await claimImportStep(jobRef, organizationId);
+  } = await claimImportStep(jobRef, organizationId, { userId });
   if (terminalSnapshot) return serializeJob(terminalSnapshot);
   if (busySnapshot) return { ...serializeJob(busySnapshot), stepInProgress: true };
 
@@ -1757,12 +1816,18 @@ export async function getYouTrackImport({ organizationId, jobId }) {
   return snapshot.docs.map(serializeJob);
 }
 
-export async function cancelYouTrackImport({ organizationId, jobId }) {
+export async function cancelYouTrackImport({
+  organizationId,
+  jobId,
+  userId,
+  isOrganizationOwner = false,
+}) {
   const ref = importJobRef(jobId);
   const snapshot = await ref.get();
   if (!snapshot.exists || snapshot.data().organizationId !== organizationId) {
     throw new Error('Імпорт не знайдено');
   }
+  assertImportControl(snapshot.data(), { userId, isOrganizationOwner, action: 'cancel' });
   if (snapshot.data().status === 'completed') return serializeJob(snapshot);
   await ref.update({
     status: 'cancelled',

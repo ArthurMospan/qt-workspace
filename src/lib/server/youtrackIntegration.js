@@ -3,7 +3,7 @@ import 'server-only';
 
 import { createHash } from 'node:crypto';
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
-import { open, seal } from '@/lib/server/secretBox.mjs';
+import { open, seal, SealedBoxUnreadableError } from '@/lib/server/secretBox.mjs';
 import { YouTrackClient } from '@/lib/server/youtrackClient';
 import {
   isYouTrackStateField,
@@ -79,9 +79,28 @@ export async function youTrackClientFor(organizationId) {
   if (!snapshot.exists) throw new Error('YouTrack не підключено');
   const data = snapshot.data();
   if (!data.tokenBox || !data.baseUrl) throw new Error('Підключення YouTrack пошкоджене');
+
+  let token;
+  try {
+    token = open(data.tokenBox);
+  } catch (error) {
+    // A stored token that no longer decrypts — the encryption key was rotated,
+    // or the document was written by a deployment holding a different one. Only
+    // this layer knows what the box held, so only this layer can say what to do
+    // about it; unhandled, the reader got Node's own English sentence about a
+    // GCM tag, printed under a progress bar in the migration screen.
+    if (error instanceof SealedBoxUnreadableError) {
+      throw new Error(
+        'Підключення YouTrack пошкоджене: збережений токен більше не вдається прочитати. '
+        + 'Відключіть YouTrack і підключіть його знову — перенесені задачі залишаться на місці.',
+      );
+    }
+    throw error;
+  }
+
   return {
     connection: data,
-    client: new YouTrackClient({ baseUrl: data.baseUrl, token: open(data.tokenBox) }),
+    client: new YouTrackClient({ baseUrl: data.baseUrl, token }),
   };
 }
 

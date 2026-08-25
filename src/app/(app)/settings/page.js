@@ -3133,6 +3133,8 @@ export default function SettingsPage() {
           >
             <DataMigrationSettings
               organizationId={activeOrgId}
+              currentUserId={currentUser?.id || currentUser?.uid || ''}
+              isOrganizationOwner={myRole === 'owner'}
               members={members}
               projects={projects}
               showToast={showToast}

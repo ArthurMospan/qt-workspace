@@ -1448,7 +1448,13 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   href={issuePath(parentIssue || { id: parentIssueId }, project || projectId)}
                   className="min-w-0 truncate font-semibold text-ink hover:underline"
                 >
-                  {parentIssue?.issueKey || parentIssueId}
+                  {/* Never the raw document id. A cancelled parent — like one
+                      in another sprint or past the loaded page — is not in the
+                      issues this screen was handed, and printing the fallback
+                      put a 20-character Firestore id where a task key belongs.
+                      The child records its parent's key when the link is made,
+                      which is what names it in every one of those cases. */}
+                  {parentIssue?.issueKey || issue?.parentIssueKey || 'Батьківське завдання'}
                   {parentIssue?.title ? ` — ${parentIssue.title}` : ''}
                 </Link>
                 {!isArchived && (

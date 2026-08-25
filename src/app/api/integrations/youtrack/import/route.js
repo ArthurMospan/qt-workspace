@@ -65,6 +65,7 @@ export async function POST(request) {
       const job = await runYouTrackImportStep({
         organizationId,
         jobId: String(body.jobId || ''),
+        userId: authorization.user.uid,
       });
       return NextResponse.json({ job });
     }
@@ -72,6 +73,10 @@ export async function POST(request) {
       const job = await cancelYouTrackImport({
         organizationId,
         jobId: String(body.jobId || ''),
+        userId: authorization.user.uid,
+        // Being admin of the organization is not being the author of somebody
+        // else's migration. Only the owner is given the stop button for one.
+        isOrganizationOwner: authorization.membership?.role === 'owner',
       });
       return NextResponse.json({ job });
     }

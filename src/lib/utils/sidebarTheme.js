@@ -75,8 +75,29 @@ function rgbToHex({ r, g, b }) {
 /**
  * Compute a complete sidebar color theme from a single background color.
  *
+ * Three tiers of quiet ink, and why they are numbered the way they are.
+ *
+ * The rail has a hierarchy: the navigation is the rail's job, the project list
+ * is a second thing inside it, and the section header, the «+» beside it and
+ * the collapse toggle are chrome around both. That is `muted` →
+ * `mutedProject` → `mutedHeader`, each a notch quieter than the last.
+ *
+ * The notches used to be 0.50 / 0.38 / 0.30 and they were invisible, because
+ * `accessibleBlend` may only ever raise a blend: no organization colour is
+ * allowed to produce navigation below AA. On the dark preset the 4.5:1 floor
+ * lands at ≈0.46, so the two quieter tiers were both clamped to it and to each
+ * other, and all three read as one colour.
+ *
+ * A tier therefore cannot be made quieter — the floor is not negotiable and
+ * `tests/qa-accessibility.test.mjs` holds it for every background. The distance
+ * is made by lifting the tier above instead: `muted` is asked for well clear of
+ * the floor, so what sits under it has somewhere to sit. On a colour whose
+ * floor is higher than the top tier's preference — a mid-tone that barely
+ * carries any foreground at all — all three still collapse together, which is
+ * the honest answer for a background with no room in it.
+ *
  * @param {string} bgHex - Background HEX color (e.g. '#1f1f1f')
- * @returns {{ bg, text, muted, hover, active, border, isDark }}
+ * @returns {{ bg, text, muted, mutedProject, mutedHeader, hover, active, border, isDark }}
  */
 export function computeSidebarTheme(bgHex) {
   const fallback = bgHex && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(bgHex)
@@ -103,9 +124,9 @@ export function computeSidebarTheme(bgHex) {
     return {
       bg: fallback,
       text: rgbToHex(textRgb),
-      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.50)),
-      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.38)),
-      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.30)),
+      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.66)),
+      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.52)),
+      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.34)),
       hover: 'rgba(255,255,255,0.04)',
       active: 'rgba(255,255,255,0.08)',
       border: 'rgba(255,255,255,0.06)',
@@ -117,9 +138,9 @@ export function computeSidebarTheme(bgHex) {
   return {
     bg: fallback,
     text: rgbToHex(textRgb),
-    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.50)),
-    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.38)),
-    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.30)),
+    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.66)),
+    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.52)),
+    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.34)),
     hover: 'rgba(0,0,0,0.04)',
     active: 'rgba(0,0,0,0.06)',
     border: 'rgba(31,31,31,0.08)',

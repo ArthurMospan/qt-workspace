@@ -35,6 +35,8 @@ function progressFor(job) {
 
 export default function YouTrackImportCard({
   organizationId,
+  currentUserId = '',
+  isOrganizationOwner = false,
   members = [],
   projects = [],
   showToast,
@@ -368,6 +370,15 @@ export default function YouTrackImportCard({
   const visibleUsers = discovery?.users?.filter(user => !user.banned).slice(0, 250) || [];
   const progress = progressFor(job);
   const activeJob = ACTIVE_JOB_STATUSES.has(job?.status);
+  // A migration belongs to whoever started it — see `assertImportControl` on the
+  // server, which refuses the same calls this hides. Everyone who can open this
+  // screen still sees the job and its progress: the point is not to conceal that
+  // an import is running, it is that stepping and stopping it are not theirs.
+  const jobOwner = job?.createdBy
+    ? members.find(member => memberId(member) === job.createdBy) || null
+    : null;
+  const jobIsMine = !job?.createdBy || job.createdBy === currentUserId;
+  const jobOwnerName = jobOwner?.name || jobOwner?.displayName || jobOwner?.email || 'інший учасник';
   const cardEnabled = connection.connected || setupOpen;
   const migrationPresentation = presentation === 'migration';
   const cardStatus = loading
@@ -691,14 +702,26 @@ export default function YouTrackImportCard({
                       {job.warnings.length} {plural(job.warnings.length, ['попередження', 'попередження', 'попереджень'])}. Дані без помилок продовжують імпортуватися.
                     </p>
                   )}
+                  {!jobIsMine && (
+                    <p className="mt-2 text-[11px] text-muted">
+                      Цей імпорт запустив(ла) {jobOwnerName}
+                      {isOrganizationOwner
+                        ? '. Продовжити його може лише той, хто розпочав; ви як власник можете його зупинити.'
+                        : '. Продовжити або зупинити його може той, хто розпочав, або власник організації.'}
+                    </p>
+                  )}
                   {ACTIVE_JOB_STATUSES.has(job.status) && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Button size="md" icon={Upload} onClick={run} loading={action === 'run'}>
-                        {job.status === 'running' ? 'Продовжити імпорт' : 'Почати імпорт'}
-                      </Button>
-                      <Button style="ghost" color="red" size="md" onClick={cancel} loading={action === 'cancel'}>
-                        Зупинити
-                      </Button>
+                      {jobIsMine && (
+                        <Button size="md" icon={Upload} onClick={run} loading={action === 'run'}>
+                          {job.status === 'running' ? 'Продовжити імпорт' : 'Почати імпорт'}
+                        </Button>
+                      )}
+                      {(jobIsMine || isOrganizationOwner) && (
+                        <Button style="ghost" color="red" size="md" onClick={cancel} loading={action === 'cancel'}>
+                          Зупинити
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

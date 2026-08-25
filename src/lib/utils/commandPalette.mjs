@@ -83,7 +83,10 @@ const ACTIONS = [
     label: 'Новий проєкт',
     hint: 'Створити проєкт',
     href: '/?new=1',
-    icon: 'plus',
+    // A folder, like every other project row in this list and in the sidebar.
+    // «Нова подія» is a calendar and «Новий спринт» is a lightning bolt: an
+    // action is drawn as the thing it makes, and this one was drawn as a plus.
+    icon: 'folder',
     permission: 'create:project',
     keywords: 'novyi proekt new project stvoryty create',
   },

@@ -78,10 +78,10 @@ export default function CommandPalette({
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      // No headline. «Команди» sat above a field that already says «Куди піти
-      // або що зробити…» and a list whose every group is captioned — a word
-      // spent on naming the window to somebody who just opened it on purpose.
-      // The name stays for a screen reader, which does need it announced.
+      // No headline. «Команди» sat above a field that already says what it is
+      // and a list whose every group is captioned — a word spent on naming the
+      // window to somebody who just opened it on purpose. The name stays for a
+      // screen reader, which does need it announced.
       ariaLabel="Команди й пошук"
       size="md"
       presentation="dialog"
@@ -195,7 +195,10 @@ function PaletteBody({
           value={query}
           onChange={event => { setQuery(event.target.value); setCursor(0); }}
           onKeyDown={handleKeyDown}
-          placeholder="Куди піти або що зробити…"
+          // «Куди піти або що зробити…» explained the palette to somebody who
+          // had already opened it. The field is a search field; the groups
+          // under it say what can be found.
+          placeholder="Пошук…"
           aria-label="Пошук команд"
           aria-controls="command-palette-list"
           className="h-[48px] w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-faint"

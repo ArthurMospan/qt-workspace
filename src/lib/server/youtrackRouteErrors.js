@@ -18,6 +18,7 @@ const SAFE_INPUT_PREFIXES = [
   'Підключення YouTrack пошкоджене',
   'Імпорт не знайдено',
   'Імпорт скасовано',
+  'Імпорт запустив',
 ];
 
 export function youTrackRouteErrorResponse(error, { context, fallbackMessage }) {
@@ -42,7 +43,10 @@ export function youTrackRouteErrorResponse(error, { context, fallbackMessage }) 
     const status = message === 'Імпорт не знайдено' ? 404
       : message === 'Імпорт скасовано' ? 409
         : message.startsWith('Ліміт ') ? 403
-          : 400;
+          // Not 400: the request is well formed and the caller is who they say
+          // they are — they simply are not this import's author.
+          : message.startsWith('Імпорт запустив') ? 403
+            : 400;
     return NextResponse.json({ error: message }, { status });
   }
   return routeErrorResponse(error, { context, fallbackMessage });

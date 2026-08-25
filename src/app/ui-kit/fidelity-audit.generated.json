@@ -340,7 +340,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:292",
+      "location": "src/components/WorkspaceSidebar.jsx:297",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -355,7 +355,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:315",
+      "location": "src/components/WorkspaceSidebar.jsx:320",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -370,7 +370,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:375",
+      "location": "src/components/WorkspaceSidebar.jsx:380",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -469,17 +469,17 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:292",
+      "location": "src/components/WorkspaceSidebar.jsx:297",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:315",
+      "location": "src/components/WorkspaceSidebar.jsx:320",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:375",
+      "location": "src/components/WorkspaceSidebar.jsx:380",
       "tag": "button",
       "context": "branding-action"
     }
@@ -585,12 +585,12 @@
       "className": "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:532",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:543",
       "tag": "div",
       "className": "rounded-[10px] bg-white p-2"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:628",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:639",
       "tag": "div",
       "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
     },

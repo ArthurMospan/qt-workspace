@@ -289,19 +289,24 @@ export default function WorkspaceSidebar() {
                   20px glyph: bigger to click, but nothing answered the cursor,
                   so it read as decoration. It is a real 32px control now — its
                   own box, its own hover tint, its own pointer. */}
+              {/* The quiet tier, not the navigation tier. Folding the rail away
+                  is chrome around the rail, and drawn at `--sb-muted` it was as
+                  loud as the destinations it sits above. It brightens to
+                  `--sb-text` on hover like everything else here, so it is still
+                  obviously a control once you are pointing at it. */}
               <button
                 onClick={() => setCollapsed(true)}
                 data-ui-control="branding-action"
                 data-ui-action="sidebar-collapse"
                 className="flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors"
-                style={{ color: 'var(--sb-muted)' }}
+                style={{ color: 'var(--sb-muted-header)' }}
                 onMouseEnter={e => {
                   e.currentTarget.style.backgroundColor = 'var(--sb-hover)';
                   e.currentTarget.style.color = 'var(--sb-text)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'var(--sb-muted)';
+                  e.currentTarget.style.color = 'var(--sb-muted-header)';
                 }}
                 title="Сховати панель"
                 aria-label="Згорнути бічну панель"
@@ -318,14 +323,14 @@ export default function WorkspaceSidebar() {
                   data-ui-control="branding-action"
                   data-ui-action="sidebar-collapse"
                   className="flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors"
-                  style={{ color: 'var(--sb-muted)' }}
+                  style={{ color: 'var(--sb-muted-header)' }}
                   onMouseEnter={e => {
                     e.currentTarget.style.backgroundColor = 'var(--sb-hover)';
                     e.currentTarget.style.color = 'var(--sb-text)';
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = 'var(--sb-muted)';
+                    e.currentTarget.style.color = 'var(--sb-muted-header)';
                   }}
                 >
                   <PanelLeftOpen size={20} />
