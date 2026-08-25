@@ -46,6 +46,46 @@ function elapsedAt(startedAt, stoppedAt) {
   return Math.max(0, Math.floor((stoppedAt - startedAt) / 1000));
 }
 
+// How long one live notification card stands, and how many stand at once.
+const LIVE_NOTIF_MS = 6000;
+const LIVE_NOTIF_LIMIT = 3;
+
+// Every card's own countdown, kept beside the state rather than in it: a timer
+// handle is not something the screen draws. `remaining` is what is left of the
+// six seconds, so a card can be stopped and started again — which is what a tab
+// going into the background and coming back does to it.
+//
+// The store is a module singleton, and so is this.
+const liveNotifTimers = new Map();
+
+function stopLiveNotifTimer(id) {
+  const entry = liveNotifTimers.get(id);
+  if (!entry) return;
+  if (entry.handle) clearTimeout(entry.handle);
+  liveNotifTimers.delete(id);
+}
+
+function runLiveNotifTimer(id, expire) {
+  const entry = liveNotifTimers.get(id);
+  if (!entry || entry.handle) return;
+  entry.startedAt = Date.now();
+  entry.handle = setTimeout(() => expire(id), entry.remaining);
+}
+
+function holdLiveNotifTimer(id) {
+  const entry = liveNotifTimers.get(id);
+  if (!entry?.handle) return;
+  clearTimeout(entry.handle);
+  entry.handle = null;
+  entry.remaining = Math.max(400, entry.remaining - (Date.now() - entry.startedAt));
+}
+
+// A card that arrives in a tab nobody is looking at waits there instead of
+// burning its six seconds unseen — the whole point of the card is to be read.
+function tabIsVisible() {
+  return typeof document === 'undefined' || document.visibilityState === 'visible';
+}
+
 function stopIntentKey(userId) {
   return `${STOP_INTENT_PREFIX}${userId}`;
 }
@@ -309,21 +349,49 @@ const useWorkspaceStore = create((set, get) => ({
     set({ toast: null, _toastTimer: null });
   },
 
-  // ── Live notification popup (real-time) ───────────────────────────
-  liveNotif: null,   // { id, title, body, type, link }
-  _liveNotifTimer: null,
+  // ── Live notification cards (real-time) ───────────────────────────
+  //
+  // A stack, not a slot. One card used to stand in for all of them: each
+  // arrival replaced whatever was on screen and reset the six seconds, so three
+  // comments in ten seconds were one card and two flashes. Up to
+  // LIVE_NOTIF_LIMIT stand at once — oldest first, newest nearest the corner —
+  // and each burns its own six seconds, paused while the tab is in the
+  // background.
+  liveNotifs: [],   // [{ id, title, body, type, link }], oldest first
   showLiveNotif: (notif) => {
-    // Same problem: the previous popup's timer used to clear whichever popup
-    // happened to be on screen when it fired, cutting the newer one short.
-    const previousTimer = get()._liveNotifTimer;
-    if (previousTimer) clearTimeout(previousTimer);
-    const timer = setTimeout(() => set({ liveNotif: null, _liveNotifTimer: null }), 6000);
-    set({ liveNotif: notif, _liveNotifTimer: timer });
+    if (!notif?.id) return;
+    const expire = get().dismissLiveNotif;
+    set(state => {
+      // The same notification twice is one card: the record is re-announced
+      // whenever the stream re-delivers it, and a stack would hold both.
+      const kept = state.liveNotifs.filter(card => card.id !== notif.id);
+      const next = [...kept, notif].slice(-LIVE_NOTIF_LIMIT);
+      // A card pushed off the bottom of the stack takes its countdown with it.
+      state.liveNotifs
+        .filter(card => !next.some(item => item.id === card.id))
+        .forEach(card => stopLiveNotifTimer(card.id));
+      return { liveNotifs: next };
+    });
+    stopLiveNotifTimer(notif.id);
+    liveNotifTimers.set(notif.id, { handle: null, remaining: LIVE_NOTIF_MS, startedAt: 0 });
+    if (tabIsVisible()) runLiveNotifTimer(notif.id, expire);
+  },
+  dismissLiveNotif: (id) => {
+    stopLiveNotifTimer(id);
+    set(state => ({ liveNotifs: state.liveNotifs.filter(card => card.id !== id) }));
+  },
+  // Nothing is counted down in a tab nobody is looking at; the reader comes back
+  // to what arrived while they were away, not to an empty corner.
+  holdLiveNotifs: () => {
+    get().liveNotifs.forEach(card => holdLiveNotifTimer(card.id));
+  },
+  resumeLiveNotifs: () => {
+    const expire = get().dismissLiveNotif;
+    get().liveNotifs.forEach(card => runLiveNotifTimer(card.id, expire));
   },
   clearLiveNotif: () => {
-    const timer = get()._liveNotifTimer;
-    if (timer) clearTimeout(timer);
-    set({ liveNotif: null, _liveNotifTimer: null });
+    get().liveNotifs.forEach(card => stopLiveNotifTimer(card.id));
+    set({ liveNotifs: [] });
   },
 
   // Which conversation the reader currently has in front of them, published by
@@ -460,15 +528,13 @@ const useWorkspaceStore = create((set, get) => ({
   // just left. Clear every organization-scoped surface as one transaction.
   resetOrganizationScope: () => {
     const toastTimer = get()._toastTimer;
-    const liveNotifTimer = get()._liveNotifTimer;
     if (toastTimer) clearTimeout(toastTimer);
-    if (liveNotifTimer) clearTimeout(liveNotifTimer);
+    get().liveNotifs.forEach(card => stopLiveNotifTimer(card.id));
     set({
       quickView: null,
       toast: null,
       _toastTimer: null,
-      liveNotif: null,
-      _liveNotifTimer: null,
+      liveNotifs: [],
       visibleConversation: null,
       unreadChatCount: 0,
       issueReadState: {},

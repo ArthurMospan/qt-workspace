@@ -12,16 +12,13 @@ import {
   channelUnreadCount,
   isDirectRoomId,
   isVisibleChatChannel,
+  TYPING_REFRESH_MS,
 } from '@/lib/utils/workspaceChat.mjs';
 import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
 
 // A live listener over an entire channel history is unbounded, so only the most
 // recent window is subscribed. Older messages load on demand via loadOlderMessages().
 const MESSAGE_PAGE_SIZE = 60;
-// A "typing" flag that is never cleared (tab crash, forced reload) would stick
-// forever, so writers refresh it on this cadence and readers ignore stale ones.
-const TYPING_TTL_MS = 8000;
-const TYPING_REFRESH_MS = 3000;
 
 // Best-effort storage cleanup: the Firestore record is already gone, so a
 // failed release must not surface as a failed delete.
@@ -339,6 +336,10 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
               title: currentUser.name || 'Нове приватне повідомлення',
               body: text.trim() || 'Надіслано вкладення',
               link: `/chat?dm=${encodeURIComponent(uid)}`,
+              // The conversation as the recipient's screen names it: a direct
+              // room is the person on the other side of it, which from there is
+              // the sender.
+              channelId: uid,
               organizationId: activeOrgId,
               dedupeKey: `chat_${messageRef.id}`,
             });
@@ -430,8 +431,9 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     return safeId;
   };
   // The flag carries a heartbeat timestamp and is refreshed while typing, so a
-  // reader can discard it after TYPING_TTL_MS. Without that, a crashed tab
-  // leaves "X is typing…" on screen permanently.
+  // reader can discard it after TYPING_TTL_MS (both live in workspaceChat.mjs,
+  // beside the reader that applies them). Without that, a crashed tab leaves
+  // "X is typing…" on screen permanently.
   const setTyping = async isTyping => {
     if (!channelId || !activeOrgId || !currentUser) return;
     if (typingStateRef.current === isTyping) return;

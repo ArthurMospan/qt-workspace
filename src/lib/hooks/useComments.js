@@ -50,6 +50,10 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
   // -------------------------------------------------------------------------
   // addComment
   // user: { uid, displayName, photoURL }
+  //
+  // Returns the id of the comment it wrote. The id is decided here, before the
+  // write leaves the browser, which is what lets a screen draw the message
+  // immediately and know which document in the next snapshot is the same one.
   // -------------------------------------------------------------------------
   const addComment = useCallback(async (issueId, text, user = {}, attachments = [], replyTo = null, options = {}) => {
     if (!text?.trim() && attachments.length === 0) throw new Error('Comment cannot be empty');
@@ -123,6 +127,7 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
         },
       }));
     }
+    return commentRef.id;
   }, []);
 
   const updateComment = useCallback(async (commentId, text) => {

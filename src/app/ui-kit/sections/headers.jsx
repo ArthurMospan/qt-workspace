@@ -118,15 +118,26 @@ export default function HeadersSection() {
         component="NotificationCard"
         fullWidth
       >
-        {/* `fixed` in the component, so the preview gives it a positioned box to
-            sit in rather than letting it fly to the corner of the catalogue. */}
-        <div className="relative h-[190px] w-full overflow-hidden rounded-[16px] bg-canvas [&>*]:!absolute [&>*]:!bottom-[12px] [&>*]:!right-[12px]">
+        {/* Two of them, because two of them is the real case: the corner holds
+            a stack of up to three, oldest at the top and the newest nearest the
+            edge. The card no longer pins its own corner, so the box below is
+            the stack — the same one the workspace draws. */}
+        <div className="flex h-[260px] w-full flex-col items-end justify-end gap-2 overflow-hidden rounded-[16px] bg-canvas p-3">
           <NotificationCard
             icon={<span className="grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[10px] bg-white text-ink"><CalendarClock size={16} /></span>}
             title="Планерка команди, четвер 10:00"
             body="Олена Коваль запросила вас на щотижневу зустріч команди дизайну."
             time="5 хв тому"
             openLabel="Відкрити подію"
+            onOpen={() => {}}
+            onDismiss={() => {}}
+          />
+          <NotificationCard
+            icon={<span className="grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[10px] bg-white text-ink"><CalendarClock size={16} /></span>}
+            title="Ігор Лисенко написав у завданні"
+            body="Переніс дедлайн на понеділок — встигнемо зібрати демо."
+            time="щойно"
+            openLabel="Відкрити чат завдання"
             onOpen={() => {}}
             onDismiss={() => {}}
           />

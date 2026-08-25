@@ -9,8 +9,10 @@
 // reader is looking at has nothing left to tell them, so the popup stays down —
 // the record in the bell is written either way, because the bell is the log.
 //
-// Pure and dependency-free: the workspace bridge decides with it, and the tests
-// exercise it without a browser.
+// Pure: the workspace bridge decides with it, and the tests exercise it without
+// a browser.
+
+import { notificationConversationId } from './notificationNavigation.mjs';
 
 // Two types are announced whatever is on screen. An emergency call is the one
 // notification that must interrupt, and a test notification exists to be seen.
@@ -18,7 +20,7 @@ const ALWAYS_ANNOUNCED = new Set(['emergency', 'alert', 'test']);
 
 /**
  * @param {object} notification The arriving notification record.
- * @param {{kind: 'issue'|'dm', id: string}|null} visibleConversation What the reader currently has open, as published by the pane showing it.
+ * @param {{kind: 'issue'|'dm'|'channel', id: string}|null} visibleConversation What the reader currently has open, as published by the pane showing it.
  */
 export function isConversationOnScreen(notification, visibleConversation) {
   if (!notification || !visibleConversation) return false;
@@ -29,7 +31,15 @@ export function isConversationOnScreen(notification, visibleConversation) {
   // comment, a mention in one and a status change all resolve to the same task.
   if (kind === 'issue') return Boolean(notification.issueId) && notification.issueId === id;
   // A direct conversation is identified by the person on the other side of it,
-  // which is exactly what `actorId` holds.
-  if (kind === 'dm') return notification.type === 'chat_message' && notification.actorId === id;
+  // which is exactly what `actorId` holds — and, on records written since, by
+  // the conversation the record names outright.
+  if (kind === 'dm') {
+    return (notification.type === 'chat_message' && notification.actorId === id)
+      || notificationConversationId(notification) === id;
+  }
+  // A channel names itself. Slack does not push about a mention in the channel
+  // you are reading either: the record is written and marked read, and the card
+  // that would have covered the conversation is not drawn.
+  if (kind === 'channel') return notificationConversationId(notification) === id;
   return false;
 }

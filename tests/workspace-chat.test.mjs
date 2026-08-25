@@ -442,7 +442,10 @@ test('the unread boundary waits for the cursor, and stops repeating itself', asy
 test('sending a message reads the conversation and takes the line down', async () => {
   const timeline = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
 
-  assert.match(timeline, /if \(!editingComment\) \{[\s\S]{0,600}?consumeConversation\(\);[\s\S]{0,40}?dismissBoundary\(\);/);
+  // Reading happens where the message is handed to the conversation, which is
+  // now before the write rather than after it — editing returns earlier, so
+  // nothing here can reach an edit.
+  assert.match(timeline, /setPendingMessages\(current =>[\s\S]{0,700}?consumeConversation\(\);[\s\S]{0,40}?dismissBoundary\(\);/);
   // And the reader lands on their own message wherever they were standing.
   assert.match(timeline, /wasNearBottomRef\.current = true;[\s\S]{0,40}?setIsScrolledUp\(false\);[\s\S]{0,40}?scrollToBottom\(\);/);
   // One place decides what «read» means, so three callers cannot each remember
@@ -579,7 +582,12 @@ test('the panes showing a conversation say so, and the popup asks before it fire
 
   assert.match(timeline, /const conversation = \{ kind: 'issue', id: issueId \};/);
   assert.match(timeline, /setVisibleConversation\(conversation\);/);
-  assert.match(chatPage, /const conversation = \{ kind: 'dm', id: activeChannel\.id \}/);
+  // Both kinds of workspace conversation, not only the direct one: a card about
+  // the channel you are reading covers the channel you are reading.
+  assert.match(
+    chatPage,
+    /const conversation = \{ kind: activeChannel\.type === 'dm' \? 'dm' : 'channel', id: activeChannel\.id \}/,
+  );
   // Registered only while the pane is actually on screen: below lg the task
   // page keeps the timeline mounted behind the task pane.
   assert.match(timeline, /if \(!isActive \|\| !issueId\) return undefined;/);
@@ -595,7 +603,7 @@ test('a message that arrives while you are reading is consumed without an unread
   // against a marker that had not mounted, returned, and was never rebuilt.
   assert.match(
     timeline,
-    /\}, \[boundary\.dismissed, consumeConversation, isActive, myId, sessionBoundary, unreadTotal\]\);/,
+    /\}, \[boundary\.dismissed, consumeConversation, isActive, myId, sessionBoundary, tabVisible, unreadTotal\]\);/,
   );
   // And a message that lands while the reader is already at the bottom crosses
   // no line at all, so the end of the conversation is observed too.
@@ -633,4 +641,70 @@ test('a reply quote leads to the message it quotes', async () => {
   // another window of reads.
   assert.match(timeline, /const JUMP_HISTORY_LIMIT = 5;/);
   assert.match(timeline, /historyWindow >= JUMP_HISTORY_LIMIT/);
+});
+
+// A message you sent is on screen because you sent it, not because Firestore
+// has come back and said so.
+test('the task chat draws a message as it is sent, and settles it by id', async () => {
+  const [timeline, comments] = await Promise.all([
+    readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/hooks/useComments.js', import.meta.url), 'utf8'),
+  ]);
+
+  // The composer hands the message over and is free again; the delivery runs
+  // after it, not in front of it.
+  assert.match(timeline, /void deliverComment\(draft\);/);
+  assert.match(timeline, /status: 'sending',/);
+  // A transaction is not applied to the local cache, so the id decided before
+  // the write is the only thing that can recognise the real document later.
+  assert.match(comments, /return commentRef\.id;/);
+  assert.match(timeline, /patchDraft\(\{ serverId: commentId, status: 'sent' \}\);/);
+  assert.match(
+    timeline,
+    /draft => Boolean\(draft\.serverId\) && \(draft\.issueId !== issueId \|\| arrivedCommentIds\.has\(draft\.serverId\)\)/,
+  );
+  // A failed send leaves the message where the sender put it, marked, and
+  // sendable again — it used to disappear along with what they had typed.
+  assert.match(timeline, /patchDraft\(\{ status: 'failed' \}\);/);
+  assert.match(timeline, /onRetry=\{\(\) => retryPendingMessage\(draft\)\}/);
+  assert.match(timeline, /icon=\{RotateCw\} size="micro" composition="chat-micro-action"/);
+  assert.match(timeline, /Не надіслано/);
+  // The bytes are reported where the message now is, not on a composer that has
+  // already been cleared.
+  assert.match(timeline, /\{ \.\.\.item, progress: \{ \.\.\.item\.progress, \[index\]: percent \} \}/);
+});
+
+// «Друкує…», which the workspace chat has had all along.
+test('the task chat says who is typing, on the workspace chat’s own mechanism', async () => {
+  const [timeline, hook, rules] = await Promise.all([
+    readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/hooks/useIssueTyping.js', import.meta.url), 'utf8'),
+    readFile(new URL('../firestore.rules', import.meta.url), 'utf8'),
+  ]);
+
+  // The same reader, the same heartbeat, the same expiry — one implementation
+  // of «who is typing» for both conversations in the product.
+  assert.match(timeline, /activeTypingUserIds\(typingState, \{ now: typingNow, exclude: myId \}\)/);
+  assert.match(hook, /import \{ TYPING_REFRESH_MS \} from '@\/lib\/utils\/workspaceChat\.mjs';/);
+  // A document of its own, because the task is subscribed to by every board and
+  // card that shows it and a heartbeat there would cost each of them a read.
+  assert.match(hook, /doc\(db, 'issues', issueId, 'presence', 'typing'\)/);
+  assert.match(rules, /match \/presence\/typing \{/);
+  assert.match(rules, /request\.resource\.data\.keys\(\)\.hasOnly\(\['typing', 'typingAt'\]\)/);
+  // Typing stops when the message is sent, and when the reader leaves.
+  assert.match(timeline, /clearTimeout\(typingRef\.current\);\s*\n\s*setTyping\(false\);/);
+  assert.match(hook, /if \(!isTypingRef\.current\) return;\s*\n\s*isTypingRef\.current = false;/);
+});
+
+// Nothing is read in a tab nobody is looking at.
+test('the task chat reads nothing while its tab is in the background', async () => {
+  const timeline = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
+
+  assert.match(timeline, /const syncVisibility = \(\) => setTabVisible\(document\.visibilityState === 'visible'\);/);
+  // Both observers — the unread line and the end of the conversation — stand
+  // down while the tab is hidden, and are rebuilt when it comes back, because
+  // an observer reports what is on screen the moment it starts watching.
+  assert.match(timeline, /if \(!isActive \|\| !tabVisible \|\| !myId \|\| unreadTotal === 0/);
+  assert.match(timeline, /if \(!isActive \|\| !tabVisible \|\| !myId \|\| unreadCommentIds\.length === 0/);
+  assert.match(timeline, /\}, \[consumeConversation, isActive, myId, tabVisible, unreadCommentIds\.length\]\);/);
 });

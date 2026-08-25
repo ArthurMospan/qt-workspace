@@ -4153,7 +4153,7 @@
           "default": "",
           "type": "React.CSSProperties",
           "values": [],
-          "description": "Placement and stacking, which the layer above owns."
+          "description": "Animation and stacking, which the layer above owns."
         },
         {
           "name": "time",

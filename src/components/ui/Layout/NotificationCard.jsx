@@ -13,6 +13,11 @@ import { X } from 'lucide-react';
  * than props, because deciding which glyph a notification type gets is the
  * product's business, not the kit's.
  *
+ * The card does not place itself. It used to pin its own corner, which meant
+ * two of them arriving together sat on top of each other — so the corner is the
+ * business of the layer that stacks them, and this is a card of a fixed width
+ * wherever it is put.
+ *
  * It used to open with two lines that could not tell the reader anything: a
  * capitalised category that repeated the title in worse words, and the name of
  * the organisation — which is filtered three times over on the way here and is
@@ -30,7 +35,7 @@ import { X } from 'lucide-react';
  * @param {string} props.openLabel What the open button says — where it goes, not «Перейти».
  * @param {() => void} props.onOpen Goes to whatever the notification is about. Without it no open button is drawn.
  * @param {() => void} props.onDismiss Hides the card.
- * @param {React.CSSProperties} props.style Placement and stacking, which the layer above owns.
+ * @param {React.CSSProperties} props.style Animation and stacking, which the layer above owns.
  */
 export default function NotificationCard({
   icon,
@@ -49,7 +54,7 @@ export default function NotificationCard({
       data-qt-global-notification-layer
       data-ui-surface="notification"
       data-ui-tone={tone}
-      className="ui-surface fixed bottom-[72px] right-[12px] w-[min(320px,calc(100vw-24px))] overflow-hidden md:bottom-5 md:right-[24px]"
+      className="ui-surface w-[min(320px,calc(100vw-24px))] overflow-hidden"
       style={style}
     >
       <div className="flex items-start gap-3 px-4 py-4">

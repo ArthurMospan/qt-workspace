@@ -40,9 +40,16 @@ export function channelIdFromName(name) {
     .slice(0, 100);
 }
 
+// A "typing" flag that is never cleared (tab crash, forced reload) would stick
+// forever, so writers refresh it on this cadence and readers ignore stale ones.
+// Both conversations in the product — the workspace channel and the task chat —
+// keep the same shape and the same clock, so they read with the same function.
+export const TYPING_TTL_MS = 8000;
+export const TYPING_REFRESH_MS = 3000;
+
 // A typing flag is only trusted for TYPING_TTL_MS after it was refreshed;
 // `typingAt` is a map of uid → epoch millis written alongside `typing`.
-export function activeTypingUserIds(channel, { now = Date.now(), ttlMs = 8000, exclude = '' } = {}) {
+export function activeTypingUserIds(channel, { now = Date.now(), ttlMs = TYPING_TTL_MS, exclude = '' } = {}) {
   const typing = Array.isArray(channel?.typing) ? channel.typing : [];
   const typingAt = channel?.typingAt && typeof channel.typingAt === 'object' ? channel.typingAt : {};
   return typing.filter(uid => {

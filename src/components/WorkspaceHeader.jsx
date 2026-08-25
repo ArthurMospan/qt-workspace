@@ -185,7 +185,8 @@ function useHeaderMode(pathname, projects, breadcrumbs = []) {
 export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   const router = useRouter();
   const { activeOrgId, allOrgs } = useAppContext();
-  const liveNotif = useWorkspaceStore(s => s.liveNotif);
+  const liveNotifs = useWorkspaceStore(s => s.liveNotifs);
+  const dismissLiveNotif = useWorkspaceStore(s => s.dismissLiveNotif);
   const clearLiveNotif = useWorkspaceStore(s => s.clearLiveNotif);
   const notifications = useWorkspaceStore(s => s.notifications);
   const notificationActions = useWorkspaceStore(s => s.notificationActions);
@@ -556,34 +557,44 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         </div>
       </div>
 
-      {/* ─── Live notification popup ────────────────────────────────── */}
-      {liveNotif && typeof document !== 'undefined' && createPortal((() => {
-        return (
-          <NotificationCard
-            icon={<NotifIcon n={liveNotif} size={32} />}
-            title={liveNotif.title}
-            body={liveNotif.body}
-            time={timeAgo(liveNotif.createdAt)}
-            tone={liveNotif.type === 'emergency' ? 'emergency' : 'default'}
-            actions={liveNotif.type === 'calendar_invite' && liveNotif.calendarEventId ? (
-              <CalendarResponseActions
-                notification={liveNotif}
-                response={calendarResponses[liveNotif.id]}
-                responding={respondingNotificationId === liveNotif.id}
-                onRespond={handleCalendarResponse}
-                surface="canvas"
-              />
-            ) : null}
-            openLabel={notificationOpenLabel(liveNotif)}
-            onOpen={liveNotif.link ? () => handleNotifClick(liveNotif) : undefined}
-            onDismiss={clearLiveNotif}
-            style={{
-              animation: 'slideUpIn 0.3s cubic-bezier(0.16,1,0.3,1)',
-              zIndex: GLOBAL_NOTIFICATION_Z_INDEX,
-            }}
-          />
-        );
-      })(), document.body)}
+      {/* ─── Live notification cards ────────────────────────────────────
+          A stack rather than a slot. The corner used to hold exactly one card,
+          so a burst of notifications was one card and a flicker; up to three
+          stand here now, oldest at the top, the newest one nearest the corner
+          where the eye already is. The stack owns the placement — the card
+          itself is just a card. */}
+      {liveNotifs.length > 0 && typeof document !== 'undefined' && createPortal(
+        <div
+          data-qt-global-notification-layer
+          className="fixed bottom-[72px] right-[12px] flex flex-col items-end gap-2 md:bottom-5 md:right-[24px]"
+          style={{ zIndex: GLOBAL_NOTIFICATION_Z_INDEX }}
+        >
+          {liveNotifs.map(card => (
+            <NotificationCard
+              key={card.id}
+              icon={<NotifIcon n={card} size={32} />}
+              title={card.title}
+              body={card.body}
+              time={timeAgo(card.createdAt)}
+              tone={card.type === 'emergency' ? 'emergency' : 'default'}
+              actions={card.type === 'calendar_invite' && card.calendarEventId ? (
+                <CalendarResponseActions
+                  notification={card}
+                  response={calendarResponses[card.id]}
+                  responding={respondingNotificationId === card.id}
+                  onRespond={handleCalendarResponse}
+                  surface="canvas"
+                />
+              ) : null}
+              openLabel={notificationOpenLabel(card)}
+              onOpen={card.link ? () => handleNotifClick(card) : undefined}
+              onDismiss={() => dismissLiveNotif(card.id)}
+              style={{ animation: 'slideUpIn 0.3s cubic-bezier(0.16,1,0.3,1)' }}
+            />
+          ))}
+        </div>,
+        document.body,
+      )}
     </>
   );
 }

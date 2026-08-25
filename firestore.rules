@@ -353,6 +353,21 @@ service cloud.firestore {
         );
       }
 
+      // Who is typing in the task's chat, as one document rather than two
+      // fields on the task: the task itself is subscribed to by every board and
+      // every card that shows it, and a heartbeat written there every three
+      // seconds would cost each of them a read. Anyone who can read the
+      // conversation can see it, and anyone who can write in it can say they
+      // are typing — the document holds nothing else, which is what the key
+      // check enforces.
+      match /presence/typing {
+        allow read: if canAccessIssueProject(issueId);
+        allow create, update: if issueAcceptsNestedWrites(issueId) &&
+          canAccessIssueProject(issueId) &&
+          request.resource.data.keys().hasOnly(['typing', 'typingAt']);
+        allow delete: if false;
+      }
+
       // Append-only activity log.
       match /audit/{auditId} {
         allow read: if canAccessIssueProject(issueId);

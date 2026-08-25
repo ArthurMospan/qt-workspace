@@ -35,6 +35,7 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 import EmojiPicker from 'emoji-picker-react';
 import { activeTypingUserIds, channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
+import { notificationConversationId } from '@/lib/utils/notificationNavigation.mjs';
 import { collectIssueMentions } from '@/lib/utils/messageTokens.mjs';
 import { formatLastSeenUk } from '@/lib/utils/presence.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
@@ -749,24 +750,39 @@ export default function ChatPage() {
     markAsRead(getRoomId());
   }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // A notification exists to bring somebody to a conversation. Standing in that
+  // conversation, the record has already done its whole job — so it is marked
+  // read rather than left in the bell as a badge for something on screen. The
+  // task chat does the same thing for a task.
+  //
+  // This used to reach direct messages only, because a `chat_message` record
+  // named its conversation nowhere but inside its link: a channel's records went
+  // on counting while their channel was open. They carry `channelId` now, and
+  // `notificationConversationId` reads the link for the ones written before it.
   useEffect(() => {
-    if (activeChannel.type !== 'dm' || document.visibilityState !== 'visible' || !markNotificationRead) return;
-    const unreadForConversation = notifications.filter(notification =>
-      notification.type === 'chat_message'
-      && !notification.read
+    if (!activeChannel.id || document.visibilityState !== 'visible' || !markNotificationRead) return;
+    const unreadForConversation = notifications.filter(notification => (
+      !notification.read
       && notification.organizationId === activeOrgId
-      && notification.actorId === activeChannel.id);
+      && (notification.type === 'chat_message' || notification.type === 'mentioned')
+      && (
+        notificationConversationId(notification) === activeChannel.id
+        // A direct message from before the field existed, whose link named the
+        // sender and whose sender is exactly what this pane calls the room.
+        || (activeChannel.type === 'dm' && notification.type === 'chat_message' && notification.actorId === activeChannel.id)
+      )
+    ));
     if (unreadForConversation.length === 0) return;
     Promise.allSettled(unreadForConversation.map(notification => markNotificationRead(notification.id)));
   }, [activeChannel.id, activeChannel.type, activeOrgId, markNotificationRead, notifications]);
 
-  // The open direct conversation, published for the live notification popup:
-  // the same rule the read-marking above already follows, said once more where
-  // the popup can hear it. A card announcing the message you are watching
-  // arrive is noise, and it lands on top of the conversation it describes.
+  // The open conversation, published for the live notification popup: the same
+  // rule the read-marking above already follows, said once more where the popup
+  // can hear it. A card announcing the message you are watching arrive is noise,
+  // and it lands on top of the conversation it describes.
   useEffect(() => {
-    if (activeChannel.type !== 'dm' || !activeChannel.id) return undefined;
-    const conversation = { kind: 'dm', id: activeChannel.id };
+    if (!activeChannel.id) return undefined;
+    const conversation = { kind: activeChannel.type === 'dm' ? 'dm' : 'channel', id: activeChannel.id };
     setVisibleConversation(conversation);
     return () => clearVisibleConversation(conversation);
   }, [activeChannel.id, activeChannel.type, clearVisibleConversation, setVisibleConversation]);
@@ -976,6 +992,7 @@ export default function ChatPage() {
               title: `${currentUser?.name || 'Колега'} згадав вас у чаті`,
               body: text.trim().slice(0, 500),
               link: `/chat?channel=${encodeURIComponent(activeChannel.id)}`,
+              channelId: activeChannel.id,
               organizationId: activeOrgId,
               dedupeKey: `channel_mention_${activeChannel.id}_${Date.now()}`,
             }).catch(notificationError => {
@@ -1037,7 +1054,7 @@ export default function ChatPage() {
     ].filter(Boolean);
 
     for (const notification of announce) {
-      void sendNotification({ ...notification, link, organizationId: activeOrgId })
+      void sendNotification({ ...notification, link, channelId: activeChannel.id, organizationId: activeOrgId })
         .catch(notificationError => {
           console.error('[workspace-chat] Thread notification failed:', notificationError);
         });

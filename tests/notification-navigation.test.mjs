@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
+  notificationConversationId,
   notificationDestination,
   notificationOpenLabel,
   notificationDestinationWithOrganization,
@@ -106,4 +107,74 @@ test('the notification card drops the two lines that carried nothing', async () 
   // The badge on the sender's face could not separate twelve types across far
   // fewer glyphs, so the face is drawn on its own.
   assert.doesNotMatch(header, /absolute -bottom-\[3px\] -right-\[3px\]/);
+});
+
+// Three notifications in ten seconds used to be one card and two flashes.
+test('live notification cards stand in a stack, one countdown each', async () => {
+  const [store, header, card, bridge] = await Promise.all([
+    readFile(new URL('../src/store/useWorkspaceStore.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/WorkspaceHeader.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/ui/Layout/NotificationCard.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/WorkspaceNotificationBridge.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  // A list bounded at three, not a slot that the next arrival overwrites.
+  assert.match(store, /const LIVE_NOTIF_LIMIT = 3;/);
+  assert.match(store, /liveNotifs: \[\]/);
+  assert.doesNotMatch(store, /_liveNotifTimer:/);
+  assert.match(store, /const next = \[\.\.\.kept, notif\]\.slice\(-LIVE_NOTIF_LIMIT\);/);
+  // One countdown per card, so an arrival cannot cut the card before it short.
+  assert.match(store, /const liveNotifTimers = new Map\(\);/);
+  assert.match(store, /dismissLiveNotif: \(id\) => \{/);
+  // And the countdown is spent in front of somebody: a hidden tab holds it.
+  assert.match(store, /if \(tabIsVisible\(\)\) runLiveNotifTimer\(notif\.id, expire\);/);
+  assert.match(store, /entry\.remaining = Math\.max\(400, entry\.remaining - \(Date\.now\(\) - entry\.startedAt\)\);/);
+  assert.match(bridge, /document\.addEventListener\('visibilitychange', syncVisibility\);/);
+  assert.match(bridge, /if \(document\.visibilityState === 'visible'\) resumeLiveNotifs\(\);/);
+
+  // The corner is the stack's, so two cards cannot sit on top of each other.
+  assert.match(header, /\{liveNotifs\.map\(card => \(/);
+  assert.match(header, /className="fixed bottom-\[72px\] right-\[12px\] flex flex-col items-end gap-2 md:bottom-5 md:right-\[24px\]"/);
+  assert.doesNotMatch(card, /fixed bottom-\[72px\]/);
+});
+
+// Which conversation a bell record is about, without opening it.
+test('a notification names its chat conversation, by field or by link', () => {
+  // The field, on everything written since it existed.
+  assert.equal(notificationConversationId({ channelId: 'general', link: '/chat?channel=general' }), 'general');
+  // The link, on everything written before — those records are still in bells.
+  assert.equal(notificationConversationId({ link: '/chat?channel=design&org=org-1' }), 'design');
+  // A direct conversation is named by the person on the other side of it, which
+  // is exactly what the chat pane calls that room.
+  assert.equal(notificationConversationId({ link: '/chat?dm=user-7' }), 'user-7');
+  // A thread reply belongs to the channel that holds the thread.
+  assert.equal(notificationConversationId({ link: '/chat?channel=general&thread=msg-3' }), 'general');
+  // Anything that is not a conversation names none.
+  assert.equal(notificationConversationId({ link: '/qt/issue/QT-12?view=chat' }), '');
+  assert.equal(notificationConversationId({ link: 'https://evil.example/chat?channel=general' }), '');
+  assert.equal(notificationConversationId(null), '');
+});
+
+// The record that exists only to bring you somewhere you already are.
+test('a channel marks its own bell records read while it is open', async () => {
+  const [chatPage, route, chatHook] = await Promise.all([
+    readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/api/notifications/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/hooks/useWorkspaceChat.js', import.meta.url), 'utf8'),
+  ]);
+
+  // The field the record could not carry before, written by the one route that
+  // creates notifications and by the three places that announce a message.
+  assert.match(route, /const channelId = cleanText\(payload\.channelId, 128\);/);
+  assert.match(route, /organizationId, channelId,/);
+  assert.match(chatPage, /channelId: activeChannel\.id,/);
+  assert.match(chatHook, /channelId: uid,/);
+
+  // Every conversation, not only the direct ones — that restriction is what
+  // left a channel's records counting while the channel was on screen.
+  assert.doesNotMatch(chatPage, /if \(activeChannel\.type !== 'dm' \|\| document\.visibilityState/);
+  assert.match(chatPage, /notificationConversationId\(notification\) === activeChannel\.id/);
+  assert.match(chatPage, /\(notification\.type === 'chat_message' \|\| notification\.type === 'mentioned'\)/);
+  // Nothing is read in a tab nobody is looking at.
+  assert.match(chatPage, /document\.visibilityState !== 'visible' \|\| !markNotificationRead/);
 });

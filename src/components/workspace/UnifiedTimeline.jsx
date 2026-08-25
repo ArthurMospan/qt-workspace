@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckCheck, ChevronDown, ChevronUp, Paperclip, Pencil, Reply, Trash2, X } from 'lucide-react';
+import { Check, CheckCheck, ChevronDown, ChevronUp, Clock, Paperclip, Pencil, Reply, RotateCw, Trash2, X } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
 import { useRouter } from 'next/navigation';
 import AvatarButton from '@/components/ui/DataDisplay/AvatarButton';
@@ -21,6 +21,7 @@ import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
 import { can } from '@/lib/utils/can';
 import { COMMENT_WINDOW, useComments } from '@/lib/hooks/useComments';
+import { useIssueTyping } from '@/lib/hooks/useIssueTyping';
 import { useSearch } from '@/lib/hooks/useSearch';
 import { AUDIT_WINDOW, useAuditLog } from '@/lib/hooks/useAuditLog';
 import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
@@ -42,6 +43,7 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { extractMentionedUserIds, filterMentionCandidates } from '@/lib/utils/mentions';
 import { collectIssueMentions } from '@/lib/utils/messageTokens.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { activeTypingUserIds } from '@/lib/utils/workspaceChat.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 import {
   ATTACHMENT_UPLOAD_ACCEPT,
@@ -239,6 +241,62 @@ function DaySeparator({ timestamp }) {
   );
 }
 
+/**
+ * A message that has been sent and has not come back yet, drawn where it will
+ * stand once it has. The composer used to hold it — and the reader — until
+ * Firestore answered, which on a transaction means a round trip to the server:
+ * a second of an empty conversation and a box that had swallowed what you
+ * typed. Now the message is on screen at once, and the only difference is the
+ * mark under it.
+ *
+ * @param {object} props.draft The queued message: text, files, upload progress and status.
+ * @param {object[]} props.members Participants, so a mention reads the same before and after it lands.
+ * @param {() => void} props.onRetry Sends it again, after a failure.
+ * @param {() => void} props.onDiscard Drops a failed message.
+ */
+function PendingMessage({ draft, members, onRetry, onDiscard }) {
+  const failed = draft.status === 'failed';
+  return (
+    <div className="group grid grid-cols-[minmax(0,1fr)_28px] items-end gap-x-2.5">
+      <div className="col-start-1 row-start-1 flex max-w-[84%] min-w-0 flex-col items-end justify-self-end">
+        <div className={`max-w-full break-words rounded-[16px] rounded-br-none p-3 text-[14px] leading-[22px] ${failed ? 'bg-[#303030]/55 text-white/85' : 'bg-[#303030] text-white'}`}>
+          <ReplyQuote replyTo={draft.replyTo} dark />
+          {draft.text && (
+            <div className="whitespace-pre-wrap">
+              <MentionText text={draft.text} members={members} dark issueMentions={draft.issueMentions} />
+            </div>
+          )}
+          {draft.files.length > 0 && (
+            <PendingChatAttachments
+              files={draft.files}
+              progress={draft.progress}
+              onRemove={() => {}}
+              className="mt-2"
+            />
+          )}
+        </div>
+      </div>
+      <div className="col-start-1 row-start-2 mt-1 flex flex-row-reverse items-center gap-1 justify-self-end">
+        {failed ? (
+          <>
+            <span className="px-1 text-[10px] font-medium text-red-500">Не надіслано</span>
+            {/* The same two controls the row under a real message carries, in
+                the same size and shape — a failed message is a message, and
+                sending it again is one of the things you do to one. */}
+            <IconAction label="Надіслати ще раз" icon={RotateCw} size="micro" composition="chat-micro-action" appearance="quiet" shape="micro" onClick={onRetry} title="Надіслати ще раз" />
+            <IconAction label="Прибрати повідомлення" icon={Trash2} size="micro" composition="chat-micro-action" appearance="quiet-danger" shape="micro" onClick={onDiscard} title="Прибрати" />
+          </>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-1 text-[10px] font-medium text-[#a1a1a1]">
+            <Clock size={11} aria-hidden />
+            Надсилається
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function UnifiedTimeline({
   issueId,
   projectId,
@@ -300,7 +358,12 @@ export default function UnifiedTimeline({
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
   const [pendingFiles, setPendingFiles] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState({});
+  // Messages that have been sent and have not come back yet. Each one is drawn
+  // at the end of the conversation the instant it is sent, carries its own
+  // upload progress, and is dropped when the snapshot brings the real document
+  // — or stays, marked as unsent, when the write fails.
+  const [pendingMessages, setPendingMessages] = useState([]);
+  const pendingSeqRef = useRef(0);
   const [replyTo, setReplyTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [viewerAttachment, setViewerAttachment] = useState(null);
@@ -341,6 +404,24 @@ export default function UnifiedTimeline({
     const timer = window.setTimeout(() => setWaitedOutFor(issueId), 2500);
     return () => window.clearTimeout(timer);
   }, [issueId]);
+
+  // Reading happens in front of somebody. A pane left open in a background tab
+  // is not being read, and the workspace chat has always checked this before it
+  // moves its cursor — the task chat marked messages read while the window was
+  // behind another one, which is how a conversation could be «прочитано»
+  // without ever having been seen.
+  //
+  // Held as state rather than asked at the moment of intersection, because both
+  // observers below have to be rebuilt when the tab comes back: an observer
+  // reports what is on screen the moment it starts watching, so returning to a
+  // task left open reads it, while nothing at all happens while away.
+  const [tabVisible, setTabVisible] = useState(true);
+  useEffect(() => {
+    const syncVisibility = () => setTabVisible(document.visibilityState === 'visible');
+    syncVisibility();
+    document.addEventListener('visibilitychange', syncVisibility);
+    return () => document.removeEventListener('visibilitychange', syncVisibility);
+  }, []);
 
   const [mentionState, setMentionState] = useState({
     active: false,
@@ -396,6 +477,28 @@ export default function UnifiedTimeline({
     return filterMentionCandidates(members, myId, mentionState.query);
   }, [mentionState.active, mentionState.query, members, myId]);
 
+  // «Друкує…», on the workspace chat's own mechanism. A flag is only worth
+  // anything while it is fresh, so the list is recomputed on a clock of its own
+  // — otherwise somebody who closed their laptop mid-sentence stays typing
+  // until the next message arrives.
+  const { typingState, setTyping } = useIssueTyping(issueId, { userId: myId, active: isActive });
+  const typingHeartbeat = typingState?.typing?.length || 0;
+  const [typingNow, setTypingNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!typingHeartbeat) return undefined;
+    const timer = window.setInterval(() => setTypingNow(Date.now()), 2000);
+    return () => window.clearInterval(timer);
+  }, [typingHeartbeat]);
+  const typingNames = useMemo(() => activeTypingUserIds(typingState, { now: typingNow, exclude: myId })
+    .map(uid => members.find(member => (member.id || member.uid) === uid)?.name)
+    .filter(Boolean), [members, myId, typingNow, typingState]);
+  const typingRef = useRef(null);
+  const noteTyping = () => {
+    setTyping(true);
+    clearTimeout(typingRef.current);
+    typingRef.current = setTimeout(() => setTyping(false), 2000);
+  };
+
   const timeline = useMemo(() => {
     const items = [];
     comments.forEach(comment => items.push({
@@ -415,6 +518,27 @@ export default function UnifiedTimeline({
     }));
     return items.sort((a, b) => a._time - b._time);
   }, [comments, auditLogs, timeLogs]);
+
+  // Where the optimistic message hands over to the real one. A transaction is
+  // not applied to the local cache the way a plain write is, so the snapshot
+  // arrives only once the server has it — until then the draft is the message,
+  // and the id the write already knows is what recognises the two as one.
+  //
+  // Read out of the list rather than deleted from it, because deciding this is
+  // arithmetic on what the snapshot says and not an event: a draft is finished
+  // the moment its document is in `comments`, whether or not anything else
+  // happens afterwards. A draft also belongs to the task it was typed in — going
+  // to another task leaves it be, so an unsent message is still there, and still
+  // retryable, when the sender comes back to it.
+  const arrivedCommentIds = useMemo(() => new Set(comments.map(comment => comment.id)), [comments]);
+  const draftSettled = useCallback(
+    draft => Boolean(draft.serverId) && (draft.issueId !== issueId || arrivedCommentIds.has(draft.serverId)),
+    [arrivedCommentIds, issueId],
+  );
+  const visibleDrafts = useMemo(
+    () => pendingMessages.filter(draft => draft.issueId === issueId && !draftSettled(draft)),
+    [draftSettled, issueId, pendingMessages],
+  );
 
   // One boundary for the whole feed. Messages and changes are two kinds of the
   // same thing to a reader coming back to a task — «що тут сталося без мене» —
@@ -507,7 +631,6 @@ export default function UnifiedTimeline({
   const resetComposer = () => {
     setInput('');
     setPendingFiles([]);
-    setUploadProgress({});
     setReplyTo(null);
     setEditingComment(null);
   };
@@ -853,7 +976,7 @@ export default function UnifiedTimeline({
   useEffect(() => {
     const marker = unreadMarkerRef.current;
     const scroll = scrollRef.current;
-    if (!isActive || !myId || unreadTotal === 0 || !marker || !scroll) {
+    if (!isActive || !tabVisible || !myId || unreadTotal === 0 || !marker || !scroll) {
       return undefined;
     }
 
@@ -877,7 +1000,7 @@ export default function UnifiedTimeline({
     // this effect otherwise watches. Without it the observer ran once against a
     // marker that had not mounted yet, returned, and was never rebuilt — so
     // messages sat unread under a reader who was looking straight at them.
-  }, [boundary.dismissed, consumeConversation, isActive, myId, sessionBoundary, unreadTotal]);
+  }, [boundary.dismissed, consumeConversation, isActive, myId, sessionBoundary, tabVisible, unreadTotal]);
 
   // Reading is not only crossing the line. The boundary is the landmark for a
   // conversation you came back to; a message that arrives while you are already
@@ -888,7 +1011,7 @@ export default function UnifiedTimeline({
   useEffect(() => {
     const feedEnd = feedEndRef.current;
     const scroll = scrollRef.current;
-    if (!isActive || !myId || unreadCommentIds.length === 0 || !feedEnd || !scroll) {
+    if (!isActive || !tabVisible || !myId || unreadCommentIds.length === 0 || !feedEnd || !scroll) {
       return undefined;
     }
 
@@ -908,7 +1031,7 @@ export default function UnifiedTimeline({
       observer.disconnect();
       if (readTimer) window.clearTimeout(readTimer);
     };
-  }, [consumeConversation, isActive, myId, unreadCommentIds.length]);
+  }, [consumeConversation, isActive, myId, tabVisible, unreadCommentIds.length]);
 
   // A list that grows under a reader sitting at the end of it has to keep them
   // there. An image finishing its decode, or a composer growing by a line, used
@@ -947,91 +1070,160 @@ export default function UnifiedTimeline({
     setPendingFiles(previous => [...previous, ...accepted]);
   };
 
-  const handleSend = async () => {
-    const text = input.trim();
-    if ((!text && pendingFiles.length === 0) || sendingRef.current) return;
-    sendingRef.current = true;
-    setSending(true);
+  // The whole of sending, once the message has already been drawn: the files go
+  // up, the comment is written, and the people with a stake in the task are
+  // told. Separate from the handler because a message that failed to send can be
+  // sent again without being typed again — the draft is still on screen.
+  const deliverComment = useCallback(async draft => {
+    const patchDraft = changes => setPendingMessages(current => current.map(item => (
+      item.clientId === draft.clientId ? { ...item, ...changes } : item
+    )));
     try {
-      if (editingComment) {
-        await updateComment(editingComment.id, text);
-      } else {
-        const folder = `organizations/${project?.organizationId || 'shared'}/comments`;
-        const attachments = [];
-        for (const [index, file] of pendingFiles.entries()) {
-          attachments.push(await uploadFile(file, folder, percent => {
-            setUploadProgress(previous => ({ ...previous, [index]: percent }));
-          }));
-        }
-        const mentionedUserIds = extractMentionedUserIds(text, members, myId);
-        await addComment(issueId, text, currentUser, attachments, replyTo, {
-          mentionedUserIds,
-          issueMentions: collectIssueMentions(text, resolvedIssues.current),
-        });
-        const taskChatLink = `${issuePath(issue, project || projectId)}?view=chat`;
-        if (mentionedUserIds.length > 0) {
-          try {
-            await sendNotification({
-              userIds: mentionedUserIds,
-              type: 'mentioned',
-              title: `${currentUser?.name || 'Колега'} згадав вас у завданні`,
-              body: text.slice(0, 500),
-              link: taskChatLink,
-              issueId,
-              projectId,
-              organizationId: project?.organizationId || org?.id || '',
-            });
-          } catch (notificationError) {
-            console.error('[task-chat] mention notification failed:', notificationError);
-            showToast('Повідомлення надіслано, але сповіщення про згадку не доставлено', 'error');
-          }
-        }
-
-        // Everyone with a stake in the task hears about a new comment. Nothing
-        // sent this type before — «Новий коментар» sat in Settings as a switch
-        // wired to no sender at all, so it silently did nothing. Mentioned
-        // people are excluded: they already get the mention, which says the
-        // same thing more precisely.
-        const commentRecipients = issueParticipants(issue, {
-          actorId: myId,
-          commentAuthorIds: comments.map(item => item.authorId),
-          exclude: mentionedUserIds,
-        });
-        if (commentRecipients.length > 0) {
-          sendNotification({
-            userIds: commentRecipients,
-            type: 'commented',
-            title: `${currentUser?.name || 'Колега'} написав у завданні`,
-            body: text.slice(0, 500) || 'Вкладення',
+      const folder = `organizations/${project?.organizationId || 'shared'}/comments`;
+      const attachments = [];
+      for (const [index, file] of draft.files.entries()) {
+        attachments.push(await uploadFile(file, folder, percent => {
+          setPendingMessages(current => current.map(item => (
+            item.clientId === draft.clientId
+              ? { ...item, progress: { ...item.progress, [index]: percent } }
+              : item
+          )));
+        }));
+      }
+      const mentionedUserIds = extractMentionedUserIds(draft.text, members, myId);
+      const commentId = await addComment(issueId, draft.text, currentUser, attachments, draft.replyTo, {
+        mentionedUserIds,
+        issueMentions: draft.issueMentions,
+      });
+      // From here the message exists. The draft stays on screen until the
+      // snapshot carrying it arrives — dropping it now would blink the message
+      // out and back in — and the id is how the two are recognised as one.
+      patchDraft({ serverId: commentId, status: 'sent' });
+      const taskChatLink = `${issuePath(issue, project || projectId)}?view=chat`;
+      if (mentionedUserIds.length > 0) {
+        try {
+          await sendNotification({
+            userIds: mentionedUserIds,
+            type: 'mentioned',
+            title: `${currentUser?.name || 'Колега'} згадав вас у завданні`,
+            body: draft.text.slice(0, 500),
             link: taskChatLink,
             issueId,
             projectId,
             organizationId: project?.organizationId || org?.id || '',
-          }).catch(error => console.error('[task-chat] comment notification failed:', error));
+          });
+        } catch (notificationError) {
+          console.error('[task-chat] mention notification failed:', notificationError);
+          showToast('Повідомлення надіслано, але сповіщення про згадку не доставлено', 'error');
         }
       }
-      resetComposer();
-      if (!editingComment) {
-        // Answering is the strongest statement there is that everything above
-        // has been read, and every messenger treats it that way. Ours did not:
-        // the unread line stood over a conversation with the reader's own
-        // replies under it, and the tab kept counting messages they had plainly
-        // seen. It also takes the line down, because it has nothing left to say.
-        consumeConversation();
-        dismissBoundary();
-        // And wherever they were standing in the history, their own message is
-        // what they are now looking for. The ref is what the feed reads when the
-        // message actually arrives from Firestore a moment later.
-        wasNearBottomRef.current = true;
-        setIsScrolledUp(false);
-        scrollToBottom();
+
+      // Everyone with a stake in the task hears about a new comment. Nothing
+      // sent this type before — «Новий коментар» sat in Settings as a switch
+      // wired to no sender at all, so it silently did nothing. Mentioned
+      // people are excluded: they already get the mention, which says the
+      // same thing more precisely.
+      const commentRecipients = issueParticipants(issue, {
+        actorId: myId,
+        commentAuthorIds: comments.map(item => item.authorId),
+        exclude: mentionedUserIds,
+      });
+      if (commentRecipients.length > 0) {
+        sendNotification({
+          userIds: commentRecipients,
+          type: 'commented',
+          title: `${currentUser?.name || 'Колега'} написав у завданні`,
+          body: draft.text.slice(0, 500) || 'Вкладення',
+          link: taskChatLink,
+          issueId,
+          projectId,
+          organizationId: project?.organizationId || org?.id || '',
+        }).catch(error => console.error('[task-chat] comment notification failed:', error));
       }
     } catch (error) {
+      // The message stays where the sender put it, marked as what it is. It used
+      // to vanish with the composer's contents, so a failed send was a message
+      // typed twice.
+      patchDraft({ status: 'failed' });
       showToast(`Помилка надсилання: ${error.message}`, 'error');
-    } finally {
-      sendingRef.current = false;
-      setSending(false);
     }
+  }, [addComment, comments, currentUser, issue, issueId, members, myId, org, project, projectId, showToast]);
+
+  const retryPendingMessage = draft => {
+    setPendingMessages(current => current.map(item => (
+      item.clientId === draft.clientId
+        ? { ...item, status: 'sending', progress: Object.fromEntries(item.files.map((_, index) => [index, 0])) }
+        : item
+    )));
+    void deliverComment(draft);
+  };
+
+  const discardPendingMessage = draft => {
+    setPendingMessages(current => current.filter(item => item.clientId !== draft.clientId));
+  };
+
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text && pendingFiles.length === 0) return;
+    // The message is the answer; nobody is still typing it.
+    clearTimeout(typingRef.current);
+    setTyping(false);
+
+    // Editing is still a form: the message is already on screen and the change
+    // has to land on it, so the composer waits for the write.
+    if (editingComment) {
+      if (sendingRef.current) return;
+      sendingRef.current = true;
+      setSending(true);
+      try {
+        await updateComment(editingComment.id, text);
+        resetComposer();
+      } catch (error) {
+        showToast(`Помилка надсилання: ${error.message}`, 'error');
+      } finally {
+        sendingRef.current = false;
+        setSending(false);
+      }
+      return;
+    }
+
+    // A new message is not. It appears the moment it is sent — marked as being
+    // sent, and settled by the snapshot that carries the real one — because
+    // waiting for a Firestore transaction to answer is a second of an empty
+    // conversation and a composer that has swallowed what you typed.
+    pendingSeqRef.current += 1;
+    const draft = {
+      clientId: `draft-${pendingSeqRef.current}`,
+      issueId,
+      text,
+      files: pendingFiles,
+      replyTo,
+      issueMentions: collectIssueMentions(text, resolvedIssues.current),
+      // Seeded at zero so the files read as «being sent» from the first frame,
+      // rather than offering a remove button for an upload already under way.
+      progress: Object.fromEntries(pendingFiles.map((_, index) => [index, 0])),
+      status: 'sending',
+      serverId: null,
+      createdAt: new Date(),
+    };
+    // The settled ones go here rather than in an effect of their own: a list
+    // that is already being rewritten is the cheapest place to drop what it no
+    // longer needs.
+    setPendingMessages(current => [...current.filter(item => !draftSettled(item)), draft]);
+    resetComposer();
+    // Answering is the strongest statement there is that everything above
+    // has been read, and every messenger treats it that way. Ours did not:
+    // the unread line stood over a conversation with the reader's own
+    // replies under it, and the tab kept counting messages they had plainly
+    // seen. It also takes the line down, because it has nothing left to say.
+    consumeConversation();
+    dismissBoundary();
+    // And wherever they were standing in the history, their own message is
+    // what they are now looking for.
+    wasNearBottomRef.current = true;
+    setIsScrolledUp(false);
+    scrollToBottom();
+    void deliverComment(draft);
   };
 
   return (
@@ -1239,6 +1431,38 @@ export default function UnifiedTimeline({
           return null;
         })}
 
+        {/* What has been sent and has not come back yet. Always the newest thing
+            in the conversation, so it belongs after everything the snapshot
+            knows about and before the end of the feed. */}
+        {visibleDrafts.map(draft => (
+          <PendingMessage
+            key={draft.clientId}
+            draft={draft}
+            members={members}
+            onRetry={() => retryPendingMessage(draft)}
+            onDiscard={() => discardPendingMessage(draft)}
+          />
+        ))}
+
+        {/* Somebody is answering right now. The same three dots the workspace
+            chat has always had, off the same heartbeat. */}
+        {typingNames.length > 0 && (
+          <div className="flex items-center gap-2 py-1" aria-live="polite">
+            <span className="flex gap-0.5">
+              {[0, 1, 2].map(dot => (
+                <span
+                  key={dot}
+                  className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted"
+                  style={{ animationDelay: `${dot * 0.15}s` }}
+                />
+              ))}
+            </span>
+            <span className="text-[12px] italic text-muted">
+              {typingNames.join(', ')} {typingNames.length === 1 ? 'друкує' : 'друкують'}...
+            </span>
+          </div>
+        )}
+
         {/* The end of the conversation, as something that can be observed.
             Seeing it is what consumes a message that arrived while the reader
             was already here — no unread line is ever crossed for those. */}
@@ -1310,6 +1534,7 @@ export default function UnifiedTimeline({
               // a message opened for editing arrives at its full height instead
               // of in a two-line box that has to be scrolled.
               setInput(event.target.value);
+              noteTyping();
               checkMentions(event.target.value, event.target.selectionStart);
               checkIssueMention(event.target.value, event.target.selectionStart);
             }}
@@ -1356,9 +1581,11 @@ export default function UnifiedTimeline({
             placeholder={editingComment ? 'Змінити повідомлення...' : 'Написати повідомлення...'}
             attachments={pendingFiles.length > 0 ? (
               <div className="border-b border-black/[0.05] p-2">
+                {/* No progress here any more: the upload starts after the
+                    composer has already handed the message to the conversation,
+                    and that is where the bytes are now reported. */}
                 <PendingChatAttachments
                   files={pendingFiles}
-                  progress={uploadProgress}
                   onRemove={index => setPendingFiles(files => files.filter((_, fileIndex) => fileIndex !== index))}
                 />
               </div>

@@ -51,6 +51,8 @@ export default function WorkspaceNotificationBridge() {
   const setUnreadChatCount = useWorkspaceStore(state => state.setUnreadChatCount);
   const showLiveNotif = useWorkspaceStore(state => state.showLiveNotif);
   const clearLiveNotif = useWorkspaceStore(state => state.clearLiveNotif);
+  const holdLiveNotifs = useWorkspaceStore(state => state.holdLiveNotifs);
+  const resumeLiveNotifs = useWorkspaceStore(state => state.resumeLiveNotifs);
   const setNotificationCenter = useWorkspaceStore(state => state.setNotificationCenter);
   const clearNotificationCenter = useWorkspaceStore(state => state.clearNotificationCenter);
   // Read off the store rather than subscribed to: which conversation is open
@@ -76,6 +78,18 @@ export default function WorkspaceNotificationBridge() {
   useEffect(() => {
     clearLiveNotif();
   }, [activeOrgId, clearLiveNotif]);
+
+  // Six seconds is six seconds of somebody looking. A card that arrived while
+  // the tab was in another window used to spend them there and be gone before
+  // the reader came back, which is the one case the card exists for.
+  useEffect(() => {
+    const syncVisibility = () => {
+      if (document.visibilityState === 'visible') resumeLiveNotifs();
+      else holdLiveNotifs();
+    };
+    document.addEventListener('visibilitychange', syncVisibility);
+    return () => document.removeEventListener('visibilitychange', syncVisibility);
+  }, [holdLiveNotifs, resumeLiveNotifs]);
 
   const actions = useMemo(() => ({
     markAllRead: notificationCenter.markAllRead,
