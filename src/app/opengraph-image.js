@@ -16,10 +16,8 @@ export const contentType = 'image/png';
 
 const INK = '#1f1f1f';
 const CANVAS = '#f4f4f5';
-const MUTED = '#9a9a9a';
 
 const TITLE = 'QuickTeam';
-const TAGLINE = 'Одна робота, а не сім інструментів';
 
 // The real mark, copied from `public/logo-min.svg`. Inlined rather than read
 // off disk on purpose: a file under `public/` is served to browsers but is not
@@ -38,18 +36,17 @@ const MARK_SRC = `data:image/svg+xml;base64,${Buffer.from(MARK).toString('base64
 const PLAIN_UA = 'Mozilla/5.0';
 
 /**
- * The bundled fallback font has no Cyrillic, and the tagline is Ukrainian —
- * without this the whole lower half of the card renders as empty boxes. Google
- * serves a subset containing exactly the glyphs asked for, which is a few
- * kilobytes.
+ * Google serves a subset containing exactly the glyphs asked for, which for
+ * one word is a couple of kilobytes rather than the whole face.
  *
- * If the fetch fails the card still renders — Latin "QuickTeam" is intact and
- * the rest degrades. An unfurled preview is not worth failing a build over.
+ * If the fetch fails the card still renders — the name falls back to whatever
+ * satori bundles. An unfurled preview is not worth failing a build over.
  *
- * Each weight is registered as its own family rather than as two weights of
- * one. Both subsets arrive as separate files with the same internal name, and
- * satori then matched every element to whichever it saw last — the first cut
- * of this card had a 116px title in the same weight as its 26px chips.
+ * The face is registered under a name of its own rather than as a weight of
+ * "Inter". Subsets arrive as separate files carrying the same internal name,
+ * and satori then matches every element to whichever it saw last — that is how
+ * an earlier cut of this card ended up with a 116px title in the weight of its
+ * 26px chips.
  */
 async function interSubset(family, weight, text) {
   try {
@@ -69,12 +66,7 @@ async function interSubset(family, weight, text) {
 }
 
 export default async function Image() {
-  const fonts = (
-    await Promise.all([
-      interSubset('InterBold', 700, `${TITLE}QT`),
-      interSubset('InterMedium', 500, TAGLINE),
-    ])
-  ).filter(Boolean);
+  const fonts = [await interSubset('InterBold', 700, TITLE)].filter(Boolean);
 
   return new ImageResponse(
     (
@@ -87,7 +79,6 @@ export default async function Image() {
           justifyContent: 'space-between',
           background: INK,
           padding: '72px 80px',
-          fontFamily: 'InterMedium, sans-serif',
         }}
       >
         {/* The product mark itself — not a stand-in built out of letters.
@@ -96,22 +87,17 @@ export default async function Image() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={MARK_SRC} width={84} height={84} alt="" />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-          <div
-            style={{
-              display: 'flex',
-              color: CANVAS,
-              fontFamily: 'InterBold, sans-serif',
-              fontSize: 116,
-              letterSpacing: -4,
-              lineHeight: 1,
-            }}
-          >
-            {TITLE}
-          </div>
-          <div style={{ display: 'flex', color: MUTED, fontSize: 40 }}>
-            {TAGLINE}
-          </div>
+        <div
+          style={{
+            display: 'flex',
+            color: CANVAS,
+            fontFamily: 'InterBold, sans-serif',
+            fontSize: 116,
+            letterSpacing: -4,
+            lineHeight: 1,
+          }}
+        >
+          {TITLE}
         </div>
       </div>
     ),

@@ -25,7 +25,7 @@ const robotoCondensed = Roboto_Condensed({
 // the emails already resolve against, so there is one answer to "what is our
 // origin" rather than three.
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-const OG_DESCRIPTION = 'Дошки, спринти, облік часу, календар і чат — в одному застосунку, на одних даних.';
+const OG_DESCRIPTION = 'Сучасний менеджер завдань для команди';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
