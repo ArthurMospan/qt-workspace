@@ -4,6 +4,7 @@ import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import { rolesFor } from '@/lib/utils/can';
+import { assigneesOutsideProject } from '@/lib/utils/projectAccess.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
   DEFAULT_LABEL_IDS,
@@ -159,11 +160,30 @@ export async function POST(request) {
     }
 
     const assigneeIds = Array.isArray(data.assigneeIds) ? [...new Set(data.assigneeIds)].slice(0, 20) : [];
+    // Being in the organization was the only thing ever asked of an assignee,
+    // and it is not enough: `project.team` is what opens a project, so a task
+    // could be handed to somebody who could not open the project it was in.
+    // They then had a task in «Мої завдання» whose project 404'd for them, and
+    // a card on a board that dropped their face because the board resolves
+    // faces from the team they were not in.
+    let assigneesToAddToTeam = [];
     if (assigneeIds.length) {
       const refs = assigneeIds.map(uid => db.collection('orgMemberships').doc(`${organizationId}_${uid}`));
       const memberships = await db.getAll(...refs);
       if (memberships.some((snap, index) => !snap.exists || snap.data().userId !== assigneeIds[index])) {
         return NextResponse.json({ error: 'Виконавець не є учасником організації' }, { status: 400 });
+      }
+      const roleByUid = new Map(assigneeIds.map((uid, index) => [uid, memberships[index].data().role || null]));
+      assigneesToAddToTeam = assigneesOutsideProject(projectData, assigneeIds, uid => roleByUid.get(uid) || null);
+      // Granting project access is `manage:team`, which a member does not hold.
+      // For them the assignment is refused rather than performed half-way; the
+      // composer does not offer these people to a member in the first place, so
+      // this is the server saying the same thing the screen already said.
+      if (assigneesToAddToTeam.length && !isPrivileged) {
+        return NextResponse.json({
+          error: 'Виконавець не входить до команди проєкту. Попросіть власника або адміністратора додати його до проєкту.',
+          code: 'ASSIGNEE_OUTSIDE_PROJECT',
+        }, { status: 403 });
       }
     }
 
@@ -360,6 +380,13 @@ export async function POST(request) {
       transaction.update(projectRef, {
         issueCounter: next,
         ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
+        // An owner or an admin handing work to somebody outside the project
+        // grants the access along with it, in the same write that creates the
+        // task — so the assignee can open what they were just given rather than
+        // finding out later that they cannot. The composer says this will
+        // happen before it happens; the silent version of it is what this
+        // replaced.
+        ...(assigneesToAddToTeam.length ? { team: FieldValue.arrayUnion(...assigneesToAddToTeam) } : {}),
         updatedAt: now,
         ...(parentIssueId
           ? { issueHierarchyVersion: FieldValue.increment(1) }

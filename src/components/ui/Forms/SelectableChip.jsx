@@ -41,6 +41,9 @@ const STATES = {
  * @param {React.ReactNode} props.children Chip content.
  * @param {'person'|'label'} props.shape Which of the two chip geometries to draw.
  * @param {boolean} props.selected Whether it is switched on.
+ * @param {boolean} props.disabled Offered, but not to you — the composer draws
+ *   a colleague who is not on the selected project this way rather than hiding
+ *   them, so the reason can be said instead of the name simply being absent.
  * @param {string} props.tone Optional colour role for the `label` shape.
  * @param {string} props.className Placement in the parent only.
  */
@@ -48,18 +51,21 @@ export default function SelectableChip({
   children,
   shape = 'person',
   selected = false,
+  disabled = false,
   tone,
   className = '',
   ...props
 }) {
   const shapeClass = SHAPES[shape] ?? SHAPES.person;
   const stateClass = (STATES[shape] ?? STATES.person)[selected ? 'on' : 'off'];
+  const disabledClass = disabled ? 'opacity-45 cursor-not-allowed hover:border-line' : '';
 
   return (
     <button
       type="button"
       aria-pressed={selected}
-      className={`${shapeClass} ${stateClass} ${className}`.trim()}
+      disabled={disabled}
+      className={`${shapeClass} ${stateClass} ${disabledClass} ${className}`.trim()}
       style={selected && tone ? { background: `${tone}14`, color: tone } : undefined}
       {...props}
     >

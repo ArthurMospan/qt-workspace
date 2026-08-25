@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 855,
-    "documentedProps": 855,
+    "props": 856,
+    "documentedProps": 856,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5106,6 +5106,13 @@
           "type": "string",
           "values": [],
           "description": "Placement in the parent only."
+        },
+        {
+          "name": "disabled",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Offered, but not to you — the composer draws"
         },
         {
           "name": "selected",

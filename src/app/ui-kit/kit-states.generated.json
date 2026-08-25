@@ -375,7 +375,7 @@
       "long-text": "placeholder"
     },
     "SelectableChip": {
-      "disabled": "native",
+      "disabled": "prop",
       "hover": "own",
       "focus": "global",
       "long-text": "children"

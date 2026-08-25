@@ -31,7 +31,7 @@ import {
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { useBulkIssueActions } from '@/lib/hooks/useBulkIssueActions';
-import { can } from '@/lib/utils/can';
+import { can, canWhileRoleLoads } from '@/lib/utils/can';
 import { useViewState } from '@/lib/hooks/useViewState';
 import { MY_TASKS_VIEW_SCHEMA } from '@/lib/utils/viewState.mjs';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
@@ -399,7 +399,7 @@ export default function MyTasksPage() {
               }}
               onMoveIssue={handleMoveIssue}
               onBulkUpdate={handleBulkUpdate}
-              canArchive={can(orgRole, 'delete:issue')}
+              canArchive={canWhileRoleLoads(orgRole, 'delete:issue')}
               issueLinks={issueLinks}
               selectionScopeKey={selectionScopeKey}
             />
@@ -419,7 +419,7 @@ export default function MyTasksPage() {
             hiddenGroupIds={hiddenCategories}
             onBulkUpdate={handleBulkUpdate}
             bulkProgress={bulkProgress}
-            canArchive={can(orgRole, 'delete:issue')}
+            canArchive={canWhileRoleLoads(orgRole, 'delete:issue')}
             selectionScopeKey={selectionScopeKey}
           />
         )}

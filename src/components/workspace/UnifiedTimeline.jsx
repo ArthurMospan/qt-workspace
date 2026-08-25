@@ -19,7 +19,7 @@ import LoadOlderButton from '@/components/ui/Chat/LoadOlderButton';
 import { IconAction, Pill, Popover, useConfirm } from '@/components/ui';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
 import { useAppContext } from '@/lib/context/AppContext';
-import { can } from '@/lib/utils/can';
+import { can, canWhileRoleLoads } from '@/lib/utils/can';
 import { COMMENT_WINDOW, useComments } from '@/lib/hooks/useComments';
 import { useIssueTyping } from '@/lib/hooks/useIssueTyping';
 import { useSearch } from '@/lib/hooks/useSearch';
@@ -318,8 +318,14 @@ export default function UnifiedTimeline({
   // Writing and editing a comment are open to every role that can work in the
   // project. Reading that from the matrix rather than assuming it keeps the
   // matrix honest: an entry nothing consults can say anything and stay true.
-  const canWriteComments = can(orgRole, 'create:comment');
-  const canEditOwnComment = can(orgRole, 'edit:comment');
+  //
+  // Asked so that a role still in flight is not read as a refusal. Both of
+  // these hold for every role in the workspace, so `can(null, …)` returning
+  // false could only ever mean "the membership has not arrived" — and it took
+  // the composer off the task screen while it hadn't, which looked exactly like
+  // a task you are not allowed to write in.
+  const canWriteComments = canWhileRoleLoads(orgRole, 'create:comment');
+  const canEditOwnComment = canWhileRoleLoads(orgRole, 'edit:comment');
   const showToast = useWorkspaceStore(state => state.showToast);
   const setVisibleConversation = useWorkspaceStore(state => state.setVisibleConversation);
   const clearVisibleConversation = useWorkspaceStore(state => state.clearVisibleConversation);

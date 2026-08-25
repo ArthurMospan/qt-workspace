@@ -31,3 +31,39 @@ export function projectWriteError(project, organizationId, role, uid) {
   if (!hasProjectAccess(project, role, uid)) return 'Ви не входите до команди цього проєкту';
   return '';
 }
+
+/**
+ * A project whose team was never recorded is legacy data, not a project nobody
+ * belongs to. Every reader of `team` has to make that distinction or it starts
+ * refusing writes on the oldest projects in the workspace.
+ */
+export function hasRecordedTeam(project) {
+  return Array.isArray(project?.team);
+}
+
+/**
+ * The assignees who could not open the task being handed to them.
+ *
+ * A task's assignee has to be able to reach its project — otherwise the task is
+ * not work assigned to somebody, it is a note about them. The workspace could
+ * produce exactly that: «Команда» → a member → «Створити завдання» offers every
+ * project, the composer offered the whole organization as assignees, and the
+ * server only ever checked that an assignee was in the organization. The result
+ * was a task its own assignee could not find, whose avatar the board then
+ * dropped silently because the card resolves faces from the project's team.
+ *
+ * Who may then do something about it is a separate question, and the caller's:
+ * adding somebody to a project is `manage:team`, so an owner or an admin
+ * assigning work grants the access along with it, and anyone else is refused.
+ *
+ * @param {object} project The project the task lives in.
+ * @param {string[]} assigneeIds The people being assigned.
+ * @param {(uid: string) => string|null} roleOf Their role in the organization.
+ * @returns {string[]} The subset that needs to be added to `project.team`.
+ */
+export function assigneesOutsideProject(project, assigneeIds, roleOf) {
+  if (!hasRecordedTeam(project)) return [];
+  return [...new Set(assigneeIds || [])].filter(
+    uid => uid && !hasProjectAccess(project, roleOf(uid), uid),
+  );
+}

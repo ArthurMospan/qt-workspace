@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
+import { hasProjectAccess, hasRecordedTeam, isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
 import { Check, Play, Tag as TagIcon } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
@@ -41,7 +42,7 @@ import {
 // chosen — and again if it is changed.
 export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, teamMembers = [], projects = null, projectContext = null, sprints = [], initialStatus = null, initialCategory = null, initialAssignees = null, initialSprintId = null }) {
   const router = useRouter();
-  const { currentUser, activeOrg } = useAppContext();
+  const { currentUser, activeOrg, orgRole } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
   const [mode, setMode] = useState('task');
@@ -66,6 +67,46 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
 
   const selectedProject = projects?.find(p => p.id === form.projectId) || projectContext;
   const activeHiddenCols = selectedProject?.hiddenColumns;
+
+  // Who this task may be given to, decided from the project that is selected
+  // right now rather than from whatever list the caller happened to pass.
+  //
+  // Three of the four places that open this composer handed it the whole
+  // organization — «Мої завдання», «Спринти» and the projects page all ask for
+  // a project *inside* the dialog, so there was no project to scope by when
+  // they built their list. The result was a task assigned to somebody who is
+  // not on its project: they cannot open it, and the board silently drops their
+  // face, because a card resolves faces from the project's team. The dialog
+  // knows which project is selected, so the dialog is where this belongs.
+  //
+  // Adding somebody to a project is `manage:team`. An owner or an admin may
+  // hand work to a person outside it — the assignment adds them, and the line
+  // under the picker says so before it happens. Anybody else is only offered
+  // the people who are already there, because an assignment they are not
+  // allowed to complete is a dead end, not a permission prompt.
+  const mayGrantProjectAccess = isPrivilegedRole(orgRole);
+  // The organization directory carries each colleague's role, so an owner or an
+  // admin — who reaches every project without being listed on one — is never
+  // reported as missing from a team.
+  const memberReachesProject = useMemo(() => member => {
+    if (!selectedProject || !hasRecordedTeam(selectedProject)) return true;
+    return hasProjectAccess(selectedProject, member.role || null, member.uid || member.id);
+  }, [selectedProject]);
+
+  // Anyone the composer was opened with stays on the list even when they are
+  // not on the project — «Команда» → учасник → «Створити завдання» is exactly
+  // that case, and dropping the person the dialog was opened for would be a
+  // stranger answer than saying what will happen to them.
+  const preselected = useMemo(() => new Set(initialAssignees || []), [initialAssignees]);
+  const assignableMembers = useMemo(() => (teamMembers || []).filter(member => {
+    const uid = member.uid || member.id;
+    return memberReachesProject(member) || preselected.has(uid) || mayGrantProjectAccess;
+  }), [teamMembers, memberReachesProject, preselected, mayGrantProjectAccess]);
+
+  const assigneesJoiningProject = useMemo(() => (assignableMembers || []).filter(member => {
+    const uid = member.uid || member.id;
+    return form.assignees.includes(uid) && !memberReachesProject(member);
+  }), [assignableMembers, form.assignees, memberReachesProject]);
   const availableSprints = useMemo(
     () => (sprints || []).filter(sprint => sprint.status !== 'completed'),
     [sprints],
@@ -446,21 +487,28 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           </div>
 
           {/* Assignees */}
-          {teamMembers.length > 0 && (
+          {assignableMembers.length > 0 && (
             <div className="flex flex-col gap-[6px] lg:col-span-2">
               <div className="flex items-center justify-between gap-3">
                 <Label>Виконавці</Label>
                 <span className="text-[10px] font-medium text-muted">Можна вибрати кількох</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {teamMembers.map(m => {
+                {assignableMembers.map(m => {
                   const uid = m.uid || m.id;
                   const selected = form.assignees.includes(uid);
+                  const joining = !memberReachesProject(m);
                   return (
                     <SelectableChip
                       key={uid}
                       shape="person"
                       selected={selected}
+                      disabled={joining && !mayGrantProjectAccess}
+                      title={joining
+                        ? (mayGrantProjectAccess
+                          ? `Не входить до команди проєкту — буде додано`
+                          : `Не входить до команди проєкту${selectedProject?.name ? ` «${selectedProject.name}»` : ''}`)
+                        : undefined}
                       onClick={() => toggleAssignee(uid)}
                     >
                       <span aria-hidden="true"><UserAvatar user={m} size="xs" /></span>
@@ -470,6 +518,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                   );
                 })}
               </div>
+              {assigneesJoiningProject.length > 0 && (
+                <p className="text-[10px] leading-[1.4] text-muted">
+                  {assigneesJoiningProject.map(m => m.name || m.email).join(', ')}
+                  {assigneesJoiningProject.length === 1 ? ' не входить' : ' не входять'} до команди проєкту
+                  {selectedProject?.name ? ` «${selectedProject.name}»` : ''}
+                  {mayGrantProjectAccess
+                    ? ' — буде додано разом зі створенням завдання.'
+                    : ' — призначити не вдасться, попросіть власника або адміністратора.'}
+                </p>
+              )}
               <p className="text-[10px] leading-[1.4] text-muted">
                 У персональній аналітиці завдання врахується кожному вибраному виконавцю.
               </p>

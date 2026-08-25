@@ -16,7 +16,7 @@ import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
 import { Alert, BulkActionBar, ContextMenu, DatePicker, FormGroup, PageHeader, Pill, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
-import { can } from '@/lib/utils/can';
+import { can, canWhileRoleLoads } from '@/lib/utils/can';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { useLocalization } from '@/lib/hooks/useLocalization';
@@ -1158,7 +1158,7 @@ export default function GlobalSprintsPage() {
           value: sprint.id,
           label: sprint.name,
         }))}
-        canArchive={can(orgRole, 'delete:issue')}
+        canArchive={canWhileRoleLoads(orgRole, 'delete:issue')}
         onApply={handleBulkUpdate}
         onClear={clearSelection}
       />

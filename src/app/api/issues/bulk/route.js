@@ -26,7 +26,7 @@ import { resolveCategoryStatusId } from '@/lib/utils/statusCategories.mjs';
 import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
+import { assigneesOutsideProject, isPrivilegedRole, projectWriteError } from '@/lib/utils/projectAccess.mjs';
 import { can } from '@/lib/utils/can';
 import { DEFAULT_ORGANIZATION_TIME_ZONE, zonedDateTimeToUtcMs } from '@/lib/utils/timeZone.mjs';
 
@@ -223,6 +223,13 @@ export async function POST(request) {
     if (!(await enforceRateLimit('issue-bulk', authorization.user.uid, 20, 60))) {
       return NextResponse.json({ error: 'Забагато масових операцій. Спробуйте за хвилину' }, { status: 429 });
     }
+    // Adding somebody to a project is `manage:team`. It decides only whether an
+    // assignment that needs project access may grant it; everything else about
+    // the action is already decided above.
+    const isPrivilegedActor = isPrivilegedRole(authorization.membership?.role);
+    // Project → the assignees this operation has to let into it, collected
+    // across every task and written once, beside the project touch below.
+    const projectTeamGrants = new Map();
 
     const db = getAdminDb();
     const issueSnaps = await db.getAll(...issueIds.map(id => db.collection('issues').doc(id)));
@@ -239,6 +246,10 @@ export async function POST(request) {
     const statuses = fallbackStatuses(workflow);
 
     let valueMemberships = null;
+    // The role each of them holds, because being in the organization is not
+    // what opens a project — `project.team` is, and an owner or an admin
+    // reaches every project without being listed in one.
+    let valueRoles = new Map();
     if (['assignees-add', 'assignees-replace'].includes(actionId)) {
       const memberIds = cleanIds(body.value);
       const memberships = await db.getAll(...memberIds.map(id => db.collection('orgMemberships').doc(`${organizationId}_${id}`)));
@@ -246,6 +257,7 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Один із відповідальних не є учасником організації' }, { status: 400 });
       }
       valueMemberships = memberIds;
+      valueRoles = new Map(memberIds.map((id, index) => [id, memberships[index].data().role || null]));
     }
     let sprint = null;
     if (actionId === 'sprint') {
@@ -346,6 +358,29 @@ export async function POST(request) {
           // is read once, above, with the rest of the operation's context.
           patch = updateForAction({ actionId, value: normalizedValue, issue: fresh, workflow, timeZone });
           freshIssue = fresh;
+          // An assignee has to be able to open the project the task is in. In
+          // bulk this is per task, because a selection spans projects: the same
+          // person may be on one of them and not the next.
+          //
+          // Only the people this action is *adding*. Reading it off the patch
+          // would also pick up somebody assigned long ago who has since left
+          // the project team, and quietly put them back into it — removing an
+          // assignee is not the moment to grant anybody access.
+          //
+          // Refused here, granted after the loop: writing `team` inside this
+          // transaction would put every task in the selection back onto the one
+          // hot project document that the per-task `updatedAt` was moved out of.
+          const outsideProject = valueMemberships
+            ? assigneesOutsideProject(freshProject, valueMemberships, uid => valueRoles.get(uid) ?? null)
+            : [];
+          if (outsideProject.length && !isPrivilegedActor) {
+            throw new Error(`У проєкті «${freshProject?.name || issue.projectId}» цей виконавець не входить до команди`);
+          }
+          for (const uid of outsideProject) {
+            const pending = projectTeamGrants.get(issue.projectId) || new Set();
+            pending.add(uid);
+            projectTeamGrants.set(issue.projectId, pending);
+          }
           const now = FieldValue.serverTimestamp();
           transaction.update(issueRef, {
             ...patch,
@@ -391,15 +426,24 @@ export async function POST(request) {
     const failed = results.filter(result => result.error).map(result => ({ id: result.id, reason: result.error }));
 
     // One touch per project the operation actually changed, not one per task.
-    const touchedProjectIds = [...new Set(
-      updated
+    const touchedProjectIds = [...new Set([
+      ...updated
         .map(result => issues.find(issue => issue.id === result.id)?.projectId)
         .filter(Boolean),
-    )];
+      ...projectTeamGrants.keys(),
+    ])];
     if (touchedProjectIds.length) {
       const touch = db.batch();
       for (const id of touchedProjectIds) {
-        touch.update(db.collection('projects').doc(id), { updatedAt: FieldValue.serverTimestamp() });
+        const grants = projectTeamGrants.get(id);
+        touch.update(db.collection('projects').doc(id), {
+          updatedAt: FieldValue.serverTimestamp(),
+          // The same write that says the project changed also lets in the
+          // people the operation just handed work to. `arrayUnion` is
+          // idempotent, so a task whose transaction lost a race and retried
+          // cannot add anybody twice.
+          ...(grants?.size ? { team: FieldValue.arrayUnion(...grants) } : {}),
+        });
       }
       await touch.commit().catch(error => console.warn('[issue-bulk] project touch failed:', error.message));
     }

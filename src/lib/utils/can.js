@@ -79,3 +79,30 @@ export function can(role, action) {
   if (!role) return false;
   return PERMISSIONS[action]?.includes(role) || false;
 }
+
+/**
+ * The same question, asked while the role is still on its way.
+ *
+ * `can(null, action)` is `false`, and a screen that hides a control on `false`
+ * cannot tell "you may not" from "we do not know yet". For an owner-only action
+ * that conflation is harmless — hiding it a moment longer is the safe way to be
+ * wrong. For an action every role in the workspace holds it is never anything
+ * but wrong: the comment composer simply was not on the task screen until the
+ * membership arrived, and the person waiting for it had no way to know whether
+ * they were early or forbidden.
+ *
+ * So while the role is unknown this answers for the floor — the least any
+ * member of this organization holds. Nobody who is in the workspace at all is
+ * denied `create:comment`, so nobody is shown a control they will lose; and
+ * `create:project`, which a member does not hold, still stays hidden until the
+ * role proves otherwise. The write itself is authorized by Firestore rules and
+ * the server routes either way; this decides only what is on screen.
+ *
+ * @param {string|null} role - The role, or null/undefined while it loads.
+ * @param {string} action - The action to check permission for.
+ * @returns {boolean} True if allowed, or still possible for any member.
+ */
+export function canWhileRoleLoads(role, action) {
+  if (role) return can(role, action);
+  return PERMISSIONS[action]?.includes('member') || false;
+}

@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 259,
-    "parsedFiles": 259,
+    "productFiles": 260,
+    "parsedFiles": 260,
     "parseErrors": 0,
     "nativeControls": 21,
     "structures": {
@@ -505,7 +505,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:326",
+      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:342",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -710,7 +710,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:1537",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1543",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

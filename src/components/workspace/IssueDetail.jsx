@@ -7,6 +7,8 @@ import { useAppContext }        from '@/lib/context/AppContext';
 import { useIssues }           from '@/lib/hooks/useIssues';
 import { useTimeLogs }         from '@/lib/hooks/useTimeLogs';
 import { useOrganization }     from '@/lib/hooks/useOrganization';
+import { hasProjectAccess, hasRecordedTeam } from '@/lib/utils/projectAccess.mjs';
+import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { usePortalSession }    from '@/lib/portal/usePortalSession';
@@ -42,7 +44,7 @@ import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 import DatePicker from '@/components/ui/Forms/DatePicker';
 
-import { can } from '@/lib/utils/can';
+import { can, canWhileRoleLoads } from '@/lib/utils/can';
 import { isArchivedIssue, withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import { isCancelledIssue, withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
 import { setIssueArchived, setIssueCancelled } from '@/lib/services/issues';
@@ -58,7 +60,7 @@ import {
   AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
   Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon, Archive, ArchiveRestore,
-  Maximize2, User, CircleDot, Ban, Undo2,
+  Maximize2, User, Users, CircleDot, Ban, Undo2,
 } from 'lucide-react';
 import { ParentTaskIcon, TaskIcon } from '@/lib/design/icons';
 import { taskTypeIcon } from '@/lib/design/taskTypeIcons';
@@ -428,6 +430,27 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // task is worse still. Anyone already assigned stays on the list even if they
   // have since left the team; otherwise they could never be un-assigned.
   const assignableIds = new Set([...teamUids, ...(issue?.assigneeIds || [])]);
+  // Assignees this project's team does not reach. Owners and admins reach every
+  // project without being listed in one, so the role is part of the question.
+  const assigneesOutsideProjectTeam = !project || !hasRecordedTeam(project)
+    ? []
+    : (issue?.assigneeIds || [])
+      .map(uid => members.find(member => (member.id || member.uid) === uid) || { id: uid, name: uid })
+      // The organization directory carries each colleague's role, and an owner
+      // or an admin reaches every project without being listed on one — so a
+      // missing role here is a member's, which is the case this is about.
+      .filter(member => !hasProjectAccess(project, member.role || null, member.id || member.uid));
+
+  const handleGrantProjectAccess = async () => {
+    const uids = assigneesOutsideProjectTeam.map(member => member.id || member.uid).filter(Boolean);
+    if (uids.length === 0) return;
+    try {
+      await updateDoc(doc(db, 'projects', projectId), { team: arrayUnion(...uids) });
+      showToast('Додано до команди проєкту');
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося додати до команди проєкту'), 'error');
+    }
+  };
   // Deactivated colleagues stay in `members` so their name and face still
   // render on everything they did; they are simply not people you can hand new
   // work to, here or in any other picker.
@@ -928,14 +951,25 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
 
     // Under team-gated project visibility, an assignee who isn't on the
     // project team could not open the task they were just given. Add them to
-    // the team so the assignment is actually usable. Best-effort: only
-    // owners/admins may write `team` (Firestore rules), so a member assigner's
-    // write is denied and swallowed — the assignment itself still stands.
+    // the team so the assignment is actually usable.
+    //
+    // And say which of the two happened. Only owners and admins may write
+    // `team` (Firestore rules), so a member's grant is refused — and it used to
+    // be refused into a `catch {}`, which left the assignment standing beside a
+    // person who still could not open it and nobody told either of them. Both
+    // outcomes are now something the assigner reads.
     const missingFromTeam = added.filter(uid => !teamUids.includes(uid));
     if (missingFromTeam.length > 0) {
+      const named = missingFromTeam
+        .map(uid => members.find(m => (m.id || m.uid) === uid))
+        .map((member, index) => member?.name || member?.email || missingFromTeam[index])
+        .join(', ');
       try {
         await updateDoc(doc(db, 'projects', projectId), { team: arrayUnion(...missingFromTeam) });
-      } catch { /* member assigner lacks team-write permission — non-fatal */ }
+        showToast(`${named} — додано до команди проєкту`);
+      } catch {
+        showToast(`${named} не входить до команди проєкту — попросіть власника або адміністратора додати`, 'warning');
+      }
     }
 
     const myId = currentUser?.id || currentUser?.uid;
@@ -1323,20 +1357,20 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 },
                 // Two different things, and they finally read as two: putting a
                 // task aside for good, and deleting it with a clock running.
-                ...(can(orgRole, 'edit:issue')
+                ...(canWhileRoleLoads(orgRole, 'edit:issue')
                   ? [
                     { label: 'Архівувати', icon: Archive, onClick: () => handleArchive(true) },
                     { label: 'Скасувати', icon: Ban, onClick: () => handleCancel(true) },
                   ]
                   : []),
-                ...(can(orgRole, 'delete:issue')
+                ...(canWhileRoleLoads(orgRole, 'delete:issue')
                   ? [{ label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true }]
                   : []),
               ] : []),
-              ...(isIssueArchived && can(orgRole, 'edit:issue')
+              ...(isIssueArchived && canWhileRoleLoads(orgRole, 'edit:issue')
                 ? [{ label: 'Повернути з архіву', icon: ArchiveRestore, onClick: () => handleArchive(false) }]
                 : []),
-              ...(isIssueCancelled && can(orgRole, 'edit:issue')
+              ...(isIssueCancelled && canWhileRoleLoads(orgRole, 'edit:issue')
                 ? [{ label: 'Повернути завдання', icon: Undo2, onClick: () => handleCancel(false) }]
                 : []),
             ]}
@@ -1450,7 +1484,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 <Alert variant="info" title="Завдання в архіві">
                   <div className="flex flex-wrap items-center gap-3">
                     <span>Воно прибране з дошки, списків і підрахунку відкритої роботи. У звітах, таймшиті та рахунках лишається — записаний час нікуди не дівся. Строку немає.</span>
-                    {can(orgRole, 'edit:issue') && (
+                    {canWhileRoleLoads(orgRole, 'edit:issue') && (
                       <Button
                         style="secondary"
                         size="sm"
@@ -1474,7 +1508,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 <Alert variant="warning" title="Завдання скасовано">
                   <div className="flex flex-wrap items-center gap-3">
                     <span>Цієї роботи не буде. Завдання не рахується ніде: ні в прогресі, ні у звітах, ні в навантаженні, ні в рахунках. Дані збережені — строку немає.</span>
-                    {can(orgRole, 'edit:issue') && (
+                    {canWhileRoleLoads(orgRole, 'edit:issue') && (
                       <Button
                         style="secondary"
                         size="sm"
@@ -1482,6 +1516,37 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                         onClick={() => handleCancel(false)}
                       >
                         Повернути завдання
+                      </Button>
+                    )}
+                  </div>
+                </Alert>
+              </div>
+            )}
+
+            {/* An assignment nobody can act on. `project.team` is what opens a
+                project, and until the create route started checking it a task
+                could be handed to somebody outside it — from «Команда» →
+                учасник → «Створити завдання», where the composer offered every
+                colleague and every project at once. The task then sat in their
+                «Мої завдання» with a project that 404s. Saying so on the task is
+                the only place the two facts meet. */}
+            {assigneesOutsideProjectTeam.length > 0 && (
+              <div className="mt-3">
+                <Alert variant="warning" title="Виконавець не має доступу до проєкту">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span>
+                      {assigneesOutsideProjectTeam.map(member => member.name || member.email).join(', ')}
+                      {assigneesOutsideProjectTeam.length === 1 ? ' не входить' : ' не входять'} до команди проєкту
+                      {project?.name ? ` «${project.name}»` : ''}, тож не побачить це завдання у своєму проєкті.
+                    </span>
+                    {can(orgRole, 'manage:team') && (
+                      <Button
+                        style="secondary"
+                        size="sm"
+                        icon={Users}
+                        onClick={handleGrantProjectAccess}
+                      >
+                        Додати до проєкту
                       </Button>
                     )}
                   </div>

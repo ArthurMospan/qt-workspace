@@ -10,6 +10,7 @@ import { useSprints }    from '@/lib/hooks/useSprints';
 import { useTeamMembers } from '@/lib/hooks/useTeamMembers';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { issueDisplayParticipants } from '@/lib/utils/issueParticipants.mjs';
 import useWorkspaceStore  from '@/store/useWorkspaceStore';
 import AgileBoard    from '@/components/workspace/AgileBoard';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
@@ -23,7 +24,7 @@ import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
-import { can } from '@/lib/utils/can';
+import { can, canWhileRoleLoads } from '@/lib/utils/can';
 import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
@@ -97,7 +98,22 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   });
 
   const project  = projects?.find(p => p.id === projectId);
-  const teamUids = Array.isArray(project?.team) ? project.team : [];
+  // The project's team, plus anyone actually standing on one of these tasks.
+  //
+  // The team alone is who may be *given* work here. It is not who is *on* the
+  // work: a task assigned before somebody left the team — or, until the server
+  // started refusing it, assigned to somebody who was never on it — still
+  // carries their name, and a card that resolves faces from the team dropped
+  // them without a word. A face is a record of who is on a task; a picker is a
+  // question about who may be handed one. The union answers both, which is the
+  // same rule the task screen has always used for its own assignee list.
+  const teamUids = useMemo(() => {
+    const uids = new Set(Array.isArray(project?.team) ? project.team : []);
+    for (const issue of sourceIssues || []) {
+      for (const participant of issueDisplayParticipants(issue)) uids.add(participant.id);
+    }
+    return [...uids];
+  }, [project, sourceIssues]);
   const { members } = useTeamMembers(teamUids);
   const { members: organizationMembers } = useOrganization();
   const { labels, priorities, types } = useWorkflowConfig();
@@ -513,7 +529,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               issueLinks={issueLinks}
               sprints={sprints}
               isArchived={isArchived}
-              canArchive={can(orgRole, 'delete:issue')}
+              canArchive={canWhileRoleLoads(orgRole, 'delete:issue')}
               selectionScopeKey={selectionScopeKey}
             />
           </div>
@@ -538,10 +554,10 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
               // `edit:issue`. Hidden UI is not the guard — the server route and
               // the rules are — but a cell that opens and then refuses is worse
               // than one that does not open.
-              onUpdateIssue={isArchived || !can(orgRole, 'edit:issue') ? undefined : handleUpdateIssue}
+              onUpdateIssue={isArchived || !canWhileRoleLoads(orgRole, 'edit:issue') ? undefined : handleUpdateIssue}
               onBulkUpdate={handleBulkUpdate}
               bulkProgress={bulkProgress}
-              canArchive={can(orgRole, 'delete:issue')}
+              canArchive={canWhileRoleLoads(orgRole, 'delete:issue')}
               selectionScopeKey={selectionScopeKey}
             />
           </div>
@@ -559,7 +575,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
             activeTimerIssueId={activeTimer?.issueId}
             onBulkUpdate={handleBulkUpdate}
             bulkProgress={bulkProgress}
-            canArchive={can(orgRole, 'delete:issue')}
+            canArchive={canWhileRoleLoads(orgRole, 'delete:issue')}
             selectionScopeKey={selectionScopeKey}
           />
         )
