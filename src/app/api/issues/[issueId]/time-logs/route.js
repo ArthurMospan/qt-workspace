@@ -22,6 +22,13 @@ import {
   parseTaskTimeLogDescription,
   parseTaskTimeLogTimestamp,
 } from '@/lib/utils/taskTimeLog.mjs';
+import {
+  cleanTimerSessionId,
+  requireMatchingPendingTimer,
+  timerLogDocumentId,
+  timerStateErrorResponse,
+  timerStateRef,
+} from '@/lib/server/userTimerState';
 
 export async function POST(request, context) {
   try {
@@ -49,6 +56,12 @@ export async function POST(request, context) {
     }
 
     const authorization = await authorizeTaskTimeLogRequest(request, organizationId);
+    const timerSessionId = body.timerSessionId === undefined
+      ? ''
+      : cleanTimerSessionId(body.timerSessionId);
+    if (body.timerSessionId !== undefined && !timerSessionId) {
+      throw taskTimeLogError('TASK_TIME_TIMER_INVALID', 400, 'Некоректна сесія таймера');
+    }
     if (
       body.userId !== undefined
       && body.userId !== authorization.user.uid
@@ -77,12 +90,51 @@ export async function POST(request, context) {
     const estimateReservationRef = db.collection('invoiceEstimateReservations').doc(
       invoiceSourcelessReservationId(organizationId, projectId, issueId),
     );
-    const logRef = db.collection('timeLogs').doc();
+    const timerRef = timerSessionId ? timerStateRef(db, authorization.user.uid) : null;
+    const logRef = timerSessionId
+      ? db.collection('timeLogs').doc(timerLogDocumentId(authorization.user.uid, timerSessionId))
+      : db.collection('timeLogs').doc();
+    let created = true;
     // Read outside the transaction: the timezone decides which day this hour is
     // filed under and changes approximately never, so it is not worth making
     // every time entry contend on the organization document.
     const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
+      if (timerSessionId) {
+        const [timerSnapshot, existingLogSnapshot] = await Promise.all([
+          transaction.get(timerRef),
+          transaction.get(logRef),
+        ]);
+        const timerState = timerSnapshot.exists ? timerSnapshot.data() : null;
+        if (existingLogSnapshot.exists) {
+          const existingLog = existingLogSnapshot.data();
+          if (
+            existingLog.timerSessionId !== timerSessionId
+            || existingLog.userId !== authorization.user.uid
+            || existingLog.organizationId !== organizationId
+            || existingLog.projectId !== projectId
+            || existingLog.issueId !== issueId
+          ) {
+            throw taskTimeLogError('TASK_TIME_TIMER_CONFLICT', 409, 'Сесія таймера вже використана іншим записом');
+          }
+          if (timerState?.pending?.id === timerSessionId) {
+            transaction.update(timerRef, {
+              pending: null,
+              revision: FieldValue.increment(1),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+          }
+          created = false;
+          return;
+        }
+        requireMatchingPendingTimer(timerState, {
+          timerSessionId,
+          userId: authorization.user.uid,
+          organizationId,
+          projectId,
+          issueId,
+        });
+      }
       const {
         initializeSpentMinutesMirror,
         issue,
@@ -144,6 +196,7 @@ export async function POST(request, context) {
           : Timestamp.fromMillis(loggedAt.millis),
         createdAt: now,
         updatedAt: now,
+        ...(timerSessionId ? { timerSessionId } : {}),
       });
       // Hours logged against a task somebody has already called off are counted
       // and corrected in the same breath, so that «logged» and «still counts»
@@ -166,11 +219,19 @@ export async function POST(request, context) {
         rollupDeltas,
         initializeSpentMinutesMirror,
       });
+      if (timerSessionId) {
+        transaction.update(timerRef, {
+          pending: null,
+          revision: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
     });
 
-    return NextResponse.json({ id: logRef.id }, { status: 201 });
+    return NextResponse.json({ id: logRef.id }, { status: created ? 201 : 200 });
   } catch (error) {
     if (error?.taskTimeLog) return taskTimeLogErrorResponse(error);
+    if (error?.userTimer) return timerStateErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'task time log POST',
       fallbackMessage: 'Не вдалося зафіксувати час',

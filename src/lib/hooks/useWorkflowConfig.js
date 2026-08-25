@@ -189,7 +189,10 @@ function createWorkflowStore(organizationId) {
     } catch (error) {
       if (version !== requestVersion) return;
       reportLoadError('[useWorkflowConfig]', error);
-      emit({ ...EMPTY_WORKFLOW_SNAPSHOT, error });
+      // A failed refresh says nothing about the configuration that was already
+      // loaded. Replacing it with editable defaults can make the next save
+      // overwrite a real custom workflow after a brief network/quota failure.
+      emit({ ...snapshot, loading: false, error });
     }
   };
 

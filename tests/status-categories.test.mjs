@@ -346,8 +346,8 @@ test('every surface that spans projects groups by category, never by status name
   assert.match(myTasks, /<AgileBoard[\s\S]{0,600}groupBy="category"/);
   assert.match(myTasks, /<TaskListView[\s\S]{0,420}groupBy="category"/);
   // Its columns are categories, so what a person folds away is a category too.
-  assert.match(myTasks, /qt_my_tasks_hidden_categories/);
-  assert.doesNotMatch(myTasks, /'qt_my_tasks_hidden'/);
+  assert.match(myTasks, /qt:my-tasks:hidden-categories:\$\{uid/);
+  assert.doesNotMatch(myTasks, /qt_my_tasks_hidden/);
   // A drop names a category and the hook resolves the project's own status.
   assert.match(myTasks, /moveTaskToCategory\(issueId, categoryId, position/);
   assert.match(hook, /resolveCategoryStatusId\(categoryId, statuses, \{/);

@@ -461,6 +461,14 @@ service cloud.firestore {
       allow create: if false;
     }
 
+    // One server-owned timer state per account. Every tab and device listens
+    // to this same document; clients may read their own state but every
+    // mutation goes through the transactional timer APIs.
+    match /timerStates/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update, delete: if false;
+    }
+
     // ── presence/{uid} ───────────────────────────────────────────────────
     match /presence/{uid} {
       allow read, write: if false;

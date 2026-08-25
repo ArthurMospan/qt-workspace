@@ -38,6 +38,7 @@ function createOrganizationStore(organizationId, viewerScope) {
   let stopTimer = null;
   let requestVersion = 0;
   let memberDirectoryVersion;
+  let ownMembershipInitialized = false;
   let focusListener = null;
   const listeners = new Set();
 
@@ -59,7 +60,9 @@ function createOrganizationStore(organizationId, viewerScope) {
     } catch (error) {
       if (version !== requestVersion) return;
       reportLoadError('[useOrganization] member profiles', error);
-      emit({ ...snapshot, members: [], loading: false, error });
+      // A failed refresh is not proof that the directory became empty. Keep
+      // the last verified list visible and publish the failure separately.
+      emit({ ...snapshot, loading: false, error });
     }
   };
 
@@ -87,7 +90,13 @@ function createOrganizationStore(organizationId, viewerScope) {
 
     const uid = auth.currentUser?.uid;
     unsubscribeMembers = uid
-      ? onSnapshot(doc(db, 'orgMemberships', `${organizationId}_${uid}`), refresh, error => {
+      ? onSnapshot(doc(db, 'orgMemberships', `${organizationId}_${uid}`), () => {
+        // The initial membership snapshot describes the same state as the
+        // refresh start() already launched. Only later changes invalidate the
+        // directory; otherwise every reload spends two identical API reads.
+        if (ownMembershipInitialized) refresh();
+        ownMembershipInitialized = true;
+      }, error => {
         reportLoadError('[useOrganization] own membership', error);
       })
       : () => {};
@@ -114,6 +123,7 @@ function createOrganizationStore(organizationId, viewerScope) {
           unsubscribeMembers = null;
           focusListener = null;
           memberDirectoryVersion = undefined;
+          ownMembershipInitialized = false;
           stopTimer = null;
         }, 1000);
       }

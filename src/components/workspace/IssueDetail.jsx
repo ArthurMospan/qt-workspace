@@ -511,6 +511,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // vanished a second after it appeared and the tracked time went with it.
   const pendingTimeLog = useWorkspaceStore(s => s.pendingTimeLog);
   const clearPendingTimeLog = useWorkspaceStore(s => s.clearPendingTimeLog);
+  const acknowledgePendingTimeLog = useWorkspaceStore(s => s.acknowledgePendingTimeLog);
   const pendingForThisIssue = Boolean(
     issueId
     && pendingTimeLog
@@ -559,7 +560,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
         danger: true,
       });
       if (!discard) return;
-      clearPendingTimeLog();
+      try {
+        await clearPendingTimeLog();
+      } catch (error) {
+        showToast(error.message || 'Не вдалося відхилити відстежений час', 'error');
+        return;
+      }
     }
     setLogForm(null);
   };
@@ -946,12 +952,24 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   };
 
   const handleTimerToggle = async () => {
-    if (isTimerMine) {
-      const result = stopTimer();
-      if (result?.minutes > 0) setLogForm({ minutes: result.minutes, desc: '', fromTimer: true });
-    } else {
-      if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
-      startTimer(issueId, projectId, { issueKey: issue.issueKey });
+    try {
+      if (isTimerMine) {
+        const result = await stopTimer();
+        if (result?.queued) {
+          showToast('Зупинку таймера збережено — час синхронізується після відновлення мережі', 'warning');
+        } else if (result?.minutes > 0) {
+          setLogForm({ minutes: result.minutes, desc: '', fromTimer: true });
+        }
+      } else {
+        if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
+        const started = await startTimer(issueId, projectId, {
+          entityType: 'issue',
+          organizationId: activeOrgId,
+        });
+        if (!started) showToast('Спершу збережи або відхили попередній відстежений час', 'error');
+      }
+    } catch (error) {
+      showToast(error.message || 'Не вдалося змінити таймер', 'error');
     }
   };
 
@@ -989,7 +1007,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
           showToast('Запис оновлено');
         } else {
           const uid = currentUser?.id || currentUser?.uid;
-          await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc);
+          await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc, {
+            timerSessionId: logForm.fromTimer ? pendingTimeLog?.id : undefined,
+          });
           showToast(`${logForm.minutes} хв зафіксовано`);
         }
       } catch (err) {
@@ -1000,7 +1020,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       showToast('Оцінку часу оновлено');
     }
     // Saved — the stopped timer's minutes now live in a time log.
-    if (logForm.fromTimer) clearPendingTimeLog();
+    if (logForm.fromTimer) acknowledgePendingTimeLog(pendingTimeLog?.id);
     setLogForm(null);
   };
 

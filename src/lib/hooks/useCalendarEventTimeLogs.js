@@ -79,6 +79,7 @@ export function useCalendarEventTimeLogs(eventId, occurrenceStartAt, projectId) 
     userId,
     spentMinutes,
     description = '',
+    timerSessionId,
   }) => {
     const minutes = Number(spentMinutes);
     if (
@@ -102,6 +103,7 @@ export function useCalendarEventTimeLogs(eventId, occurrenceStartAt, projectId) 
           userId,
           spentMinutes: minutes,
           description,
+          ...(timerSessionId ? { timerSessionId } : {}),
         }),
       },
     );

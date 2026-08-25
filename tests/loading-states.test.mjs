@@ -44,12 +44,12 @@ test('useIssues only finishes empty when there is genuinely no project', async (
 
 test('an unloaded membership list is not treated as a denied organization', async () => {
   const guard = await read('../src/components/WorkspaceOrganizationRouteGuard.jsx');
-  assert.match(guard, /if \(orgLoading \|\| allOrgs\.length === 0\) return <LoadingScreen \/>;/);
+  assert.match(guard, /if \(orgLoading \|\| !orgDirectoryVerified\) return <LoadingScreen \/>;/);
   // The denial still exists — it just cannot be reached before the answer is in.
   const denial = '<h1 className="ui-type-section-title text-ink mb-2">Немає доступу до організації</h1>';
   assert.ok(guard.includes(denial));
   assert.ok(
-    guard.indexOf('if (orgLoading || allOrgs.length === 0)') < guard.indexOf(denial),
+    guard.indexOf('if (orgLoading || !orgDirectoryVerified)') < guard.indexOf(denial),
     'the loading guard must come before the denial',
   );
 });
@@ -68,4 +68,12 @@ test('projects from the previous organization are cleared before a new scope sub
   );
   assert.match(source, /loadedOrganizationId === activeOrgId/);
   assert.match(source, /projects: scopeMatches \? projects : \[\]/);
+});
+
+test('an already restored account never paints the login form while redirecting', async () => {
+  const source = await read('../src/app/login/page.js');
+  assert.match(source, /if \(authLoading \|\| currentUser\) \{/);
+  assert.ok(
+    source.indexOf('if (authLoading || currentUser)') < source.indexOf('<AuthLayout hideCreateOrg={true}>'),
+  );
 });

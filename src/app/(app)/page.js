@@ -915,7 +915,10 @@ export default function WorkspacePage() {
 
   const workspaceLoadError = projectsError || issuesError;
   const workspaceLoadErrorKind = organizationLoadErrorKind(workspaceLoadError);
-  const workspaceAccessFailure = workspaceLoadErrorKind === 'permission-denied'
+  // Project/issue streams are narrower than organization membership. One of
+  // them failing can mean a stale project team snapshot or a transient rules
+  // read; only OrgContext may make the organization-level access decision.
+  const workspaceScopeFailure = workspaceLoadErrorKind === 'permission-denied'
     || workspaceLoadErrorKind === 'not-found';
 
   return (<>
@@ -952,20 +955,18 @@ export default function WorkspacePage() {
           <div className="flex flex-col items-start gap-2">
             <Alert
               variant="error"
-              title={workspaceAccessFailure
-                ? 'Немає доступу до даних організації'
+              title={workspaceScopeFailure
+                ? 'Не вдалося прочитати частину робочого простору'
                 : projectsError
                   ? 'Не вдалося завантажити проєкти'
                   : 'Не вдалося завантажити завдання'}
-              description={workspaceAccessFailure
-                ? 'Доступ відкликано або організацію видалено.'
+              description={workspaceScopeFailure
+                ? 'Дані організації на місці. Оновіть доступ і спробуйте ще раз.'
                 : 'Перевірте підключення до інтернету та спробуйте ще раз.'}
             />
-            {!workspaceAccessFailure && (
-              <Button onClick={() => window.location.reload()} style="secondary" size="sm">
-                Спробувати ще раз
-              </Button>
-            )}
+            <Button onClick={() => window.location.reload()} style="secondary" size="sm">
+              Спробувати ще раз
+            </Button>
           </div>
         )}
 

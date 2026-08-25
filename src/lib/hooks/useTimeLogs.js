@@ -81,6 +81,7 @@ export function useTimeLogs(issueId, projectId) {
     userId,
     spentMinutes,
     description = '',
+    options = {},
   ) => {
     if (
       !Number.isSafeInteger(spentMinutes)
@@ -96,6 +97,7 @@ export function useTimeLogs(issueId, projectId) {
       userId,
       spentMinutes,
       description,
+      timerSessionId: options.timerSessionId,
     });
   }, [activeOrgId]);
 

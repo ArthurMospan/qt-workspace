@@ -263,7 +263,7 @@ test('chat autocompletes and opens stable issue-key mentions', async () => {
   assert.doesNotMatch(mentionChip, /collection\(db, 'issues'\)/);
   // A lookup that could not be made is not an answer. Caching it meant a chat
   // opened before Firebase restored the session never resolved a mention again.
-  assert.match(mentionChip, /resolved\.delete\(`\$\{organizationId\}:\$\{key\}`\)/);
+  assert.match(mentionChip, /resolved\.delete\(`\$\{userId\}:\$\{organizationId\}:\$\{key\}`\)/);
 });
 
 test('a task chat reads back the task mentions its own composer writes', async () => {

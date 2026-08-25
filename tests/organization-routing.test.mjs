@@ -33,7 +33,9 @@ test('each browser tab owns its organization selection and keeps it in the URL',
   assert.match(guard, /withNotificationOrganization\(current, activeOrgId\)/);
   // A click must navigate to the organization it selected. A bare `/` races
   // the state update and lets the guard restore the previous organization.
+  assert.match(switcher, /sessionStorage\.setItem\('qt_active_org_id', org\.id\)/);
   assert.match(switcher, /router\.push\(withNotificationOrganization\('\/', org\.id\)\)/);
+  assert.doesNotMatch(switcher, /switchOrg\(org\.id\)/);
   assert.doesNotMatch(switcher, /router\.push\('\/'\)/);
 });
 
@@ -127,8 +129,15 @@ test('an organization list published late cannot overwrite a newer one', async (
   // The publish is guarded, not merely the unmount.
   assert.match(
     context,
-    /if \(!current\(\)\) return;\s*\n\s*if \(authoritative\) hasVerifiedDirectory = true;\s*\n\s*publishedOrgs = organizations;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(organizations\);/,
+    /if \(!current\(\)\) return;\s*\n\s*if \(authoritative\) \{[\s\S]*hasVerifiedDirectory = true;[\s\S]*setOrgDirectoryVerified\(true\);[\s\S]*\}\s*\n\s*publishedOrgs = organizations;\s*\n\s*setOrgError\(null\);\s*\n\s*setAllOrgs\(organizations\);/,
   );
+
+  // A non-empty but short cache is still provisional. It cannot select a
+  // different workspace in place of the org this tab explicitly requested.
+  assert.match(context, /const requestedOrganization = requested && organizations\.find\(o => o\.id === requested\);/);
+  assert.match(context, /const explicitOrganizationId = requested \|\| stored;/);
+  assert.match(context, /if \(!authoritative && explicitOrganizationId && !preferred\) \{[\s\S]*setOrgLoading\(true\);[\s\S]*return;/);
+  assert.match(context, /if \(!requested \|\| requestedOrganization\) persistTabOrganization\(chosen\.id\);/);
 
   // The list itself is still built from memberships alone — access is
   // `orgMemberships` and nothing else — so the guard protects the right thing.
@@ -229,9 +238,12 @@ test('role-filtered organization caches are isolated by organization, user and r
   }
   assert.match(issueLinks, /linkRequestCacheKey\(viewerScope, issueId\)/);
   assert.match(issueLinks, /activeOrgId \|\| 'none'[\s\S]*viewerId \|\| 'anonymous'[\s\S]*orgRole \|\| 'pending'/);
+  assert.match(issueLinks, /generation !== requestGeneration\.current/);
   assert.match(members, /\$\{organizationId\}_\$\{currentUser\.uid\}_\$\{cacheScope \|\| 'default'\}/);
-  assert.match(mentions, /pendingKeysByOrganization\.get\(organizationId\)/);
-  assert.match(mentions, /scheduledOrganizations\.has\(organizationId\)/);
+  assert.match(mentions, /function mentionScope\(userId, organizationId\)/);
+  assert.match(mentions, /pendingKeysByScope\.get\(scope\)/);
+  assert.match(mentions, /`\$\{userId\}:\$\{organizationId\}:\$\{issueKey\}`/);
+  assert.match(mentions, /auth\.currentUser\?\.uid !== userId/);
 });
 
 test('remembered workspace filters are scoped to the organization', async () => {
@@ -242,6 +254,7 @@ test('remembered workspace filters are scoped to the organization', async () => 
   ]);
 
   assert.match(myTasks, /storageKey: `qt:view:\$\{activeOrgId\}:my-tasks`/);
+  assert.match(myTasks, /qt:my-tasks:hidden-categories:\$\{uid \|\| 'anonymous'\}:\$\{activeOrgId \|\| 'none'\}/);
   assert.match(sprints, /storageKey: `qt:view:\$\{activeOrgId\}:sprints`/);
   assert.match(projectBoard, /storageKey: `qt:view:\$\{resourceOrganizationId \|\| activeOrgId\}:board:\$\{projectId\}`/);
 });

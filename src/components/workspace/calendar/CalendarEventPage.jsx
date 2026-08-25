@@ -324,7 +324,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const confirm = useConfirm();
-  const { currentUser, projects = [], orgRole } = useAppContext();
+  const { currentUser, projects = [], orgRole, activeOrgId } = useAppContext();
   const { members = [] } = useOrganization();
   const {
     events,
@@ -431,6 +431,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
   // confirmed them. See `stopTimer` in the workspace store.
   const pendingTimeLog = useWorkspaceStore(state => state.pendingTimeLog);
   const clearPendingTimeLog = useWorkspaceStore(state => state.clearPendingTimeLog);
+  const acknowledgePendingTimeLog = useWorkspaceStore(state => state.acknowledgePendingTimeLog);
   const pendingMinutesForThisEvent = (
     pendingTimeLog?.entityType === 'calendar_event'
     && pendingTimeLog.issueId === timerKey
@@ -668,23 +669,33 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
     }
   };
 
-  const handleTimerToggle = () => {
+  const handleTimerToggle = async () => {
     if (!canTrackTime) return;
-    if (isTimerMine) {
-      const result = stopTimer();
-      setTimerMinutes(result?.minutes || 0);
-      setTimePanelOpen(true);
-      return;
+    try {
+      if (isTimerMine) {
+        const result = await stopTimer();
+        if (result?.queued) {
+          showToast('Зупинку таймера збережено — час синхронізується після відновлення мережі', 'warning');
+          return;
+        }
+        setTimerMinutes(result?.minutes || 0);
+        setTimePanelOpen(true);
+        return;
+      }
+      if (activeTimer) {
+        showToast('Зупини поточний таймер спочатку', 'error');
+        return;
+      }
+      const started = await startTimer(timerKey, event.projectId || '', {
+        entityType: 'calendar_event',
+        organizationId: activeOrgId,
+        eventId: sourceEventId,
+        occurrenceStartAt: event.startAt,
+      });
+      if (!started) showToast('Спершу збережи або відхили попередній відстежений час', 'error');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося змінити таймер', 'error');
     }
-    if (activeTimer) {
-      showToast('Зупини поточний таймер спочатку', 'error');
-      return;
-    }
-    startTimer(timerKey, event.projectId || '', {
-      entityType: 'calendar_event',
-      eventId: sourceEventId,
-      occurrenceStartAt: event.startAt,
-    });
   };
 
   const handleSaveTime = async form => {
@@ -695,6 +706,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
         await updateTimeLog(form.id, {
           spentMinutes: form.minutes,
           description: form.description,
+          timerSessionId: pendingMinutesForThisEvent ? pendingTimeLog?.id : undefined,
         });
         showToast('Запис часу оновлено', 'success');
       } else {
@@ -707,7 +719,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
       }
       setTimerMinutes(0);
       // Written down — the stopped timer no longer owes the user anything.
-      if (pendingMinutesForThisEvent) clearPendingTimeLog();
+      if (pendingMinutesForThisEvent) acknowledgePendingTimeLog(pendingTimeLog?.id);
       return true;
     } catch (timeError) {
       setActionError(timeError.message || 'Не вдалося зберегти час');
@@ -1421,7 +1433,11 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
             setActionError('');
             // Closing the panel is the decision not to log those minutes;
             // without this the pending log would reopen it on every visit.
-            if (pendingMinutesForThisEvent) clearPendingTimeLog();
+            if (pendingMinutesForThisEvent) {
+              clearPendingTimeLog().catch(error => {
+                setActionError(error.message || 'Не вдалося відхилити відстежений час');
+              });
+            }
           }}
           onSave={handleSaveTime}
           onDelete={handleDeleteTime}

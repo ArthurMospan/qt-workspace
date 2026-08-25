@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
+import { useOrganizationUnreadCounts } from '@/lib/hooks/useOrganizationUnreadCounts';
+import { useUserTimerState } from '@/lib/hooks/useUserTimerState';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 // Synthesised locally instead of streamed from assets.mixkit.co. Pulling an
@@ -50,12 +52,13 @@ export default function WorkspaceNotificationBridge() {
   const clearLiveNotif = useWorkspaceStore(state => state.clearLiveNotif);
   const setNotificationCenter = useWorkspaceStore(state => state.setNotificationCenter);
   const clearNotificationCenter = useWorkspaceStore(state => state.clearNotificationCenter);
-  const restoreTimer = useWorkspaceStore(state => state.restoreTimer);
   const handleNew = useCallback(notification => showLiveNotif(notification), [showLiveNotif]);
   const notificationCenter = useNotifications(userId, {
     activeOrganizationId: activeOrgId,
     onNew: handleNew,
   });
+  useOrganizationUnreadCounts();
+  useUserTimerState(userId);
   const unreadChatNotifications = notificationCenter.notifications.filter(notification =>
     notification.type === 'chat_message'
     && !notification.read
@@ -65,12 +68,6 @@ export default function WorkspaceNotificationBridge() {
   useEffect(() => {
     clearLiveNotif();
   }, [activeOrgId, clearLiveNotif]);
-
-  // A running timer survives reloads and crashes; re-attach it as soon as the
-  // workspace mounts so the user never silently loses tracked time.
-  useEffect(() => {
-    restoreTimer();
-  }, [restoreTimer]);
 
   const actions = useMemo(() => ({
     markAllRead: notificationCenter.markAllRead,

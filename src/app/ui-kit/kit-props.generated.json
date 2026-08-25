@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 856,
-    "documentedProps": 856,
+    "props": 857,
+    "documentedProps": 857,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -1853,6 +1853,13 @@
           "type": "number",
           "values": [],
           "description": "Distinguishes repeated launches with the same query."
+        },
+        {
+          "name": "searchError",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "An actionable search failure, if the request failed."
         },
         {
           "name": "searching",

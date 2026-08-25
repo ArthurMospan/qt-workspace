@@ -1,5 +1,10 @@
 // src/store/useWorkspaceStore.js
 import { create } from 'zustand';
+import {
+  discardPendingUserTimer,
+  startUserTimer,
+  stopUserTimer,
+} from '@/lib/services/userTimer';
 
 function formatElapsed(seconds) {
   const s   = Math.max(0, Math.floor(seconds));
@@ -10,68 +15,52 @@ function formatElapsed(seconds) {
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
 
-// The running timer is the one piece of state whose loss costs the user real,
-// unrecoverable work, so it outlives the tab. Only the descriptor is stored —
-// elapsed time is always recomputed from `startedAt`, which keeps a restored
-// timer accurate even after hours of downtime and immune to clock throttling.
-const TIMER_STORAGE_KEY = 'qt_active_timer';
-// Stopping the timer is not the same thing as writing the time down. Between
-// those two moments the minutes exist nowhere else, and every way of leaving
-// the page — a canonical-URL redirect, a reload, a mistaken click — used to
-// destroy them silently. They are persisted the instant the timer stops and
-// only cleared once the user has saved or explicitly discarded them.
-const PENDING_LOG_STORAGE_KEY = 'qt_pending_time_log';
-// A timer left running overnight is a forgotten timer, not 14 billable hours.
-const MAX_TIMER_MS = 12 * 60 * 60 * 1000;
-// An unsaved slip is worth keeping across a reload, not across a fortnight.
-const MAX_PENDING_LOG_MS = 7 * 24 * 60 * 60 * 1000;
+const STOP_INTENT_PREFIX = 'qt_timer_stop_intent:';
 
-function readStoredTimer() {
-  if (typeof window === 'undefined') return null;
+function timestampMillis(value) {
+  if (Number.isFinite(value)) return Number(value);
+  if (typeof value?.toMillis === 'function') return value.toMillis();
+  if (Number.isFinite(value?.seconds)) return value.seconds * 1000;
+  const parsed = new Date(value || '').getTime();
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeTimer(timer) {
+  if (!timer?.id) return null;
+  const startedAt = timestampMillis(timer.startedAt);
+  if (!Number.isFinite(startedAt)) return null;
+  const stoppedAt = timestampMillis(timer.stoppedAt);
+  return {
+    ...timer,
+    startedAt,
+    ...(Number.isFinite(stoppedAt) ? { stoppedAt } : {}),
+  };
+}
+
+function elapsedAt(startedAt, stoppedAt) {
+  return Math.max(0, Math.floor((stoppedAt - startedAt) / 1000));
+}
+
+function stopIntentKey(userId) {
+  return `${STOP_INTENT_PREFIX}${userId}`;
+}
+
+function readStopIntent(userId) {
+  if (typeof window === 'undefined' || !userId) return null;
   try {
-    const raw = window.localStorage.getItem(TIMER_STORAGE_KEY);
-    if (!raw) return null;
-    const stored = JSON.parse(raw);
-    const startedAt = Number(stored?.startedAt);
-    if (!stored?.issueId || !Number.isFinite(startedAt)) return null;
-    const elapsed = Date.now() - startedAt;
-    if (elapsed < 0 || elapsed > MAX_TIMER_MS) return null;
-    return { ...stored, startedAt };
+    const value = JSON.parse(window.localStorage.getItem(stopIntentKey(userId)) || 'null');
+    return value?.timerId && value?.requestedAt ? value : null;
   } catch {
     return null;
   }
 }
 
-function writeStoredTimer(timer) {
-  if (typeof window === 'undefined') return;
+function writeStopIntent(userId, intent) {
+  if (typeof window === 'undefined' || !userId) return;
   try {
-    if (timer) window.localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(timer));
-    else window.localStorage.removeItem(TIMER_STORAGE_KEY);
-  } catch { /* private mode / quota — the in-memory timer still works */ }
-}
-
-function readStoredPendingLog() {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(PENDING_LOG_STORAGE_KEY);
-    if (!raw) return null;
-    const stored = JSON.parse(raw);
-    const minutes = Number(stored?.minutes);
-    const stoppedAt = Number(stored?.stoppedAt);
-    if (!stored?.issueId || !Number.isFinite(minutes) || minutes <= 0) return null;
-    if (!Number.isFinite(stoppedAt) || Date.now() - stoppedAt > MAX_PENDING_LOG_MS) return null;
-    return { ...stored, minutes: Math.round(minutes), stoppedAt };
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredPendingLog(pending) {
-  if (typeof window === 'undefined') return;
-  try {
-    if (pending) window.localStorage.setItem(PENDING_LOG_STORAGE_KEY, JSON.stringify(pending));
-    else window.localStorage.removeItem(PENDING_LOG_STORAGE_KEY);
-  } catch { /* private mode / quota — the in-memory pending log still works */ }
+    if (intent) window.localStorage.setItem(stopIntentKey(userId), JSON.stringify(intent));
+    else window.localStorage.removeItem(stopIntentKey(userId));
+  } catch { /* the server state remains authoritative */ }
 }
 
 const elapsedSeconds = startedAt => Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
@@ -109,73 +98,149 @@ const useWorkspaceStore = create((set, get) => ({
   // Minutes a stopped timer produced that nobody has written down yet.
   // { issueId, projectId, minutes, stoppedAt, entityType?, ...context }
   pendingTimeLog: null,
+  timerOwnerUserId: null,
+  timerMutationPending: false,
+  timerStopQueued: false,
+  _timerAccountGeneration: 0,
 
   // Returns false when a timer is already running instead of silently
   // discarding it — replacing it used to throw away the tracked time.
-  startTimer: (issueId, projectId, context = {}) => {
-    const { activeTimer, _timerInterval } = get();
-    if (activeTimer) return false;
-    if (_timerInterval) clearInterval(_timerInterval);
-    const timer = { ...context, issueId, projectId, startedAt: Date.now() };
-    writeStoredTimer(timer);
-    set({
-      activeTimer: timer,
-      timerElapsed: 0,
-      _timerInterval: setInterval(() => set({ timerElapsed: elapsedSeconds(timer.startedAt) }), 1000),
-    });
-    return true;
+  startTimer: async (issueId, projectId, context = {}) => {
+    const { activeTimer, pendingTimeLog, timerMutationPending, _timerAccountGeneration } = get();
+    if (activeTimer || pendingTimeLog || timerMutationPending) return false;
+    set({ timerMutationPending: true });
+    try {
+      const result = await startUserTimer({ ...context, issueId, projectId });
+      if (get()._timerAccountGeneration === _timerAccountGeneration) {
+        get().applyUserTimerState(result.state, result.state?.userId);
+      }
+      return result.state?.active || true;
+    } finally {
+      if (get()._timerAccountGeneration === _timerAccountGeneration) {
+        set({ timerMutationPending: false });
+      }
+    }
   },
 
-  stopTimer: () => {
-    const { activeTimer, _timerInterval } = get();
-    if (_timerInterval) clearInterval(_timerInterval);
-    writeStoredTimer(null);
-    if (!activeTimer) { set({ _timerInterval: null }); return null; }
-    // Recomputed rather than read from `timerElapsed`, which a background tab
-    // may not have updated recently.
-    const seconds = elapsedSeconds(activeTimer.startedAt);
-    const result = { ...activeTimer, minutes: Math.max(1, Math.ceil(seconds / 60)) };
-    // Written down before anything navigates. The screen that asks the user to
-    // confirm these minutes may be remounted by a canonical-URL redirect or
-    // closed by a reload before they get to press save; the minutes have to be
-    // somewhere that survives both.
-    const pending = { ...result, stoppedAt: Date.now() };
-    writeStoredPendingLog(pending);
-    set({
-      activeTimer: null,
-      timerElapsed: 0,
-      _timerInterval: null,
-      pendingTimeLog: pending,
-    });
-    return result;
+  stopTimer: async () => {
+    const {
+      activeTimer,
+      timerOwnerUserId,
+      timerMutationPending,
+      _timerAccountGeneration,
+    } = get();
+    if (!activeTimer || timerMutationPending) return null;
+    const requestedAt = new Date().toISOString();
+    set({ timerMutationPending: true });
+    try {
+      const result = await stopUserTimer(activeTimer.id, requestedAt);
+      writeStopIntent(timerOwnerUserId, null);
+      if (get()._timerAccountGeneration === _timerAccountGeneration) {
+        get().applyUserTimerState(result.state, timerOwnerUserId);
+      }
+      return result.state?.pending || null;
+    } catch (error) {
+      if (get()._timerAccountGeneration !== _timerAccountGeneration) return null;
+      // fetch() network failures have no HTTP status even when navigator still
+      // reports online (captive portal, radio hand-off, brief reconnect). Queue
+      // only those; real server responses retain their status and surface.
+      if (
+        typeof navigator !== 'undefined'
+        && (navigator.onLine === false || !Number.isFinite(Number(error?.status)))
+      ) {
+        writeStopIntent(timerOwnerUserId, { timerId: activeTimer.id, requestedAt });
+        const interval = get()._timerInterval;
+        if (interval) clearInterval(interval);
+        set({ _timerInterval: null, timerStopQueued: true });
+        return { ...activeTimer, queued: true };
+      }
+      throw error;
+    } finally {
+      if (get()._timerAccountGeneration === _timerAccountGeneration) {
+        set({ timerMutationPending: false });
+      }
+    }
   },
 
   /** The user saved the minutes, or knowingly threw them away. */
-  clearPendingTimeLog: () => {
-    writeStoredPendingLog(null);
-    set({ pendingTimeLog: null });
+  clearPendingTimeLog: async () => {
+    const pending = get().pendingTimeLog;
+    if (!pending?.id) return null;
+    const generation = get()._timerAccountGeneration;
+    const result = await discardPendingUserTimer(pending.id);
+    if (get()._timerAccountGeneration === generation) {
+      get().applyUserTimerState(result.state, get().timerOwnerUserId);
+    }
+    return result.state;
   },
 
-  // Re-attaches a timer that survived a reload. Safe to call repeatedly.
-  restoreTimer: () => {
-    const { activeTimer, _timerInterval } = get();
-    if (!get().pendingTimeLog) {
-      const storedPending = readStoredPendingLog();
-      if (storedPending) set({ pendingTimeLog: storedPending });
-      else writeStoredPendingLog(null);
-    }
-    if (activeTimer) return;
-    const stored = readStoredTimer();
-    if (!stored) {
-      writeStoredTimer(null);
-      return;
-    }
-    if (_timerInterval) clearInterval(_timerInterval);
+  acknowledgePendingTimeLog: timerId => set(state => (
+    state.pendingTimeLog?.id === timerId ? { pendingTimeLog: null } : {}
+  )),
+
+  applyUserTimerState: (state, userId) => {
+    const interval = get()._timerInterval;
+    if (interval) clearInterval(interval);
+    const validState = state && state.userId === userId ? state : null;
+    const active = normalizeTimer(validState?.active);
+    const pending = normalizeTimer(validState?.pending);
+    const stopIntent = readStopIntent(userId);
+    const stopQueued = Boolean(active && stopIntent?.timerId === active.id);
     set({
-      activeTimer: stored,
-      timerElapsed: elapsedSeconds(stored.startedAt),
-      _timerInterval: setInterval(() => set({ timerElapsed: elapsedSeconds(stored.startedAt) }), 1000),
+      activeTimer: active,
+      pendingTimeLog: pending,
+      timerOwnerUserId: userId || null,
+      timerElapsed: active
+        ? (stopQueued
+          ? elapsedAt(active.startedAt, new Date(stopIntent.requestedAt).getTime())
+          : elapsedSeconds(active.startedAt))
+        : 0,
+      timerStopQueued: stopQueued,
+      _timerInterval: active && !stopQueued
+        ? setInterval(() => set({ timerElapsed: elapsedSeconds(active.startedAt) }), 1000)
+        : null,
     });
+  },
+
+  clearUserTimerState: () => {
+    const interval = get()._timerInterval;
+    if (interval) clearInterval(interval);
+    set({
+      activeTimer: null,
+      pendingTimeLog: null,
+      timerOwnerUserId: null,
+      timerElapsed: 0,
+      timerStopQueued: false,
+      timerMutationPending: false,
+      _timerInterval: null,
+      _timerAccountGeneration: get()._timerAccountGeneration + 1,
+    });
+  },
+
+  flushQueuedTimerStop: async userId => {
+    const generation = get()._timerAccountGeneration;
+    const intent = readStopIntent(userId);
+    const active = get().timerOwnerUserId === userId ? get().activeTimer : null;
+    if (!intent) return null;
+    if (!active || active.id !== intent.timerId) {
+      writeStopIntent(userId, null);
+      set({ timerStopQueued: false });
+      return null;
+    }
+    try {
+      const result = await stopUserTimer(intent.timerId, intent.requestedAt);
+      writeStopIntent(userId, null);
+      if (get()._timerAccountGeneration === generation) {
+        get().applyUserTimerState(result.state, userId);
+      }
+      return result.state;
+    } catch (error) {
+      if (error?.status === 409 || error?.status === 404) {
+        writeStopIntent(userId, null);
+        if (get()._timerAccountGeneration === generation) set({ timerStopQueued: false });
+      }
+      return null;
+    }
   },
 
   formatElapsed,
@@ -250,6 +315,23 @@ const useWorkspaceStore = create((set, get) => ({
     notifications: [],
     notificationsLoading: false,
     notificationActions: null,
+  }),
+
+  // Server-authoritative unread in-app totals for every membership org. The
+  // live notification window above is intentionally active-org-only and must
+  // never be reused as a cross-organization count.
+  notificationUnreadByOrg: {},
+  notificationUnreadByOrgLoading: true,
+  notificationUnreadByOrgError: null,
+  setNotificationUnreadByOrg: (counts, error = null) => set(state => ({
+    notificationUnreadByOrg: counts ?? state.notificationUnreadByOrg,
+    notificationUnreadByOrgLoading: false,
+    notificationUnreadByOrgError: error,
+  })),
+  clearNotificationUnreadByOrg: () => set({
+    notificationUnreadByOrg: {},
+    notificationUnreadByOrgLoading: false,
+    notificationUnreadByOrgError: null,
   }),
 
   // The same reasoning as the stream above, for the chat badge. Every consumer

@@ -52,7 +52,11 @@ export default function WorkspaceSidebar() {
     !item.read && item.type === 'chat_message' && item.organizationId === activeOrgId).length;
   const displayedUnreadChats = unreadChatNotifications || unreadChats;
   const showUnreadChatBadge = !pathname.startsWith('/chat') && displayedUnreadChats > 0;
-  const otherOrgUnreadCount = notifications.filter(item => !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
+  const unreadByOrganization = useWorkspaceStore(s => s.notificationUnreadByOrg);
+  const otherOrgUnreadCount = Object.entries(unreadByOrganization).reduce(
+    (total, [organizationId, count]) => organizationId === activeOrgId ? total : total + count,
+    0,
+  );
 
   // ── Sidebar theme & Preview ──
   const sidebarPreview = useWorkspaceStore(s => s.sidebarPreview);
@@ -85,7 +89,7 @@ export default function WorkspaceSidebar() {
   }, [isBranded, orgBrand?.sidebarTheme, orgBrand?.sidebarColor, sidebarPreview]);
 
   // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня.
-  useSidebarThemeBoot(theme, Boolean(activeOrg));
+  useSidebarThemeBoot(theme, Boolean(activeOrg), activeOrgId);
 
   // Поки не приїхали живі дані (чи live-preview з налаштувань) — лого й назва
   // організації невідомі. Замість того щоб на мить показати "Company name" /
@@ -104,16 +108,22 @@ export default function WorkspaceSidebar() {
   const timerElapsed = useWorkspaceStore(s => s.timerElapsed);
   const formatElapsed = useWorkspaceStore(s => s.formatElapsed);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
+  const showToast = useWorkspaceStore(s => s.showToast);
 
-  const handleStopGlobalTimer = (e) => {
+  const handleStopGlobalTimer = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     // The minutes ride in the store, not in the URL — see `stopTimer`. A query
     // param was stripped by the task page's own canonical redirect before the
     // user could confirm it, and the tracked time went with it.
-    const result = stopTimer();
-    const targetHref = timerTargetHref(result);
-    if (targetHref) router.push(targetHref);
+    try {
+      const result = await stopTimer();
+      if (result?.queued) showToast('Зупинку таймера збережено до відновлення мережі', 'warning');
+      const targetHref = timerTargetHref(result);
+      if (targetHref) router.push(targetHref);
+    } catch (error) {
+      showToast(error.message || 'Не вдалося зупинити таймер', 'error');
+    }
   };
 
   const isActive = (href, exact) =>

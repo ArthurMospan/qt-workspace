@@ -14,15 +14,7 @@ import {
   getFirestore,
 } from 'firebase-admin/firestore';
 import { createHash, timingSafeEqual } from 'node:crypto';
-
-const REJECTED_ID_TOKEN_CODES = new Set([
-  'auth/argument-error',
-  'auth/id-token-expired',
-  'auth/id-token-revoked',
-  'auth/invalid-id-token',
-  'auth/user-disabled',
-  'auth/user-not-found',
-]);
+import { isRejectedIdTokenError } from '@/lib/utils/firebaseAuthError.mjs';
 
 function getAdminApp() {
   if (getApps().length) return getApp();
@@ -69,7 +61,7 @@ export async function authenticateRequest(request) {
     return { user: await getAdminAuth().verifyIdToken(token, true) };
   } catch (error) {
     const firebaseCode = error?.code || '';
-    const tokenWasRejected = REJECTED_ID_TOKEN_CODES.has(firebaseCode);
+    const tokenWasRejected = isRejectedIdTokenError(error);
     // Never log the bearer token. The Firebase error code is enough to tell an
     // actually expired/revoked session from an Admin SDK credential or project
     // mismatch, which otherwise collapses into the same user-facing 401.

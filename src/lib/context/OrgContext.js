@@ -56,6 +56,11 @@ export function OrgProvider({ user, children }) {
   const [orgLoading,  setOrgLoading]  = useState(true);
   const [orgError,    setOrgError]    = useState(null);
   const [noOrg,       setNoOrg]       = useState(false); // true → show onboarding prompt
+  // A browser snapshot is useful for a fast provisional list, but only the
+  // authenticated directory route can prove that an organization is absent.
+  // Guards use this bit before turning a missing provisional entry into an
+  // access-denied screen.
+  const [orgDirectoryVerified, setOrgDirectoryVerified] = useState(false);
 
   // ── Apply an org as active (Internal helper) ─────────────────────────
   const applyOrg = useCallback((orgData, role) => {
@@ -84,11 +89,14 @@ export function OrgProvider({ user, children }) {
         setOrgLoading(false);
         setNoOrg(false);
         setOrgError(null);
+        setOrgDirectoryVerified(false);
       });
       return;
     }
 
     const uid = user.id || user.uid;
+
+    queueMicrotask(() => setOrgDirectoryVerified(false));
 
     let cancelled = false;
     let retryAttempt = 0;
@@ -176,7 +184,10 @@ export function OrgProvider({ user, children }) {
         const { organizations, roles } = buildOrganizationList(memberships, documents, publishedOrgs);
 
         if (!current()) return;
-        if (authoritative) hasVerifiedDirectory = true;
+        if (authoritative) {
+          hasVerifiedDirectory = true;
+          setOrgDirectoryVerified(true);
+        }
         publishedOrgs = organizations;
         setOrgError(null);
         setAllOrgs(organizations);
@@ -204,10 +215,28 @@ export function OrgProvider({ user, children }) {
           return;
         }
 
-        // Pick active org: prefer this tab's choice, fallback to first.
+        // The address is an explicit navigation intent (notification, copied
+        // link, or switcher choice). It outranks the tab's last workspace.
+        // Only when the address is unscoped may sessionStorage decide.
+        const requested = typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('org')
+          : null;
         const stored = typeof window !== 'undefined' ? sessionStorage.getItem(TAB_STORAGE_KEY) : null;
-        const preferred = stored && organizations.find(o => o.id === stored);
-        const chosen = preferred || organizations[0];
+        const requestedOrganization = requested && organizations.find(o => o.id === requested);
+        const storedOrganization = stored && organizations.find(o => o.id === stored);
+        const preferred = requestedOrganization || (!requested ? storedOrganization : null);
+        // A short cache may know about some other workspace but not the one the
+        // tab explicitly carries. Falling back here paints the wrong workspace
+        // and lets the route guard accuse the requested one of being forbidden.
+        // Keep resolving until the server directory either restores that exact
+        // membership or authoritatively says it is gone.
+        const explicitOrganizationId = requested || stored;
+        if (!authoritative && explicitOrganizationId && !preferred) {
+          setNoOrg(false);
+          setOrgLoading(true);
+          return;
+        }
+        const chosen = preferred || storedOrganization || organizations[0];
 
         // Apply org (bypassing members array logic)
         setActiveOrgId(chosen.id);
@@ -218,7 +247,11 @@ export function OrgProvider({ user, children }) {
         // A partial cache must not replace a stored choice it did not know
         // about. The forced server read can then restore that exact workspace,
         // rather than merely put it back somewhere in the switcher.
-        if (authoritative || preferred || !stored) persistTabOrganization(chosen.id);
+        // If a verified directory says the URL's organization is not a
+        // membership, leave that URL untouched for the route guard to render
+        // the real denial. Rewriting it to a fallback organization would turn
+        // a broken/deauthorized link into a silent wrong-workspace navigation.
+        if (!requested || requestedOrganization) persistTabOrganization(chosen.id);
         retryAttempt = 0;
       } catch (err) {
         handleLoadError('[OrgContext] organizations', err);
@@ -408,7 +441,7 @@ export function OrgProvider({ user, children }) {
   return (
     <OrgContext.Provider value={{
       allOrgs, orgRoles, activeOrgId, activeOrg, orgRole,
-      orgLoading, orgError, noOrg,
+      orgLoading, orgError, noOrg, orgDirectoryVerified,
       setActiveOrgId, switchOrg,
     }}>
       {children}

@@ -871,6 +871,24 @@ test('a recipient can only toggle the read state of a notification', async () =>
   await assertFails(updateDoc(doc(db, 'notifications', 'recipient-notification'), { userId: 'owner-a' }));
 });
 
+test('timer state is readable only by its account and writable only by the server', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'timerStates', 'member-a'), {
+      userId: 'member-a',
+      active: { id: 'timer-a' },
+      pending: null,
+    });
+  });
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  await assertSucceeds(getDoc(doc(memberDb, 'timerStates', 'member-a')));
+  await assertFails(getDoc(doc(ownerDb, 'timerStates', 'member-a')));
+  await assertFails(updateDoc(doc(memberDb, 'timerStates', 'member-a'), { active: null }));
+  await assertFails(setDoc(doc(memberDb, 'timerStates', 'forged'), {
+    userId: 'member-a', active: null, pending: null,
+  }));
+});
+
 test('user profiles are private even between organization members', async () => {
   const memberDb = environment.authenticatedContext('member-a').firestore();
   await assertSucceeds(getDoc(doc(memberDb, 'users', 'member-a')));

@@ -51,6 +51,7 @@ const ICONS = {
  * @param {object[]} props.issues Search results to append as their own group.
  * @param {{people: object[], projects: object[], events: object[]}} props.matches The other kinds search found — people, projects, calendar events.
  * @param {boolean} props.searching Whether results are still loading.
+ * @param {string} props.searchError An actionable search failure, if the request failed.
  * @param {(query: string) => void} props.onQueryChange Called as the query changes.
  * @param {(command: object) => void} props.onSelect Runs the chosen command.
  * @param {object[]} props.projects Projects, used to name the project a found task belongs to.
@@ -65,6 +66,7 @@ export default function CommandPalette({
   issues = [],
   matches,
   searching = false,
+  searchError = '',
   onQueryChange,
   onSelect,
   projects = [],
@@ -97,6 +99,7 @@ export default function CommandPalette({
           issues={issues}
           matches={matches}
           searching={searching}
+          searchError={searchError}
           projects={projects}
           onQueryChange={onQueryChange}
           onSelect={onSelect}
@@ -114,6 +117,7 @@ function PaletteBody({
   issues,
   matches,
   searching,
+  searchError,
   projects,
   onQueryChange,
   onSelect,
@@ -208,12 +212,17 @@ function PaletteBody({
         aria-label="Команди"
         className="max-h-[min(56dvh,420px)] overflow-y-auto overscroll-contain py-[6px]"
       >
+        {searchError && (
+          <p role="alert" className="px-[16px] py-[10px] text-center text-[12px] text-danger">
+            Не вдалося виконати пошук. Перевірте зʼєднання та повторіть.
+          </p>
+        )}
         {/* "Нічого не знайдено" while the request is still in flight is a
             wrong answer, not a slow one — and it is the answer the palette gave
             for the whole 250ms debounce plus the round trip. The spinner in the
             field says the same thing to somebody watching the caret; this says
             it to somebody watching the list. */}
-        {!flat.length && (
+        {!flat.length && !searchError && (
           <p className="px-[16px] py-[28px] text-center text-[13px] text-muted">
             {searching ? 'Шукаємо…' : `Нічого не знайдено за «${query}»`}
           </p>

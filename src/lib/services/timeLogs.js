@@ -54,6 +54,7 @@ export function createTaskTimeLogViaApi({
   spentMinutes,
   description = '',
   loggedAt,
+  timerSessionId,
 }) {
   return taskTimeLogRequest(taskTimeLogPath(issueId), {
     method: 'POST',
@@ -64,6 +65,7 @@ export function createTaskTimeLogViaApi({
       spentMinutes,
       description,
       ...(loggedAt ? { loggedAt } : {}),
+      ...(timerSessionId ? { timerSessionId } : {}),
     }),
   }, 'Не вдалося зафіксувати час');
 }

@@ -86,6 +86,15 @@ test('exactly one component writes document.title', async () => {
   assert.deepEqual(writers, ['WorkspaceDocumentTitle.jsx']);
 });
 
+test('an App Router head commit cannot replace the organization title after a switch', async () => {
+  const owner = await read('../src/components/WorkspaceDocumentTitle.jsx');
+  assert.match(owner, /new MutationObserver/);
+  assert.match(owner, /headObserver\.observe\(document\.head/);
+  assert.match(owner, /document\.title !== desiredTitle/);
+  assert.match(owner, /headObserver\.disconnect\(\)/);
+  assert.doesNotMatch(owner, /return \(\) => \{[\s\S]{0,240}document\.title = baseTitle/);
+});
+
 test('the root layout declares a title template and the app is not indexable', async () => {
   const layout = await read('../src/app/layout.js');
   assert.match(layout, /template: '%s · QuickTeam'/);

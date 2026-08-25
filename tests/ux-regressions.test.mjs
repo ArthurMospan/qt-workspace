@@ -197,10 +197,11 @@ test('a stopped timer keeps its minutes until they are written down', async () =
     read('src/components/workspace/IssueDetail.jsx'),
     read('src/components/WorkspaceSidebar.jsx'),
   ]);
-  // Persisted the moment the timer stops, so a reload or the task page's own
-  // canonical-URL redirect cannot take the tracked time with it.
+  // The server-owned pending state survives reloads, tabs and devices; a
+  // client-local stop intent is namespaced by uid only for offline delivery.
   assert.match(store, /pendingTimeLog/);
-  assert.match(store, /writeStoredPendingLog\(pending\)/);
+  assert.match(store, /stopUserTimer/);
+  assert.match(store, /STOP_INTENT_PREFIX = 'qt_timer_stop_intent:'/);
   assert.match(store, /clearPendingTimeLog/);
   // The handoff is the store, not a query param that gets stripped on arrival.
   assert.doesNotMatch(sidebar, /timerTargetHref\(result, \{ minutes/);

@@ -15,7 +15,7 @@ import VirtualDroppableColumn from '@/components/workspace/VirtualDroppableColum
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
-import { BulkActionBar, ContextMenu, DatePicker, FormGroup, PageHeader, Pill, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
+import { Alert, BulkActionBar, ContextMenu, DatePicker, FormGroup, PageHeader, Pill, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { createIssueViaApi } from '@/lib/services/issues';
@@ -410,6 +410,7 @@ export default function GlobalSprintsPage() {
     issues: snapshotIssues,
     issueLinks,
     loading: issuesLoading,
+    error: issuesError,
   } = useWorkspaceAnalytics(projectIds, { includeTimeLogs: false });
   // Sprint reassignment is painted locally first; without it the dropped card
   // animates back into its old sprint and only then hops to the new one.
@@ -431,6 +432,7 @@ export default function GlobalSprintsPage() {
   const {
     sprints,
     loading: sprintsLoading,
+    error: sprintsError,
     createSprint,
     updateSprint,
     deleteSprint,
@@ -836,6 +838,19 @@ export default function GlobalSprintsPage() {
       {loading ? (
         <div className="flex-1 flex items-center justify-center bg-transparent">
           <div className="w-[28px] h-[28px] border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
+        </div>
+      ) : issuesError || sprintsError ? (
+        <div className="flex min-h-[360px] flex-1 items-center justify-center p-6">
+          <div className="flex w-full max-w-[480px] flex-col gap-3">
+            <Alert
+              variant="error"
+              title="Не вдалося оновити планування"
+              description="Попередні дані не видалені. Перевірте зʼєднання та спробуйте ще раз."
+            />
+            <Button onClick={() => window.location.reload()} style="secondary" size="sm">
+              Спробувати ще раз
+            </Button>
+          </div>
         </div>
       ) : (
         /* PLANNING TAB */

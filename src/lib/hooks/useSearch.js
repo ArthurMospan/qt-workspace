@@ -13,6 +13,7 @@ export function useSearch() {
   const [results, setResults] = useState([]);
   const [matches, setMatches] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const activeRequest = useRef(null);
   const pendingDelay = useRef(null);
 
@@ -38,6 +39,7 @@ export function useSearch() {
       setResults([]);
       setMatches(EMPTY);
       setLoading(false);
+      setError(null);
       return;
     }
 
@@ -49,6 +51,7 @@ export function useSearch() {
     setResults([]);
     setMatches(EMPTY);
     setLoading(true);
+    setError(null);
     const shouldRun = await new Promise(resolve => {
       const timer = setTimeout(() => resolve(true), 250);
       pendingDelay.current = { timer, resolve };
@@ -72,7 +75,12 @@ export function useSearch() {
         cache: 'no-store',
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Search failed');
+      if (!response.ok) {
+        const requestError = new Error(result.error || 'Search failed');
+        requestError.status = response.status;
+        requestError.code = result.code || null;
+        throw requestError;
+      }
       setResults(result.results || []);
       setMatches({
         people: result.people || [],
@@ -84,6 +92,7 @@ export function useSearch() {
       console.error('[useSearch]', err);
       setResults([]);
       setMatches(EMPTY);
+      setError(err);
     } finally {
       if (activeRequest.current === controller) setLoading(false);
     }
@@ -102,7 +111,8 @@ export function useSearch() {
     setResults([]);
     setMatches(EMPTY);
     setLoading(false);
+    setError(null);
   }, []);
 
-  return { results, matches, loading, search, clear };
+  return { results, matches, loading, error, search, clear };
 }

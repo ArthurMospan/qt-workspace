@@ -17,11 +17,21 @@ export function useSprints() {
   const currentUserId = currentUser?.id || currentUser?.uid || null;
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   useEffect(() => {
     if (!activeOrgId || !currentUserId) {
-      queueMicrotask(() => setLoading(false));
+      queueMicrotask(() => {
+        setSprints([]);
+        setError(null);
+        setLoading(false);
+      });
       return;
     }
+    queueMicrotask(() => {
+      setSprints([]);
+      setError(null);
+      setLoading(true);
+    });
     const q = query(
       collection(db, 'sprints'),
       where('organizationId', '==', activeOrgId),
@@ -41,9 +51,11 @@ export function useSprints() {
         return aTime - bTime;
       });
       setSprints(docs);
+      setError(null);
       setLoading(false);
     }, err => {
       reportLoadError('[useSprints]', err);
+      setError(err);
       setLoading(false);
     });
     return () => unsub();
@@ -139,6 +151,7 @@ export function useSprints() {
   return {
     sprints,
     loading,
+    error,
     createSprint,
     updateSprint,
     deleteSprint,

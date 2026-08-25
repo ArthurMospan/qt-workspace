@@ -119,6 +119,7 @@ export async function GET(request) {
       issues: issuesSnapshot,
       projects: projectsSnapshot,
       memberships: membershipsSnapshot,
+      profiles: profilesSnapshot,
       events: eventsSnapshot,
     } = await readCorpus(corpusKey(organizationId, projectId, mention), async () => {
     const [issues, projects, memberships, events] = await Promise.all([
@@ -142,6 +143,12 @@ export async function GET(request) {
           .select('title', 'description', 'location', 'type', 'visibility', 'organizerId', 'participantIds', 'projectId', 'startAt')
           .get(),
     ]);
+      const profiles = mention || memberships.docs.length === 0
+        ? EMPTY_SNAPSHOT
+        : {
+          docs: await db.getAll(...memberships.docs.map(document =>
+            db.collection('users').doc(document.data().userId))),
+        };
       // Snapshots are held as their documents' data, so a cached corpus cannot
       // keep a Firestore query object alive behind it.
       const plain = snapshot => ({
@@ -154,6 +161,7 @@ export async function GET(request) {
         issues: plain(issues),
         projects: plain(projects),
         memberships: plain(memberships),
+        profiles: plain(profiles),
         events: plain(events),
       };
     });
@@ -228,12 +236,13 @@ export async function GET(request) {
     const memberships = membershipsSnapshot.docs
       .map(document => document.data())
       .filter(membership => !scopedMemberIds || scopedMemberIds.has(membership.userId));
-    const profiles = memberships.length
-      ? await db.getAll(...memberships.map(membership => db.collection('users').doc(membership.userId)))
-      : [];
+    const profilesById = new Map(profilesSnapshot.docs.map(document => [
+      document.id,
+      document.data(),
+    ]));
     const people = memberships
-      .map((membership, index) => {
-        const profile = profiles[index]?.exists ? profiles[index].data() : {};
+      .map(membership => {
+        const profile = profilesById.get(membership.userId) || {};
         return {
           membership,
           profile,

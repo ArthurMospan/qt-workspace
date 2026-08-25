@@ -114,6 +114,7 @@ On Windows with Firebase CLI 15 and Node 24, the rules assertions can finish suc
 - Projects and issues are created through server APIs so plan limits, sequential issue keys and audit records are atomic.
 - Issue hierarchy, logical links and status transitions are validated by server APIs; clients cannot bypass their execution invariants.
 - Invoice creation reserves and freezes its exact raw time-log sources transactionally.
+- `timerStates/{uid}` is account-owned and server-written: one active timer and one pending log at most, shared across organizations, tabs and devices.
 - API keys live under a server-only Firestore path and are stored as SHA-256 hashes. The clear-text token is returned only once.
 - Cloudinary signing, notifications/email, invitations and integration endpoints are authenticated and rate-limited.
 - User documents are private; shared team profile fields and presence are organization-scoped.
@@ -125,7 +126,7 @@ Primary collections:
 - `organizations`, `orgMemberships` and `orgMembershipArchive` (deactivated seats, server-only)
 - `projects` and `stages`
 - `issues`, with `comments` and `audit` subcollections
-- `issueLinks`, `sprints`, `timeLogs`, `invoices`
+- `issueLinks`, `sprints`, `timeLogs`, `timerStates`, `invoices`
 - `notifications`; presence under `organizations/{orgId}/presence`
 - `system/notificationSweep` — the scheduled sweep's watermark and last counts. Server-written only; Firestore rules have no `system` match, so browsers cannot read or forge it.
 - organization-scoped `channels`, `messages` and `readState`

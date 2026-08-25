@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { reportLoadError } from '@/lib/utils/errors';
@@ -57,8 +57,10 @@ export function useIssueLinks(issueId) {
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const requestGeneration = useRef(0);
 
   const refresh = useCallback(async () => {
+    const generation = ++requestGeneration.current;
     if (!issueId) {
       setLinks([]);
       setError(null);
@@ -68,17 +70,19 @@ export function useIssueLinks(issueId) {
     setLoading(true);
     try {
       const result = await requestLinks(issueId, viewerScope);
+      if (generation !== requestGeneration.current) return null;
       const nextLinks = result.links || [];
       setLinks(nextLinks);
       setError(null);
       return nextLinks;
     } catch (error) {
+      if (generation !== requestGeneration.current) return null;
       reportLoadError('[useIssueLinks]', error);
       setLinks([]);
       setError(error);
       return null;
     } finally {
-      setLoading(false);
+      if (generation === requestGeneration.current) setLoading(false);
     }
   }, [issueId, viewerScope]);
 
@@ -89,6 +93,7 @@ export function useIssueLinks(issueId) {
     });
     return () => {
       cancelled = true;
+      requestGeneration.current += 1;
     };
   }, [refresh]);
 

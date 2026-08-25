@@ -10,8 +10,8 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 363,
-    "elements": 4333,
+    "files": 367,
+    "elements": 4346,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -43,7 +43,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/sprints/page.js:887",
+      "location": "src/app/(app)/sprints/page.js:902",
       "attributes": [
         "title",
         "aria-label"
@@ -192,7 +192,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/Navigation/CommandPalette.jsx:178",
+      "location": "src/components/ui/Navigation/CommandPalette.jsx:182",
       "attributes": [
         "aria-label"
       ]
@@ -281,7 +281,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/workspace/IssueMentionChip.jsx:191",
+      "location": "src/components/workspace/IssueMentionChip.jsx:201",
       "attributes": [
         "title"
       ]
@@ -323,7 +323,7 @@
     },
     {
       "element": "IconAction",
-      "location": "src/components/WorkspaceHeader.jsx:410",
+      "location": "src/components/WorkspaceHeader.jsx:422",
       "attributes": [
         "label"
       ]

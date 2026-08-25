@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { CHANNEL_DEFAULTS } from '@/lib/utils/notificationChannels.mjs';
+import { invalidateOrganizationUnreadCounts } from '@/lib/hooks/useOrganizationUnreadCounts';
 
 // Live window kept in memory for the notification centre.
 const PAGE_SIZE = 50;
@@ -86,6 +87,12 @@ export function useNotifications(userId, {
       queueMicrotask(() => setLoading(false));
       return;
     }
+    // A subscription identity is account + organization. Historical documents
+    // in a newly selected scope populate the centre; they are not "new" events
+    // and must not replay fifty old popups or sounds after a switch.
+    seenIds.current = new Set();
+    isFirstLoad.current = true;
+    queueMicrotask(() => setLoading(true));
     // Scoped to the active organization. A user-only query let notifications
     // from other organizations consume the page limit and inflate the badge
     // for an organization the user is not even looking at.
@@ -136,6 +143,7 @@ export function useNotifications(userId, {
       setNotifications(docs);
       setUnreadCount(docs.filter(n => !n.read).length);
       setLoading(false);
+      invalidateOrganizationUnreadCounts();
     }, () => setLoading(false));
     return () => unsub();
   }, [userId, activeOrganizationId]); // eslint-disable-line
@@ -162,22 +170,26 @@ export function useNotifications(userId, {
       item => item.data().read !== true,
       (batch, ref) => batch.update(ref, { read: true }),
     );
+    invalidateOrganizationUnreadCounts();
   }, [applyToAllMatching]);
 
   const markRead = useCallback(async id => {
     await updateDoc(doc(db, 'notifications', id), {
       read: true
     });
+    invalidateOrganizationUnreadCounts();
   }, []);
 
   const markUnread = useCallback(async id => {
     await updateDoc(doc(db, 'notifications', id), {
       read: false
     });
+    invalidateOrganizationUnreadCounts();
   }, []);
 
   const removeNotification = useCallback(async id => {
     await deleteDoc(doc(db, 'notifications', id));
+    invalidateOrganizationUnreadCounts();
   }, []);
 
   // Delete everything already read — keeps the center tidy
@@ -187,6 +199,7 @@ export function useNotifications(userId, {
       item => item.data().read === true,
       (batch, ref) => batch.delete(ref),
     );
+    invalidateOrganizationUnreadCounts();
   }, [applyToAllMatching]);
 
   const markProjectRead = useCallback(async (projectId, organizationId = null) => {
@@ -195,6 +208,7 @@ export function useNotifications(userId, {
       item => item.data().read !== true && item.data().projectId === projectId,
       (batch, ref) => batch.update(ref, { read: true }),
     );
+    invalidateOrganizationUnreadCounts();
   }, [applyToAllMatching]);
 
   return {

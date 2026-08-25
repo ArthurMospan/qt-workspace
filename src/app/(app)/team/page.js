@@ -16,6 +16,7 @@ import {
   EmptyState,
   Button,
   Pill,
+  Alert,
   MobilePaneBack,
   SidebarLayout,
   MemberRail,
@@ -31,7 +32,7 @@ import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function TeamPage() {
   const { orgRole, currentUser } = useAppContext();
-  const { members, loading, inviteMember } = useOrganization();
+  const { members, loading, error: membersError, inviteMember } = useOrganization();
   const { positions = [] } = useWorkflowConfig();
   const presenceByUserId = useOrganizationPresence();
   
@@ -131,7 +132,20 @@ export default function TeamPage() {
             phone screen saying what an arrow says. */}
         <Surface preset="nested-card" className="relative flex-1 w-full overflow-hidden flex flex-col">
           <MobilePaneBack onClick={requestPaneClose} label="До списку команди" className="absolute left-[16px] top-[16px] z-20" />
-          {selectedMember ? (
+          {membersError ? (
+            <div className="flex flex-1 items-center justify-center p-6">
+              <div className="flex w-full max-w-[460px] flex-col gap-3">
+                <Alert
+                  variant="error"
+                  title="Не вдалося оновити список команди"
+                  description="Попередні дані не видалені. Перевірте зʼєднання та спробуйте ще раз."
+                />
+                <Button onClick={() => window.location.reload()} style="secondary" size="sm">
+                  Спробувати ще раз
+                </Button>
+              </div>
+            </div>
+          ) : selectedMember ? (
             <ProfileView user={selectedMember} />
           ) : (
             <div className="flex-1 flex items-center justify-center bg-white h-full">

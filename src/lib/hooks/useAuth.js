@@ -20,8 +20,12 @@ export function useAuth() {
     let unsubscribeProfile = () => {};
     let unsubscribeAuth = () => {};
     let profileSignature = '';
+    let authGeneration = 0;
+    let sessionSyncChain = Promise.resolve();
 
     const handleAuthChange = async firebaseUser => {
+      const generation = ++authGeneration;
+      const isCurrent = () => !cancelled && generation === authGeneration;
       if (intervalId) clearInterval(intervalId);
       removeVisibilityListener();
       removeVisibilityListener = () => {};
@@ -32,11 +36,27 @@ export function useAuth() {
         const hadServerSession = Boolean(sessionUserRef.current);
         sessionUserRef.current = null;
         if (hadServerSession) fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
-        if (!cancelled) {
+        if (isCurrent()) {
           setUser(null);
           setLoading(false);
         }
         return;
+      }
+
+      const accountChanged = Boolean(
+        sessionUserRef.current && sessionUserRef.current !== firebaseUser.uid,
+      );
+      if (accountChanged && isCurrent()) {
+        // Hide the previous workspace immediately. Profile/session work for the
+        // new account can take a round trip, but none of the old account's UI
+        // may remain visible during it.
+        setUser(null);
+        setLoading(true);
+        sessionUserRef.current = null;
+        try {
+          window.sessionStorage.removeItem('qt_active_org_id');
+          window.sessionStorage.removeItem('qt_org_selected_this_session');
+        } catch { /* storage may be disabled */ }
       }
 
       // No third-party placeholder avatar here. The old i.pravatar.cc URL was
@@ -60,21 +80,33 @@ export function useAuth() {
             });
           };
 
-          let sessionResponse = await syncServerSession(false);
-          if (sessionResponse.status === 401 || sessionResponse.status >= 500) {
-            // A stale token or a brief Admin SDK/network interruption must not
-            // leave Firebase Auth valid while protected routes have no cookie.
-            await new Promise(resolve => window.setTimeout(resolve, 250));
-            sessionResponse = await syncServerSession(sessionResponse.status === 401);
-          }
-          if (!sessionResponse.ok) throw new Error('Failed to establish server session');
-          sessionUserRef.current = firebaseUser.uid;
+          // Auth callbacks may overlap during an account switch. Serialize the
+          // cookie exchanges in callback order so the newest account always
+          // writes the final server session even if the previous request was
+          // slower on the network.
+          const synchronize = async () => {
+            if (accountChanged) {
+              await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+            }
+            let sessionResponse = await syncServerSession(false);
+            if (sessionResponse.status === 401 || sessionResponse.status >= 500) {
+              // A stale token or a brief Admin SDK/network interruption must not
+              // leave Firebase Auth valid while protected routes have no cookie.
+              await new Promise(resolve => window.setTimeout(resolve, 250));
+              sessionResponse = await syncServerSession(sessionResponse.status === 401);
+            }
+            if (!sessionResponse.ok) throw new Error('Failed to establish server session');
+          };
+          const queuedSync = sessionSyncChain.catch(() => {}).then(synchronize);
+          sessionSyncChain = queuedSync;
+          await queuedSync;
+          if (isCurrent()) sessionUserRef.current = firebaseUser.uid;
         } catch (sessionError) {
           // Workspace/API authentication uses the Firebase ID token directly.
           // A transient cookie-sync failure must not sign out a valid user.
           console.warn('[useAuth] Server session synchronization failed:', sessionError);
         }
-        if (cancelled) return;
+        if (!isCurrent()) return;
 
         setUser(fallbackProfile);
         setLoading(false);
@@ -82,7 +114,7 @@ export function useAuth() {
         const userRef = doc(db, 'users', firebaseUser.uid);
         try {
           const snap = await getDoc(userRef);
-          if (cancelled) return;
+          if (!isCurrent()) return;
           const storedProfile = snap.exists() ? snap.data() : null;
 
           const syncLastActive = () => {
@@ -111,7 +143,7 @@ export function useAuth() {
             await setDoc(userRef, reactiveProfile, { merge: true });
           }
 
-          if (cancelled) return;
+          if (!isCurrent()) return;
           setUser({
             ...fallbackProfile,
             ...(storedProfile || {}),
@@ -126,7 +158,7 @@ export function useAuth() {
           profileSignature = JSON.stringify(profileWithoutActivity);
 
           unsubscribeProfile = onSnapshot(userRef, docSnap => {
-            if (cancelled || !docSnap.exists()) return;
+            if (!isCurrent() || !docSnap.exists()) return;
             const profile = { ...docSnap.data() };
             delete profile.lastActive;
             const nextSignature = JSON.stringify(profile);
@@ -151,7 +183,7 @@ export function useAuth() {
       } catch (error) {
         console.error('[useAuth] Authentication initialization failed:', error);
         sessionUserRef.current = null;
-        if (!cancelled) {
+        if (isCurrent()) {
           setUser(null);
           setLoading(false);
         }
@@ -213,6 +245,11 @@ export function useAuth() {
       }).catch(console.error);
     }
     sessionUserRef.current = null;
+    try {
+      window.sessionStorage.removeItem('qt_active_org_id');
+      window.sessionStorage.removeItem('qt_org_selected_this_session');
+      window.sessionStorage.removeItem('just_logged_in');
+    } catch { /* storage may be disabled */ }
     await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
     return firebaseSignOut(auth);
   };

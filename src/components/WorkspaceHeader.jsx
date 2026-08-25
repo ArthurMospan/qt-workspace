@@ -253,8 +253,20 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
       ) setBellOpen(false);
       if (userOpen && userRef.current && !userRef.current.contains(e.target)) setUserOpen(false);
     };
+    const escape = event => {
+      if (event.key !== 'Escape') return;
+      if (bellOpen) {
+        setBellOpen(false);
+        bellRef.current?.querySelector('button')?.focus();
+      }
+      if (userOpen) setUserOpen(false);
+    };
     document.addEventListener('mousedown', clickOut);
-    return () => document.removeEventListener('mousedown', clickOut);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('mousedown', clickOut);
+      document.removeEventListener('keydown', escape);
+    };
   }, [bellOpen, isMobile, userOpen]);
 
   const handleNotifClick = (n) => {

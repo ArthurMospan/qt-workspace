@@ -9,10 +9,6 @@ export async function readWorkspaceProjectAccess(projectId) {
   if (!cleanProjectId) notFound();
 
   const cookieStore = await cookies();
-  const db = getAdminDb();
-  const projectSnapshot = await db.collection('projects').doc(cleanProjectId).get();
-  if (!projectSnapshot.exists) notFound();
-
   const sessionCookie = cookieStore.get('qt_session')?.value;
   if (!sessionCookie) return null;
 
@@ -25,6 +21,13 @@ export async function readWorkspaceProjectAccess(projectId) {
     // finish auth instead of turning that race into a false 404.
     return null;
   }
+
+  // Authentication comes before the resource read. Apart from saving a
+  // billable Firestore read for anonymous requests, this prevents the server
+  // component from becoming a project-id existence oracle.
+  const db = getAdminDb();
+  const projectSnapshot = await db.collection('projects').doc(cleanProjectId).get();
+  if (!projectSnapshot.exists) notFound();
 
   const project = projectSnapshot.data();
   const organizationId = typeof project.organizationId === 'string'

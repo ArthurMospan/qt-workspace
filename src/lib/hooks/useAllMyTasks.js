@@ -49,6 +49,7 @@ export function useAllMyTasks(userId) {
   const [snapshotAllIssues, setSnapshotAllIssues] = useState([]);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const targetRef = useRef('');
   const [myTaskOrders, setMyTaskOrders] = useState({});
   const [myTaskOrderLoading, setMyTaskOrderLoading] = useState(true);
@@ -83,6 +84,7 @@ export function useAllMyTasks(userId) {
         setSnapshotTasks([]);
         setSnapshotAllIssues([]);
         setIssueLinks([]);
+        setError(null);
         // An empty project list before the projects have loaded is not a user
         // with nothing assigned to them.
         setLoading(Boolean(authLoading || orgLoading || projectsLoading));
@@ -96,6 +98,7 @@ export function useAllMyTasks(userId) {
         setSnapshotTasks([]);
         setSnapshotAllIssues([]);
         setIssueLinks([]);
+        setError(null);
         setLoading(true);
       });
     }
@@ -103,6 +106,7 @@ export function useAllMyTasks(userId) {
     const chunks = chunkProjectIds(projectIds);
     const issueBuckets = new Map();
     const linkBuckets = new Map();
+    const streamErrors = new Map();
     const readyStreams = new Set();
     const expectedStreamCount = chunks.length * 2;
     const unsubs = [];
@@ -111,6 +115,11 @@ export function useAllMyTasks(userId) {
       if (readyStreams.size >= expectedStreamCount) {
         setLoading(false);
       }
+    };
+    const publishStreamError = (key, nextError = null) => {
+      if (nextError) streamErrors.set(key, nextError);
+      else streamErrors.delete(key);
+      setError(streamErrors.values().next().value || null);
     };
     const publishIssues = () => {
       // A task put aside is not on anybody's list of what to do next.
@@ -138,14 +147,14 @@ export function useAllMyTasks(userId) {
           where('assigneeIds', 'array-contains', userId),
         ),
         snap => {
+          publishStreamError(issuesKey);
           issueBuckets.set(issuesKey, snap.docs.map(d => ({ ...d.data(), id: d.id })));
           publishIssues();
           markReady(issuesKey);
         },
         err => {
           reportLoadError('[useAllMyTasks]', err);
-          issueBuckets.set(issuesKey, []);
-          publishIssues();
+          publishStreamError(issuesKey, err);
           markReady(issuesKey);
         },
       ));
@@ -158,14 +167,14 @@ export function useAllMyTasks(userId) {
           where('projectId', 'in', chunk),
         ),
         snap => {
+          publishStreamError(linksKey);
           linkBuckets.set(linksKey, snap.docs.map(d => ({ ...d.data(), id: d.id })));
           setIssueLinks(flattenDocumentBuckets(linkBuckets));
           markReady(linksKey);
         },
         err => {
           reportLoadError('[useAllMyTasks] links', err);
-          linkBuckets.set(linksKey, []);
-          setIssueLinks(flattenDocumentBuckets(linkBuckets));
+          publishStreamError(linksKey, err);
           markReady(linksKey);
         },
       ));
@@ -435,6 +444,7 @@ export function useAllMyTasks(userId) {
     allIssues,
     issueLinks,
     loading: loading || myTaskOrderLoading,
+    error,
     moveTask,
     moveTaskToCategory,
     compareTaskCards,

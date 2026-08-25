@@ -37,10 +37,11 @@ export default function WorkspaceCommandPalette() {
   const { projects, activeOrgId, orgRole, allOrgs } = useAppContext();
   const [open, setOpen] = useState(false);
   const [orgSwitcherOpen, setOrgSwitcherOpen] = useState(false);
-  const { results, matches, loading, search, clear } = useSearch();
+  const { results, matches, loading, error, search, clear } = useSearch();
 
   const activeTimer = useWorkspaceStore(state => state.activeTimer);
   const stopTimer = useWorkspaceStore(state => state.stopTimer);
+  const showToast = useWorkspaceStore(state => state.showToast);
   const paletteRequest = useWorkspaceStore(state => state.commandPaletteRequest);
   const openCommandPalette = useWorkspaceStore(state => state.openCommandPalette);
 
@@ -88,20 +89,25 @@ export default function WorkspaceCommandPalette() {
   // That is why every row in «Перейти» — and every search result reached with
   // ↑↓ and Enter — appeared to do nothing at all. `navigateAfterOverlayClose`
   // holds the push until the entry is genuinely back.
-  const onSelect = useCallback(command => {
+  const onSelect = useCallback(async command => {
     if (command.href) {
       navigateAfterOverlayClose(() => router.push(command.href));
       return;
     }
     if (command.action === 'stop-timer') {
       // The minutes ride in the store, not in the URL — see `stopTimer`.
-      const result = stopTimer();
-      const href = timerTargetHref(result);
-      if (href) navigateAfterOverlayClose(() => router.push(href));
+      try {
+        const result = await stopTimer();
+        if (result?.queued) showToast('Зупинку таймера збережено до відновлення мережі', 'warning');
+        const href = timerTargetHref(result);
+        if (href) navigateAfterOverlayClose(() => router.push(href));
+      } catch (error) {
+        showToast(error.message || 'Не вдалося зупинити таймер', 'error');
+      }
       return;
     }
     if (command.action === 'switch-organization') setOrgSwitcherOpen(true);
-  }, [router, stopTimer]);
+  }, [router, showToast, stopTimer]);
 
   return (
     <>
@@ -112,6 +118,7 @@ export default function WorkspaceCommandPalette() {
         issues={results}
         matches={matches}
         searching={loading}
+        searchError={error?.message || ''}
         projects={projects}
         onQueryChange={onQueryChange}
         onSelect={onSelect}

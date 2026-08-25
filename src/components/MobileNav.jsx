@@ -103,12 +103,15 @@ export default function MobileNav({ keyboardOpen = false }) {
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
-  const notifications = useWorkspaceStore(s => s.notifications);
+  const showToast = useWorkspaceStore(s => s.showToast);
+  const unreadByOrganization = useWorkspaceStore(s => s.notificationUnreadByOrg);
   // Published by WorkspaceNotificationBridge, which holds the only subscription
   // to the chat channels and read cursors.
   const displayedUnreadChats = useWorkspaceStore(s => s.unreadChatCount);
-  const otherOrgUnreadCount = notifications.filter(item =>
-    !item.read && item.organizationId && item.organizationId !== activeOrgId).length;
+  const otherOrgUnreadCount = Object.entries(unreadByOrganization).reduce(
+    (total, [organizationId, count]) => organizationId === activeOrgId ? total : total + count,
+    0,
+  );
 
   // Close the sheet on navigation
   const sidebarPreview = useWorkspaceStore(s => s.sidebarPreview);
@@ -142,7 +145,7 @@ export default function MobileNav({ keyboardOpen = false }) {
   );
 
   // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня.
-  useSidebarThemeBoot(theme, Boolean(activeOrg));
+  useSidebarThemeBoot(theme, Boolean(activeOrg), activeOrgId);
 
   useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
 
@@ -151,13 +154,18 @@ export default function MobileNav({ keyboardOpen = false }) {
   // «Ще» is highlighted when the current page lives in the sheet
   const moreActive = MORE_NAV.some(i => isActive(i.href));
 
-  const handleStopTimer = e => {
+  const handleStopTimer = async e => {
     e.stopPropagation();
     // The minutes ride in the store, not in the URL — see `stopTimer`.
-    const result = stopTimer();
-    setMoreOpen(false);
-    const targetHref = timerTargetHref(result);
-    if (targetHref) router.push(targetHref);
+    try {
+      const result = await stopTimer();
+      if (result?.queued) showToast('Зупинку таймера збережено до відновлення мережі', 'warning');
+      setMoreOpen(false);
+      const targetHref = timerTargetHref(result);
+      if (targetHref) router.push(targetHref);
+    } catch (error) {
+      showToast(error.message || 'Не вдалося зупинити таймер', 'error');
+    }
   };
 
   const handleTimerNavigate = (timer) => {

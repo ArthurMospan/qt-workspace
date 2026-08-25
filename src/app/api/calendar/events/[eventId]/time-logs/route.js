@@ -19,6 +19,13 @@ import {
   isCanonicalCalendarOccurrence,
 } from '@/lib/utils/calendarTimeLog.mjs';
 import { calendarEventSupportsTracking } from '@/lib/utils/calendarEventTypes.mjs';
+import {
+  cleanTimerSessionId,
+  requireMatchingPendingTimer,
+  timerLogDocumentId,
+  timerStateErrorResponse,
+  timerStateRef,
+} from '@/lib/server/userTimerState';
 
 const MAX_MINUTES = 525_600;
 
@@ -282,7 +289,6 @@ export async function GET(request, context) {
     validateOccurrence(occurrenceStartAt);
     const authResult = await authorizeCalendarTimeRequest(request, organizationId);
     if (authResult.response) return authResult.response;
-
     const db = getAdminDb();
     const eventRef = db.collection('calendarEvents').doc(eventId);
     const logsQuery = db.collection('timeLogs')
@@ -350,6 +356,7 @@ export async function POST(request, context) {
       }, { status: 400 });
     }
     const organizationId = cleanId(body.organizationId);
+    const projectId = cleanId(body.projectId) || '';
     const occurrenceStartAt = body.occurrenceStartAt || '';
     const minutes = exactMinutes(body.spentMinutes);
     if (!eventId || minutes === null) {
@@ -361,6 +368,12 @@ export async function POST(request, context) {
     validateOccurrence(occurrenceStartAt);
     const authResult = await authorizeCalendarTimeRequest(request, organizationId);
     if (authResult.response) return authResult.response;
+    const timerSessionId = body.timerSessionId === undefined
+      ? ''
+      : cleanTimerSessionId(body.timerSessionId);
+    if (body.timerSessionId !== undefined && !timerSessionId) {
+      throw calendarTimeError('CALENDAR_TIME_TIMER_INVALID', 400, 'Некоректна сесія таймера');
+    }
     if (body.userId && body.userId !== authResult.authorization.user.uid) {
       return NextResponse.json({
         error: 'Не можна списувати час від імені іншого користувача',
@@ -381,9 +394,53 @@ export async function POST(request, context) {
 
     const db = getAdminDb();
     const eventRef = db.collection('calendarEvents').doc(eventId);
-    const logRef = db.collection('timeLogs').doc();
+    const timerRef = timerSessionId
+      ? timerStateRef(db, authResult.authorization.user.uid)
+      : null;
+    const logRef = timerSessionId
+      ? db.collection('timeLogs').doc(timerLogDocumentId(authResult.authorization.user.uid, timerSessionId))
+      : db.collection('timeLogs').doc();
+    let logCreated = true;
     const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
+      if (timerSessionId) {
+        const [timerSnapshot, existingLogSnapshot] = await Promise.all([
+          transaction.get(timerRef),
+          transaction.get(logRef),
+        ]);
+        const timerState = timerSnapshot.exists ? timerSnapshot.data() : null;
+        if (existingLogSnapshot.exists) {
+          const existingLog = existingLogSnapshot.data();
+          if (
+            existingLog.timerSessionId !== timerSessionId
+            || existingLog.userId !== authResult.authorization.user.uid
+            || existingLog.organizationId !== organizationId
+            || existingLog.projectId !== (projectId || '')
+            || existingLog.sourceType !== 'calendar_event'
+            || existingLog.eventId !== eventId
+            || existingLog.occurrenceStartAt !== occurrenceStartAt
+          ) {
+            throw calendarTimeError('CALENDAR_TIME_TIMER_CONFLICT', 409, 'Сесія таймера вже використана іншим записом');
+          }
+          if (timerState?.pending?.id === timerSessionId) {
+            transaction.update(timerRef, {
+              pending: null,
+              revision: FieldValue.increment(1),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+          }
+          logCreated = false;
+          return;
+        }
+        requireMatchingPendingTimer(timerState, {
+          timerSessionId,
+          userId: authResult.authorization.user.uid,
+          organizationId,
+          projectId: projectId || '',
+          eventId,
+          occurrenceStartAt,
+        });
+      }
       const { event, projectRef, canTrackTime, trackingDisabledReason } = await readLiveEventContext({
         transaction,
         db,
@@ -421,6 +478,7 @@ export async function POST(request, context) {
         loggedAt: Timestamp.fromDate(new Date(occurrenceStartAt)),
         createdAt: now,
         updatedAt: now,
+        ...(timerSessionId ? { timerSessionId } : {}),
       });
       rollupDeltas.add(calendarRollupLog({
         organizationId,
@@ -432,12 +490,23 @@ export async function POST(request, context) {
       }), 1);
       writeAnalyticsRollupDeltas({ writer: transaction, db, deltas: rollupDeltas });
       incrementMutationLocks(transaction, eventRef, projectRef);
+      if (timerSessionId) {
+        transaction.update(timerRef, {
+          pending: null,
+          revision: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
     });
 
-    const created = await logRef.get();
-    return NextResponse.json({ log: serializeTimeLog(created) }, { status: 201 });
+    const createdSnapshot = await logRef.get();
+    return NextResponse.json(
+      { log: serializeTimeLog(createdSnapshot) },
+      { status: logCreated ? 201 : 200 },
+    );
   } catch (error) {
     if (error?.calendarTimeLog) return expectedErrorResponse(error);
+    if (error?.userTimer) return timerStateErrorResponse(error);
     return routeErrorResponse(error, {
       context: 'calendar event time logs POST',
       fallbackMessage: 'Не вдалося зафіксувати час',

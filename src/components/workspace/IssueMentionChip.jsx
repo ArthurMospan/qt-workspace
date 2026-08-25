@@ -58,25 +58,33 @@ function recallFromSession(id) {
 
 // Capsules mount in the same commit, so the keys they want are collected within
 // one microtask and asked for together.
-const pendingKeysByOrganization = new Map();
-const scheduledOrganizations = new Set();
+const pendingKeysByScope = new Map();
+const scheduledScopes = new Set();
 // The endpoint answers up to twenty keys at a time; a conversation with more
 // distinct tasks in it is asked in as many requests, never as many as keys.
 const LOOKUP_BATCH = 20;
 
-async function flush(organizationId) {
-  const batch = pendingKeysByOrganization.get(organizationId) || new Map();
-  pendingKeysByOrganization.delete(organizationId);
-  scheduledOrganizations.delete(organizationId);
+function mentionScope(userId, organizationId) {
+  return `${userId}:${organizationId}`;
+}
+
+async function flush(userId, organizationId) {
+  const scope = mentionScope(userId, organizationId);
+  const batch = pendingKeysByScope.get(scope) || new Map();
+  pendingKeysByScope.delete(scope);
+  scheduledScopes.delete(scope);
   const allKeys = [...batch.keys()];
   for (let index = 0; index < allKeys.length; index += LOOKUP_BATCH) {
     const slice = allKeys.slice(index, index + LOOKUP_BATCH);
-    void askFor(organizationId, slice, new Map(slice.map(key => [key, batch.get(key)])));
+    void askFor(userId, organizationId, slice, new Map(slice.map(key => [key, batch.get(key)])));
   }
 }
 
-async function askFor(organizationId, keys, batch) {
+async function askFor(userId, organizationId, keys, batch) {
   try {
+    // A logout/login can happen while capsules are waiting in the microtask
+    // batch. Never answer the new account with the old account's request.
+    if (auth.currentUser?.uid !== userId) throw new Error('Account changed');
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error('Not signed in yet');
     const params = new URLSearchParams({ organizationId, keys: keys.join(',') });
@@ -94,7 +102,7 @@ async function askFor(organizationId, keys, batch) {
     const answered = [];
     for (const [key, waiting] of batch) {
       const issue = byKey.get(key) || null;
-      answered.push([`${organizationId}:${key}`, issue]);
+      answered.push([`${userId}:${organizationId}:${key}`, issue]);
       waiting.forEach(resolve => resolve(issue));
     }
     // Only *answers* are kept. A key that resolves to nothing is an answer; a
@@ -103,14 +111,14 @@ async function askFor(organizationId, keys, batch) {
   } catch (error) {
     console.error('[IssueMentionChip] lookup failed', keys, error);
     for (const [key, waiting] of batch) {
-      resolved.delete(`${organizationId}:${key}`);
+      resolved.delete(`${userId}:${organizationId}:${key}`);
       waiting.forEach(resolve => resolve(null));
     }
   }
 }
 
-function resolveIssueMention(organizationId, issueKey) {
-  const id = `${organizationId}:${issueKey}`;
+function resolveIssueMention(userId, organizationId, issueKey) {
+  const id = `${userId}:${organizationId}:${issueKey}`;
   const cached = resolved.get(id);
   if (cached) return cached;
 
@@ -122,14 +130,15 @@ function resolveIssueMention(organizationId, issueKey) {
   }
 
   const request = new Promise(resolve => {
-    const pendingKeys = pendingKeysByOrganization.get(organizationId) || new Map();
-    pendingKeysByOrganization.set(organizationId, pendingKeys);
+    const scope = mentionScope(userId, organizationId);
+    const pendingKeys = pendingKeysByScope.get(scope) || new Map();
+    pendingKeysByScope.set(scope, pendingKeys);
     const waiting = pendingKeys.get(issueKey) || [];
     waiting.push(resolve);
     pendingKeys.set(issueKey, waiting);
-    if (!scheduledOrganizations.has(organizationId)) {
-      scheduledOrganizations.add(organizationId);
-      queueMicrotask(() => flush(organizationId));
+    if (!scheduledScopes.has(scope)) {
+      scheduledScopes.add(scope);
+      queueMicrotask(() => flush(userId, organizationId));
     }
   });
   resolved.set(id, request);
@@ -165,7 +174,7 @@ export default function IssueMentionChip({ issueKey, title = '', dark = false })
     // by every message that ever named it.
     if (title || !activeOrgId || !issueKey || !signedInAs) return undefined;
     let cancelled = false;
-    resolveIssueMention(activeOrgId, issueKey).then(found => {
+    resolveIssueMention(signedInAs, activeOrgId, issueKey).then(found => {
       if (!cancelled && found) setIssue(found);
     });
     return () => { cancelled = true; };
@@ -180,12 +189,13 @@ export default function IssueMentionChip({ issueKey, title = '', dark = false })
       return;
     }
     if (!activeOrgId) return;
-    const found = await resolveIssueMention(activeOrgId, issueKey);
+    if (!signedInAs) return;
+    const found = await resolveIssueMention(signedInAs, activeOrgId, issueKey);
     if (found) {
       setIssue(found);
       openIssueQuickView(found);
     }
-  }, [activeOrgId, issue, issueKey, openIssueQuickView]);
+  }, [activeOrgId, issue, issueKey, openIssueQuickView, signedInAs]);
 
   return (
     <button

@@ -11,6 +11,7 @@ import { Counter } from '@/components/ui';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
 import { organizationRoleLabel } from '@/lib/utils/orgMembership.mjs';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { useOrganizationUnreadCounts } from '@/lib/hooks/useOrganizationUnreadCounts';
 
 // Логотипи бувають темні/прозорі (png, svg) і зливаються з темним фоном
 // пікера. Тому під лого завжди є підложка: біла за замовчуванням, або колір
@@ -62,17 +63,11 @@ function OrgBigCard({ org, role, unreadCount, onClick }) {
 }
 
 export default function OrgSwitcherScreen({ onClose }) {
-  const { allOrgs, orgRoles, switchOrg, currentUser } = useAppContext();
+  const { allOrgs, orgRoles, currentUser } = useAppContext();
   const router = useRouter();
   const [expandingOrg, setExpandingOrg] = useState(null);
   const dialogRef = useModalFocus({ isOpen: Boolean(onClose), onClose });
-  const notifications = useWorkspaceStore(state => state.notifications);
-  const unreadByOrg = notifications.reduce((counts, item) => {
-    if (!item.read && item.organizationId) {
-      counts[item.organizationId] = (counts[item.organizationId] || 0) + 1;
-    }
-    return counts;
-  }, {});
+  const { counts: unreadByOrg } = useOrganizationUnreadCounts();
 
   const handleSelect = (e, org) => {
     const circle = document.getElementById(`org-circle-${org.id}`);
@@ -98,7 +93,10 @@ export default function OrgSwitcherScreen({ onClose }) {
     setTimeout(() => {
       sessionStorage.setItem('qt_org_selected_this_session', '1');
       sessionStorage.removeItem('just_logged_in');
-      switchOrg(org.id);
+      // The URL is the navigation intent and the route guard applies it. Doing
+      // a state switch first let the guard render once with the previous
+      // search params and immediately switch the state back to the old org.
+      sessionStorage.setItem('qt_active_org_id', org.id);
       onClose?.();
       // The destination carries the selection itself. Relying on React state to
       // settle before a bare `/` navigation let the route guard restore the

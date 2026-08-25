@@ -53,12 +53,13 @@ export function useCachedOrgBranding(activeOrgId, activeOrg) {
 // що фарбує [data-app-sb] кешованою темою ДО першого кадру). Тут: щойно
 // приїхали живі дані організації — записуємо застосовану тему в кеш для
 // наступного перезавантаження і прибираємо boot-стиль, віддаючи владу React.
-export function useSidebarThemeBoot(theme, ready) {
+export function useSidebarThemeBoot(theme, ready, activeOrgId) {
   useEffect(() => {
-    if (!ready || !theme?.bg) return;
+    if (!ready || !theme?.bg || !activeOrgId) return;
     try {
-      localStorage.setItem('qt_sidebar_theme', JSON.stringify(theme));
+      localStorage.setItem(`qt_sidebar_theme:${activeOrgId}`, JSON.stringify(theme));
+      localStorage.removeItem('qt_sidebar_theme');
     } catch {}
     document.getElementById('sb-boot-theme')?.remove();
-  }, [theme, ready]);
+  }, [activeOrgId, theme, ready]);
 }

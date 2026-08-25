@@ -10,7 +10,7 @@ import { useSprints } from '@/lib/hooks/useSprints';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import { PageHeader, StatusTransitionPicker, StatusVisibilityPicker, TaskListView } from '@/components/ui';
+import { Alert, PageHeader, StatusTransitionPicker, StatusVisibilityPicker, TaskListView } from '@/components/ui';
 import { Plus, Settings2, List, Kanban } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Tabs from '@/components/ui/Tabs';
@@ -64,11 +64,13 @@ export default function MyTasksPage() {
   const { members } = useOrganization();
   const { labels, types, priorities, statuses, categoryColumns } = useWorkflowConfig();
   const uid = currentUser?.uid || currentUser?.id;
+  const hiddenCategoriesStorageKey = `qt:my-tasks:hidden-categories:${uid || 'anonymous'}:${activeOrgId || 'none'}`;
   const {
     tasks: sourceTasks,
     allIssues,
     issueLinks,
     loading,
+    error: tasksError,
     moveTask,
     moveTaskToCategory,
     compareTaskCards,
@@ -76,6 +78,7 @@ export default function MyTasksPage() {
   const {
     sprints,
     loading: sprintsLoading,
+    error: sprintsError,
   } = useSprints();
   const showToast = useWorkspaceStore(s => s.showToast);
   const resolveBulkStatusId = useCallback((issue, value) => {
@@ -141,7 +144,7 @@ export default function MyTasksPage() {
   // status ids, which mean nothing to these columns.
   const [hiddenCategories, setHiddenCategories] = useState(() => {
     if (typeof window !== 'undefined') {
-      try { return JSON.parse(localStorage.getItem('qt_my_tasks_hidden_categories')) || []; } catch(e){}
+      try { return JSON.parse(localStorage.getItem(hiddenCategoriesStorageKey)) || []; } catch(e){}
     }
     return [];
   });
@@ -155,7 +158,7 @@ export default function MyTasksPage() {
       return;
     }
     setHiddenCategories(next);
-    localStorage.setItem('qt_my_tasks_hidden_categories', JSON.stringify(next));
+    localStorage.setItem(hiddenCategoriesStorageKey, JSON.stringify(next));
   };
 
   // A drop names a category, and the task takes a status of that category from
@@ -362,6 +365,19 @@ export default function MyTasksPage() {
           <div role="status" aria-busy="true" className="flex min-h-[320px] flex-1 items-center justify-center">
             <LoadingSpinner size="md" />
             <span className="sr-only">Завантаження…</span>
+          </div>
+        ) : tasksError || sprintsError ? (
+          <div className="flex min-h-[320px] flex-1 items-center justify-center p-6">
+            <div className="flex w-full max-w-[480px] flex-col gap-3">
+              <Alert
+                variant="error"
+                title="Не вдалося оновити ваші завдання"
+                description="Попередні дані не видалені. Перевірте зʼєднання та спробуйте ще раз."
+              />
+              <Button onClick={() => window.location.reload()} style="secondary" size="sm">
+                Спробувати ще раз
+              </Button>
+            </div>
           </div>
         ) : viewMode === 'kanban' ? (
           <div className="flex min-h-[500px] flex-1 flex-col">

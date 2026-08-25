@@ -318,8 +318,11 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
   assert.match(createProjectRoute, /hiddenColumns: requestedHidden/);
   assert.match(createIssueRoute, /\(project\.hiddenColumns \|\| \[\]\)\.includes\(statusCandidate\)/);
   // «Мої завдання» folds away a *category*, not a status name — see
-  // tests/status-categories.test.mjs. The key changed with the meaning.
-  assert.match(myTasks, /localStorage\.setItem\('qt_my_tasks_hidden_categories'/);
+  // tests/status-categories.test.mjs. The preference is also scoped to both the
+  // signed-in account and organization, so neither can inherit another scope's
+  // hidden board columns after a switch.
+  assert.match(myTasks, /const hiddenCategoriesStorageKey = `qt:my-tasks:hidden-categories:\$\{uid \|\| 'anonymous'\}:\$\{activeOrgId \|\| 'none'\}`/);
+  assert.match(myTasks, /localStorage\.setItem\(hiddenCategoriesStorageKey/);
   assert.match(kit, /title="Project Status Visibility"[\s\S]{0,500}<StatusVisibilityPicker/);
 });
 

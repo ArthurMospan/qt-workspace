@@ -179,7 +179,10 @@ export default function LoginPage() {
 
   const anyLoading = githubLoading || googleLoading || onebLoading;
 
-  if (authLoading) {
+  // Once Firebase has restored a valid account, the effect above only needs to
+  // finish the navigation. Rendering the sign-in form during that gap creates
+  // the familiar one-frame (or slow-network several-second) login flash.
+  if (authLoading || currentUser) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-[#1c1c1c]">
         <div className="w-[32px] h-[32px] border-[3px] border-[#3a3a3a] border-t-white rounded-full animate-spin" />
