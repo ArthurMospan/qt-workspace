@@ -19,7 +19,10 @@ test('ranked priority uses a solid dot and no priority uses a dashed ring', () =
   assert.match(icon, /r="5\.5" fill=\{config\.color\} fillOpacity="0\.4"/);
   assert.match(icon, /r="2\.5" fill=\{config\.color\}/);
   assert.match(icon, /if \(config\.isNoPriority\)/);
-  assert.match(icon, /strokeDasharray="1\.8 2\.1"/);
+  assert.match(icon, /NO_PRIORITY_RADIUS = 2\.1/);
+  assert.match(icon, /NO_PRIORITY_STROKE_WIDTH = 0\.8/);
+  assert.match(icon, /strokeDasharray="0\.8 1\.1"/);
+  assert.match(icon, /opacity="0\.38"/);
   assert.doesNotMatch(icon, /outerColor|innerColor/);
 });
 

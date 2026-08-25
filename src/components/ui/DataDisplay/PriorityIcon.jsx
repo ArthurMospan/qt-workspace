@@ -7,7 +7,10 @@ const SIZE_CLASSES = {
   md: 'h-5 w-5',
 };
 
-const NO_PRIORITY_STROKE_WIDTH = 1.4;
+// Match the 5px footprint of a ranked priority's centre dot. The broken line
+// is deliberately quiet: it says «not ranked yet», never another priority.
+const NO_PRIORITY_RADIUS = 2.1;
+const NO_PRIORITY_STROKE_WIDTH = 0.8;
 
 /**
  * Canonical priority mark: ranked priorities use one solid colour dot on a
@@ -37,13 +40,13 @@ export default function PriorityIcon({ priority, priorities = [], size = 'sm', c
         <circle
           cx="8"
           cy="8"
-          r="5.5"
+          r={NO_PRIORITY_RADIUS}
           fill="none"
           stroke={config.color}
           strokeWidth={NO_PRIORITY_STROKE_WIDTH}
-          strokeDasharray="1.8 2.1"
+          strokeDasharray="0.8 1.1"
           strokeLinecap="round"
-          opacity="0.82"
+          opacity="0.38"
         />
       </svg>
     );

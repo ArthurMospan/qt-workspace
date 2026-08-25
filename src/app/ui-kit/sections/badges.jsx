@@ -104,7 +104,7 @@ export default function BadgesSection() {
 
       <PreviewBlock
         title="PriorityIcon — system and custom priority language"
-        description="Усі рівні мають однакову просту геометрію: суцільна крапка та ореол того самого кольору з прозорістю 40%. Рівень читається за підписом і кольором без додаткової системи кілець."
+        description="Ранжовані рівні мають одну геометрію: суцільна крапка та 40%-й ореол того самого кольору. «Без пріоритету» займає лише розмір центральної крапки й позначається ледь видимим пунктирним контуром — це відсутність рішення, а не ще один рівень шкали."
         component="PriorityIcon"
       >
         <div className="flex flex-wrap items-center gap-5">
