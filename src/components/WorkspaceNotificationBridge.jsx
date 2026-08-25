@@ -6,6 +6,7 @@ import { useNotifications } from '@/lib/hooks/useNotifications';
 import { useUnreadChatCount } from '@/lib/hooks/useUnreadChatCount';
 import { useOrganizationUnreadCounts } from '@/lib/hooks/useOrganizationUnreadCounts';
 import { useUserTimerState } from '@/lib/hooks/useUserTimerState';
+import { isConversationOnScreen } from '@/lib/utils/notificationPresence.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 // Synthesised locally instead of streamed from assets.mixkit.co. Pulling an
@@ -52,7 +53,14 @@ export default function WorkspaceNotificationBridge() {
   const clearLiveNotif = useWorkspaceStore(state => state.clearLiveNotif);
   const setNotificationCenter = useWorkspaceStore(state => state.setNotificationCenter);
   const clearNotificationCenter = useWorkspaceStore(state => state.clearNotificationCenter);
-  const handleNew = useCallback(notification => showLiveNotif(notification), [showLiveNotif]);
+  // Read off the store rather than subscribed to: which conversation is open
+  // matters only at the instant a notification arrives, and re-subscribing this
+  // callback to it would rebuild the whole notification stream every time the
+  // reader switched panes.
+  const handleNew = useCallback(notification => {
+    if (isConversationOnScreen(notification, useWorkspaceStore.getState().visibleConversation)) return;
+    showLiveNotif(notification);
+  }, [showLiveNotif]);
   const notificationCenter = useNotifications(userId, {
     activeOrganizationId: activeOrgId,
     onNew: handleNew,

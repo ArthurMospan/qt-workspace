@@ -6,7 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { arrayUnion, doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 let environment;
 
@@ -412,6 +412,25 @@ test('the legacy tasks collection is closed to browsers', async () => {
     const db = environment.authenticatedContext(uid).firestore();
     await assertFails(getDoc(doc(db, 'tasks', 'legacy-task')));
   }
+});
+
+test('a reader stamps when they read a comment, and may touch nothing else on it', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const commentRef = doc(memberDb, 'issues', 'issue-a', 'comments', 'owner-comment');
+
+  // The receipt is two fields written together: who has read it, and when they
+  // did. The ticks under a sent message could only ever say «прочитано», which
+  // is the half of the question a sender is not asking.
+  await assertSucceeds(updateDoc(commentRef, {
+    readBy: arrayUnion('member-a'),
+    'readAt.member-a': serverTimestamp(),
+  }));
+  // And nothing beyond them: a read receipt is not a way into somebody else's
+  // words.
+  await assertFails(updateDoc(commentRef, {
+    readBy: arrayUnion('member-a'),
+    text: 'Rewritten while marking it read',
+  }));
 });
 
 test('an admin removes a comment they did not write, but cannot rewrite it', async () => {

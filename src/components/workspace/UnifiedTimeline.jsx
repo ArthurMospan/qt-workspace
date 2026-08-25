@@ -47,6 +47,11 @@ import {
   uploadFilePolicy,
 } from '@/lib/utils/uploadPolicy.mjs';
 
+// How far back a reply quote may pull the history before it gives up. Each
+// step is another `COMMENT_WINDOW` of reads, and a quote pointing at a message
+// deleted long ago must not walk a year of conversation to discover that.
+const JUMP_HISTORY_LIMIT = 5;
+
 function fmtTime(minutes) {
   if (!minutes && minutes !== 0) return '—';
   const hours = Math.floor(minutes / 60);
@@ -89,13 +94,59 @@ function dayLabel(timestamp) {
   });
 }
 
-function ReplyQuote({ replyTo, dark = false }) {
+// «о 14:32» for something that happened today, and the day as well for
+// anything older — a read receipt from Tuesday reading «о 14:32» says the wrong
+// thing more confidently than saying nothing.
+function readStamp(timestamp) {
+  const time = fmtClock(timestamp);
+  if (!time) return '';
+  return dayKey(timestamp) === dayKey(new Date())
+    ? `о ${time}`
+    : `${dayLabel(timestamp)} о ${time}`;
+}
+
+// What the ticks under your own message say when you point at them. `readAt`
+// is written beside `readBy` the moment a reader consumes the conversation;
+// messages read before that field existed carry only the array, and say
+// «Прочитано» without inventing an hour for it.
+function readReceiptLabel(comment, members) {
+  const readers = (comment.readBy || []).filter(readerId => readerId !== comment.authorId);
+  if (readers.length === 0) return 'Надіслано · ще не прочитано';
+  const readAt = comment.readAt || {};
+  if (readers.length === 1) {
+    const stamp = readStamp(readAt[readers[0]]);
+    return stamp ? `Прочитано ${stamp}` : 'Прочитано';
+  }
+  return ['Прочитано:', ...readers.map(readerId => {
+    const member = members.find(candidate => (candidate.id || candidate.uid) === readerId);
+    const stamp = readStamp(readAt[readerId]);
+    return `· ${member?.name || 'Учасник'}${stamp ? ` — ${stamp}` : ''}`;
+  })].join('\n');
+}
+
+function ReplyQuote({ replyTo, dark = false, onJump }) {
   if (!replyTo) return null;
-  return (
-    <div className={`mb-2 rounded-[7px] px-2.5 py-2 text-[11px] leading-4 ${dark ? 'bg-white/10 text-white/75' : 'bg-black/[0.05] text-muted'}`}>
+  const skin = `mb-2 block w-full rounded-[7px] px-2.5 py-2 text-left text-[11px] leading-4 ${dark ? 'bg-white/10 text-white/75' : 'bg-black/[0.05] text-muted'}`;
+  const body = (
+    <>
       <div className={`mb-0.5 font-bold ${dark ? 'text-white' : 'text-ink'}`}>{replyTo.authorName || 'Учасник'}</div>
       <div className="line-clamp-2 whitespace-pre-wrap">{replyTo.text || 'Вкладення'}</div>
-    </div>
+    </>
+  );
+  // The quote already shows what was answered, so it is also the way back to
+  // it. Without that, following a reply in a long conversation meant scrolling
+  // for the original by hand and hoping to recognise it.
+  if (!onJump) return <div className={skin}>{body}</div>;
+  return (
+    <button
+      type="button"
+      data-ui-control="chat-reply-quote"
+      onClick={onJump}
+      title="Перейти до повідомлення"
+      className={`${skin} cursor-pointer transition-colors ${dark ? 'hover:bg-white/20' : 'hover:bg-black/[0.09]'}`}
+    >
+      {body}
+    </button>
   );
 }
 
@@ -187,6 +238,8 @@ export default function UnifiedTimeline({
   const canWriteComments = can(orgRole, 'create:comment');
   const canEditOwnComment = can(orgRole, 'edit:comment');
   const showToast = useWorkspaceStore(state => state.showToast);
+  const setVisibleConversation = useWorkspaceStore(state => state.setVisibleConversation);
+  const clearVisibleConversation = useWorkspaceStore(state => state.clearVisibleConversation);
   const confirmDialog = useConfirm();
   const project = projects.find(item => item.id === projectId);
   // The history is read out through the live workflow: a project that renamed a
@@ -231,12 +284,20 @@ export default function UnifiedTimeline({
   const fileInputRef = useRef(null);
   const wrapperRef = useRef(null);
   const unreadMarkerRef = useRef(null);
+  const feedEndRef = useRef(null);
+  const highlightTimerRef = useRef(null);
+  // Which message a reply quote is still trying to reach, and the snapshot that
+  // has already been searched for it. Refs, not state: a jump in progress is a
+  // conversation with the feed, not something the list draws.
+  const pendingJumpRef = useRef(null);
+  const jumpedOverRef = useRef(null);
   const wasNearBottomRef = useRef(true);
   const wasActiveRef = useRef(false);
   const previousTimelineLengthRef = useRef(0);
   const positionedIssueRef = useRef(null);
   const [isUnreadMarkerVisible, setIsUnreadMarkerVisible] = useState(false);
   const [unreadDirection, setUnreadDirection] = useState('down');
+  const [highlightedCommentId, setHighlightedCommentId] = useState(null);
   // Waiting for the read cursors is right, and waiting forever is not. They
   // arrive over the network, and a network that cannot answer — an exhausted
   // quota, a denied read — must not leave the conversation unplaced, which is
@@ -531,6 +592,71 @@ export default function UnifiedTimeline({
     unreadMarkerRef.current?.scrollIntoView({ behavior, block: 'center' });
   };
 
+  // Bringing one message into view and marking it, briefly, as the one that was
+  // asked for — a conversation scrolled by a click has to say where it landed.
+  const revealComment = useCallback(commentId => {
+    const target = scrollRef.current?.querySelector(`[data-comment-id="${CSS.escape(commentId)}"]`);
+    if (!target) return false;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightedCommentId(commentId);
+    if (highlightTimerRef.current) window.clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = window.setTimeout(() => setHighlightedCommentId(null), 1800);
+    return true;
+  }, []);
+
+  const giveUpOnJump = useCallback(moreToLoad => {
+    pendingJumpRef.current = null;
+    showToast(moreToLoad
+      ? 'Повідомлення надто давнє — відкрийте давнішу історію'
+      : 'Це повідомлення видалено', 'error');
+  }, [showToast]);
+
+  // The answered message is often older than the window the feed opened on, so
+  // the click grows the history until it is found rather than doing nothing.
+  // Bounded: each step is another `COMMENT_WINDOW` of reads, and a quote left
+  // behind by a message deleted long ago must not walk a year of conversation
+  // to discover that.
+  const jumpToComment = useCallback(commentId => {
+    if (!commentId || revealComment(commentId)) return;
+    if (!hasOlderComments || historyWindow >= JUMP_HISTORY_LIMIT) {
+      giveUpOnJump(hasOlderComments);
+      return;
+    }
+    pendingJumpRef.current = commentId;
+    // The attempt this click already made, so the wait below starts at the
+    // *next* snapshot rather than immediately repeating what just failed.
+    jumpedOverRef.current = comments;
+    setHistoryWindow(current => current + 1);
+  }, [comments, giveUpOnJump, hasOlderComments, historyWindow, revealComment]);
+
+  // Every wider window arrives as a new snapshot, and the target is looked for
+  // once per snapshot — after the render that drew it, which is why this waits
+  // for a frame rather than reading the DOM straight out of the effect.
+  useEffect(() => {
+    if (!pendingJumpRef.current || commentsLoading || jumpedOverRef.current === comments) {
+      return undefined;
+    }
+    jumpedOverRef.current = comments;
+    const frame = requestAnimationFrame(() => {
+      const commentId = pendingJumpRef.current;
+      if (!commentId) return;
+      if (revealComment(commentId)) {
+        pendingJumpRef.current = null;
+        return;
+      }
+      if (!hasOlderComments || historyWindow >= JUMP_HISTORY_LIMIT) {
+        giveUpOnJump(hasOlderComments);
+        return;
+      }
+      setHistoryWindow(current => current + 1);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [comments, commentsLoading, giveUpOnJump, hasOlderComments, historyWindow, revealComment]);
+
+  useEffect(() => () => {
+    if (highlightTimerRef.current) window.clearTimeout(highlightTimerRef.current);
+  }, []);
+
   // Landing the conversation, once.
   //
   // This effect re-ran on every change to `timeline.length`, and a task's feed
@@ -611,6 +737,16 @@ export default function UnifiedTimeline({
     }).catch(error => reportLoadError('[task-chat] mark changes seen', error));
   }, [activeOrgId, issueId, myId, newestActivityMillis]);
 
+  // What the reader currently has in front of them, so the live notification
+  // popup can stay down for a message that arrived on this very screen instead
+  // of landing on top of the conversation it is announcing.
+  useEffect(() => {
+    if (!isActive || !issueId) return undefined;
+    const conversation = { kind: 'issue', id: issueId };
+    setVisibleConversation(conversation);
+    return () => clearVisibleConversation(conversation);
+  }, [clearVisibleConversation, isActive, issueId, setVisibleConversation]);
+
   // Read receipts: a visible pane alone is not enough. The unread boundary has
   // to enter the scroll viewport, so opening a long task chat cannot consume
   // messages that remained above or below the fold.
@@ -645,7 +781,47 @@ export default function UnifiedTimeline({
       observer.disconnect();
       if (readTimer) window.clearTimeout(readTimer);
     };
-  }, [consumeChanges, isActive, markCommentsRead, myId, unreadCommentIds, unreadTotal]);
+    // The line itself is in the dependencies because the marker is a ref, and a
+    // task's feed latches its boundary a render *after* the unread count that
+    // this effect otherwise watches. Without it the observer ran once against a
+    // marker that had not mounted yet, returned, and was never rebuilt — so
+    // messages sat unread under a reader who was looking straight at them.
+  }, [boundary.dismissed, consumeChanges, isActive, markCommentsRead, myId, sessionBoundary, unreadCommentIds, unreadTotal]);
+
+  // Reading is not only crossing the line. The boundary is the landmark for a
+  // conversation you came back to; a message that arrives while you are already
+  // sitting at the bottom of one never crosses it, and there was nothing else
+  // on this screen that could consume it — so the tab kept «1», and a reload
+  // drew «Нові повідомлення (1)» over a message that had been on screen the
+  // whole time. Seeing the end of the conversation is reading too.
+  useEffect(() => {
+    const feedEnd = feedEndRef.current;
+    const scroll = scrollRef.current;
+    if (!isActive || !myId || unreadCommentIds.length === 0 || !feedEnd || !scroll) {
+      return undefined;
+    }
+
+    let readTimer = null;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) {
+        if (readTimer) window.clearTimeout(readTimer);
+        readTimer = null;
+        return;
+      }
+      if (readTimer) return;
+      readTimer = window.setTimeout(() => {
+        markCommentsRead(unreadCommentIds, myId);
+        consumeChanges();
+        setBoundary(current => (current.read ? current : { ...current, read: true }));
+      }, 500);
+    }, { root: scroll });
+
+    observer.observe(feedEnd);
+    return () => {
+      observer.disconnect();
+      if (readTimer) window.clearTimeout(readTimer);
+    };
+  }, [consumeChanges, isActive, markCommentsRead, myId, unreadCommentIds]);
 
   const addPendingFiles = fileList => {
     const files = Array.from(fileList || []);
@@ -718,7 +894,7 @@ export default function UnifiedTimeline({
           sendNotification({
             userIds: commentRecipients,
             type: 'commented',
-            title: `${currentUser?.name || 'Колега'} прокоментував завдання`,
+            title: `${currentUser?.name || 'Колега'} написав у завданні`,
             body: text.slice(0, 500) || 'Вкладення',
             link: taskChatLink,
             issueId,
@@ -790,7 +966,10 @@ export default function UnifiedTimeline({
               <Fragment key={`comment-${item.id}`}>
               {separator}
               {renderUnreadBoundary(`comment-${item.id}`)}
-              <div className={`group grid items-end gap-x-2.5 ${isMe ? 'grid-cols-[minmax(0,1fr)_28px]' : 'grid-cols-[28px_minmax(0,1fr)]'}`}>
+              <div
+                data-comment-id={item.id}
+                className={`group grid items-end gap-x-2.5 ${isMe ? 'grid-cols-[minmax(0,1fr)_28px]' : 'grid-cols-[28px_minmax(0,1fr)]'}`}
+              >
                 {isExternalAuthor ? (
                   <Popover
                     position="top"
@@ -832,8 +1011,12 @@ export default function UnifiedTimeline({
                       <StatusEmoji member={authorMember} />
                     </span>
                   )}
-                  <div className={`max-w-full break-words p-3 text-[14px] leading-[22px] ${isMe ? 'rounded-[16px] rounded-br-none bg-[#303030] text-white' : 'rounded-[16px] rounded-bl-none bg-white text-ink'}`}>
-                    <ReplyQuote replyTo={item.replyTo} dark={isMe} />
+                  <div className={`max-w-full break-words p-3 text-[14px] leading-[22px] transition-shadow duration-300 ${isMe ? 'rounded-[16px] rounded-br-none bg-[#303030] text-white' : 'rounded-[16px] rounded-bl-none bg-white text-ink'} ${highlightedCommentId === item.id ? 'ring-2 ring-ink/30' : ''}`}>
+                    <ReplyQuote
+                      replyTo={item.replyTo}
+                      dark={isMe}
+                      onJump={item.replyTo?.id ? () => jumpToComment(item.replyTo.id) : undefined}
+                    />
                     {item.text && (
                       <div className="whitespace-pre-wrap">
                         <MentionText
@@ -856,11 +1039,20 @@ export default function UnifiedTimeline({
                     <span className="px-1 text-[10px] font-medium text-[#a1a1a1]">
                       {fmtClock(item.createdAt)}{item.editedAt ? ' · змінено' : ''}
                     </span>
-                    {/* Read receipt на своїх повідомленнях: ✓ надіслано / ✓✓ прочитано іншими */}
+                    {/* Read receipt на своїх повідомленнях: ✓ надіслано / ✓✓ прочитано іншими.
+                        «Прочитано» alone answers whether, never when, and when is
+                        the half a sender is actually asking about — so pointing
+                        at the ticks names the hour, and every reader in a task
+                        with more than one of them. */}
                     {isMe && (
-                      (item.readBy || []).some(readerId => readerId !== item.authorId)
-                        ? <CheckCheck size={13} className="text-muted" aria-label="Прочитано" />
-                        : <Check size={13} className="text-[#a1a1a1]" aria-label="Надіслано" />
+                      <span
+                        className="inline-flex cursor-help items-center"
+                        title={readReceiptLabel(item, members)}
+                      >
+                        {(item.readBy || []).some(readerId => readerId !== item.authorId)
+                          ? <CheckCheck size={13} className="text-muted" aria-label="Прочитано" />
+                          : <Check size={13} className="text-[#a1a1a1]" aria-label="Надіслано" />}
+                      </span>
                     )}
                     {!isArchived && (
                       <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-lg:opacity-100">
@@ -905,6 +1097,11 @@ export default function UnifiedTimeline({
           }
           return null;
         })}
+
+        {/* The end of the conversation, as something that can be observed.
+            Seeing it is what consumes a message that arrived while the reader
+            was already here — no unread line is ever crossed for those. */}
+        <div ref={feedEndRef} aria-hidden className="-mt-4 h-px shrink-0" />
       </div>
 
       {!isArchived && canWriteComments && (

@@ -534,24 +534,32 @@ a list.
 3. **One boundary for the whole feed.** Messages and changes are two kinds of the
    same question — «що тут сталося без мене» — so `UnreadDivider` counts both.
 4. **The two halves are consumed differently, on purpose.** A message is read
-   when the boundary has been on screen for half a second (`readBy` per comment).
-   A change is read when the reader *leaves the task*. Rendering the detail used
-   to advance the cursor, which broke the one case the boundary exists for: open
-   a task, get called away, come back to a task that already counts as read.
-5. **Leaving is not the same as unmounting.** Opening a task through a
+   when the reader has looked at it for half a second — either the boundary or
+   the end of the feed being on screen counts (`readBy` and `readAt.<uid>` per
+   comment). A change is read when the reader *leaves the task*, or when either
+   of those two observers fires. Rendering the detail used to advance the
+   cursor, which broke the one case the boundary exists for: open a task, get
+   called away, come back to a task that already counts as read.
+5. **Two observers, because there are two ways of reading.** The boundary is the
+   landmark for a conversation you came back to. A message that arrives while
+   you are already sitting at the bottom of one crosses no line, so the end of
+   the feed is observed as well — without it such a message stayed unread for
+   good, and a reload drew «Нові повідомлення (1)» over something that had been
+   on screen the whole time. Both consume messages and changes together.
+6. **Leaving is not the same as unmounting.** Opening a task through a
    non-canonical link replaces the address a beat later and remounts the detail,
    so the consume is scheduled with a short delay and a fresh mount of the same
    task cancels it. A browser killed with a task open leaves it unread — the
    forgiving direction of the two.
-6. **Your own activity is never new to you.** The dot, the boundary and the count
+7. **Your own activity is never new to you.** The dot, the boundary and the count
    all drop the current user's own entries. It is also why «Позначити
    непрочитаним» is offered only when somebody else acted last: marking your own
    change unread would light nothing.
-7. **Marking unread never resets a cursor that already sits further back.** The
+8. **Marking unread never resets a cursor that already sits further back.** The
    cursor moves to just before the newest activity, so the dot returns and the
    boundary lands on the change that made you want to come back — while older
    changes you never saw stay unseen.
-8. **The comparison is server clock against server clock.** `audit.createdAt` is
+9. **The comparison is server clock against server clock.** `audit.createdAt` is
    written by Firestore, and the cursor it is measured against was copied from the
    task's own `lastActivityAt`. That is why the boundary needs no cursor of its
    own and no per-entry timestamp written by a client.
@@ -595,6 +603,13 @@ attempts the enabled external channels. No scheduler is involved.
 This path is intentionally low-latency, but it does not yet have a durable retry
 queue for a provider failure. Adding the immediate events to the same outbox is
 remaining reliability work.
+
+Сповіщення завжди записується; спливне вікно внизу екрана — ні. Панель, яка
+показує розмову, публікує її у `visibleConversation` (`{ kind: 'issue' | 'dm',
+id }`), а `WorkspaceNotificationBridge` питає `isConversationOnScreen` перед
+показом картки. Повідомлення, яке щойно прийшло у відкритий чат, не оголошується
+карткою поверх самого чату. Виняток — `emergency`, `alert` і `test`: екстрений
+виклик має перебивати будь-що.
 
 Лічильник на екрані вибору організації не походить із активного live-вікна і не
 покладається на Zustand/localStorage. `GET /api/notifications/unread-counts`

@@ -8,12 +8,12 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 256,
-    "parsedFiles": 256,
+    "productFiles": 257,
+    "parsedFiles": 257,
     "parseErrors": 0,
-    "nativeControls": 20,
+    "nativeControls": 21,
     "structures": {
-      "chat": 1,
+      "chat": 2,
       "analytics": 1,
       "qtplus": 1,
       "settings": 1,
@@ -21,7 +21,7 @@
       "other": 3
     },
     "styledNativeControls": 13,
-    "reviewedNativeControls": 6,
+    "reviewedNativeControls": 7,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 20,
+    "button": 21,
     "input": 0,
     "textarea": 0,
     "select": 0
@@ -306,6 +306,22 @@
     },
     {
       "tag": "button",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:141",
+      "className": "${…} cursor-pointer transition-colors ${…}",
+      "text": "",
+      "childElements": [],
+      "ariaLabel": "Перейти до повідомлення",
+      "styled": false,
+      "reviewed": "chat-reply-quote",
+      "resembles": "",
+      "structure": "chat",
+      "routes": [
+        "/[projectId]/issue/[issueId]",
+        "/sprints"
+      ]
+    },
+    {
+      "tag": "button",
       "location": "src/components/workspace/WorkloadTab.jsx:619",
       "className": "flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left transition-all ${…}",
       "text": "",
@@ -437,6 +453,10 @@
       "count": 1
     },
     {
+      "file": "src/components/workspace/UnifiedTimeline.jsx",
+      "count": 1
+    },
+    {
       "file": "src/components/workspace/WorkloadTab.jsx",
       "count": 1
     }
@@ -457,6 +477,11 @@
       "location": "src/components/profile/ProfileView.jsx:59",
       "tag": "button",
       "context": "profile-contact-value"
+    },
+    {
+      "location": "src/components/workspace/UnifiedTimeline.jsx:141",
+      "tag": "button",
+      "context": "chat-reply-quote"
     },
     {
       "location": "src/components/WorkspaceSidebar.jsx:288",
@@ -685,7 +710,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:955",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1152",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

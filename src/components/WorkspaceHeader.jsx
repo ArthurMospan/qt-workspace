@@ -40,7 +40,7 @@ import {
 
 const TYPE_CFG = {
   assigned:       { icon: UserCheck,      color: '#6366f1', label: 'Призначено' },
-  commented:      { icon: ChatIcon,  color: '#0891b2', label: 'Коментар' },
+  commented:      { icon: ChatIcon,  color: '#0891b2', label: 'Повідомлення в завданні' },
   status_changed: { icon: GitPullRequest, color: '#10b981', label: 'Статус змінено' },
   mentioned:      { icon: AtSign,         color: '#f97316', label: 'Згадано' },
   deadline:       { icon: CalendarClock,  color: '#d97706', label: 'Дедлайн' },

@@ -160,6 +160,11 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
   // Read receipts: mark the given comments as read by `userId` (arrayUnion, so
   // it's idempotent). Best-effort — callers pass only comments not yet read by
   // this user, and a rules/permission hiccup must never break the chat.
+  //
+  // `readAt` records when, per reader, beside the array that records whether.
+  // The ticks under a sent message could only ever say «прочитано», which is
+  // the half of the question a sender is not asking. Written under the reader's
+  // own id, so the two fields cannot disagree about who has read what.
   const markCommentsRead = useCallback(async (commentIds, userId) => {
     if (!issueId || !userId || !commentIds?.length) return;
     try {
@@ -167,6 +172,7 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
       commentIds.slice(0, 400).forEach(commentId => {
         batch.update(doc(db, 'issues', issueId, 'comments', commentId), {
           readBy: arrayUnion(userId),
+          [`readAt.${userId}`]: serverTimestamp(),
         });
       });
       batch.update(doc(db, 'issues', issueId), {

@@ -326,6 +326,24 @@ const useWorkspaceStore = create((set, get) => ({
     set({ liveNotif: null, _liveNotifTimer: null });
   },
 
+  // Which conversation the reader currently has in front of them, published by
+  // whichever pane is showing it: `{ kind: 'issue' | 'dm', id }`. The live
+  // popup reads it and stays down for a message that arrived on the very screen
+  // it would have covered — announcing what somebody is already reading is
+  // noise, and on a task page it landed on top of the chat itself.
+  //
+  // Cleared against the target that registered it, so a pane unmounting after
+  // the next one has already registered does not wipe the newer answer.
+  visibleConversation: null,
+  setVisibleConversation: (conversation) => set({ visibleConversation: conversation }),
+  clearVisibleConversation: (conversation) => set(state => (
+    state.visibleConversation
+    && state.visibleConversation.kind === conversation?.kind
+    && state.visibleConversation.id === conversation?.id
+      ? { visibleConversation: null }
+      : {}
+  )),
+
   // One shared notification stream for the whole workspace. This avoids
   // separate Firestore listeners in the header, sidebar and org switcher.
   notifications: [],
@@ -451,6 +469,7 @@ const useWorkspaceStore = create((set, get) => ({
       _toastTimer: null,
       liveNotif: null,
       _liveNotifTimer: null,
+      visibleConversation: null,
       unreadChatCount: 0,
       issueReadState: {},
       issueReadStateLoaded: false,

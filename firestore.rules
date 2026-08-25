@@ -334,12 +334,13 @@ service cloud.firestore {
           canAccessIssueProject(issueId) &&
           request.resource.data.authorId == request.auth.uid;
         // The author may edit their own comment; any org member may mark it read
-        // (read receipts) — that write touches only `readBy` and nothing else.
+        // (read receipts) — that write touches only `readBy` and the `readAt`
+        // stamp beside it, and nothing else.
         allow update: if issueAcceptsNestedWrites(issueId) &&
           canAccessIssueProject(issueId) && (
           (resource.data.authorId == request.auth.uid &&
            request.resource.data.authorId == resource.data.authorId) ||
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy', 'readAt'])
         );
         // Moderation: the author, or an owner/admin of the organization. Editing
         // is deliberately NOT extended — an edited comment still carries the

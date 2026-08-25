@@ -508,6 +508,8 @@ export default function ChatPage() {
   const setChatOnlineUsers = useWorkspaceStore(s => s.setChatOnlineUsers);
   const notifications = useWorkspaceStore(s => s.notifications);
   const markNotificationRead = useWorkspaceStore(s => s.notificationActions?.markRead);
+  const setVisibleConversation = useWorkspaceStore(s => s.setVisibleConversation);
+  const clearVisibleConversation = useWorkspaceStore(s => s.clearVisibleConversation);
 
   const [activeChannel, setActiveChannel] = useState({ id: 'general', type: 'channel' });
   // Mobile single-pane mode: 'list' (channels) або 'chat' (розмова); md+ показує обидві панелі
@@ -757,6 +759,17 @@ export default function ChatPage() {
     if (unreadForConversation.length === 0) return;
     Promise.allSettled(unreadForConversation.map(notification => markNotificationRead(notification.id)));
   }, [activeChannel.id, activeChannel.type, activeOrgId, markNotificationRead, notifications]);
+
+  // The open direct conversation, published for the live notification popup:
+  // the same rule the read-marking above already follows, said once more where
+  // the popup can hear it. A card announcing the message you are watching
+  // arrive is noise, and it lands on top of the conversation it describes.
+  useEffect(() => {
+    if (activeChannel.type !== 'dm' || !activeChannel.id) return undefined;
+    const conversation = { kind: 'dm', id: activeChannel.id };
+    setVisibleConversation(conversation);
+    return () => clearVisibleConversation(conversation);
+  }, [activeChannel.id, activeChannel.type, clearVisibleConversation, setVisibleConversation]);
 
   // DMs list
   const unreadDMNotifications = useMemo(() => {

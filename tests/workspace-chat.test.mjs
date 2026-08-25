@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { isConversationOnScreen } from '../src/lib/utils/notificationPresence.mjs';
 import {
   chatAttachmentKind,
   chatAttachmentNames,
@@ -487,4 +488,99 @@ test('a task opens on a window of its history, not all of it', async () => {
   // And through the same control the chat uses, rather than a second one that
   // happens to look like it.
   assert.match(timeline, /<LoadOlderButton/);
+});
+
+// A message that arrives on the screen you are looking at.
+test('the live popup stays down for the conversation already on screen', () => {
+  const comment = { type: 'commented', issueId: 'issue-1' };
+  assert.equal(isConversationOnScreen(comment, { kind: 'issue', id: 'issue-1' }), true);
+  assert.equal(isConversationOnScreen(comment, { kind: 'issue', id: 'issue-2' }), false);
+  // Every kind of notification a task produces resolves to that task, so a
+  // mention inside the chat you are reading is quiet too.
+  assert.equal(
+    isConversationOnScreen({ type: 'mentioned', issueId: 'issue-1' }, { kind: 'issue', id: 'issue-1' }),
+    true,
+  );
+  // A direct conversation is named by the person on the other side of it.
+  const dm = { type: 'chat_message', actorId: 'user-7' };
+  assert.equal(isConversationOnScreen(dm, { kind: 'dm', id: 'user-7' }), true);
+  assert.equal(isConversationOnScreen(dm, { kind: 'dm', id: 'user-8' }), false);
+  // An open task does not silence somebody's direct message, and nothing at all
+  // silences an emergency — that is the one notification whose whole job is to
+  // interrupt.
+  assert.equal(isConversationOnScreen(dm, { kind: 'issue', id: 'issue-1' }), false);
+  assert.equal(
+    isConversationOnScreen({ type: 'emergency', issueId: 'issue-1' }, { kind: 'issue', id: 'issue-1' }),
+    false,
+  );
+  // Nothing open, nothing suppressed.
+  assert.equal(isConversationOnScreen(comment, null), false);
+  assert.equal(isConversationOnScreen(comment, { kind: 'issue', id: '' }), false);
+});
+
+// The two panes that can show a conversation publish it, and the bridge is the
+// only thing that reads it back.
+test('the panes showing a conversation say so, and the popup asks before it fires', async () => {
+  const [timeline, chatPage, bridge] = await Promise.all([
+    readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/WorkspaceNotificationBridge.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(timeline, /const conversation = \{ kind: 'issue', id: issueId \};/);
+  assert.match(timeline, /setVisibleConversation\(conversation\);/);
+  assert.match(chatPage, /const conversation = \{ kind: 'dm', id: activeChannel\.id \}/);
+  // Registered only while the pane is actually on screen: below lg the task
+  // page keeps the timeline mounted behind the task pane.
+  assert.match(timeline, /if \(!isActive \|\| !issueId\) return undefined;/);
+  assert.match(bridge, /if \(isConversationOnScreen\(notification, useWorkspaceStore\.getState\(\)\.visibleConversation\)\) return;/);
+});
+
+// Reading a message is not only crossing the line that says where you stopped.
+test('a message that arrives while you are reading is consumed without an unread line', async () => {
+  const timeline = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
+
+  // The boundary is latched a render *after* the unread count that the receipt
+  // observer watches, and the marker is a ref — so the observer ran once
+  // against a marker that had not mounted, returned, and was never rebuilt.
+  assert.match(
+    timeline,
+    /\}, \[boundary\.dismissed, consumeChanges, isActive, markCommentsRead, myId, sessionBoundary, unreadCommentIds, unreadTotal\]\);/,
+  );
+  // And a message that lands while the reader is already at the bottom crosses
+  // no line at all, so the end of the conversation is observed too.
+  assert.match(timeline, /<div ref=\{feedEndRef\} aria-hidden/);
+  assert.match(timeline, /observer\.observe\(feedEnd\);/);
+});
+
+// The ticks under a sent message.
+test('a read receipt records when, not only whether', async () => {
+  const [comments, timeline, rules] = await Promise.all([
+    readFile(new URL('../src/lib/hooks/useComments.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../firestore.rules', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(comments, /\[`readAt\.\$\{userId\}`\]: serverTimestamp\(\)/);
+  // The rule that lets any member mark a comment read carries both fields, or
+  // the receipt write is refused whole and nothing is ever marked read.
+  assert.match(rules, /hasOnly\(\['readBy', 'readAt'\]\)/);
+  assert.match(timeline, /title=\{readReceiptLabel\(item, members\)\}/);
+  // Messages read before the stamp existed carry only the array, and say
+  // «Прочитано» rather than inventing an hour for it.
+  assert.match(timeline, /return stamp \? `Прочитано \$\{stamp\}` : 'Прочитано';/);
+});
+
+// The quote above an answer is the way back to what was answered.
+test('a reply quote leads to the message it quotes', async () => {
+  const timeline = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
+
+  assert.match(timeline, /onJump=\{item\.replyTo\?\.id \? \(\) => jumpToComment\(item\.replyTo\.id\) : undefined\}/);
+  assert.match(timeline, /data-comment-id=\{item\.id\}/);
+  assert.match(timeline, /querySelector\(`\[data-comment-id="\$\{CSS\.escape\(commentId\)\}"\]`\)/);
+  // The answered message is often older than the window the feed opened on, so
+  // the history grows until it is found — and stops, because each step is
+  // another window of reads.
+  assert.match(timeline, /const JUMP_HISTORY_LIMIT = 5;/);
+  assert.match(timeline, /historyWindow >= JUMP_HISTORY_LIMIT/);
 });
