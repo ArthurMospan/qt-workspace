@@ -99,8 +99,10 @@ const OPEN_LABELS = {
 };
 
 /**
- * @param {object} notification The notification the button belongs to.
- * @returns {string} Where the button goes, in words. «Перейти» for anything without a place of its own.
+ * @param {object} notification The notification being named.
+ * @returns {string} Where the card goes, in words — its accessible name, and the
+ *   label of the row action where one is still drawn. «Перейти» for anything
+ *   without a place of its own.
  */
 export function notificationOpenLabel(notification) {
   const type = typeof notification?.type === 'string' ? notification.type : '';

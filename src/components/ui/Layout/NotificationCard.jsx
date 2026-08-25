@@ -22,9 +22,15 @@ import { X } from 'lucide-react';
  * capitalised category that repeated the title in worse words, and the name of
  * the organisation — which is filtered three times over on the way here and is
  * therefore always the one already written in the header. So the card's first
- * line is now the only thing it arrived to say: who, and what. The type moved
- * into the button, where it names the destination instead of the category, and
- * the same card is now the same shape as the row in the bell.
+ * line is now the only thing it arrived to say: who, and what.
+ *
+ * The card is the control. It carried a small «Перейти» link instead, which
+ * made a 320px card with one destination hold a 60px target for it — and the
+ * row this same notification gets in the bell had been fully clickable the
+ * whole time, so the same thing behaved two ways depending on where you saw it.
+ * `openLabel` still names the destination, but it names it to a screen reader
+ * now rather than occupying a line: the card says who and what, and going there
+ * is what clicking it does.
  *
  * @param {React.ReactNode} props.icon The sender's face, drawn at the leading edge.
  * @param {string} props.title What happened.
@@ -32,8 +38,9 @@ import { X } from 'lucide-react';
  * @param {string} props.time How long ago, since the card can sit there while nobody is at the desk.
  * @param {'emergency'|'default'} props.tone An emergency draws a different surface.
  * @param {React.ReactNode} props.actions Extra controls inside the card — the calendar reply buttons.
- * @param {string} props.openLabel What the open button says — where it goes, not «Перейти».
- * @param {() => void} props.onOpen Goes to whatever the notification is about. Without it no open button is drawn.
+ * @param {string} props.openLabel Where the card goes, in words — it becomes the
+ *   card's accessible name after the title, not a second control.
+ * @param {() => void} props.onOpen Goes to whatever the notification is about. Without it the card is not a control.
  * @param {() => void} props.onDismiss Hides the card.
  * @param {React.CSSProperties} props.style Animation and stacking, which the layer above owns.
  */
@@ -54,7 +61,20 @@ export default function NotificationCard({
       data-qt-global-notification-layer
       data-ui-surface="notification"
       data-ui-tone={tone}
-      className="ui-surface w-[min(320px,calc(100vw-24px))] overflow-hidden"
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      aria-label={onOpen ? [title, openLabel].filter(Boolean).join(' — ') : undefined}
+      onClick={onOpen}
+      onKeyDown={onOpen ? (event => {
+        // The dismiss × and the calendar replies are inside the card and are
+        // real buttons; a space on one of those is that button's, not the
+        // card's.
+        if (event.target !== event.currentTarget) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        onOpen();
+      }) : undefined}
+      className={`ui-surface w-[min(320px,calc(100vw-24px))] overflow-hidden${onOpen ? ' cursor-pointer transition-colors hover:bg-canvas' : ''}`}
       style={style}
     >
       <div className="flex items-start gap-3 px-4 py-4">
@@ -62,20 +82,11 @@ export default function NotificationCard({
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-bold text-ink leading-snug">{title}</p>
           {body && <p className="text-[11px] text-muted mt-1 line-clamp-2">{body}</p>}
-          {actions}
-          {(onOpen || time) && (
-            <div className="mt-2 flex items-center gap-2">
-              {onOpen && (
-                <button onClick={onOpen} className="text-[11px] font-semibold text-ink hover:underline">
-                  {openLabel}
-                </button>
-              )}
-              {time && <span className="text-[10px] text-faint">{time}</span>}
-            </div>
-          )}
+          {actions && <div onClick={event => event.stopPropagation()}>{actions}</div>}
+          {time && <p className="mt-2 text-[10px] text-faint">{time}</p>}
         </div>
         <button
-          onClick={onDismiss}
+          onClick={event => { event.stopPropagation(); onDismiss?.(); }}
           aria-label="Приховати сповіщення"
           className="text-faint hover:text-ink transition-colors p-1"
         >

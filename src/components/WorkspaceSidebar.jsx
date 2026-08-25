@@ -264,17 +264,21 @@ export default function WorkspaceSidebar() {
                         event.preventDefault();
                         setShowOrgSwitcher(true);
                       }}
-                      className="flex items-center gap-[4px] cursor-pointer transition-colors w-fit"
+                      // `w-fit` plus a 120px name, a counter and a chevron adds
+                      // up to 156px in a column that is 140px wide, so the row
+                      // simply hung over the collapse button the moment a
+                      // second organization had anything unread. The row is the
+                      // width it is given now, and the name is the part that
+                      // yields — which is what `truncate` was there for.
+                      className="flex w-full min-w-0 items-center gap-[4px] cursor-pointer transition-colors"
                       style={{ color: isBranded ? theme.text : theme.muted, height: isBranded ? 21 : 17 }}
                     >
                       <span
-                        className="truncate max-w-[120px] transition-all"
+                        className="min-w-0 truncate transition-all"
                         style={{ fontSize: isBranded ? 16 : 12, lineHeight: isBranded ? '21px' : '17px', fontWeight: isBranded ? 700 : 500 }}
                       >{activeOrg?.name || 'Company name'}</span>
                       {otherOrgUnreadCount > 0 && (
-                        <span data-ui-pill="branding-counter" className="min-w-[16px] h-[16px] px-1 rounded-full bg-ink text-white text-[9px] font-bold flex items-center justify-center">
-                          {otherOrgUnreadCount > 99 ? '99+' : otherOrgUnreadCount}
-                        </span>
+                        <Counter value={otherOrgUnreadCount} size="sm" appearance="sidebar" />
                       )}
                       <ChevronsUpDown size={12} className="shrink-0" style={{ color: theme.muted }} />
                     </div>

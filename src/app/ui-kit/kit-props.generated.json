@@ -1952,18 +1952,19 @@
     },
     "Counter": {
       "file": "src/components/ui/DataDisplay/Counter.jsx",
-      "summary": "The number on a bell, a tab or a rail item — and, as `variant=\"dot\"`, the same signal with the number left out.",
+      "summary": "The number on a bell, a tab or a rail item — and, as `variant=\"dot\"`, the same signal with the number left out. weight.",
       "props": [
         {
           "name": "appearance",
           "default": "'solid'",
-          "type": "'solid'|'subtle'|'inverse-outline'",
+          "type": "'solid'|'subtle'|'inverse-outline'|'sidebar'",
           "values": [
             "inverse-outline",
+            "sidebar",
             "solid",
             "subtle"
           ],
-          "description": "Fill weight."
+          "description": "Fill"
         },
         {
           "name": "className",
@@ -4139,14 +4140,14 @@
           "default": "",
           "type": "() => void",
           "values": [],
-          "description": "Goes to whatever the notification is about. Without it no open button is drawn."
+          "description": "Goes to whatever the notification is about. Without it the card is not a control."
         },
         {
           "name": "openLabel",
           "default": "'Перейти'",
           "type": "string",
           "values": [],
-          "description": "What the open button says — where it goes, not «Перейти»."
+          "description": "Where the card goes, in words — it becomes the"
         },
         {
           "name": "style",

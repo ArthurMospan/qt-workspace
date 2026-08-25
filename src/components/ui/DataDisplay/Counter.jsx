@@ -9,7 +9,12 @@ import React from 'react';
  * @param {'count'|'dot'} props.variant Whether the badge carries a number or only says "there is something here".
  * @param {'info'|'danger'|'muted'|'success'} props.status Meaning, not decoration: `info` is neutral and takes the surface's opposite.
  * @param {'xs'|'sm'|'md'|'lg'} props.size `xs` (12px) is the one that fits on a bell icon; `sm` overflows there.
- * @param {'solid'|'subtle'|'inverse-outline'} props.appearance Fill weight.
+ * @param {'solid'|'subtle'|'inverse-outline'|'sidebar'} props.appearance Fill
+ *   weight. `sidebar` is the one a navigation rail wants: it paints itself from
+ *   the sidebar's own two colours, so it stays legible on the dark theme, the
+ *   light theme and any brand colour an organization picks — none of which
+ *   `dark` can answer, because `dark` is a boolean somebody has to set and the
+ *   brand is not.
  * @param {boolean} props.dark High-contrast variant for the dark sidebar.
  * @param {string} props.className Placement in the parent only.
  */
@@ -61,20 +66,27 @@ export default function Counter({
     lg: 'min-w-[24px] h-[24px] px-[8px] text-[11px] font-bold',
   };
 
-  const statusStyles = appearance === 'subtle'
-    ? 'bg-white/60 text-muted'
-    : appearance === 'inverse-outline'
-      ? 'border-[3px] border-[#171717] bg-white text-[#171717]'
-      : dark
-        ? 'bg-white text-ink'
-        : 'bg-ink text-white';
+  // `--sb-text` and `--sb-bg` are the sidebar's own pair, and
+  // `computeSidebarTheme` guarantees 4.5:1 between them on every background an
+  // organization can choose — so inverting them here is legible by
+  // construction. Outside a rail the variables are unset and the fallbacks make
+  // it the ordinary ink counter.
+  const statusStyles = appearance === 'sidebar'
+    ? 'bg-[var(--sb-text,var(--color-ink))] text-[var(--sb-bg,var(--color-surface))]'
+    : appearance === 'subtle'
+      ? 'bg-white/60 text-muted'
+      : appearance === 'inverse-outline'
+        ? 'border-[3px] border-[#171717] bg-white text-[#171717]'
+        : dark
+          ? 'bg-white text-ink'
+          : 'bg-ink text-white';
 
   // Format value (e.g. 99+)
   const displayValue = typeof value === 'number' && value > 99 ? '99+' : value;
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full tabular-nums ${outerSizes[size]} ${statusStyles} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full tabular-nums ${outerSizes[size]} ${statusStyles} ${className}`}
     >
       {displayValue}
     </span>

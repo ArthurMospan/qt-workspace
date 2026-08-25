@@ -9,11 +9,11 @@
   },
   "totals": {
     "componentsWithVariants": 46,
-    "declaredValues": 376,
+    "declaredValues": 377,
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 233,
+    "usedAndPreviewed": 234,
     "usedWithoutPreview": 0,
     "declaredUnused": 113
   },
@@ -1058,6 +1058,7 @@
       ],
       "appearance": [
         "inverse-outline",
+        "sidebar",
         "solid",
         "subtle"
       ]
@@ -1403,7 +1404,7 @@
     "ChatComposerCore.variant.workspace": 1,
     "IconAction.appearance.soft": 8,
     "IconAction.composition.chat-composer-action": 2,
-    "Counter.size.sm": 12,
+    "Counter.size.sm": 13,
     "Counter.appearance.subtle": 3,
     "IconAction.composition.chat-panel-action": 3,
     "UserAvatar.size.md": 6,
@@ -1484,7 +1485,7 @@
     "Alert.variant.warning": 9,
     "IconAction.appearance.danger": 1,
     "Counter.status.muted": 3,
-    "Counter.status.info": 5,
+    "Counter.appearance.sidebar": 3,
     "Button.composition.sidebar-help-action": 2,
     "Counter.size.md": 2,
     "Counter.appearance.inverse-outline": 1,
@@ -1517,6 +1518,7 @@
     "Skeleton.width.wide": 1,
     "Skeleton.width.half": 1,
     "Counter.variant.dot": 3,
+    "Counter.status.info": 3,
     "Alert.variant.info": 3,
     "IconAction.size.lg": 3,
     "IconAction.appearance.surface-plain": 2,
@@ -1688,6 +1690,7 @@
     "ColorSwatch.size.theme",
     "ColorSwatch.size.trigger",
     "Counter.appearance.inverse-outline",
+    "Counter.appearance.sidebar",
     "Counter.appearance.solid",
     "Counter.appearance.subtle",
     "Counter.size.lg",

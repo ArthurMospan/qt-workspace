@@ -340,7 +340,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:288",
+      "location": "src/components/WorkspaceSidebar.jsx:292",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -355,7 +355,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:311",
+      "location": "src/components/WorkspaceSidebar.jsx:315",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -370,7 +370,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:371",
+      "location": "src/components/WorkspaceSidebar.jsx:375",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -385,7 +385,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:449",
+      "location": "src/components/WorkspaceSidebar.jsx:453",
       "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
@@ -484,17 +484,17 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:288",
+      "location": "src/components/WorkspaceSidebar.jsx:292",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:311",
+      "location": "src/components/WorkspaceSidebar.jsx:315",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:371",
+      "location": "src/components/WorkspaceSidebar.jsx:375",
       "tag": "button",
       "context": "branding-action"
     }

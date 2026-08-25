@@ -101,7 +101,7 @@ const SOURCES = {
     size: { literal: ['xs', 'sm', 'md', 'lg'] },
     variant: { literal: ['count', 'dot'] },
     status: { literal: ['info', 'danger', 'muted', 'success'] },
-    appearance: { literal: ['solid', 'subtle', 'inverse-outline'] },
+    appearance: { literal: ['solid', 'subtle', 'inverse-outline', 'sidebar'] },
   },
   Dialog: {
     size: { map: ['Dialog.jsx', 'sizeClasses'] },

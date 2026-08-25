@@ -70,7 +70,7 @@ test('keeps a calendar event deep link scoped to the right organization', () => 
 
 // The card's button names its destination, and that is where the notification's
 // type now lives.
-test('the open button says where it goes', () => {
+test('a notification names its destination in words', () => {
   assert.equal(notificationOpenLabel({ type: 'commented', issueId: 'issue-1' }), 'Відкрити чат завдання');
   assert.equal(notificationOpenLabel({ type: 'assigned', issueId: 'issue-1' }), 'Відкрити завдання');
   assert.equal(notificationOpenLabel({ type: 'deadline', issueId: 'issue-1' }), 'Відкрити завдання');
@@ -81,7 +81,7 @@ test('the open button says where it goes', () => {
   // apart, because a mention in the workspace chat has none.
   assert.equal(notificationOpenLabel({ type: 'mentioned', issueId: 'issue-1' }), 'Відкрити чат завдання');
   assert.equal(notificationOpenLabel({ type: 'mentioned' }), 'Відкрити розмову');
-  // Nothing recognisable still gets a working button.
+  // Nothing recognisable still gets a usable name.
   assert.equal(notificationOpenLabel({ type: 'test' }), 'Перейти');
   assert.equal(notificationOpenLabel(null), 'Перейти');
 });
@@ -103,7 +103,18 @@ test('the notification card drops the two lines that carried nothing', async () 
   assert.doesNotMatch(card, /organizationName/);
   // And the capitalised category repeated the title in the product's own words.
   assert.doesNotMatch(card, /categoryLabel|categoryColor/);
-  assert.match(card, /\{openLabel\}/);
+  // The destination is still named — to a screen reader, as the second half of
+  // the card's accessible name. It is no longer a 60px link inside a 320px card
+  // whose only purpose is that destination: the card is the control, the way
+  // the row for the same notification in the bell always was.
+  assert.match(card, /aria-label=\{onOpen \? \[title, openLabel\]\.filter\(Boolean\)\.join\(' — '\) : undefined\}/);
+  assert.match(card, /role=\{onOpen \? 'button' : undefined\}/);
+  assert.match(card, /tabIndex=\{onOpen \? 0 : undefined\}/);
+  assert.match(card, /onClick=\{onOpen\}/);
+  assert.doesNotMatch(card, /<button onClick=\{onOpen\}/);
+  // Both controls that do live inside it keep their own click to themselves.
+  assert.match(card, /onClick=\{event => event\.stopPropagation\(\)\}>\{actions\}/);
+  assert.match(card, /onClick=\{event => \{ event\.stopPropagation\(\); onDismiss\?\.\(\); \}\}/);
   // The badge on the sender's face could not separate twelve types across far
   // fewer glyphs, so the face is drawn on its own.
   assert.doesNotMatch(header, /absolute -bottom-\[3px\] -right-\[3px\]/);

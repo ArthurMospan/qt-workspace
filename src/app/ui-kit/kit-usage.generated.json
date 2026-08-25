@@ -6658,7 +6658,7 @@
     "Counter": {
       "size": {
         "sm": {
-          "count": 6,
+          "count": 7,
           "routes": [
             "/chat"
           ],
@@ -6667,8 +6667,9 @@
             "src/components/MobileNav.jsx:230",
             "src/components/MobileNav.jsx:254",
             "src/components/MobileNav.jsx:301",
-            "src/components/WorkspaceSidebar.jsx:354",
-            "src/components/WorkspaceSidebar.jsx:404"
+            "src/components/WorkspaceSidebar.jsx:281",
+            "src/components/WorkspaceSidebar.jsx:358",
+            "src/components/WorkspaceSidebar.jsx:408"
           ]
         },
         "md": {
@@ -6686,7 +6687,7 @@
       },
       "variant": {
         "(default)": {
-          "count": 7,
+          "count": 8,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
@@ -6699,7 +6700,8 @@
             "src/components/MobileNav.jsx:254",
             "src/components/MobileNav.jsx:301",
             "src/components/OrgSwitcherScreen.jsx:49",
-            "src/components/WorkspaceSidebar.jsx:354",
+            "src/components/WorkspaceSidebar.jsx:281",
+            "src/components/WorkspaceSidebar.jsx:358",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6707,13 +6709,13 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:404"
+            "src/components/WorkspaceSidebar.jsx:408"
           ]
         }
       },
       "status": {
         "(default)": {
-          "count": 3,
+          "count": 6,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
@@ -6722,7 +6724,10 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:389",
+            "src/components/MobileNav.jsx:254",
+            "src/components/MobileNav.jsx:301",
             "src/components/OrgSwitcherScreen.jsx:49",
+            "src/components/WorkspaceSidebar.jsx:281",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6731,16 +6736,14 @@
           "routes": [],
           "files": [
             "src/components/MobileNav.jsx:230",
-            "src/components/WorkspaceSidebar.jsx:354"
+            "src/components/WorkspaceSidebar.jsx:358"
           ]
         },
         "info": {
-          "count": 3,
+          "count": 1,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:254",
-            "src/components/MobileNav.jsx:301",
-            "src/components/WorkspaceSidebar.jsx:404"
+            "src/components/WorkspaceSidebar.jsx:408"
           ]
         }
       },
@@ -6755,7 +6758,7 @@
           ]
         },
         "(default)": {
-          "count": 6,
+          "count": 4,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
@@ -6763,11 +6766,18 @@
           ],
           "files": [
             "src/components/MobileNav.jsx:230",
+            "src/components/WorkspaceSidebar.jsx:358",
+            "src/components/WorkspaceSidebar.jsx:408",
+            "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
+          ]
+        },
+        "sidebar": {
+          "count": 3,
+          "routes": [],
+          "files": [
             "src/components/MobileNav.jsx:254",
             "src/components/MobileNav.jsx:301",
-            "src/components/WorkspaceSidebar.jsx:354",
-            "src/components/WorkspaceSidebar.jsx:404",
-            "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
+            "src/components/WorkspaceSidebar.jsx:281"
           ]
         },
         "inverse-outline": {

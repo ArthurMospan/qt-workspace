@@ -251,7 +251,7 @@ export default function MobileNav({ keyboardOpen = false }) {
           )}
           {otherOrgUnreadCount > 0 && !activeTimer && (
             <span className="absolute top-[6px] left-[calc(50%+4px)]">
-              <Counter value={otherOrgUnreadCount} size="sm" status="info" dark />
+              <Counter value={otherOrgUnreadCount} size="sm" appearance="sidebar" />
             </span>
           )}
         </button>
@@ -298,9 +298,9 @@ export default function MobileNav({ keyboardOpen = false }) {
                   className="flex items-center gap-[6px] text-[var(--sb-text)] min-w-0">
                   <span className="text-[15px] font-bold truncate">{activeOrg?.name || 'QuickTeam'}</span>
                   {otherOrgUnreadCount > 0 && (
-                    <Counter value={otherOrgUnreadCount} size="sm" status="info" dark />
+                    <Counter value={otherOrgUnreadCount} size="sm" appearance="sidebar" />
                   )}
-                  <ChevronsUpDown size={14} className="text-muted shrink-0" />
+                  <ChevronsUpDown size={14} className="shrink-0 text-[var(--sb-muted)]" />
                 </button>
                 <IconAction label="Закрити" icon={X} size="sm" appearance="quiet" onClick={() => setMoreOpen(false)} className="-mr-[6px]" />
               </div>
