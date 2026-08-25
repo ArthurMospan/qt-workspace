@@ -619,9 +619,19 @@ Assignments, comments, mentions and chat messages originate in an authenticated
 server request. That request writes the in-app notification and immediately
 attempts the enabled external channels. No scheduler is involved.
 
-This path is intentionally low-latency, but it does not yet have a durable retry
-queue for a provider failure. Adding the immediate events to the same outbox is
-remaining reliability work.
+This path is intentionally low-latency and stays that way: the message is
+attempted the moment the event happens. A provider that is down no longer ends
+there, though. Every recipient whose email or Telegram failed gets a row in the
+same `scheduledNotifications` outbox the scheduled reminders use, and the
+dispatcher retries it on the usual backoff.
+
+Two details make that row behave: it carries `attempts: 1`, because the request
+already spent an attempt and the dispatcher would otherwise read the record it
+just wrote as somebody else's delivery and close the row unsent; and it carries
+`emailSentAtMs` / `telegramSentAtMs` for whichever channel did succeed, so a
+retry sends only what is still owed. The row id is the notification document's
+id, which keeps the claim — and therefore the guarantee against a third
+delivery — exactly where it already was.
 
 Сповіщення завжди записується; спливне вікно внизу екрана — ні. Панель, яка
 показує розмову, публікує її у `visibleConversation` (`{ kind: 'issue' | 'dm' |
@@ -679,6 +689,32 @@ derivation. The final architecture is to rewrite affected outbox rows in every
 server path that creates, moves or completes an event/deadline. Until that
 invariant is implemented and tested, the twenty-minute materialiser is required.
 
+### Hygiene of the record itself
+
+A notification record is not only a notification: with a dedupe key it is also
+the claim that says «this person has already been told». That is why nothing
+removed read records for so long — deleting a claim is how a reminder gets sent
+twice.
+
+`pruneReadNotifications` runs on the slow (materialising) half of the sweep and
+deletes records that are read and older than `READ_NOTIFICATION_TTL_MS` (30
+days), bounded to 100 per pass because deletions are writes and the daily write
+budget is the tighter of the two free-tier limits. For the two types this outbox
+produces — `deadline` and `calendar_reminder` — it first reads the scheduled row
+of the same id and keeps the record while that row is still `pending`: a pending
+row is a retry in flight, and a retry recreates the document it cannot find.
+Every other type came from an event that happened once and cannot repeat, so its
+record is only a record. An idle pass is one indexed query that matches nothing.
+
+The bell also draws one row per conversation rather than one per record:
+`notificationGrouping.mjs` collapses `commented`, `mentioned` and `chat_message`
+by task or channel, so five comments on one task are one line saying «5 нових
+повідомлень в QT-12». Read and unread never share a row — a mixed row could not
+say whether the dot belongs to it — and every action a row offers reaches every
+record it stands for. `assigned` and `status_changed` are deliberately not
+grouped: two status changes are two different facts, and a number would hide the
+newer one.
+
 ### Trigger during hosted testing
 
 `GET /api/cron/notifications` validates `Authorization: Bearer $CRON_SECRET` and
@@ -711,7 +747,6 @@ claim before outbound delivery.
 - Show the last successful email/Telegram delivery and terminal channel errors.
 - Mark a Telegram connection as needing attention after a permanent recipient
   error.
-- Move event-driven external delivery onto a durable retry path.
 
 ## Вартість читання
 
@@ -765,6 +800,13 @@ claim before outbound delivery.
   гірший за слухача, якого прибрали.
 - Те, що вже відоме під час запису, записується під час запису. Назва згаданої
   задачі, імʼя автора, кількість повідомлень у каналі — це поля, а не запити.
+- Прочитане — це курсор на розмову, а не позначка в кожному повідомленні.
+  Прочитати пʼятдесят повідомлень має коштувати один запис. Позначка на самому
+  повідомленні лишається тільки там, де без неї не обійтись, — під квитанцією
+  ✓✓, бо відправник не має права читати чужі курсори. Але й там пишеться не
+  пʼятдесят позначок, а по одній на автора: квитанція монотонна, тож найновіше
+  повідомлення людини відповідає за все, що вона надіслала раніше
+  (`receiptMarkIds` / `receiptMarks` у `issueReadState.mjs`).
 - Дані, потрібні кільком екранам, підписуються один раз на межі робочого
   простору й публікуються у стор.
 - Ранжування в памʼяті означає читання всього корпусу. `/api/search` тримає

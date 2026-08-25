@@ -104,26 +104,36 @@ task chat (`UnifiedTimeline`) keeps a `readBy` array on every comment and owns
 the unread divider the workspace chat has never had. Repairing one leaves the
 other holding its own half of the same defect.
 
-The first two passes are done — the git log carries what changed and why. The
-second one left the cards stacking three deep with a countdown each, both chats
-refusing to read anything while their tab is hidden, the task chat sending
-optimistically and showing «друкує…», and a channel marking its own bell records
-read while it is open (records carry `channelId` now; older ones are read from
-their link). What remains:
+All three passes are done — the git log carries what changed and why. The third
+one was cost and hygiene: the task chat now asks the per-issue cursor what is
+unread instead of a mark inside every message, and writes a mark only where the
+✓✓ receipt genuinely needs one (the newest message of each author, which covers
+everything older); the bell collapses a conversation into one row; read records
+expire after thirty days without ever deleting a claim something could still
+resend; and event-driven email and Telegram failures land in the same outbox the
+reminders use.
 
-**Next: cost and hygiene**
+One item of that list turned out to be wrong as written. **`birthday` is not a
+dead type.** `ALLOWED_TYPES` does reject it, but that route is not how it is
+sent: `createBirthdayNotifications` in `lib/server/reminderJobs.js` writes it
+straight through the Admin SDK on the daily greeting sweep, and it reaches real
+bells. The route rejects it on purpose — a greeting is addressed to a whole
+organization on somebody else's behalf, and no browser should be able to send
+one. What was actually wrong was that three lists disagreed in three files with
+nothing holding them together; the registry in `notificationChannels.mjs`
+(`REQUESTABLE_NOTIFICATION_TYPES` / `SYSTEM_NOTIFICATION_TYPES`) and
+`tests/notification-types.test.mjs` now do.
 
-- One cursor per conversation instead of a mark per message. Reading fifty
-  messages costs fifty writes today where the workspace chat costs one; keep the
-  per-message mark only for the ✓✓ receipt, which genuinely needs it. See the
-  read-budget rules in «Вартість читання» in [ARCHITECTURE.md](ARCHITECTURE.md).
-- Group bell records by task and conversation: one row saying «3 нові
-  повідомлення в QT-12» rather than three identical ones.
-- Expire read notifications. Nothing removes them but the manual «очистити
-  прочитані», and each one is also a dedupe claim, so expiry has to leave the
-  scheduled-outbox row as the guard against a resend.
-- Drop the dead `birthday` notification type. It sits in the client's type table,
-  the server's `ALLOWED_TYPES` rejects it, and nothing sends it.
+**Still open in this area**
+
+- One implementation of reading and scrolling for both chats. Wave 1 moved the
+  scroll behaviour across and wave 3 moved the read model across; the two screens
+  still hold two copies of the code that does it. The unread line and the ✓✓
+  receipts are a layer above that, not a second chat.
+- «Позначити непрочитаним» for a single message. It exists for a task as a
+  whole.
+- Reactions in the task chat. They exist in the workspace chat; this is taste,
+  not mechanics.
 
 ### Notification delivery
 
