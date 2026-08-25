@@ -518,6 +518,12 @@ a list.
 - `src/components/IssueReadStateBridge.jsx` — one organization-wide cursor
   listener at the workspace boundary. Unchanged, and the reason a board of five
   hundred cards costs no reads for any of this.
+- `src/lib/hooks/useIssueTyping.js` — «друкує…» for a task, on the workspace
+  chat's own mechanism (`activeTypingUserIds`, and the TTL and heartbeat beside
+  it in `workspaceChat.mjs`). It writes `issues/{issueId}/presence/typing` — a
+  document of its own, because the task itself is subscribed to by every board
+  and card that shows it and a heartbeat written there would cost each of them a
+  read.
 
 ### The rules
 
@@ -559,7 +565,20 @@ a list.
    cursor moves to just before the newest activity, so the dot returns and the
    boundary lands on the change that made you want to come back — while older
    changes you never saw stay unseen.
-9. **The comparison is server clock against server clock.** `audit.createdAt` is
+9. **Nothing is read in a tab nobody is looking at.** Both observers stand down
+   while `document.visibilityState` is not `visible`, and are rebuilt when it
+   returns — an `IntersectionObserver` reports what is on screen the moment it
+   starts watching, so coming back to a task left open reads it, and a pane left
+   open behind another window reads nothing. The workspace chat has always made
+   the same check before moving its cursor.
+10. **A message you sent is on screen because you sent it.** The task chat draws
+   it immediately, marked as being sent and carrying its own upload progress,
+   and the snapshot settles it by the id the write already knew (`addComment`
+   returns it; a Firestore transaction is not applied to the local cache, so
+   nothing else arrives until the server answers). A failed send leaves the
+   message in place, marked and sendable again, rather than taking it away with
+   the draft.
+11. **The comparison is server clock against server clock.** `audit.createdAt` is
    written by Firestore, and the cursor it is measured against was copied from the
    task's own `lastActivityAt`. That is why the boundary needs no cursor of its
    own and no per-entry timestamp written by a client.
@@ -605,11 +624,20 @@ queue for a provider failure. Adding the immediate events to the same outbox is
 remaining reliability work.
 
 Сповіщення завжди записується; спливне вікно внизу екрана — ні. Панель, яка
-показує розмову, публікує її у `visibleConversation` (`{ kind: 'issue' | 'dm',
-id }`), а `WorkspaceNotificationBridge` питає `isConversationOnScreen` перед
-показом картки. Повідомлення, яке щойно прийшло у відкритий чат, не оголошується
-карткою поверх самого чату. Виняток — `emergency`, `alert` і `test`: екстрений
-виклик має перебивати будь-що.
+показує розмову, публікує її у `visibleConversation` (`{ kind: 'issue' | 'dm' |
+'channel', id }`), а `WorkspaceNotificationBridge` питає `isConversationOnScreen`
+перед показом картки. Повідомлення, яке щойно прийшло у відкритий чат, не
+оголошується карткою поверх самого чату. Виняток — `emergency`, `alert` і
+`test`: екстрений виклик має перебивати будь-що.
+
+Розмова, відкрита перед читачем, ще й гасить свої записи у дзвіночку: запис
+існує, щоб привести туди, де людини не було. Яку саме розмову називає запис,
+відповідає `notificationConversationId` — з поля `channelId`, а для записів,
+створених до появи цього поля, з посилання (`/chat?channel=…`, `/chat?dm=…`).
+
+Карток може стояти до трьох, стосом, кожна зі своїми шістьма секундами. Поки
+вкладка у фоні, відлік стоїть: картка чекає, доки на неї подивляться, а не
+догорає у невидимому вікні.
 
 Лічильник на екрані вибору організації не походить із активного live-вікна і не
 покладається на Zustand/localStorage. `GET /api/notifications/unread-counts`

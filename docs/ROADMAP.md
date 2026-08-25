@@ -104,26 +104,14 @@ task chat (`UnifiedTimeline`) keeps a `readBy` array on every comment and owns
 the unread divider the workspace chat has never had. Repairing one leaves the
 other holding its own half of the same defect.
 
-The first pass is done — the git log carries what changed and why. What remains,
-in the order it was agreed:
+The first two passes are done — the git log carries what changed and why. The
+second one left the cards stacking three deep with a countdown each, both chats
+refusing to read anything while their tab is hidden, the task chat sending
+optimistically and showing «друкує…», and a channel marking its own bell records
+read while it is open (records carry `channelId` now; older ones are read from
+their link). What remains:
 
-**Next: behaviour**
-
-- Queue or stack the live notification cards. `showLiveNotif` replaces whatever
-  is on screen, so three notifications in ten seconds show one.
-- Respect tab visibility. Neither a card's six seconds nor a read receipt should
-  be spent while the tab is hidden. `/chat` checks `document.visibilityState`;
-  the task chat's two observers do not.
-- Optimistic sending in the task chat: the message appears at once, marked as
-  sending, and settles when the snapshot lands. Today it waits for Firestore.
-- A typing indicator in the task chat. `activeTypingUserIds` and its render
-  already exist on the workspace chat side.
-- Mark a channel's bell records read while that channel is open. Direct messages
-  and tasks already do it; a channel cannot yet, because a `chat_message`
-  record carries no channel id — only its link does (`/chat?channel=…`), so
-  either that link is parsed or the field is added first.
-
-**After that: cost and hygiene**
+**Next: cost and hygiene**
 
 - One cursor per conversation instead of a mark per message. Reading fifty
   messages costs fifty writes today where the workspace chat costs one; keep the
