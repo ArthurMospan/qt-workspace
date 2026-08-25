@@ -425,13 +425,63 @@ test('the unread boundary waits for the cursor, and stops repeating itself', asy
   // The effect that places the conversation has to watch the line, or the wait
   // for it never ends and the scroller stays where an unplaced one sits — the
   // very top.
-  assert.match(timeline, /\}, \[feedSettled, isActive, issueId, sessionBoundary, timeline\.length\]\);/);
-  // The button and the line say the same number, and the button goes once the
-  // line has been read — «1 нове» must not lead to a line reading «3».
-  assert.match(timeline, /\{boundaryCount\} нових/);
-  assert.match(timeline, /sessionBoundary && !boundary\.dismissed && !boundary\.read && !isUnreadMarkerVisible/);
-  // And the line itself is dismissed by pointing at it, once it has been read.
-  assert.match(timeline, /onMouseEnter=\{boundary\.read \? dismissBoundary : undefined\}/);
+  assert.match(timeline, /\}, \[feedSettled, isActive, issueId, sessionBoundary, syncScrollPosition, timeline\.length\]\);/);
+  // The line says no number at all, and the jump control says a live one. A
+  // frozen «2» stood over four messages, two of them the reader's own.
+  assert.doesNotMatch(timeline, /\{boundaryCount\} нових/);
+  assert.match(timeline, /plural\(unreadTotal, \['нове', 'нові', 'нових'\]\)/);
+  // One control, two jobs: the unread line while there is one off screen, the
+  // end of the conversation for a reader who has climbed into the history.
+  assert.match(timeline, /if \(isScrolledUp\) return \{ to: 'bottom', label: 'До останнього'/);
+  // And the line is not taken down by putting a mouse pointer on it — a phone
+  // has no pointer to put anywhere, so there it was permanent for the visit.
+  assert.doesNotMatch(timeline, /onMouseEnter=\{boundary\.read \? dismissBoundary : undefined\}/);
+});
+
+// Answering is reading, and every messenger has always treated it that way.
+test('sending a message reads the conversation and takes the line down', async () => {
+  const timeline = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
+
+  assert.match(timeline, /if \(!editingComment\) \{[\s\S]{0,600}?consumeConversation\(\);[\s\S]{0,40}?dismissBoundary\(\);/);
+  // And the reader lands on their own message wherever they were standing.
+  assert.match(timeline, /wasNearBottomRef\.current = true;[\s\S]{0,40}?setIsScrolledUp\(false\);[\s\S]{0,40}?scrollToBottom\(\);/);
+  // One place decides what «read» means, so three callers cannot each remember
+  // their own half of it.
+  assert.match(timeline, /const consumeConversation = useCallback\(\(\) => \{/);
+  assert.match(timeline, /dismissIssueNotifications\(\);/);
+  // Including the records in the bell, which existed only to bring the reader
+  // to the conversation they are now standing in.
+  assert.match(timeline, /notification\.issueId === issueId/);
+  assert.match(timeline, /notification\.type === 'commented' \|\| notification\.type === 'mentioned'/);
+});
+
+// One person speaking without interruption is drawn as one run.
+test('consecutive messages from one author share a name and a face', async () => {
+  const timeline = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
+
+  assert.match(timeline, /const RUN_WINDOW_MS = 5 \* 60 \* 1000;/);
+  assert.match(timeline, /function continuesRun\(previous, next\)/);
+  // The name opens the run, the face closes it, and the tail marks the end.
+  assert.match(timeline, /\{!isMe && startsRun &&/);
+  assert.match(timeline, /\{!endsRun \? null : isExternalAuthor \?/);
+  assert.match(timeline, /endsRun \? \(isMe \? 'rounded-br-none' : 'rounded-bl-none'\) : ''/);
+  // A day break or the unread line ends a run wherever it falls.
+  assert.match(timeline, /`comment-\$\{item\.id\}` === sessionBoundary/);
+});
+
+// A list that grows under a reader at the end of it has to keep them there.
+test('the task feed corrects itself when its own height changes', async () => {
+  const timeline = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
+
+  assert.match(timeline, /new ResizeObserver\(/);
+  assert.match(timeline, /observer\.observe\(feed\);/);
+  // It stands down until the conversation has been placed: during placement the
+  // list is on its way to the unread line, not to the bottom.
+  assert.match(timeline, /if \(positionedIssueRef\.current !== issueId \|\| !wasNearBottomRef\.current\) return;/);
+  // Where the reader stands is read off the scroller, not remembered from the
+  // last scroll event — a list placed by code never fires one.
+  assert.match(timeline, /const syncScrollPosition = useCallback/);
+  assert.match(timeline, /const AT_BOTTOM_SLACK = 80;/);
 });
 
 // What a project card costs to draw.
@@ -545,7 +595,7 @@ test('a message that arrives while you are reading is consumed without an unread
   // against a marker that had not mounted, returned, and was never rebuilt.
   assert.match(
     timeline,
-    /\}, \[boundary\.dismissed, consumeChanges, isActive, markCommentsRead, myId, sessionBoundary, unreadCommentIds, unreadTotal\]\);/,
+    /\}, \[boundary\.dismissed, consumeConversation, isActive, myId, sessionBoundary, unreadTotal\]\);/,
   );
   // And a message that lands while the reader is already at the bottom crosses
   // no line at all, so the end of the conversation is observed too.

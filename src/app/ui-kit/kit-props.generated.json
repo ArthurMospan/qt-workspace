@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 856,
-    "documentedProps": 856,
+    "props": 855,
+    "documentedProps": 855,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -7010,7 +7010,7 @@
     },
     "UnreadDivider": {
       "file": "src/components/ui/Chat/UnreadDivider.jsx",
-      "summary": "The boundary between previously seen chat history and unread messages.",
+      "summary": "The boundary between previously seen chat history and unread messages. It carries no number, on purpose.",
       "props": [
         {
           "name": "className",
@@ -7018,13 +7018,6 @@
           "type": "string",
           "values": [],
           "description": "Placement in the parent only."
-        },
-        {
-          "name": "count",
-          "default": "0",
-          "type": "number",
-          "values": [],
-          "description": "Number of unread messages after the boundary."
         },
         {
           "name": "label",

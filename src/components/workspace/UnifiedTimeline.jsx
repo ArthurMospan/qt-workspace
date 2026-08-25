@@ -42,6 +42,7 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { extractMentionedUserIds, filterMentionCandidates } from '@/lib/utils/mentions';
 import { collectIssueMentions } from '@/lib/utils/messageTokens.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 import {
   ATTACHMENT_UPLOAD_ACCEPT,
   uploadFilePolicy,
@@ -51,6 +52,28 @@ import {
 // step is another `COMMENT_WINDOW` of reads, and a quote pointing at a message
 // deleted long ago must not walk a year of conversation to discover that.
 const JUMP_HISTORY_LIMIT = 5;
+
+// How close together two messages from the same person have to be to be drawn
+// as one run — the same five minutes the workspace chat uses. Without this the
+// name and the face were repeated over every single message, so four «ку» in a
+// row cost four avatars and four headers saying the same name.
+const RUN_WINDOW_MS = 5 * 60 * 1000;
+
+// «At the bottom», in pixels. Matches the workspace chat, so the two lists
+// agree about when a new message should push the view and when it should not.
+const AT_BOTTOM_SLACK = 80;
+
+// Whether `next` continues the run `previous` started: same author, close
+// enough in time, same day.
+function continuesRun(previous, next) {
+  return Boolean(
+    previous && next
+    && previous._type === 'comment' && next._type === 'comment'
+    && previous.authorId === next.authorId
+    && Math.abs((next._time || 0) - (previous._time || 0)) <= RUN_WINDOW_MS
+    && dayKey(previous.createdAt) === dayKey(next.createdAt),
+  );
+}
 
 function fmtTime(minutes) {
   if (!minutes && minutes !== 0) return '—';
@@ -240,6 +263,8 @@ export default function UnifiedTimeline({
   const showToast = useWorkspaceStore(state => state.showToast);
   const setVisibleConversation = useWorkspaceStore(state => state.setVisibleConversation);
   const clearVisibleConversation = useWorkspaceStore(state => state.clearVisibleConversation);
+  const notifications = useWorkspaceStore(state => state.notifications);
+  const markNotificationRead = useWorkspaceStore(state => state.notificationActions?.markRead);
   const confirmDialog = useConfirm();
   const project = projects.find(item => item.id === projectId);
   // The history is read out through the live workflow: a project that renamed a
@@ -284,6 +309,7 @@ export default function UnifiedTimeline({
   const fileInputRef = useRef(null);
   const wrapperRef = useRef(null);
   const unreadMarkerRef = useRef(null);
+  const feedRef = useRef(null);
   const feedEndRef = useRef(null);
   const highlightTimerRef = useRef(null);
   // Which message a reply quote is still trying to reach, and the snapshot that
@@ -297,6 +323,10 @@ export default function UnifiedTimeline({
   const positionedIssueRef = useRef(null);
   const [isUnreadMarkerVisible, setIsUnreadMarkerVisible] = useState(false);
   const [unreadDirection, setUnreadDirection] = useState('down');
+  // Whether the reader has left the end of the conversation. A ref alone could
+  // not answer this: the jump control has to redraw when it changes, and only
+  // state redraws.
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [highlightedCommentId, setHighlightedCommentId] = useState(null);
   // Waiting for the read cursors is right, and waiting forever is not. They
   // arrive over the network, and a network that cannot answer — an exhausted
@@ -428,11 +458,13 @@ export default function UnifiedTimeline({
   }
   const sessionBoundary = boundary.issueId === issueId ? boundary.key : null;
   const boundaryCount = boundary.count;
-  // Dismissed by pointing at it. The line is a landmark, not a notice: once the
-  // reader is looking at what it separates, it has said everything it had to
-  // say, and it used to stand there repeating «Нові повідомлення (3)» for the
-  // rest of the visit however much of them had been read. Hovering is the
-  // cheapest way to say «yes, I see them» without asking for a click.
+  // Taken down by answering, and by leaving. The line is a landmark, not a
+  // notice, and it used to be removable in exactly one way — putting a mouse
+  // pointer on it. A phone has no pointer to put anywhere, so on a phone the
+  // line was permanent for the whole visit; and on a desktop it stood over a
+  // conversation the reader was actively taking part in, with their own replies
+  // under it. Sending a message is the strongest statement there is that
+  // everything above has been read, so that is what takes it down.
   // Kept on the boundary itself, which is already reset by a change of task, so
   // there is no second piece of state to keep in step with the first.
   const dismissBoundary = useCallback(
@@ -440,18 +472,35 @@ export default function UnifiedTimeline({
     [],
   );
 
+  // One control, because to a reader there is one question: «take me to what I
+  // have not seen». While an unread line exists off screen it points there;
+  // otherwise, if the reader has climbed into the history, it points at the end
+  // of the conversation — which is what somebody reading upwards while messages
+  // arrive below them needs, and never had. Its number is live, unlike the
+  // line's, which is exactly why the line no longer carries one.
+  // Described here, performed in the handler: what it points at is a fact about
+  // this render, while reaching for the scroller is not.
+  const jumpTarget = (() => {
+    if (sessionBoundary && !boundary.dismissed && !isUnreadMarkerVisible && unreadTotal > 0) {
+      return {
+        to: 'unread',
+        label: `${unreadTotal} ${plural(unreadTotal, ['нове', 'нові', 'нових'])}`,
+        icon: unreadDirection === 'up' ? ChevronUp : ChevronDown,
+      };
+    }
+    if (isScrolledUp) return { to: 'bottom', label: 'До останнього', icon: ChevronDown };
+    return null;
+  })();
+
   const unreadLabel = unreadChangeIds.length === 0
     ? 'Нові повідомлення'
     : (unreadCommentIds.length === 0 ? 'Нові зміни' : 'Нове в задачі');
   const renderUnreadBoundary = itemKey => (itemKey === sessionBoundary && !boundary.dismissed ? (
     <div
       ref={unreadMarkerRef}
-      // Only after it has been read: dismissing a line the reader has not
-      // reached yet would take away the very thing they came back for.
-      onMouseEnter={boundary.read ? dismissBoundary : undefined}
       className={`transition-opacity duration-300 ${boundary.read ? 'opacity-70' : 'opacity-100'}`}
     >
-      <UnreadDivider count={boundaryCount} label={unreadLabel} />
+      <UnreadDivider label={unreadLabel} />
     </div>
   ) : null);
 
@@ -592,6 +641,23 @@ export default function UnifiedTimeline({
     unreadMarkerRef.current?.scrollIntoView({ behavior, block: 'center' });
   };
 
+  const scrollToBottom = (behavior = 'smooth') => {
+    const scroll = scrollRef.current;
+    if (scroll) scroll.scrollTo({ top: scroll.scrollHeight, behavior });
+  };
+
+  // Where the reader is standing, answered from the scroller itself rather than
+  // remembered from the last scroll event — a list that has not been scrolled
+  // yet never fired one, and a list whose images have just finished decoding
+  // fired one that is no longer true.
+  const syncScrollPosition = useCallback(() => {
+    const scroll = scrollRef.current;
+    if (!scroll) return;
+    const atBottom = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < AT_BOTTOM_SLACK;
+    wasNearBottomRef.current = atBottom;
+    setIsScrolledUp(previous => (previous === !atBottom ? previous : !atBottom));
+  }, []);
+
   // Bringing one message into view and marking it, briefly, as the one that was
   // asked for — a conversation scrolled by a click has to say where it landed.
   const revealComment = useCallback(commentId => {
@@ -692,19 +758,20 @@ export default function UnifiedTimeline({
         if (!feedSettled) return;
         if (sessionBoundary && !unreadMarkerRef.current) return;
         positionedIssueRef.current = issueId;
-        if (unreadMarkerRef.current) {
-          scrollToUnread('auto');
-          return;
-        }
+        if (unreadMarkerRef.current) scrollToUnread('auto');
+        else scroll.scrollTop = scroll.scrollHeight;
+      } else if (wasNearBottomRef.current) {
+        // Afterwards the list only follows new activity, and only for a reader
+        // who is already at the bottom of it.
         scroll.scrollTop = scroll.scrollHeight;
-        return;
       }
-      // Afterwards the list only follows new activity, and only for a reader
-      // who is already at the bottom of it.
-      if (wasNearBottomRef.current) scroll.scrollTop = scroll.scrollHeight;
+      // And wherever it landed, that is now where the reader is standing — read
+      // off the scroller rather than waited for as a scroll event, because a
+      // list placed by code never fires one.
+      syncScrollPosition();
     });
     return () => cancelAnimationFrame(frame);
-  }, [feedSettled, isActive, issueId, sessionBoundary, timeline.length]);
+  }, [feedSettled, isActive, issueId, sessionBoundary, syncScrollPosition, timeline.length]);
 
   // A compact task screen keeps the timeline mounted while its chat pane is
   // hidden. That preserves the live unread badge without falsely consuming the
@@ -736,6 +803,34 @@ export default function UnifiedTimeline({
       lastSeenAt: new Date(newestActivityMillis),
     }).catch(error => reportLoadError('[task-chat] mark changes seen', error));
   }, [activeOrgId, issueId, myId, newestActivityMillis]);
+
+  // A notification exists to bring somebody to a conversation. Standing in that
+  // conversation, the record has already done its whole job, so it is marked
+  // read instead of sitting in the bell as a badge for something on screen.
+  const dismissIssueNotifications = useCallback(() => {
+    if (!markNotificationRead || !issueId) return;
+    const answered = notifications.filter(notification => (
+      !notification.read
+      && notification.issueId === issueId
+      && (notification.type === 'commented' || notification.type === 'mentioned')
+    ));
+    if (answered.length === 0) return;
+    Promise.allSettled(answered.map(notification => markNotificationRead(notification.id)));
+  }, [issueId, markNotificationRead, notifications]);
+
+  // Reading the conversation, in every sense this product keeps one: the
+  // messages, the changes, the line that says where you stopped, and the
+  // records in the bell that were only ever there to bring you here. Three
+  // callers reach it — the unread line coming into view, the end of the feed
+  // coming into view, and answering — and they must not each remember their own
+  // half of the list.
+  const consumeConversation = useCallback(() => {
+    if (!myId) return;
+    if (unreadCommentIds.length > 0) markCommentsRead(unreadCommentIds, myId);
+    consumeChanges();
+    setBoundary(current => (current.read ? current : { ...current, read: true }));
+    dismissIssueNotifications();
+  }, [consumeChanges, dismissIssueNotifications, markCommentsRead, myId, unreadCommentIds]);
 
   // What the reader currently has in front of them, so the live notification
   // popup can stay down for a message that arrived on this very screen instead
@@ -769,11 +864,7 @@ export default function UnifiedTimeline({
         setUnreadDirection(entry.boundingClientRect.top < entry.rootBounds.top ? 'up' : 'down');
       }
       if (!entry.isIntersecting || readTimer) return;
-      readTimer = window.setTimeout(() => {
-        if (unreadCommentIds.length > 0) markCommentsRead(unreadCommentIds, myId);
-        consumeChanges();
-        setBoundary(current => (current.read ? current : { ...current, read: true }));
-      }, 500);
+      readTimer = window.setTimeout(consumeConversation, 500);
     }, { root: scroll, threshold: 0.8 });
 
     observer.observe(marker);
@@ -786,7 +877,7 @@ export default function UnifiedTimeline({
     // this effect otherwise watches. Without it the observer ran once against a
     // marker that had not mounted yet, returned, and was never rebuilt — so
     // messages sat unread under a reader who was looking straight at them.
-  }, [boundary.dismissed, consumeChanges, isActive, markCommentsRead, myId, sessionBoundary, unreadCommentIds, unreadTotal]);
+  }, [boundary.dismissed, consumeConversation, isActive, myId, sessionBoundary, unreadTotal]);
 
   // Reading is not only crossing the line. The boundary is the landmark for a
   // conversation you came back to; a message that arrives while you are already
@@ -809,11 +900,7 @@ export default function UnifiedTimeline({
         return;
       }
       if (readTimer) return;
-      readTimer = window.setTimeout(() => {
-        markCommentsRead(unreadCommentIds, myId);
-        consumeChanges();
-        setBoundary(current => (current.read ? current : { ...current, read: true }));
-      }, 500);
+      readTimer = window.setTimeout(consumeConversation, 500);
     }, { root: scroll });
 
     observer.observe(feedEnd);
@@ -821,7 +908,27 @@ export default function UnifiedTimeline({
       observer.disconnect();
       if (readTimer) window.clearTimeout(readTimer);
     };
-  }, [consumeChanges, isActive, markCommentsRead, myId, unreadCommentIds]);
+  }, [consumeConversation, isActive, myId, unreadCommentIds.length]);
+
+  // A list that grows under a reader sitting at the end of it has to keep them
+  // there. An image finishing its decode, or a composer growing by a line, used
+  // to leave the newest message below the fold — the same correction the
+  // workspace chat has always made and this one never did. It stands down until
+  // the conversation has been placed, because during placement the list is on
+  // its way to the unread line, not to the bottom.
+  useEffect(() => {
+    const feed = feedRef.current;
+    if (!isActive || !feed || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => {
+      if (positionedIssueRef.current !== issueId || !wasNearBottomRef.current) return;
+      requestAnimationFrame(() => {
+        const scroll = scrollRef.current;
+        if (scroll && wasNearBottomRef.current) scroll.scrollTop = scroll.scrollHeight;
+      });
+    });
+    observer.observe(feed);
+    return () => observer.disconnect();
+  }, [isActive, issueId]);
 
   const addPendingFiles = fileList => {
     const files = Array.from(fileList || []);
@@ -904,6 +1011,21 @@ export default function UnifiedTimeline({
         }
       }
       resetComposer();
+      if (!editingComment) {
+        // Answering is the strongest statement there is that everything above
+        // has been read, and every messenger treats it that way. Ours did not:
+        // the unread line stood over a conversation with the reader's own
+        // replies under it, and the tab kept counting messages they had plainly
+        // seen. It also takes the line down, because it has nothing left to say.
+        consumeConversation();
+        dismissBoundary();
+        // And wherever they were standing in the history, their own message is
+        // what they are now looking for. The ref is what the feed reads when the
+        // message actually arrives from Firestore a moment later.
+        wasNearBottomRef.current = true;
+        setIsScrolledUp(false);
+        scrollToBottom();
+      }
     } catch (error) {
       showToast(`Помилка надсилання: ${error.message}`, 'error');
     } finally {
@@ -917,11 +1039,8 @@ export default function UnifiedTimeline({
       {viewerAttachment && <AttachmentViewer attachment={viewerAttachment} onClose={() => setViewerAttachment(null)} />}
       <div
         ref={scrollRef}
-        onScroll={event => {
-          const scroll = event.currentTarget;
-          wasNearBottomRef.current = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 72;
-        }}
-        className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-5"
+        onScroll={syncScrollPosition}
+        className="custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-5"
       >
         {timeline.length === 0 && (
           <EmptyState
@@ -932,6 +1051,12 @@ export default function UnifiedTimeline({
           />
         )}
 
+        {/* One box around the messages, so their combined height can be
+            watched. A picture that finishes decoding after the list was placed
+            grows this box and nothing else, and the scroller re-pins itself to
+            the bottom; without a box to watch, the reader was simply left short
+            of it. */}
+        <div ref={feedRef} className="flex flex-col gap-4">
         {/* The window's edge, and the way past it. Without this control the
             feed would simply end, and a task's older history would be
             unreachable rather than merely unloaded. */}
@@ -951,6 +1076,18 @@ export default function UnifiedTimeline({
 
           if (item._type === 'comment') {
             const isMe = item.authorId === currentUser?.uid || item.authorId === currentUser?.id;
+            // One run of messages is one person speaking without interruption.
+            // The name and the face are drawn once for it — Telegram's rule, and
+            // the workspace chat's already: the name opens the run, the face
+            // closes it, and the tail on the bubble marks the end. Four «ку» in
+            // a row used to cost four avatars and four identical headers.
+            // A day break or the unread line ends a run wherever it falls.
+            const nextItem = timeline[index + 1];
+            const startsRun = Boolean(separator)
+              || `comment-${item.id}` === sessionBoundary
+              || !continuesRun(previousItem, item);
+            const endsRun = !continuesRun(item, nextItem)
+              || (nextItem && `${nextItem._type}-${nextItem.id}` === sessionBoundary);
             const authorMember = members.find(candidate => (candidate.id || candidate.uid) === item.authorId);
             const isExternalAuthor = !isMe && !authorMember;
             // Prefer the live profile over `item.authorAvatar`. That field is a
@@ -968,9 +1105,9 @@ export default function UnifiedTimeline({
               {renderUnreadBoundary(`comment-${item.id}`)}
               <div
                 data-comment-id={item.id}
-                className={`group grid items-end gap-x-2.5 ${isMe ? 'grid-cols-[minmax(0,1fr)_28px]' : 'grid-cols-[28px_minmax(0,1fr)]'}`}
+                className={`group grid items-end gap-x-2.5 ${startsRun ? '' : '-mt-3'} ${isMe ? 'grid-cols-[minmax(0,1fr)_28px]' : 'grid-cols-[28px_minmax(0,1fr)]'}`}
               >
-                {isExternalAuthor ? (
+                {!endsRun ? null : isExternalAuthor ? (
                   <Popover
                     position="top"
                     hideCloseIcon
@@ -1005,13 +1142,13 @@ export default function UnifiedTimeline({
                   />
                 )}
                 <div className={`row-start-1 flex max-w-[84%] min-w-0 flex-col ${isMe ? 'col-start-1 items-end justify-self-end' : 'col-start-2 items-start'}`}>
-                  {!isMe && (
+                  {!isMe && startsRun && (
                     <span className="mb-1 ml-1 flex items-center gap-1 text-[11px] font-bold text-ink">
                       {item.authorName}
                       <StatusEmoji member={authorMember} />
                     </span>
                   )}
-                  <div className={`max-w-full break-words p-3 text-[14px] leading-[22px] transition-shadow duration-300 ${isMe ? 'rounded-[16px] rounded-br-none bg-[#303030] text-white' : 'rounded-[16px] rounded-bl-none bg-white text-ink'} ${highlightedCommentId === item.id ? 'ring-2 ring-ink/30' : ''}`}>
+                  <div className={`max-w-full break-words rounded-[16px] p-3 text-[14px] leading-[22px] transition-shadow duration-300 ${isMe ? 'bg-[#303030] text-white' : 'bg-white text-ink'} ${endsRun ? (isMe ? 'rounded-br-none' : 'rounded-bl-none') : ''} ${highlightedCommentId === item.id ? 'ring-2 ring-ink/30' : ''}`}>
                     <ReplyQuote
                       replyTo={item.replyTo}
                       dark={isMe}
@@ -1036,7 +1173,11 @@ export default function UnifiedTimeline({
                   </div>
                 </div>
                 <div className={`row-start-2 mt-1 flex items-center gap-1 ${isMe ? 'col-start-1 justify-self-end flex-row-reverse' : 'col-start-2 justify-self-start'}`}>
-                    <span className="px-1 text-[10px] font-medium text-[#a1a1a1]">
+                    {/* The clock belongs to the run, not to every line of it:
+                        four messages a minute apart used to stamp «20:47» four
+                        times. Inside a run it is there on hover, for the one
+                        time somebody wants the exact minute. */}
+                    <span className={`px-1 text-[10px] font-medium text-[#a1a1a1] transition-opacity ${endsRun || item.editedAt ? '' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`}>
                       {fmtClock(item.createdAt)}{item.editedAt ? ' · змінено' : ''}
                     </span>
                     {/* Read receipt на своїх повідомленнях: ✓ надіслано / ✓✓ прочитано іншими.
@@ -1102,6 +1243,7 @@ export default function UnifiedTimeline({
             Seeing it is what consumes a message that arrived while the reader
             was already here — no unread line is ever crossed for those. */}
         <div ref={feedEndRef} aria-hidden className="-mt-4 h-px shrink-0" />
+        </div>
       </div>
 
       {!isArchived && canWriteComments && (
@@ -1112,15 +1254,15 @@ export default function UnifiedTimeline({
               how «1 нове» could take a reader to a line reading «3». And once
               the line has been read the button has nowhere left to send
               anybody, so it goes. */}
-          {sessionBoundary && !boundary.dismissed && !boundary.read && !isUnreadMarkerVisible && (
+          {jumpTarget && (
             <div className="absolute inset-x-0 -top-10 z-20 flex justify-center">
               <Button
                 style="primary"
                 size="sm"
-                icon={unreadDirection === 'up' ? ChevronUp : ChevronDown}
-                onClick={() => scrollToUnread()}
+                icon={jumpTarget.icon}
+                onClick={() => (jumpTarget.to === 'unread' ? scrollToUnread() : scrollToBottom())}
               >
-                {boundaryCount} нових
+                {jumpTarget.label}
               </Button>
             </div>
           )}

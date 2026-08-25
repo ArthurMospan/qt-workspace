@@ -177,7 +177,7 @@ export default function ChatElementsSection() {
         fullWidth
       >
         <div className="w-full max-w-[560px]">
-          <UnreadDivider count={4} />
+          <UnreadDivider />
         </div>
       </PreviewBlock>
 

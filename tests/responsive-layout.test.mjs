@@ -19,7 +19,9 @@ test('task chat exposes an unread boundary and reads it only after visibility', 
   // Drawn from the messages alone, it left a task where somebody moved the
   // deadline and said nothing looking untouched.
   assert.match(timeline, /const unreadTotal = unreadCommentIds\.length \+ unreadChangeIds\.length;/);
-  assert.match(timeline, /<UnreadDivider count=\{boundaryCount\}/);
+  // The line carries no number: it stays where the visit found it while the
+  // conversation moves, so any count on it goes stale the moment anybody writes.
+  assert.match(timeline, /<UnreadDivider label=\{unreadLabel\}/);
   assert.match(timeline, /new IntersectionObserver/);
   assert.match(timeline, /scrollToUnread/);
   // The line stays where the visit found it. Derived live from `unreadTotal` it

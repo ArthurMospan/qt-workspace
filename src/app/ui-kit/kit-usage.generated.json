@@ -1034,8 +1034,7 @@
         "Tabs",
         "TaskCounters",
         "TaskListView",
-        "TaskTableView",
-        "UnreadDivider"
+        "TaskTableView"
       ],
       "routes": [
         "/[projectId]",
@@ -2799,7 +2798,7 @@
             "src/components/workspace/IssueDetail.jsx:2275",
             "src/components/workspace/IssueDetail.jsx:2303",
             "src/components/workspace/IssueDetail.jsx:2313",
-            "src/components/workspace/UnifiedTimeline.jsx:1117",
+            "src/components/workspace/UnifiedTimeline.jsx:1259",
             "src/components/workspace/WorkloadTab.jsx:553",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:378",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1135",
@@ -2837,7 +2836,7 @@
             "src/components/profile/ProfileView.jsx:206",
             "src/components/workspace/IssueDetail.jsx:1348",
             "src/components/workspace/IssueDetail.jsx:1359",
-            "src/components/workspace/UnifiedTimeline.jsx:1224"
+            "src/components/workspace/UnifiedTimeline.jsx:1366"
           ]
         },
         "(default)": {
@@ -3119,7 +3118,7 @@
             "src/components/workspace/IssueDetail.jsx:2242",
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:528",
-            "src/components/workspace/UnifiedTimeline.jsx:1117"
+            "src/components/workspace/UnifiedTimeline.jsx:1259"
           ]
         },
         "ghost": {
@@ -3201,7 +3200,7 @@
             "src/components/workspace/IssueDetail.jsx:1416",
             "src/components/workspace/IssueDetail.jsx:2138",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
-            "src/components/workspace/UnifiedTimeline.jsx:1224",
+            "src/components/workspace/UnifiedTimeline.jsx:1366",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -3405,7 +3404,7 @@
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:527",
             "src/components/workspace/TimesheetTab.jsx:528",
-            "src/components/workspace/UnifiedTimeline.jsx:1117",
+            "src/components/workspace/UnifiedTimeline.jsx:1259",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -3445,7 +3444,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:138",
-            "src/components/workspace/UnifiedTimeline.jsx:1224"
+            "src/components/workspace/UnifiedTimeline.jsx:1366"
           ]
         }
       },
@@ -3635,8 +3634,8 @@
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:527",
             "src/components/workspace/TimesheetTab.jsx:528",
-            "src/components/workspace/UnifiedTimeline.jsx:1117",
-            "src/components/workspace/UnifiedTimeline.jsx:1224",
+            "src/components/workspace/UnifiedTimeline.jsx:1259",
+            "src/components/workspace/UnifiedTimeline.jsx:1366",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -3840,8 +3839,8 @@
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:527",
             "src/components/workspace/TimesheetTab.jsx:528",
-            "src/components/workspace/UnifiedTimeline.jsx:1117",
-            "src/components/workspace/UnifiedTimeline.jsx:1224",
+            "src/components/workspace/UnifiedTimeline.jsx:1259",
+            "src/components/workspace/UnifiedTimeline.jsx:1366",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -4090,7 +4089,7 @@
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:527",
             "src/components/workspace/TimesheetTab.jsx:528",
-            "src/components/workspace/UnifiedTimeline.jsx:1117",
+            "src/components/workspace/UnifiedTimeline.jsx:1259",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -4175,7 +4174,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1224"
+            "src/components/workspace/UnifiedTimeline.jsx:1366"
           ]
         }
       }
@@ -4281,10 +4280,10 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1059",
-            "src/components/workspace/UnifiedTimeline.jsx:1060",
-            "src/components/workspace/UnifiedTimeline.jsx:1061",
-            "src/components/workspace/UnifiedTimeline.jsx:1157"
+            "src/components/workspace/UnifiedTimeline.jsx:1200",
+            "src/components/workspace/UnifiedTimeline.jsx:1201",
+            "src/components/workspace/UnifiedTimeline.jsx:1202",
+            "src/components/workspace/UnifiedTimeline.jsx:1299"
           ]
         }
       },
@@ -4304,9 +4303,9 @@
             "src/app/(app)/page.js:231",
             "src/components/MobileNav.jsx:305",
             "src/components/MobileNav.jsx:334",
-            "src/components/workspace/UnifiedTimeline.jsx:1059",
-            "src/components/workspace/UnifiedTimeline.jsx:1060",
-            "src/components/workspace/UnifiedTimeline.jsx:1157"
+            "src/components/workspace/UnifiedTimeline.jsx:1200",
+            "src/components/workspace/UnifiedTimeline.jsx:1201",
+            "src/components/workspace/UnifiedTimeline.jsx:1299"
           ]
         },
         "(default)": {
@@ -4331,7 +4330,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:458",
-            "src/components/workspace/UnifiedTimeline.jsx:1061"
+            "src/components/workspace/UnifiedTimeline.jsx:1202"
           ]
         },
         "primary": {
@@ -4494,10 +4493,10 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1059",
-            "src/components/workspace/UnifiedTimeline.jsx:1060",
-            "src/components/workspace/UnifiedTimeline.jsx:1061",
-            "src/components/workspace/UnifiedTimeline.jsx:1157"
+            "src/components/workspace/UnifiedTimeline.jsx:1200",
+            "src/components/workspace/UnifiedTimeline.jsx:1201",
+            "src/components/workspace/UnifiedTimeline.jsx:1202",
+            "src/components/workspace/UnifiedTimeline.jsx:1299"
           ]
         }
       },
@@ -4567,9 +4566,9 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:458",
-            "src/components/workspace/UnifiedTimeline.jsx:1059",
-            "src/components/workspace/UnifiedTimeline.jsx:1060",
-            "src/components/workspace/UnifiedTimeline.jsx:1061"
+            "src/components/workspace/UnifiedTimeline.jsx:1200",
+            "src/components/workspace/UnifiedTimeline.jsx:1201",
+            "src/components/workspace/UnifiedTimeline.jsx:1202"
           ]
         },
         "auth-close": {
@@ -4586,7 +4585,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1157"
+            "src/components/workspace/UnifiedTimeline.jsx:1299"
           ]
         }
       }
@@ -5736,7 +5735,7 @@
           ],
           "files": [
             "src/components/TeamMemberSettingsDialog.jsx:56",
-            "src/components/workspace/UnifiedTimeline.jsx:212",
+            "src/components/workspace/UnifiedTimeline.jsx:235",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:280",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:281",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:18"
@@ -5915,7 +5914,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:212"
+            "src/components/workspace/UnifiedTimeline.jsx:235"
           ]
         },
         "wide-sm": {
@@ -6020,7 +6019,7 @@
             "src/components/workspace/BillingTab.jsx:472",
             "src/components/workspace/IssueCard.jsx:404",
             "src/components/workspace/IssueDetail.jsx:1581",
-            "src/components/workspace/UnifiedTimeline.jsx:212",
+            "src/components/workspace/UnifiedTimeline.jsx:235",
             "src/components/workspace/WorkloadTab.jsx:139",
             "src/components/workspace/WorkloadTab.jsx:140",
             "src/components/workspace/WorkloadTab.jsx:141",
@@ -6088,7 +6087,7 @@
             "src/components/workspace/IssueCard.jsx:404",
             "src/components/workspace/IssueCard.jsx:51",
             "src/components/workspace/IssueDetail.jsx:1581",
-            "src/components/workspace/UnifiedTimeline.jsx:212",
+            "src/components/workspace/UnifiedTimeline.jsx:235",
             "src/components/workspace/WorkloadTab.jsx:139",
             "src/components/workspace/WorkloadTab.jsx:140",
             "src/components/workspace/WorkloadTab.jsx:141",
@@ -6179,7 +6178,7 @@
             "src/components/workspace/IssueCard.jsx:348",
             "src/components/workspace/IssueCard.jsx:51",
             "src/components/workspace/IssueDetail.jsx:1581",
-            "src/components/workspace/UnifiedTimeline.jsx:212",
+            "src/components/workspace/UnifiedTimeline.jsx:235",
             "src/components/workspace/WorkloadTab.jsx:139",
             "src/components/workspace/WorkloadTab.jsx:140",
             "src/components/workspace/WorkloadTab.jsx:141",
@@ -6309,7 +6308,7 @@
             "src/components/workspace/IssueCard.jsx:334",
             "src/components/workspace/IssueCard.jsx:348",
             "src/components/workspace/IssueCard.jsx:51",
-            "src/components/workspace/UnifiedTimeline.jsx:212",
+            "src/components/workspace/UnifiedTimeline.jsx:235",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1413"
           ]
@@ -6442,7 +6441,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:192"
+            "src/components/workspace/UnifiedTimeline.jsx:215"
           ]
         }
       }
@@ -6456,8 +6455,8 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:979",
-            "src/components/workspace/UnifiedTimeline.jsx:999"
+            "src/components/workspace/UnifiedTimeline.jsx:1116",
+            "src/components/workspace/UnifiedTimeline.jsx:1136"
           ]
         }
       }
@@ -6643,7 +6642,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1137"
+            "src/components/workspace/UnifiedTimeline.jsx:1279"
           ]
         }
       }
@@ -7178,7 +7177,7 @@
           ],
           "files": [
             "src/components/workspace/QtPlusProjectTab.jsx:278",
-            "src/components/workspace/UnifiedTimeline.jsx:927"
+            "src/components/workspace/UnifiedTimeline.jsx:1046"
           ]
         },
         "centered": {
@@ -7228,7 +7227,7 @@
             "src/components/workspace/QtPlusProjectTab.jsx:270",
             "src/components/workspace/QtPlusProjectTab.jsx:278",
             "src/components/workspace/TimesheetTab.jsx:719",
-            "src/components/workspace/UnifiedTimeline.jsx:927",
+            "src/components/workspace/UnifiedTimeline.jsx:1046",
             "src/components/workspace/VelocityTab.jsx:185",
             "src/components/workspace/WorkloadTab.jsx:864",
             "src/components/workspace/WorkloadTab.jsx:876",
@@ -7277,7 +7276,7 @@
             "src/components/profile/ProfileView.jsx:457",
             "src/components/workspace/BillingTab.jsx:1089",
             "src/components/workspace/TimesheetTab.jsx:719",
-            "src/components/workspace/UnifiedTimeline.jsx:927",
+            "src/components/workspace/UnifiedTimeline.jsx:1046",
             "src/components/workspace/VelocityTab.jsx:185",
             "src/components/workspace/WorkloadTab.jsx:864",
             "src/components/workspace/WorkloadTab.jsx:876",
@@ -8125,7 +8124,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1162"
+            "src/components/workspace/UnifiedTimeline.jsx:1304"
           ]
         },
         "qtplus": {
@@ -8161,7 +8160,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1108",
+            "src/components/workspace/UnifiedTimeline.jsx:1250",
             "src/components/workspace/qtplus/chat/ChatComposer.jsx:63"
           ]
         }
@@ -8412,7 +8411,7 @@
           "files": [
             "src/app/(app)/settings/page.js:3057",
             "src/components/workspace/IssueDetail.jsx:1704",
-            "src/components/workspace/UnifiedTimeline.jsx:974",
+            "src/components/workspace/UnifiedTimeline.jsx:1111",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1056",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1154",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1227"
@@ -8441,7 +8440,7 @@
           "files": [
             "src/app/(app)/settings/page.js:3057",
             "src/components/workspace/IssueDetail.jsx:1704",
-            "src/components/workspace/UnifiedTimeline.jsx:974",
+            "src/components/workspace/UnifiedTimeline.jsx:1111",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1056",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1154",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1227"
@@ -8550,7 +8549,7 @@
     "TextAction — кнопка без коробки": "<div className=\"flex flex-col gap-[14px]\">\n  {[['ink', 'Зберегти', 'ствердна дія в парі'], ['muted', 'Скасувати', 'тиха половина пари'],\n    ['danger', 'Видалити', 'деструктивна й видима'], ['danger-quiet', 'Прибрати', 'червоніє лише під курсором']].map(([tone, label, role]) => (\n    <div key={tone} className=\"flex items-center gap-[12px]\">\n      <span className=\"w-[130px] shrink-0 font-mono text-[10px] font-bold text-ink\">{tone}</span>\n      {['xs', 'sm', 'md'].map(size => (\n        <TextAction key={size} tone={tone} size={size}>{label}</TextAction>\n      ))}\n      <span className=\"text-[10px] text-[#cfcfcf]\">{role}</span>\n    </div>\n  ))}\n  <div className=\"flex items-center gap-[12px]\">\n    <span className=\"w-[130px] shrink-0 font-mono text-[10px] font-bold text-ink\">з іконкою</span>\n    <TextAction size=\"sm\" icon={UserPlus}>Додати</TextAction>\n    <TextAction size=\"md\" icon={ChatIcon}>3 відповіді</TextAction>\n    <TextAction size=\"xs\" tone=\"danger-quiet\" icon={Trash2} label=\"Видалити повідомлення\" />\n  </div>\n</div>",
     "AvatarButton — аватар як контрол": "<AvatarButton user={demoUser} size=\"chat-message\" label=\"Переглянути профіль\" />\n<AvatarButton user={{ name: 'Олена Коваль' }} size=\"chat-member\" label=\"Переглянути профіль\" />\n<AvatarButton user={{ name: 'Петро Іванчук' }} size=\"chat-inline\" label=\"Переглянути профіль\" />",
     "MentionMenu — дві щільності": "<div className=\"grid w-full grid-cols-1 gap-[16px] md:grid-cols-2\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[10px] font-bold text-ink\">density=&quot;composer&quot;</span>\n    <MentionMenu density=\"composer\" members={KIT_MENTION_MEMBERS} onSelect={() => {}} />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[10px] font-bold text-ink\">density=&quot;timeline&quot;</span>\n    <MentionMenu density=\"timeline\" members={KIT_MENTION_MEMBERS} selectedIndex={1} onSelect={() => {}} />\n  </div>\n</div>",
-    "Межа непрочитаних повідомлень": "<div className=\"w-full max-w-[560px]\">\n  <UnreadDivider count={4} />\n</div>",
+    "Межа непрочитаних повідомлень": "<div className=\"w-full max-w-[560px]\">\n  <UnreadDivider />\n</div>",
     "Межа завантаженої історії": "<div className=\"w-full max-w-[560px]\">\n  <LoadOlderButton onClick={() => {}} />\n  <LoadOlderButton onClick={() => {}}>Показати давнішу історію</LoadOlderButton>\n</div>",
     "IssueMentionMenu — згадки задач через #": "<div className=\"w-full max-w-[560px]\">\n  <IssueMentionMenu\n    issues={KIT_ISSUE_MENTIONS}\n    projects={[\n      { id: 'engineering', name: 'Engineering' },\n      { id: 'design', name: 'Design' },\n    ]}\n    onSelect={() => {}}\n  />\n</div>",
     "Вкладення в чаті": "<div className=\"grid w-full grid-cols-1 gap-[16px] md:grid-cols-2\">\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[10px] font-bold text-ink\">ChatAttachmentList</span>\n    <ChatAttachmentList attachments={KIT_CHAT_ATTACHMENTS} onOpen={() => {}} />\n  </div>\n  <div className=\"flex flex-col gap-[8px]\">\n    <span className=\"font-mono text-[10px] font-bold text-ink\">PendingChatAttachments</span>\n    <PendingChatAttachments files={KIT_PENDING_FILES} onRemove={() => {}} />\n  </div>\n</div>",
