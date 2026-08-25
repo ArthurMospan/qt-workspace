@@ -28,9 +28,10 @@ test('card and row checkbox replace the priority slot, including no priority', a
   assert.ok(card.indexOf('selectionActive && onSelect ?') < card.indexOf('<PriorityIcon priority={priorityConfig}'));
   assert.ok(row.indexOf('selectionActive && onSelect ?') < row.indexOf('<PriorityIcon priority={priorityConfig}'));
   assert.match(priorityIcon, /if \(config\.isNoPriority\)/);
-  assert.match(priorityIcon, /NO_PRIORITY_RADIUS = 2\.1/);
-  assert.match(priorityIcon, /strokeDasharray="0\.8 1\.1"/);
-  assert.match(priorityIcon, /opacity="0\.38"/);
+  assert.match(priorityIcon, /NO_PRIORITY_OUTER_RADIUS = 5\.5/);
+  assert.match(priorityIcon, /NO_PRIORITY_PATH_RADIUS = NO_PRIORITY_OUTER_RADIUS - \(NO_PRIORITY_STROKE_WIDTH \/ 2\)/);
+  assert.match(priorityIcon, /strokeDasharray="0\.8 1\.6"/);
+  assert.match(priorityIcon, /opacity="0\.32"/);
 });
 
 test('requested navigation and readability regressions stay fixed', async () => {

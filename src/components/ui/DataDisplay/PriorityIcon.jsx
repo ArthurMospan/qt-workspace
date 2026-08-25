@@ -7,10 +7,14 @@ const SIZE_CLASSES = {
   md: 'h-5 w-5',
 };
 
-// Match the 5px footprint of a ranked priority's centre dot. The broken line
-// is deliberately quiet: it says «not ranked yet», never another priority.
-const NO_PRIORITY_RADIUS = 2.1;
+// Match the visible 13.75px outer halo of a ranked priority at md=20. A stroke
+// grows on both sides of its path, so subtract half its width to keep the
+// outside edge at the same 5.5 viewBox radius as the filled halo.
+// The broken line stays deliberately quiet: it says «not ranked yet», never
+// another priority.
+const NO_PRIORITY_OUTER_RADIUS = 5.5;
 const NO_PRIORITY_STROKE_WIDTH = 0.8;
+const NO_PRIORITY_PATH_RADIUS = NO_PRIORITY_OUTER_RADIUS - (NO_PRIORITY_STROKE_WIDTH / 2);
 
 /**
  * Canonical priority mark: ranked priorities use one solid colour dot on a
@@ -40,13 +44,13 @@ export default function PriorityIcon({ priority, priorities = [], size = 'sm', c
         <circle
           cx="8"
           cy="8"
-          r={NO_PRIORITY_RADIUS}
+          r={NO_PRIORITY_PATH_RADIUS}
           fill="none"
           stroke={config.color}
           strokeWidth={NO_PRIORITY_STROKE_WIDTH}
-          strokeDasharray="0.8 1.1"
+          strokeDasharray="0.8 1.6"
           strokeLinecap="round"
-          opacity="0.38"
+          opacity="0.32"
         />
       </svg>
     );

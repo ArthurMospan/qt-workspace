@@ -19,11 +19,27 @@ test('ranked priority uses a solid dot and no priority uses a dashed ring', () =
   assert.match(icon, /r="5\.5" fill=\{config\.color\} fillOpacity="0\.4"/);
   assert.match(icon, /r="2\.5" fill=\{config\.color\}/);
   assert.match(icon, /if \(config\.isNoPriority\)/);
-  assert.match(icon, /NO_PRIORITY_RADIUS = 2\.1/);
+  assert.match(icon, /NO_PRIORITY_OUTER_RADIUS = 5\.5/);
   assert.match(icon, /NO_PRIORITY_STROKE_WIDTH = 0\.8/);
-  assert.match(icon, /strokeDasharray="0\.8 1\.1"/);
-  assert.match(icon, /opacity="0\.38"/);
+  assert.match(icon, /NO_PRIORITY_PATH_RADIUS = NO_PRIORITY_OUTER_RADIUS - \(NO_PRIORITY_STROKE_WIDTH \/ 2\)/);
+  assert.match(icon, /strokeDasharray="0\.8 1\.6"/);
+  assert.match(icon, /opacity="0\.32"/);
   assert.doesNotMatch(icon, /outerColor|innerColor/);
+});
+
+test('analytics keeps explicit, missing, and stale priorities in the unranked bucket', async () => {
+  assert.equal(priorityPresentation(NO_PRIORITY_ID, DEFAULT_SYSTEM_PRIORITIES).id, NO_PRIORITY_ID);
+  assert.equal(priorityPresentation(undefined, DEFAULT_SYSTEM_PRIORITIES).id, NO_PRIORITY_ID);
+  assert.equal(priorityPresentation('deleted-custom-priority', DEFAULT_SYSTEM_PRIORITIES).id, NO_PRIORITY_ID);
+
+  const [workspaceAnalytics, projectAnalytics] = await Promise.all([
+    readFile(new URL('../src/app/(app)/analytics/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/workspace/AnalyticsTab.jsx', import.meta.url), 'utf8'),
+  ]);
+  for (const source of [workspaceAnalytics, projectAnalytics]) {
+    assert.match(source, /priorityPresentation\(i\.priority, priorities\)\.id/);
+  }
+  assert.match(projectAnalytics, /selectablePriorities\(priorities\)/);
 });
 
 // Nothing said about priority means no priority.

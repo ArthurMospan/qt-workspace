@@ -59,7 +59,7 @@ import {
   inProgressStatusIds,
 } from '@/lib/utils/statusCategories.mjs';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
-import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
+import { priorityPresentation, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 import {
   analyticsDateKey,
@@ -792,10 +792,13 @@ export default function WorkspaceAnalyticsPage() {
           if (!i.assigneeIds || !i.assigneeIds.includes(assigneeFilter)) return false;
         }
       }
-      if (priorityFilter !== 'all' && (i.priority || NO_PRIORITY_ID) !== priorityFilter) return false;
+      if (
+        priorityFilter !== 'all'
+        && priorityPresentation(i.priority, priorities).id !== priorityFilter
+      ) return false;
       if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
-  }, [searchQuery, searchMatchedProjectIds, projectFilters, assigneeFilter, priorityFilter, typeFilter]);
+  }, [searchQuery, searchMatchedProjectIds, projectFilters, assigneeFilter, priorities, priorityFilter, typeFilter]);
   const filteredIssues = useMemo(() => issues.filter(filterIssue), [issues, filterIssue]);
   // A time-log title is reference data, not a task result. Search, assignee,
   // priority and type filters may decide which figures are drawn; they must not

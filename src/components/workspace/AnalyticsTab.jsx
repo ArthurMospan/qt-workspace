@@ -19,7 +19,7 @@ import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import AttentionPanel from '@/components/workspace/AttentionPanel';
 import { memberAnalyticsHref } from '@/lib/utils/teamAnalytics.mjs';
 import { openBlockerIssues } from '@/lib/utils/issueExecution.mjs';
-import { NO_PRIORITY_ID, selectablePriorities } from '@/lib/utils/priorities.mjs';
+import { priorityPresentation, selectablePriorities } from '@/lib/utils/priorities.mjs';
 import {
   backlogStatusIds,
   inProgressStatusIds,
@@ -67,11 +67,14 @@ export default function AnalyticsTab({
 
   const filteredIssues = useMemo(() => {
     return issues.filter(i => {
-      if (priorityFilter !== 'all' && (i.priority || NO_PRIORITY_ID) !== priorityFilter) return false;
+      if (
+        priorityFilter !== 'all'
+        && priorityPresentation(i.priority, priorities).id !== priorityFilter
+      ) return false;
       if (typeFilter !== 'all' && i.type !== typeFilter) return false;
       return true;
     });
-  }, [issues, priorityFilter, typeFilter]);
+  }, [issues, priorities, priorityFilter, typeFilter]);
 
   const stats = useMemo(() => {
     const total   = filteredIssues.length;
@@ -131,7 +134,7 @@ export default function AnalyticsTab({
       label: priority.label,
       color: priority.color,
       count: filteredIssues.filter(i => (
-        (i.priority || NO_PRIORITY_ID) === priority.id
+        priorityPresentation(i.priority, priorities).id === priority.id
         && !closedSet.has(i.columnId || i.status)
       )).length,
     })).filter(s => s.count > 0);
