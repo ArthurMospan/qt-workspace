@@ -609,7 +609,7 @@ function MemberDetail({
         filters={filters}
       />
       <nav
-        className="custom-scrollbar mb-6 flex gap-1.5 overflow-x-auto rounded-[16px] bg-[#e9e9e9] p-1.5"
+        className="custom-scrollbar mb-6 flex gap-1.5 overflow-x-auto rounded-[16px] bg-line p-1.5"
         aria-label="Розділи аналітики учасника"
       >
         {MEMBER_VIEWS.map(item => {

@@ -837,7 +837,7 @@ export default function GlobalSprintsPage() {
       {/* ── Content area ── */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center bg-transparent">
-          <div className="w-[28px] h-[28px] border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
+          <div className="w-[28px] h-[28px] border-[3px] border-line border-t-ink rounded-full animate-spin" />
         </div>
       ) : issuesError || sprintsError ? (
         <div className="flex min-h-[360px] flex-1 items-center justify-center p-6">

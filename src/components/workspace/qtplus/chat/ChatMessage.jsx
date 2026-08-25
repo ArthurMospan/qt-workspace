@@ -57,7 +57,7 @@ export default function ChatMessage({ view, othersCount, onDelete }) {
     return (
       <div className="group flex flex-row-reverse gap-3">
         <div className="flex max-w-[85%] min-w-0 flex-col items-end">
-          <div className="rounded-[16px] rounded-br-none bg-[#303030] p-3 text-white">
+          <div className="rounded-[16px] rounded-br-none bg-ink-hover p-3 text-white">
             <p className="whitespace-pre-wrap break-words text-[14px] leading-[22px]">{view.text}</p>
           </div>
           <div className="mt-1 flex items-center gap-1.5">

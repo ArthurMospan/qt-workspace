@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import Image from 'next/image';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
-import { Counter, Skeleton } from '@/components/ui';
+import { Counter, IconAction, Skeleton } from '@/components/ui';
 import {
   Folder, Users, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
@@ -450,13 +450,20 @@ export default function WorkspaceSidebar() {
             {collapsed && (
               <span className="text-[10px] font-mono font-medium" style={{ color: 'var(--sb-text)' }}>{formatElapsed(timerElapsed)}</span>
             )}
-            <button
-              onClick={handleStopGlobalTimer}
+            {/* The kit's danger action, not a hand-drawn copy of it: the fill,
+                the hover and the box all came from the same three utilities
+                `IconAction appearance="danger"` already resolves, and the 28px
+                box was a number this call site held on its own. */}
+            <IconAction
+              label="Зупинити та зберегти"
               title="Зупинити та зберегти"
-              className={`flex items-center justify-center rounded-[8px] bg-danger-solid text-white hover:bg-danger transition-colors shrink-0 ${collapsed ? 'w-[24px] h-[24px] mt-1' : 'w-[28px] h-[28px]'}`}
-            >
-              <StopIcon size={12} className="fill-current" />
-            </button>
+              icon={StopIcon}
+              appearance="danger"
+              shape="compact"
+              size={collapsed ? 'xs' : 'compact'}
+              onClick={handleStopGlobalTimer}
+              className={collapsed ? 'mt-1' : ''}
+            />
           </div>
         </div>
       )}

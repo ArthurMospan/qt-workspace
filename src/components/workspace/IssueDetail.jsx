@@ -731,7 +731,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
     return (
       <div className="flex-1 flex items-center justify-center bg-white">
         {issuesLoading ? (
-          <div className="w-7 h-7 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
+          <div className="w-7 h-7 border-[3px] border-line border-t-ink rounded-full animate-spin" />
         ) : issuesError ? (
           <div className="max-w-[360px] px-6 text-center">
             <p className="text-[16px] font-bold text-ink mb-2">
@@ -863,7 +863,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const spentMin  = loggedMinutes;
   const estimMin  = isEditing ? (draft.estimateMinutes ?? issue.estimateMinutes ?? 0) : (issue.estimateMinutes || 0);
   const timePct   = estimMin > 0 ? Math.round((spentMin / estimMin) * 100) : 0;
-  const timeColor = timePct >= 100 ? '#dc2626' : timePct >= 75 ? '#f97316' : '#1f1f1f';
+  // Over the estimate, close to it, or within it — the two warnings are the
+  // status scale, and the third is the product's own ink, because "within the
+  // estimate" is not a status, it is the ordinary case.
+  const timeColor = timePct >= 100
+    ? 'var(--color-danger)'
+    : timePct >= 75 ? 'var(--color-warning)' : 'var(--color-ink)';
 
   const isTimerMine    = activeTimer?.issueId === issueId;
   const allMaterials   = stages.flatMap(s => (s.materials || []).map(m => ({ ...m, stageName: s.title || s.name })));

@@ -199,7 +199,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           ...provided.draggableProps?.style,
           borderWidth: '1px',
           borderStyle: 'solid',
-          borderColor: lifted ? '#e4e4e7' : '#ffffff',
+          borderColor: lifted ? 'var(--color-line)' : 'var(--color-surface)',
           // A deeper shadow now carries the "lifted" feel on its own. There used
           // to be a scale(1.015) here too, but the library measures a Draggable
           // once at drag start and derives every placeholder and displacement

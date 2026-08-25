@@ -261,7 +261,7 @@ function PendingMessage({ draft, members, onRetry, onDiscard }) {
   return (
     <div className="group grid grid-cols-[minmax(0,1fr)_28px] items-end gap-x-2.5">
       <div className="col-start-1 row-start-1 flex max-w-[84%] min-w-0 flex-col items-end justify-self-end">
-        <div className={`max-w-full break-words rounded-[16px] rounded-br-none p-3 text-[14px] leading-[22px] ${failed ? 'bg-[#303030]/55 text-white/85' : 'bg-[#303030] text-white'}`}>
+        <div className={`max-w-full break-words rounded-[16px] rounded-br-none p-3 text-[14px] leading-[22px] ${failed ? 'bg-ink-hover/55 text-white/85' : 'bg-ink-hover text-white'}`}>
           <ReplyQuote replyTo={draft.replyTo} dark />
           {draft.text && (
             <div className="whitespace-pre-wrap">
@@ -1365,7 +1365,7 @@ export default function UnifiedTimeline({
                       <StatusEmoji member={authorMember} />
                     </span>
                   )}
-                  <div className={`max-w-full break-words rounded-[16px] p-3 text-[14px] leading-[22px] transition-shadow duration-300 ${isMe ? 'bg-[#303030] text-white' : 'bg-white text-ink'} ${endsRun ? (isMe ? 'rounded-br-none' : 'rounded-bl-none') : ''} ${highlightedCommentId === item.id ? 'ring-2 ring-ink/30' : ''}`}>
+                  <div className={`max-w-full break-words rounded-[16px] p-3 text-[14px] leading-[22px] transition-shadow duration-300 ${isMe ? 'bg-ink-hover text-white' : 'bg-white text-ink'} ${endsRun ? (isMe ? 'rounded-br-none' : 'rounded-bl-none') : ''} ${highlightedCommentId === item.id ? 'ring-2 ring-ink/30' : ''}`}>
                     <ReplyQuote
                       replyTo={item.replyTo}
                       dark={isMe}

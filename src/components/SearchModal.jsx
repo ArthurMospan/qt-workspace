@@ -53,7 +53,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <div className="w-[28px] h-[28px] border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
+              <div className="w-[28px] h-[28px] border-[3px] border-line border-t-ink rounded-full animate-spin" />
             </div>
           ) : results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-[24px] text-center">

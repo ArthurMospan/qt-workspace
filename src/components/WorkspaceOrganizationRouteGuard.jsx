@@ -9,7 +9,7 @@ import { withNotificationOrganization } from '@/lib/utils/notificationNavigation
 function LoadingScreen() {
   return (
     <div className="w-full h-full flex items-center justify-center bg-canvas">
-      <div className="w-8 h-8 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
+      <div className="w-8 h-8 border-[3px] border-line border-t-ink rounded-full animate-spin" />
     </div>
   );
 }
