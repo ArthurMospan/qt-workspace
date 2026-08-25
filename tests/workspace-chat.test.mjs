@@ -623,7 +623,11 @@ test('a read receipt records when, not only whether', async () => {
   // The rule that lets any member mark a comment read carries both fields, or
   // the receipt write is refused whole and nothing is ever marked read.
   assert.match(rules, /hasOnly\(\['readBy', 'readAt'\]\)/);
-  assert.match(timeline, /title=\{readReceiptLabel\(item, members\)\}/);
+  // The readers are no longer read off the message: a message now carries a mark
+  // only when it is the newest one its author sent before the reader arrived,
+  // and `commentReaders` resolves the rest from the mark that covers them.
+  assert.match(timeline, /title=\{readReceiptLabel\(commentReaders\(item, myReceiptMarks\), members\)\}/);
+  assert.match(timeline, /commentReaders\(item, myReceiptMarks\)\.length > 0/);
   // Messages read before the stamp existed carry only the array, and say
   // «Прочитано» rather than inventing an hour for it.
   assert.match(timeline, /return stamp \? `Прочитано \$\{stamp\}` : 'Прочитано';/);

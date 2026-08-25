@@ -66,14 +66,15 @@ test('an empty batch produces no message at all', () => {
   assert.equal(formatTelegramNotification([{ body: 'без назви' }]), null);
 });
 
-test('every notification type the API accepts has an icon', async () => {
-  const route = await read('../src/app/api/notifications/route.js');
-  const types = route.match(/const ALLOWED_TYPES = new Set\(\[([^\]]+)\]/)[1]
-    .match(/'([a-z_]+)'/g)
-    .map(value => value.replaceAll("'", ''));
+test('every notification type the product produces has an icon', async () => {
+  // The allow-list used to be a literal in the route and this test read it back
+  // out of the source. It is a shared registry now, and the registry is wider
+  // than the allow-list: `birthday` is written by the greeting sweep through the
+  // Admin SDK, so it never passes through the route and still reaches Telegram.
+  const { NOTIFICATION_TYPES } = await import('../src/lib/utils/notificationChannels.mjs');
 
-  assert.ok(types.length >= 10);
-  for (const type of types) {
+  assert.ok(NOTIFICATION_TYPES.length >= 10);
+  for (const type of NOTIFICATION_TYPES) {
     assert.notEqual(telegramTypeIcon(type), '🔔', `${type} falls through to the generic bell`);
   }
 });

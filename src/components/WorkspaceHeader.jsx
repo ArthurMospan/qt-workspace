@@ -26,6 +26,7 @@ import IconAction from '@/components/ui/IconAction';
 import { Counter, Dialog, Pill, ResponseChoice, TextAction } from '@/components/ui';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { useRouter, usePathname } from 'next/navigation';
+import { groupNotifications } from '@/lib/utils/notificationGrouping.mjs';
 import { notificationDestinationWithOrganization, notificationOpenLabel } from '@/lib/utils/notificationNavigation.mjs';
 import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
@@ -228,7 +229,11 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
     ? scopedNotifications.filter(n => !n.read)
     : scopedNotifications;
   const readCount = scopedNotifications.length - unreadCount;
-  // Group by day, preserving the sorted order
+  // Group by day, preserving the sorted order, and then collapse each day into
+  // one row per conversation: three comments on one task are one line saying so,
+  // not three identical lines pushing everything else out of the fifty the panel
+  // holds. `groupNotifications` keeps a group at the position of its newest
+  // record, so the day and the ordering are untouched.
   const notifGroups = [];
   shownNotifications.forEach(n => {
     const label = dayGroupLabel(n.createdAt);
@@ -236,6 +241,10 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
     if (!last || last.label !== label) notifGroups.push({ label, items: [n] });
     else last.items.push(n);
   });
+  const notifDays = notifGroups.map(group => ({
+    label: group.label,
+    rows: groupNotifications(group.items),
+  }));
 
   useEffect(() => {
     const clickOut = e => {
@@ -268,7 +277,10 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
     };
   }, [bellOpen, isMobile, userOpen]);
 
-  const handleNotifClick = (n) => {
+  // A row can stand for several records. Opening it answers all of them: they
+  // are the same conversation, and the reader is now in it.
+  const handleNotifClick = (row) => {
+    const n = row.notification;
     if (n.organizationId && !allOrgs.some(org => org.id === n.organizationId)) {
       showToast('Ви більше не маєте доступу до організації цього сповіщення', 'error');
       return;
@@ -281,7 +293,15 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
     setBellOpen(false);
     clearLiveNotif();
     router.push(link);
-    if (!n.read) markRead?.(n.id).catch(() => showToast('Не вдалося позначити сповіщення прочитаним', 'error'));
+    const unread = row.items.filter(item => !item.read);
+    if (unread.length > 0) {
+      Promise.allSettled(unread.map(item => markRead?.(item.id)))
+        .then(results => {
+          if (results.some(result => result.status === 'rejected')) {
+            showToast('Не вдалося позначити сповіщення прочитаним', 'error');
+          }
+        });
+    }
   };
 
   const handleMarkAllRead = () => {
@@ -372,13 +392,15 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
         {notifFilter === 'unread' ? 'Все прочитано 👌' : 'Немає сповіщень'}
       </p>
     </div>
-  ) : notifGroups.map(group => (
+  ) : notifDays.map(group => (
     <div key={group.label}>
       <p className="px-4 pt-3 pb-1 text-[10px] font-bold text-faint uppercase tracking-wider">
         {group.label}
       </p>
-      {group.items.map(n => (
-        <div key={n.id} onClick={() => handleNotifClick(n)}
+      {group.rows.map(row => {
+        const n = row.notification;
+        return (
+        <div key={row.id} onClick={() => handleNotifClick(row)}
           // The row carries its own dismiss button, so it is not
           // a `<button>` itself.
           role="button"
@@ -387,7 +409,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
             if (event.target !== event.currentTarget) return;
             if (event.key !== 'Enter' && event.key !== ' ') return;
             event.preventDefault();
-            handleNotifClick(n);
+            handleNotifClick(row);
           }}
           className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-canvas transition-colors ${
             n.type === 'emergency' && !n.read ? 'bg-red-50' : !n.read ? 'bg-[#f5f7ff]' : ''
@@ -398,7 +420,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               their width instead of running underneath them. */}
           <div className="flex-1 min-w-0 pr-[48px]">
             <p className={`text-[12px] leading-snug ${!n.read ? 'font-semibold text-ink' : 'text-[#4a4a4a]'}`}>
-              {n.title}
+              {row.title}
             </p>
             {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
             {n.type === 'calendar_invite' && n.calendarEventId && (
@@ -422,8 +444,15 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               label={n.read ? 'Позначити непрочитаним' : 'Позначити прочитаним'}
               onClick={e => {
                 e.stopPropagation();
+                // The whole row, not its newest record: a row that half changed
+                // would split into two the moment it redrew.
                 const action = n.read ? markUnread : markRead;
-                action?.(n.id).catch(() => showToast('Не вдалося оновити сповіщення', 'error'));
+                Promise.allSettled(row.items.map(item => action?.(item.id)))
+                  .then(results => {
+                    if (results.some(result => result.status === 'rejected')) {
+                      showToast('Не вдалося оновити сповіщення', 'error');
+                    }
+                  });
               }}
               icon={n.read ? Mail : Check}
               size="xs"
@@ -433,7 +462,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               label="Видалити"
               onClick={e => {
                 e.stopPropagation();
-                removeNotification?.(n.id).catch(() => showToast('Не вдалося видалити сповіщення', 'error'));
+                Promise.allSettled(row.items.map(item => removeNotification?.(item.id)))
+                  .then(results => {
+                    if (results.some(result => result.status === 'rejected')) {
+                      showToast('Не вдалося видалити сповіщення', 'error');
+                    }
+                  });
               }}
               icon={Trash2}
               size="xs"
@@ -441,7 +475,8 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
             />
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   ));
 

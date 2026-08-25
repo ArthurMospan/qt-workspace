@@ -5,7 +5,7 @@ import { getAdminDb } from '@/lib/server/firebaseAdmin';
 import { deliverEmail } from '@/lib/server/email';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
-import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
+import { BIRTHDAY_NOTIFICATION_TYPE, shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import {
   DEADLINE_FLOOR_MS,
@@ -18,6 +18,11 @@ import {
 } from '@/lib/utils/reminderCandidates.mjs';
 import { telegramAppLink } from '@/lib/server/telegram';
 import { dispatchDueNotifications, materialiseCandidates } from '@/lib/server/notificationOutbox';
+import {
+  OUTBOX_COLLECTION,
+  READ_NOTIFICATION_TTL_MS,
+  expirableNotificationIds,
+} from '@/lib/utils/notificationOutbox.mjs';
 import { MATERIALISE_LEAD_MS } from '@/lib/utils/notificationOutbox.mjs';
 import { resolveClosedStatusIds } from '@/lib/utils/workflowDefaults.mjs';
 import { purgeExpiredDeletedIssues } from '@/lib/server/issueTrash';
@@ -400,7 +405,7 @@ async function createBirthdayNotifications({
       db.collection('notifications').doc(`birthday_${dayKey}_${birthdayUserId}_${userId}`),
       {
         userId,
-        type: 'birthday',
+        type: BIRTHDAY_NOTIFICATION_TYPE,
         title: `Сьогодні день народження у ${name}`,
         body: 'Привітайте колегу в загальному чаті 🎉',
         link,
@@ -612,6 +617,69 @@ export async function materialiseScheduledNotifications({ nowMs = Date.now(), lo
 // One pass. `mode` exists so the cheap half can be driven on a tight schedule
 // without dragging the expensive half along with it: a one-minute external cron
 // calls it with `dispatch`, and something slower keeps the outbox stocked.
+// How many read records one pass may remove. Deletions are writes, and the free
+// tier's daily write budget is the smaller of the two limits this product lives
+// under — a backlog drains over days rather than spending the budget in an hour.
+const PRUNE_BATCH = 100;
+
+/**
+ * Delete records that have been read and are past their date.
+ *
+ * The query is the whole cost when there is nothing to do: an indexed range that
+ * matches nothing is one read, so a pass over a tidy bell is free. What it
+ * matches, it was going to pay for once anyway.
+ *
+ * `createdAt` is written by every sender, so a record without one simply never
+ * matches and stays — which is the safe direction for a delete.
+ */
+export async function pruneReadNotifications({ nowMs = Date.now(), limit = PRUNE_BATCH } = {}) {
+  const db = getAdminDb();
+  let snapshot;
+  try {
+    snapshot = await db.collection('notifications')
+      .where('read', '==', true)
+      .where('createdAt', '<=', Timestamp.fromMillis(nowMs - READ_NOTIFICATION_TTL_MS))
+      .orderBy('createdAt')
+      .limit(limit)
+      .select('type')
+      .get();
+  } catch (error) {
+    // Deployments are not atomic with Firestore index creation. Tidying the bell
+    // is the least urgent thing this sweep does, and it must never be the reason
+    // a pass fails and leaves its watermark unadvanced.
+    if (error?.code !== 9 && error?.code !== 'failed-precondition') throw error;
+    console.warn('[reminder-job] Expiry index is not ready yet; nothing pruned this pass');
+    return { scanned: 0, deleted: 0, kept: 0, skipped: true };
+  }
+  if (snapshot.empty) return { scanned: 0, deleted: 0, kept: 0 };
+
+  const records = snapshot.docs.map(document => ({ id: document.id, type: document.data().type }));
+  // Only the types this outbox produces can be resent at all, so only those are
+  // worth a read of their scheduled row. Everything else came from an event that
+  // happened once.
+  const guarded = records.filter(record => record.type === 'deadline' || record.type === 'calendar_reminder');
+  const rows = new Map();
+  if (guarded.length) {
+    const rowSnaps = await db.getAll(
+      ...guarded.map(record => db.collection(OUTBOX_COLLECTION).doc(record.id)),
+      { fieldMask: ['status', 'attempts'] },
+    );
+    for (const [index, rowSnap] of rowSnaps.entries()) {
+      rows.set(guarded[index].id, rowSnap.exists ? rowSnap.data() : null);
+    }
+  }
+
+  const removable = expirableNotificationIds(records, rows);
+  for (let index = 0; index < removable.length; index += 400) {
+    const batch = db.batch();
+    for (const id of removable.slice(index, index + 400)) {
+      batch.delete(db.collection('notifications').doc(id));
+    }
+    await batch.commit();
+  }
+  return { scanned: records.length, deleted: removable.length, kept: records.length - removable.length };
+}
+
 export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode = 'full' } = {}) {
   const state = await readSweepState(nowMs);
   const lookBackMs = clampReminderLookback(state.materialiseElapsedMs);
@@ -640,6 +708,12 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     ? await purgeExpiredDeletedIssues({ nowMs })
     : { scanned: 0, purged: 0, failed: 0, related: 0, skipped: true };
 
+  // And it expires read records on the same slow pass, for the same reason: it
+  // is one bounded indexed query, and it must not ride the every-minute one.
+  const prunedNotifications = wantsMaterialise && materialiseDue
+    ? await pruneReadNotifications({ nowMs })
+    : { scanned: 0, deleted: 0, kept: 0, skipped: true };
+
   // Written last and unconditionally after a successful pass: a sweep that
   // throws must not advance the watermark, or the reminders it failed to record
   // would fall into the gap the watermark exists to close.
@@ -659,6 +733,7 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
       telegram: dispatched.telegram || 0,
       birthdays: birthdays.created || 0,
       purgedIssues: issueTrash.purged || 0,
+      prunedNotifications: prunedNotifications.deleted || 0,
     },
   }, { merge: true }).catch(error => {
     console.warn('[reminder-job] Could not record sweep state:', error.message);
@@ -672,5 +747,6 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     dispatched,
     birthdays,
     issueTrash,
+    prunedNotifications,
   };
 }

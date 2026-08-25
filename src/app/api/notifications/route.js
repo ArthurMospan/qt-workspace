@@ -6,19 +6,71 @@ import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 import { deliverEmail } from '@/lib/server/email';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
-import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
+import { REQUESTABLE_NOTIFICATION_TYPES, shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
+import { OUTBOX_COLLECTION, nextAttemptDelayMs } from '@/lib/utils/notificationOutbox.mjs';
 
-const ALLOWED_TYPES = new Set(['assigned', 'commented', 'status_changed', 'mentioned', 'deadline', 'chat_message', 'alert', 'emergency', 'calendar_invite', 'calendar_changed', 'calendar_reminder', 'test']);
+// What a caller holding a user's token may ask for. System-only types — the
+// birthday greeting — are deliberately absent: they are written by the sweep
+// through the Admin SDK, and nobody should be able to address the whole
+// organization on a colleague's behalf from a browser.
+const ALLOWED_TYPES = new Set(REQUESTABLE_NOTIFICATION_TYPES);
 const cleanText = (value, maxLength) => typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 
 // Delivery (provider choice, no-op without keys) lives in lib/server/email.
 async function sendEmail({ email, type, title, body, link }) {
-  if (!email) return;
-  await deliverEmail({
+  if (!email) return false;
+  return deliverEmail({
     to: email,
     subject: title,
     html: generateEmailTemplate({ type, title, body, link }),
   });
+}
+
+// A row per recipient who is still owed a message. `attempts: 1` is the point of
+// it: the outbox reads a first attempt that finds the record already there as
+// «somebody else already delivered this» and closes the row, which is right for a
+// scheduled reminder and wrong here, because this request wrote that record a
+// moment ago. Declaring the attempt spent puts the row straight onto the retry
+// path, and the per-channel stamps stop a channel that succeeded from being sent
+// a second time.
+async function queueFailedChannels({
+  db, recipients, recordIdByUser, emailFailed, telegramFailed,
+  emailWanted, telegramWanted, payload, actor,
+}) {
+  const nowMs = Date.now();
+  const owed = recipients.filter(item =>
+    emailFailed.has(item.userId) || telegramFailed.has(item.userId));
+  if (!owed.length) return;
+  const batch = db.batch();
+  for (const item of owed) {
+    const id = recordIdByUser.get(item.userId)
+      // Nothing was written for this person: they asked for the event on an
+      // external channel only and the request carried no dedupe key. The row
+      // still needs an id, and the record it eventually claims under that id is
+      // what stops a third delivery.
+      || db.collection('notifications').doc().id;
+    batch.set(db.collection(OUTBOX_COLLECTION).doc(id), {
+      ...payload,
+      userId: item.userId,
+      calendarEventId: '',
+      actorId: actor.id || 'quickteam-system',
+      actorName: actor.name || 'QuickTeam',
+      allowEmail: emailWanted.has(item.userId),
+      status: 'pending',
+      attempts: 1,
+      lastError: [
+        emailFailed.has(item.userId) ? 'email delivery failed' : '',
+        telegramFailed.has(item.userId) ? 'telegram delivery failed' : '',
+      ].filter(Boolean).join('; '),
+      deliverAtMs: nowMs,
+      nextAttemptAtMs: nowMs + nextAttemptDelayMs(1),
+      ...(emailWanted.has(item.userId) && !emailFailed.has(item.userId) ? { emailSentAtMs: nowMs } : {}),
+      ...(telegramWanted.has(item.userId) && !telegramFailed.has(item.userId) ? { telegramSentAtMs: nowMs } : {}),
+      materialisedAtMs: nowMs,
+      createdAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+  await batch.commit();
 }
 
 export async function POST(request) {
@@ -133,10 +185,16 @@ export async function POST(request) {
     // Telegram message either. Claiming only for the bell would have let both
     // external channels fire on every pass for anyone who muted the bell.
     let delivered = reached;
+    // Which document carries each recipient's record. The id is also the id of
+    // the retry row below, so a retry claims the record already written rather
+    // than writing a second one.
+    const recordIdByUser = new Map();
     if (dedupeKey) {
       const claimants = recipients.filter(item => reached.has(item.userId));
       const claimResults = await Promise.all(claimants.map(async item => {
-        const ref = db.collection('notifications').doc(`${dedupeKey}_${item.userId}`);
+        const id = `${dedupeKey}_${item.userId}`;
+        recordIdByUser.set(item.userId, id);
+        const ref = db.collection('notifications').doc(id);
         try {
           await ref.create(notificationData(item, { inapp: inappAudience.includes(item) }));
           return true;
@@ -149,21 +207,57 @@ export async function POST(request) {
     } else if (inappAudience.length) {
       const batch = db.batch();
       for (const delivery of inappAudience) {
-        batch.set(db.collection('notifications').doc(), notificationData(delivery, { inapp: true }));
+        const ref = db.collection('notifications').doc();
+        recordIdByUser.set(delivery.userId, ref.id);
+        batch.set(ref, notificationData(delivery, { inapp: true }));
       }
       await batch.commit();
     }
 
-    await Promise.allSettled(emailAudience
-      .filter(item => delivered.has(item.userId))
-      .map(item => sendEmail({ email: item.profile.email, type, title, body, link: scopedLink })));
-    await deliverTelegramNotification({
-      userIds: telegramAudience.filter(item => delivered.has(item.userId)).map(item => item.userId),
-      title,
-      body,
-      link: scopedLink,
-      type,
-    }).catch(error => console.warn('[notifications] Telegram delivery failed:', error.message));
+    const emailTargets = emailAudience.filter(item => delivered.has(item.userId));
+    const emailResults = await Promise.allSettled(emailTargets.map(item =>
+      sendEmail({ email: item.profile.email, type, title, body, link: scopedLink })));
+    const emailFailed = new Set(emailTargets
+      .filter((_, index) => {
+        const result = emailResults[index];
+        return result.status === 'rejected' || result.value !== true;
+      })
+      .map(item => item.userId));
+
+    const telegramTargets = telegramAudience.filter(item => delivered.has(item.userId));
+    const telegramResult = telegramTargets.length
+      ? await deliverTelegramNotification({
+        userIds: telegramTargets.map(item => item.userId),
+        title,
+        body,
+        link: scopedLink,
+        type,
+      }).catch(error => {
+        console.warn('[notifications] Telegram delivery failed:', error.message);
+        // The call itself failed, so nobody in it was reached.
+        return { delivered: 0, failedUserIds: telegramTargets.map(item => item.userId) };
+      })
+      : { delivered: 0, failedUserIds: [] };
+    const telegramFailed = new Set(telegramResult.failedUserIds || []);
+
+    // This path is the low-latency one and stays that way: the message is
+    // attempted the moment the event happens. What it did not have was anywhere
+    // to put a provider that was down — a failed email was a line in a log and
+    // nothing more. A recipient whose channel failed now gets a row in the same
+    // outbox the scheduled reminders use, carrying one spent attempt and the
+    // channels that did succeed, so the dispatcher retries what is still owed
+    // and never the rest.
+    await queueFailedChannels({
+      db,
+      recipients: recipients.filter(item => delivered.has(item.userId)),
+      recordIdByUser,
+      emailFailed,
+      telegramFailed,
+      emailWanted: new Set(emailTargets.map(item => item.userId)),
+      telegramWanted: new Set(telegramTargets.map(item => item.userId)),
+      payload: { type, title, body, link: scopedLink, issueId, projectId, organizationId },
+      actor: { id: authorization.user.uid, name: sender.name || authorization.user.name || '' },
+    });
 
     return NextResponse.json({ delivered: delivered.size });
   } catch (error) {

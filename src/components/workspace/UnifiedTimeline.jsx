@@ -28,8 +28,11 @@ import { useTimeLogs } from '@/lib/hooks/useTimeLogs';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { describeAuditEvent } from '@/lib/utils/issueAuditEvents.mjs';
 import {
+  commentReaders,
   isIssueChangeUnread,
   issueActivityCursor,
+  receiptMarkIds,
+  receiptMarks,
   timestampMillis,
 } from '@/lib/utils/issueReadState.mjs';
 import { markIssueSeen } from '@/lib/services/issueReadState';
@@ -130,22 +133,21 @@ function readStamp(timestamp) {
     : `${dayLabel(timestamp)} о ${time}`;
 }
 
-// What the ticks under your own message say when you point at them. `readAt`
-// is written beside `readBy` the moment a reader consumes the conversation;
-// messages read before that field existed carry only the array, and say
+// What the ticks under your own message say when you point at them. The readers
+// are resolved by `commentReaders` out of the marks left across this author's
+// own messages, so a message carrying no mark of its own is still answered by
+// the newer one that covers it. A mark written before `readAt` existed says
 // «Прочитано» without inventing an hour for it.
-function readReceiptLabel(comment, members) {
-  const readers = (comment.readBy || []).filter(readerId => readerId !== comment.authorId);
+function readReceiptLabel(readers, members) {
   if (readers.length === 0) return 'Надіслано · ще не прочитано';
-  const readAt = comment.readAt || {};
   if (readers.length === 1) {
-    const stamp = readStamp(readAt[readers[0]]);
+    const stamp = readStamp(readers[0].stamp);
     return stamp ? `Прочитано ${stamp}` : 'Прочитано';
   }
-  return ['Прочитано:', ...readers.map(readerId => {
+  return ['Прочитано:', ...readers.map(({ readerId, stamp }) => {
     const member = members.find(candidate => (candidate.id || candidate.uid) === readerId);
-    const stamp = readStamp(readAt[readerId]);
-    return `· ${member?.name || 'Учасник'}${stamp ? ` — ${stamp}` : ''}`;
+    const when = readStamp(stamp);
+    return `· ${member?.name || 'Учасник'}${when ? ` — ${when}` : ''}`;
   })].join('\n');
 }
 
@@ -448,15 +450,9 @@ export default function UnifiedTimeline({
   }, [activeOrgId, clearIssueSearch, issueMention.active, issueMention.query, searchIssues]);
 
   const myId = currentUser?.uid || currentUser?.id;
-  const unreadCommentIds = useMemo(() => {
-    if (!myId) return [];
-    return comments
-      .filter(comment => comment.authorId !== myId && !(comment.readBy || []).includes(myId))
-      .map(comment => comment.id);
-  }, [comments, myId]);
-  // The same cursor the dot on the card reads. It only moves when the reader
-  // leaves the task, so it does not shift under them mid-visit — and it is
-  // already in the store, so the boundary costs no read of its own.
+  // The same cursor the dot on the card reads, and now the same cursor the
+  // conversation reads. It is already in the store, so neither the unread
+  // messages nor the boundary cost a read of their own.
   //
   // Until the cursor stream has actually answered, this reads 0 — «never seen
   // anything» — and every line of the task's history back to the day it was
@@ -471,6 +467,25 @@ export default function UnifiedTimeline({
       .filter(entry => isIssueChangeUnread(entry, lastSeenAt, myId))
       .map(entry => entry.id);
   }, [auditLogs, lastSeenAt, myId, readCursorsLoaded]);
+  // What is new in the conversation, answered by that same cursor rather than by
+  // a mark inside every message. A message used to stay unread until this
+  // reader's id appeared in its own `readBy`, which is what made reading fifty
+  // messages cost fifty writes; the cursor already knows, and it answers the
+  // card and the change feed by this very comparison.
+  const unreadMessages = useMemo(() => {
+    if (!myId || !readCursorsLoaded) return [];
+    return comments.filter(comment => (
+      comment.authorId !== myId
+      && timestampMillis(comment.createdAt) > timestampMillis(lastSeenAt)
+    ));
+  }, [comments, lastSeenAt, myId, readCursorsLoaded]);
+  const unreadCommentIds = useMemo(
+    () => unreadMessages.map(comment => comment.id),
+    [unreadMessages],
+  );
+  // Whose ticks to draw under this reader's own messages, gathered once for the
+  // whole window instead of read out of each message on its own.
+  const myReceiptMarks = useMemo(() => receiptMarks(comments, myId), [comments, myId]);
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
@@ -949,11 +964,15 @@ export default function UnifiedTimeline({
   // half of the list.
   const consumeConversation = useCallback(() => {
     if (!myId) return;
-    if (unreadCommentIds.length > 0) markCommentsRead(unreadCommentIds, myId);
+    // Only the newest message from each other author carries a mark: it is the
+    // one the ✓✓ receipt needs, and it covers every older message of theirs.
+    // Unread itself is the cursor `consumeChanges` writes on the next line.
+    const receipts = receiptMarkIds(unreadMessages, myId);
+    if (receipts.length > 0) markCommentsRead(receipts, myId);
     consumeChanges();
     setBoundary(current => (current.read ? current : { ...current, read: true }));
     dismissIssueNotifications();
-  }, [consumeChanges, dismissIssueNotifications, markCommentsRead, myId, unreadCommentIds]);
+  }, [consumeChanges, dismissIssueNotifications, markCommentsRead, myId, unreadMessages]);
 
   // What the reader currently has in front of them, so the live notification
   // popup can stay down for a message that arrived on this very screen instead
@@ -1380,9 +1399,9 @@ export default function UnifiedTimeline({
                     {isMe && (
                       <span
                         className="inline-flex cursor-help items-center"
-                        title={readReceiptLabel(item, members)}
+                        title={readReceiptLabel(commentReaders(item, myReceiptMarks), members)}
                       >
-                        {(item.readBy || []).some(readerId => readerId !== item.authorId)
+                        {commentReaders(item, myReceiptMarks).length > 0
                           ? <CheckCheck size={13} className="text-muted" aria-label="Прочитано" />
                           : <Check size={13} className="text-[#a1a1a1]" aria-label="Надіслано" />}
                       </span>

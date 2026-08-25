@@ -89,6 +89,40 @@ export function isTerminal(row) {
     || (row?.status === 'failed' && (row?.attempts || 0) >= MAX_ATTEMPTS);
 }
 
+// How long a record stays in the bell after it has been read. Nothing removed
+// them but the manual «очистити прочитані», so a bell nobody tidied grew for as
+// long as the workspace existed — and the panel only ever shows the newest
+// fifty, which means everything past that was cost without an audience.
+export const READ_NOTIFICATION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+// The types this outbox produces. A record of any other type was written by an
+// event that happened once and cannot happen again, so nothing can resend it.
+export const OUTBOX_BACKED_TYPES = new Set(['deadline', 'calendar_reminder']);
+
+/**
+ * Which read records may actually be deleted.
+ *
+ * A notification document is not only a notification: with a dedupe key it is
+ * also the claim that says «this person has already been told», and deleting a
+ * claim is how a reminder gets sent twice. For anything the outbox produces the
+ * row is the guard instead — but only once the row is terminal, because a row
+ * still pending is a retry in flight, and a retry recreates the document it
+ * cannot find.
+ *
+ * @param {Array<{id: string, type: string}>} records Read records past their date.
+ * @param {Map<string, object|null>} rows The outbox row of the same id, where there is one.
+ */
+export function expirableNotificationIds(records = [], rows = new Map()) {
+  return (records || [])
+    .filter(record => {
+      if (!record?.id) return false;
+      if (!OUTBOX_BACKED_TYPES.has(record.type)) return true;
+      const row = rows.get(record.id);
+      return !row || isTerminal(row);
+    })
+    .map(record => record.id);
+}
+
 // Rows a dispatch pass should take: pending, due, and not inside a backoff.
 export function dueRows(rows, nowMs, limit = DISPATCH_BATCH) {
   return (rows || [])

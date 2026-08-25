@@ -93,3 +93,74 @@ export function isIssueChangeUnread(entry, lastSeenAt, currentUserId) {
   if (entry.userId && entry.userId === currentUserId) return false;
   return at > timestampMillis(lastSeenAt);
 }
+
+/**
+ * Which of the messages a reader is consuming actually need a mark written on
+ * them.
+ *
+ * Reading fifty messages used to cost fifty writes: every unread message got the
+ * reader's id appended to its own `readBy`. Nothing needs that. Unread is
+ * answered by the per-issue cursor — one document, one write, the same one the
+ * dot on the card reads — and the only thing left that genuinely wants a mark on
+ * the message itself is the ✓✓ receipt under the sender's own message.
+ *
+ * A receipt is monotonic: somebody who has read a message has read everything
+ * that author sent before it. So the newest message from each other author is
+ * enough to carry the whole conversation's receipts, and `receiptMarks` below
+ * reads the rest back out of it. A visit costs one write per person who spoke,
+ * not one per message they sent.
+ */
+export function receiptMarkIds(comments, readerId) {
+  const newestByAuthor = new Map();
+  for (const comment of comments || []) {
+    const authorId = comment?.authorId;
+    if (!comment?.id || !authorId || authorId === readerId) continue;
+    const at = timestampMillis(comment.createdAt);
+    const current = newestByAuthor.get(authorId);
+    if (!current || at >= current.at) newestByAuthor.set(authorId, { id: comment.id, at });
+  }
+  return [...newestByAuthor.values()].map(entry => entry.id);
+}
+
+/**
+ * The marks left on one author's messages, gathered per reader and oldest first.
+ *
+ * Each mark says «this reader was in the conversation at this hour, and had read
+ * everything up to this message». Messages written before this pass carry a mark
+ * of their own, so their receipts resolve exactly as they always did.
+ */
+export function receiptMarks(comments, authorId) {
+  const byReader = new Map();
+  if (!authorId) return byReader;
+  for (const comment of comments || []) {
+    if (!comment || comment.authorId !== authorId) continue;
+    const at = timestampMillis(comment.createdAt);
+    if (!at) continue;
+    for (const readerId of comment.readBy || []) {
+      if (!readerId || readerId === authorId) continue;
+      const marks = byReader.get(readerId) || [];
+      marks.push({ at, stamp: comment.readAt?.[readerId] || null });
+      byReader.set(readerId, marks);
+    }
+  }
+  for (const marks of byReader.values()) marks.sort((a, b) => a.at - b.at);
+  return byReader;
+}
+
+/**
+ * Who has read one message, and when.
+ *
+ * The hour comes from the earliest mark that covers the message rather than the
+ * reader's latest one: the first visit that reached this far is when they read
+ * it, and a later visit must not move the receipt of an older message forward.
+ */
+export function commentReaders(comment, marks) {
+  const at = timestampMillis(comment?.createdAt);
+  if (!at || !marks?.size) return [];
+  const readers = [];
+  for (const [readerId, list] of marks) {
+    const covering = list.find(mark => mark.at >= at);
+    if (covering) readers.push({ readerId, stamp: covering.stamp });
+  }
+  return readers;
+}

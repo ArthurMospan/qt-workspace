@@ -74,7 +74,8 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
         // names, so drawing them later costs nothing. See `collectIssueMentions`.
         issueMentions: Array.isArray(options.issueMentions) ? options.issueMentions : [],
         // The sender has read their own message — read receipts compare readBy
-        // against everyone except the sender.
+        // against everyone except the sender. Nothing else reads this array to
+        // decide what is unread; that is the per-issue cursor's job.
         readBy: authorId ? [authorId] : [],
         replyTo: replyTo ? {
           id: replyTo.id,
@@ -162,9 +163,13 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
     );
   }, [issueId]);
 
-  // Read receipts: mark the given comments as read by `userId` (arrayUnion, so
-  // it's idempotent). Best-effort — callers pass only comments not yet read by
-  // this user, and a rules/permission hiccup must never break the chat.
+  // Read receipts, and only read receipts. Callers pass the few messages that
+  // actually need a mark — `receiptMarkIds` picks the newest one from each other
+  // author, and the receipt for everything older is read back out of it. Whether
+  // a message is *unread* is answered by the per-issue cursor instead, so a
+  // fifty-message conversation costs a couple of writes rather than fifty.
+  //
+  // Best-effort: a rules or permission hiccup must never break the chat.
   //
   // `readAt` records when, per reader, beside the array that records whether.
   // The ticks under a sent message could only ever say «прочитано», which is

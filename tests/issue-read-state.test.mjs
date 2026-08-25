@@ -2,9 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
+  commentReaders,
   isIssueChangeUnread,
   isIssueUnread,
   issueActivityCursor,
+  receiptMarkIds,
+  receiptMarks,
   timestampMillis,
   unreadActivityLabel,
 } from '../src/lib/utils/issueReadState.mjs';
@@ -79,4 +82,69 @@ test('a task is consumed by being left, never by being rendered', async () => {
   // Marking unread must not reset a cursor that already sits further back, or
   // pressing it would consume the older changes it was meant to preserve.
   assert.match(service, /if \(currentSeenMillis && currentSeenMillis <= target\) return true;/);
+});
+
+const conversation = [
+  { id: 'a1', authorId: 'member-a', createdAt: 100 },
+  { id: 'a2', authorId: 'member-a', createdAt: 200 },
+  { id: 'b1', authorId: 'member-b', createdAt: 300 },
+  { id: 'a3', authorId: 'member-a', createdAt: 400 },
+  { id: 'me1', authorId: 'me', createdAt: 500 },
+];
+
+test('reading a conversation marks one message per author, not one per message', () => {
+  // The whole point of the wave: fifty unread messages used to cost fifty
+  // writes. A receipt is monotonic, so the newest message of each other author
+  // carries the receipt for everything they sent before it.
+  const marked = receiptMarkIds(conversation, 'me');
+  assert.deepEqual(marked.sort(), ['a3', 'b1']);
+  // Your own messages are never marked by you.
+  assert.equal(marked.includes('me1'), false);
+  assert.deepEqual(receiptMarkIds([], 'me'), []);
+});
+
+test('a receipt on the newest message answers for the older ones', () => {
+  const mine = [
+    { id: 'm1', authorId: 'me', createdAt: 100, readBy: ['me'] },
+    { id: 'm2', authorId: 'me', createdAt: 200, readBy: ['me'] },
+    { id: 'm3', authorId: 'me', createdAt: 300, readBy: ['me', 'member-a'], readAt: { 'member-a': 900 } },
+  ];
+  const marks = receiptMarks(mine, 'me');
+  // Every message at or below the mark is read, and says so at the hour the
+  // reader was actually there.
+  for (const id of ['m1', 'm2', 'm3']) {
+    const readers = commentReaders(mine.find(item => item.id === id), marks);
+    assert.deepEqual(readers, [{ readerId: 'member-a', stamp: 900 }], id);
+  }
+  // A message sent after the mark is not read yet.
+  const later = { id: 'm4', authorId: 'me', createdAt: 400 };
+  assert.deepEqual(commentReaders(later, marks), []);
+});
+
+test('an older message keeps the hour of the visit that first reached it', () => {
+  // A second visit must not move the receipt of an older message forward, or
+  // «Прочитано о 14:32» would drift every time the reader came back.
+  const mine = [
+    { id: 'm1', authorId: 'me', createdAt: 100, readBy: ['me', 'member-a'], readAt: { 'member-a': 150 } },
+    { id: 'm2', authorId: 'me', createdAt: 200, readBy: ['me', 'member-a'], readAt: { 'member-a': 950 } },
+  ];
+  const marks = receiptMarks(mine, 'me');
+  assert.deepEqual(commentReaders(mine[0], marks), [{ readerId: 'member-a', stamp: 150 }]);
+  assert.deepEqual(commentReaders(mine[1], marks), [{ readerId: 'member-a', stamp: 950 }]);
+});
+
+test('a mark written before readAt existed still reads as read', () => {
+  const mine = [{ id: 'm1', authorId: 'me', createdAt: 100, readBy: ['me', 'member-a'] }];
+  const marks = receiptMarks(mine, 'me');
+  assert.deepEqual(commentReaders(mine[0], marks), [{ readerId: 'member-a', stamp: null }]);
+});
+
+test('the task chat asks the cursor what is unread, not every message', async () => {
+  const source = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
+  // Unread is the cursor comparison the card and the change feed already use.
+  assert.match(source, /timestampMillis\(comment\.createdAt\) > timestampMillis\(lastSeenAt\)/);
+  // And nothing decides unread from the per-message array any more.
+  assert.doesNotMatch(source, /readBy \|\| \[\]\)\.includes\(myId\)/);
+  // Only the receipt marks are written.
+  assert.match(source, /markCommentsRead\(receipts, myId\)/);
 });

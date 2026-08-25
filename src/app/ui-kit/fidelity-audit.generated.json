@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 258,
-    "parsedFiles": 258,
+    "productFiles": 259,
+    "parsedFiles": 259,
     "parseErrors": 0,
     "nativeControls": 21,
     "structures": {
@@ -306,7 +306,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:166",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:168",
       "className": "${…} cursor-pointer transition-colors ${…}",
       "text": "",
       "childElements": [],
@@ -479,7 +479,7 @@
       "context": "profile-contact-value"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:166",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:168",
       "tag": "button",
       "context": "chat-reply-quote"
     },
@@ -710,7 +710,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:1518",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1537",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
@@ -720,7 +720,7 @@
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:494",
+      "location": "src/components/WorkspaceHeader.jsx:529",
       "tag": "div",
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },

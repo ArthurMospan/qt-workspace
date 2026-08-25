@@ -7,6 +7,7 @@ import {
   cancellableRowIds,
   deliveryAttemptUpdate,
   dueRows,
+  expirableNotificationIds,
   groupByRecipient,
   isTerminal,
   nextAttemptDelayMs,
@@ -280,4 +281,82 @@ test('a reminder something else already delivered is not delivered a second time
     dispatch.indexOf('isFirstAttempt') < dispatch.indexOf('claimed.push'),
     'the guard has to run before the row joins the send list',
   );
+});
+
+test('a read record past its date goes, unless something could resend it', () => {
+  const rows = new Map([
+    ['deadline-pending', { status: 'pending', attempts: 2 }],
+    ['deadline-sent', { status: 'sent', attempts: 1 }],
+    ['deadline-exhausted', { status: 'failed', attempts: MAX_ATTEMPTS }],
+    ['deadline-failing', { status: 'failed', attempts: 1 }],
+  ]);
+  const removable = expirableNotificationIds([
+    { id: 'commented-1', type: 'commented' },
+    { id: 'chat-1', type: 'chat_message' },
+    { id: 'deadline-pending', type: 'deadline' },
+    { id: 'deadline-sent', type: 'deadline' },
+    { id: 'deadline-exhausted', type: 'deadline' },
+    { id: 'deadline-failing', type: 'deadline' },
+    { id: 'deadline-orphan', type: 'deadline' },
+  ], rows);
+
+  // An event that happened once cannot happen again, so its record is only a
+  // record.
+  assert.ok(removable.includes('commented-1'));
+  assert.ok(removable.includes('chat-1'));
+  // A terminal row is the guard now: the dispatcher will never look at it again.
+  assert.ok(removable.includes('deadline-sent'));
+  assert.ok(removable.includes('deadline-exhausted'));
+  // No row at all, on a record old enough to expire, is a reminder nothing will
+  // materialise again — the window looks hours ahead, not weeks behind.
+  assert.ok(removable.includes('deadline-orphan'));
+  // A row still pending is a retry in flight, and a retry recreates the document
+  // it cannot find. Deleting the record here is exactly how a reminder is sent
+  // twice.
+  assert.equal(removable.includes('deadline-pending'), false);
+  assert.equal(removable.includes('deadline-failing'), false);
+});
+
+test('expiry runs on the slow pass, and pays for what it deletes and nothing else', async () => {
+  const source = await read('../src/lib/server/reminderJobs.js');
+  const prune = source.slice(source.indexOf('export async function pruneReadNotifications'));
+  // One bounded indexed query. An empty result is the whole cost of a tidy bell.
+  assert.match(prune, /\.where\('read', '==', true\)/);
+  assert.match(prune, /\.limit\(limit\)/);
+  assert.match(prune, /\.select\('type'\)/);
+  // The guard is only read for the types that can be resent at all.
+  assert.match(prune, /record\.type === 'deadline' \|\| record\.type === 'calendar_reminder'/);
+  assert.match(prune, /expirableNotificationIds\(records, rows\)/);
+  // Never on the every-minute dispatch pass.
+  assert.match(source, /wantsMaterialise && materialiseDue\s*\n\s*\? await pruneReadNotifications/);
+});
+
+test('an event-driven message that failed to leave is owed, not lost', async () => {
+  const route = await read('../src/app/api/notifications/route.js');
+  const queue = route.slice(route.indexOf('async function queueFailedChannels'));
+  // The retry row carries the id of the record this request already wrote, so a
+  // retry claims that one rather than writing a second.
+  assert.match(route, /recordIdByUser\.set\(item\.userId, id\)/);
+  assert.match(route, /recordIdByUser\.set\(delivery\.userId, ref\.id\)/);
+  assert.match(queue, /recordIdByUser\.get\(item\.userId\)/);
+  // One attempt is already spent — otherwise the dispatcher reads its own
+  // record as somebody else's delivery and closes the row without sending.
+  assert.match(queue, /attempts: 1,/);
+  assert.match(queue, /nextAttemptAtMs: nowMs \+ nextAttemptDelayMs\(1\)/);
+  // A channel that went through is not sent again.
+  assert.match(queue, /emailSentAtMs: nowMs/);
+  assert.match(queue, /telegramSentAtMs: nowMs/);
+  // And a row is only written for somebody actually owed something.
+  assert.match(queue, /if \(!owed\.length\) return;/);
+});
+
+test('the immediate path still knows whether it delivered', async () => {
+  const route = await read('../src/app/api/notifications/route.js');
+  // `sendEmail` used to swallow its own answer, which is why a dead provider was
+  // invisible: there was nothing to be false.
+  assert.match(route, /return deliverEmail\(\{/);
+  assert.match(route, /result\.status === 'rejected' \|\| result\.value !== true/);
+  // A Telegram call that throws means nobody in it was reached, not that
+  // everybody was.
+  assert.match(route, /failedUserIds: telegramTargets\.map\(item => item\.userId\)/);
 });
