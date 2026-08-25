@@ -26,7 +26,7 @@ import IconAction from '@/components/ui/IconAction';
 import { Counter, Dialog, Pill, ResponseChoice, TextAction } from '@/components/ui';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { useRouter, usePathname } from 'next/navigation';
-import { notificationDestinationWithOrganization } from '@/lib/utils/notificationNavigation.mjs';
+import { notificationDestinationWithOrganization, notificationOpenLabel } from '@/lib/utils/notificationNavigation.mjs';
 import { GLOBAL_NOTIFICATION_Z_INDEX } from '@/lib/utils/overlayLayers.mjs';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { auth, db } from '@/lib/firebase';
@@ -38,20 +38,24 @@ import {
   createProjectSearchScope,
 } from '@/lib/utils/searchScope.mjs';
 
+// Icon and colour only. Every entry used to carry a `label` as well, drawn in
+// caps above the notification card's title — where it repeated, in the
+// product's own vocabulary, what the title already said in a sentence. The
+// type is now said by the card's button, which names the destination.
 const TYPE_CFG = {
-  assigned:       { icon: UserCheck,      color: '#6366f1', label: 'Призначено' },
-  commented:      { icon: ChatIcon,  color: '#0891b2', label: 'Повідомлення в завданні' },
-  status_changed: { icon: GitPullRequest, color: '#10b981', label: 'Статус змінено' },
-  mentioned:      { icon: AtSign,         color: '#f97316', label: 'Згадано' },
-  deadline:       { icon: CalendarClock,  color: '#d97706', label: 'Дедлайн' },
-  chat_message:   { icon: ChatIcon,  color: '#525252', label: 'Повідомлення' },
-  alert:          { icon: AlertCircle,    color: '#dc2626', label: 'Тривога' },
-  emergency:      { icon: Zap,            color: '#dc2626', label: 'Екстрений виклик' },
-  calendar_invite:{ icon: CalendarClock,  color: '#2563eb', label: 'Запрошення в календар' },
-  calendar_changed:{ icon: CalendarIcon,  color: '#525252', label: 'Календар оновлено' },
-  calendar_reminder:{ icon: CalendarClock, color: '#111827', label: 'Нагадування' },
-  birthday:       { icon: CakeSlice,      color: '#db2777', label: 'День народження' },
-  test:           { icon: Bell,           color: '#6366f1', label: 'Тест' },
+  assigned:       { icon: UserCheck,      color: '#6366f1' },
+  commented:      { icon: ChatIcon,       color: '#0891b2' },
+  status_changed: { icon: GitPullRequest, color: '#10b981' },
+  mentioned:      { icon: AtSign,         color: '#f97316' },
+  deadline:       { icon: CalendarClock,  color: '#d97706' },
+  chat_message:   { icon: ChatIcon,       color: '#525252' },
+  alert:          { icon: AlertCircle,    color: '#dc2626' },
+  emergency:      { icon: Zap,            color: '#dc2626' },
+  calendar_invite:{ icon: CalendarClock,  color: '#2563eb' },
+  calendar_changed:{ icon: CalendarIcon,  color: '#525252' },
+  calendar_reminder:{ icon: CalendarClock, color: '#111827' },
+  birthday:       { icon: CakeSlice,      color: '#db2777' },
+  test:           { icon: Bell,           color: '#6366f1' },
 };
 
 function timeAgo(ts) {
@@ -79,22 +83,17 @@ function dayGroupLabel(ts) {
 function NotifIcon({ n, size = 28 }) {
   const cfg  = TYPE_CFG[n.type] || TYPE_CFG.assigned;
   const Icon = cfg.icon;
+  // The face, on its own. There used to be a type badge stuck to the corner of
+  // it, and the badge could not do the job it was there for: twelve types share
+  // far fewer glyphs — a comment and a chat message carry the same one, and a
+  // deadline, an invitation and a reminder carry the same calendar — so the
+  // only thing separating them was an 18px disc of colour, two of which are
+  // near-identical darks. It answered «one of the calendar three», and stopped.
+  // The type is said in words now, by the button that opens it.
   if (n.actorName || n.actorAvatar) {
     return (
-      <div className="relative shrink-0 mt-[1px]">
+      <div className="shrink-0 mt-[1px]">
         <UserAvatar user={{ name: n.actorName, avatar: n.actorAvatar }} size={size} />
-        {/* What kind of notification this is, on the face of who caused it. It
-            used to be a 7px glyph inside 10px of colour — the mark was there,
-            but nobody could tell a comment from a deadline from it. Half of a
-            14px badge is its white collar, so the badge grew rather than the
-            collar shrinking, and the glyph is drawn heavier: at this size a
-            hairline stroke is what disappears first. */}
-        <span
-          className="absolute -bottom-[3px] -right-[3px] flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white"
-          style={{ background: cfg.color }}
-        >
-          <Icon size={11} strokeWidth={2.5} className="text-white" />
-        </span>
       </div>
     );
   }
@@ -228,7 +227,6 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
     ? scopedNotifications.filter(n => !n.read)
     : scopedNotifications;
   const readCount = scopedNotifications.length - unreadCount;
-  const orgName = organizationId => allOrgs.find(org => org.id === organizationId)?.name || 'Невідома організація';
   // Group by day, preserving the sorted order
   const notifGroups = [];
   shownNotifications.forEach(n => {
@@ -560,15 +558,12 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 
       {/* ─── Live notification popup ────────────────────────────────── */}
       {liveNotif && typeof document !== 'undefined' && createPortal((() => {
-        const cfg = TYPE_CFG[liveNotif.type] || TYPE_CFG.assigned;
         return (
           <NotificationCard
             icon={<NotifIcon n={liveNotif} size={32} />}
-            categoryLabel={cfg.label}
-            categoryColor={cfg.color}
-            organizationName={liveNotif.organizationId ? orgName(liveNotif.organizationId) : null}
             title={liveNotif.title}
             body={liveNotif.body}
+            time={timeAgo(liveNotif.createdAt)}
             tone={liveNotif.type === 'emergency' ? 'emergency' : 'default'}
             actions={liveNotif.type === 'calendar_invite' && liveNotif.calendarEventId ? (
               <CalendarResponseActions
@@ -579,6 +574,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
                 surface="canvas"
               />
             ) : null}
+            openLabel={notificationOpenLabel(liveNotif)}
             onOpen={liveNotif.link ? () => handleNotifClick(liveNotif) : undefined}
             onDismiss={clearLiveNotif}
             style={{

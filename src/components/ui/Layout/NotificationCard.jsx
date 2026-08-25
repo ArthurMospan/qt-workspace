@@ -5,8 +5,7 @@ import { X } from 'lucide-react';
 
 /**
  * One notification, drawn as the card that slides in over the workspace when it
- * arrives: what kind it is, which organisation it came from, what happened, and
- * the two things you can do about it.
+ * arrives: who did it, what happened, and the two things you can do about it.
  *
  * Not a `Toast`. A toast reports that something you just did worked and takes
  * itself away; this arrives unasked, names a sender, and can carry a whole
@@ -14,30 +13,33 @@ import { X } from 'lucide-react';
  * than props, because deciding which glyph a notification type gets is the
  * product's business, not the kit's.
  *
- * Moved out of `WorkspaceHeader` with its classes intact; the surface itself
- * was already kit-owned as `data-ui-surface="notification"`.
+ * It used to open with two lines that could not tell the reader anything: a
+ * capitalised category that repeated the title in worse words, and the name of
+ * the organisation — which is filtered three times over on the way here and is
+ * therefore always the one already written in the header. So the card's first
+ * line is now the only thing it arrived to say: who, and what. The type moved
+ * into the button, where it names the destination instead of the category, and
+ * the same card is now the same shape as the row in the bell.
  *
- * @param {React.ReactNode} props.icon The type's glyph, drawn at the leading edge.
- * @param {string} props.categoryLabel What kind of notification this is, in caps above the title.
- * @param {string} props.categoryColor The colour that label carries — the type's own, from the product.
- * @param {string} props.organizationName Which workspace it came from; omitted when there is only one in play.
+ * @param {React.ReactNode} props.icon The sender's face, drawn at the leading edge.
  * @param {string} props.title What happened.
  * @param {string} props.body The detail under it, clamped to two lines.
+ * @param {string} props.time How long ago, since the card can sit there while nobody is at the desk.
  * @param {'emergency'|'default'} props.tone An emergency draws a different surface.
  * @param {React.ReactNode} props.actions Extra controls inside the card — the calendar reply buttons.
- * @param {() => void} props.onOpen Goes to whatever the notification is about. Without it no «Перейти» is drawn.
+ * @param {string} props.openLabel What the open button says — where it goes, not «Перейти».
+ * @param {() => void} props.onOpen Goes to whatever the notification is about. Without it no open button is drawn.
  * @param {() => void} props.onDismiss Hides the card.
  * @param {React.CSSProperties} props.style Placement and stacking, which the layer above owns.
  */
 export default function NotificationCard({
   icon,
-  categoryLabel,
-  categoryColor,
-  organizationName,
   title,
   body,
+  time,
   tone = 'default',
   actions,
+  openLabel = 'Перейти',
   onOpen,
   onDismiss,
   style,
@@ -53,19 +55,18 @@ export default function NotificationCard({
       <div className="flex items-start gap-3 px-4 py-4">
         {icon}
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide mb-[3px]" style={{ color: categoryColor }}>
-            {categoryLabel}
-          </p>
-          {organizationName && (
-            <p className="text-[10px] font-semibold text-ink mb-1 truncate">{organizationName}</p>
-          )}
           <p className="text-[13px] font-bold text-ink leading-snug">{title}</p>
           {body && <p className="text-[11px] text-muted mt-1 line-clamp-2">{body}</p>}
           {actions}
-          {onOpen && (
-            <button onClick={onOpen} className="mt-2 text-[11px] font-semibold text-ink hover:underline">
-              Перейти
-            </button>
+          {(onOpen || time) && (
+            <div className="mt-2 flex items-center gap-2">
+              {onOpen && (
+                <button onClick={onOpen} className="text-[11px] font-semibold text-ink hover:underline">
+                  {openLabel}
+                </button>
+              )}
+              {time && <span className="text-[10px] text-faint">{time}</span>}
+            </div>
           )}
         </div>
         <button

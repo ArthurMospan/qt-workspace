@@ -50,6 +50,41 @@ export function notificationDestination(notification) {
   return '';
 }
 
+// What the card's button says. «Перейти» was the only word it ever said, for
+// five different destinations — a task's chat, the task itself, a conversation,
+// a calendar event, a colleague's profile — so the one thing a button is for,
+// naming where it takes you, was the one thing it did not do.
+//
+// This is also where the notification's type now lives on the card. It used to
+// be a capitalised label above the title, repeating in worse words what the
+// title already said in plain ones; said by the button instead, it earns its
+// place.
+const OPEN_LABELS = {
+  commented: 'Відкрити чат завдання',
+  mentioned: 'Відкрити чат завдання',
+  assigned: 'Відкрити завдання',
+  status_changed: 'Відкрити завдання',
+  deadline: 'Відкрити завдання',
+  chat_message: 'Відкрити розмову',
+  calendar_invite: 'Відкрити подію',
+  calendar_changed: 'Відкрити подію',
+  calendar_reminder: 'Відкрити подію',
+  emergency: 'Відкрити профіль',
+  alert: 'Відкрити профіль',
+};
+
+/**
+ * @param {object} notification The notification the button belongs to.
+ * @returns {string} Where the button goes, in words. «Перейти» for anything without a place of its own.
+ */
+export function notificationOpenLabel(notification) {
+  const type = typeof notification?.type === 'string' ? notification.type : '';
+  // A mention in the workspace chat is a conversation, not a task — the same
+  // type reaches two different places, and the link is what knows which.
+  if (type === 'mentioned' && !notification?.issueId) return 'Відкрити розмову';
+  return OPEN_LABELS[type] || 'Перейти';
+}
+
 export function notificationDestinationWithOrganization(notification) {
   return withNotificationOrganization(
     notificationDestination(notification),

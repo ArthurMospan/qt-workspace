@@ -113,7 +113,7 @@ export default function HeadersSection() {
 
       <PreviewBlock
         title="8) Картка сповіщення"
-        description="Те, що приїжджає над робочою областю, коли сповіщення надходить. Не Toast: тост звітує про твою ж дію і йде сам, а це приходить непроханим, називає відправника й може нести цілу календарну відповідь."
+        description="Те, що приїжджає над робочою областю, коли сповіщення надходить. Не Toast: тост звітує про твою ж дію і йде сам, а це приходить непроханим, називає відправника й може нести цілу календарну відповідь. Кнопка каже, куди веде — тип сповіщення живе там, а не міткою над заголовком."
         filePath="src/components/ui/Layout/NotificationCard.jsx"
         component="NotificationCard"
         fullWidth
@@ -123,11 +123,10 @@ export default function HeadersSection() {
         <div className="relative h-[190px] w-full overflow-hidden rounded-[16px] bg-canvas [&>*]:!absolute [&>*]:!bottom-[12px] [&>*]:!right-[12px]">
           <NotificationCard
             icon={<span className="grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[10px] bg-white text-ink"><CalendarClock size={16} /></span>}
-            categoryLabel="Запрошення в подію"
-            categoryColor="#6366f1"
-            organizationName="QuickTeam"
             title="Планерка команди, четвер 10:00"
             body="Олена Коваль запросила вас на щотижневу зустріч команди дизайну."
+            time="5 хв тому"
+            openLabel="Відкрити подію"
             onOpen={() => {}}
             onDismiss={() => {}}
           />

@@ -720,7 +720,7 @@
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:495",
+      "location": "src/components/WorkspaceHeader.jsx:493",
       "tag": "div",
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },

@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 857,
-    "documentedProps": 857,
+    "props": 856,
+    "documentedProps": 856,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4104,7 +4104,7 @@
     },
     "NotificationCard": {
       "file": "src/components/ui/Layout/NotificationCard.jsx",
-      "summary": "One notification, drawn as the card that slides in over the workspace when it arrives: what kind it is, which organisation it came from, what happened, and the two things you can do about it.",
+      "summary": "One notification, drawn as the card that slides in over the workspace when it arrives: who did it, what happened, and the two things you can do about it. Not a `Toast`.",
       "props": [
         {
           "name": "actions",
@@ -4121,25 +4121,11 @@
           "description": "The detail under it, clamped to two lines."
         },
         {
-          "name": "categoryColor",
-          "default": "",
-          "type": "string",
-          "values": [],
-          "description": "The colour that label carries — the type's own, from the product."
-        },
-        {
-          "name": "categoryLabel",
-          "default": "",
-          "type": "string",
-          "values": [],
-          "description": "What kind of notification this is, in caps above the title."
-        },
-        {
           "name": "icon",
           "default": "",
           "type": "React.ReactNode",
           "values": [],
-          "description": "The type's glyph, drawn at the leading edge."
+          "description": "The sender's face, drawn at the leading edge."
         },
         {
           "name": "onDismiss",
@@ -4153,14 +4139,14 @@
           "default": "",
           "type": "() => void",
           "values": [],
-          "description": "Goes to whatever the notification is about. Without it no «Перейти» is drawn."
+          "description": "Goes to whatever the notification is about. Without it no open button is drawn."
         },
         {
-          "name": "organizationName",
-          "default": "",
+          "name": "openLabel",
+          "default": "'Перейти'",
           "type": "string",
           "values": [],
-          "description": "Which workspace it came from; omitted when there is only one in play."
+          "description": "What the open button says — where it goes, not «Перейти»."
         },
         {
           "name": "style",
@@ -4168,6 +4154,13 @@
           "type": "React.CSSProperties",
           "values": [],
           "description": "Placement and stacking, which the layer above owns."
+        },
+        {
+          "name": "time",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "How long ago, since the card can sit there while nobody is at the desk."
         },
         {
           "name": "title",

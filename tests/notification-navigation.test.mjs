@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   notificationDestination,
+  notificationOpenLabel,
   notificationDestinationWithOrganization,
   normalizeNotificationLink,
   withNotificationOrganization,
@@ -63,4 +65,45 @@ test('keeps a calendar event deep link scoped to the right organization', () => 
     }),
     '/calendar/event/event-42?occurrence=2026-07-25T09%3A00%3A00.000Z&org=org-1',
   );
+});
+
+// The card's button names its destination, and that is where the notification's
+// type now lives.
+test('the open button says where it goes', () => {
+  assert.equal(notificationOpenLabel({ type: 'commented', issueId: 'issue-1' }), 'Відкрити чат завдання');
+  assert.equal(notificationOpenLabel({ type: 'assigned', issueId: 'issue-1' }), 'Відкрити завдання');
+  assert.equal(notificationOpenLabel({ type: 'deadline', issueId: 'issue-1' }), 'Відкрити завдання');
+  assert.equal(notificationOpenLabel({ type: 'chat_message' }), 'Відкрити розмову');
+  assert.equal(notificationOpenLabel({ type: 'calendar_reminder' }), 'Відкрити подію');
+  assert.equal(notificationOpenLabel({ type: 'emergency' }), 'Відкрити профіль');
+  // The same type reaches two different places; the task id is what tells them
+  // apart, because a mention in the workspace chat has none.
+  assert.equal(notificationOpenLabel({ type: 'mentioned', issueId: 'issue-1' }), 'Відкрити чат завдання');
+  assert.equal(notificationOpenLabel({ type: 'mentioned' }), 'Відкрити розмову');
+  // Nothing recognisable still gets a working button.
+  assert.equal(notificationOpenLabel({ type: 'test' }), 'Перейти');
+  assert.equal(notificationOpenLabel(null), 'Перейти');
+});
+
+// What the card stopped saying, and why it could never have been saying it.
+test('the notification card drops the two lines that carried nothing', async () => {
+  const [card, header, notifications] = await Promise.all([
+    readFile(new URL('../src/components/ui/Layout/NotificationCard.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/WorkspaceHeader.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/hooks/useNotifications.js', import.meta.url), 'utf8'),
+  ]);
+
+  // The organisation is filtered three times over on the way to this card — in
+  // the query, before the popup fires, and again in the bell — so its name here
+  // could only ever repeat what the header already says.
+  assert.match(notifications, /where\('organizationId', '==', activeOrganizationId\)/);
+  assert.match(notifications, /if \(n\.organizationId !== activeOrganizationIdRef\.current\) return;/);
+  assert.match(header, /const scopedNotifications = notifications\.filter\(n => n\.organizationId === activeOrgId\)/);
+  assert.doesNotMatch(card, /organizationName/);
+  // And the capitalised category repeated the title in the product's own words.
+  assert.doesNotMatch(card, /categoryLabel|categoryColor/);
+  assert.match(card, /\{openLabel\}/);
+  // The badge on the sender's face could not separate twelve types across far
+  // fewer glyphs, so the face is drawn on its own.
+  assert.doesNotMatch(header, /absolute -bottom-\[3px\] -right-\[3px\]/);
 });
