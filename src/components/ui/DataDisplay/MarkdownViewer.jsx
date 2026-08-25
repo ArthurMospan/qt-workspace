@@ -65,8 +65,8 @@ const SIZES = {
 // TaskToggleContext, which changes what the box does without changing what the
 // box *is*.
 const COMPONENTS = {
-  h1: ({node, ...props}) => <h1 className="ui-type-page-title mt-6 mb-4 pb-2 border-b border-[#f0f0f0]" {...props} />,
-  h2: ({node, ...props}) => <h2 className="ui-type-detail-title mt-6 mb-4 pb-2 border-b border-[#f0f0f0]" {...props} />,
+  h1: ({node, ...props}) => <h1 className="ui-type-page-title mt-6 mb-4 pb-2 border-b border-line" {...props} />,
+  h2: ({node, ...props}) => <h2 className="ui-type-detail-title mt-6 mb-4 pb-2 border-b border-line" {...props} />,
   h3: ({node, ...props}) => <h3 className="ui-type-dialog-title mt-6 mb-3" {...props} />,
   p: ({node, ...props}) => <p className="mb-4 last:mb-0" {...props} />,
   ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
@@ -81,12 +81,12 @@ const COMPONENTS = {
     // eslint-disable-next-line @next/next/no-img-element
     <img alt={alt} className="my-5 max-h-[560px] w-auto max-w-full rounded-[8px] border border-line object-contain" loading="lazy" {...props} />
   ),
-  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-line pl-4 italic text-[#4a4a4a] mb-4" {...props} />,
+  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-line pl-4 italic text-ink mb-4" {...props} />,
   pre: ({node, ...props}) => (
     <pre className="bg-ink text-white p-4 rounded-[8px] overflow-x-auto mb-4 text-[13px] font-mono [&>code]:!bg-transparent [&>code]:!p-0 [&>code]:!text-inherit" {...props} />
   ),
   code: ({node, className, children, ...props}) => (
-    <code className={`bg-[#f0f0f0] px-[6px] py-[2px] rounded-[4px] text-[13px] font-mono ${className || ''}`} {...props}>
+    <code className={`bg-canvas px-[6px] py-[2px] rounded-[4px] text-[13px] font-mono ${className || ''}`} {...props}>
       {children}
     </code>
   ),

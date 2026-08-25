@@ -114,7 +114,7 @@ export default function StatusTransitionPicker({
                   className="peer sr-only"
                 />
                 <div className={`group flex min-h-[280px] w-full flex-col overflow-hidden rounded-[16px] border-2 bg-canvas text-left transition-[background-color,border-color] peer-focus-visible:ring-2 peer-focus-visible:ring-inset peer-focus-visible:ring-ink/30 peer-disabled:opacity-60 ${
-                  active ? 'border-ink' : 'border-transparent hover:bg-[#f0f0f2]'
+                  active ? 'border-ink' : 'border-transparent hover:bg-line'
                 }`}>
                   <span className="flex w-full items-center justify-between px-4 pb-3 pt-4">
                     <span className="flex min-w-0 items-center gap-[6px]">

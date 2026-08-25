@@ -8,7 +8,7 @@ import { withNotificationOrganization } from '@/lib/utils/notificationNavigation
 
 function LoadingScreen() {
   return (
-    <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5]">
+    <div className="w-full h-full flex items-center justify-center bg-canvas">
       <div className="w-8 h-8 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
     </div>
   );
@@ -46,7 +46,7 @@ export default function WorkspaceOrganizationRouteGuard({ children }) {
   if (orgLoading || !orgDirectoryVerified) return <LoadingScreen />;
 
   return (
-    <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5] p-6">
+    <div className="w-full h-full flex items-center justify-center bg-canvas p-6">
       <div data-ui-surface="local" className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
         <h1 className="ui-type-section-title text-ink mb-2">Немає доступу до організації</h1>
         <p className="text-[13px] text-muted mb-5">

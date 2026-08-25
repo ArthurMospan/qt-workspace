@@ -395,7 +395,7 @@ export default function AnalyticsTab({
                   header: 'Прострочено',
                   size: 'figure',
                   cell: row => (row.overdue > 0
-                    ? <span className="font-semibold text-[#ef4444]">{row.overdue}</span>
+                    ? <span className="font-semibold text-danger">{row.overdue}</span>
                     : <span className="text-faint">—</span>),
                 },
                 { id: 'time', header: 'Час', size: 'figure', cell: row => (row.minutes > 0 ? fmtH(row.minutes) : <span className="text-faint">—</span>) },
@@ -422,7 +422,7 @@ export default function AnalyticsTab({
           <div className="flex flex-col items-center py-16 text-center">
             <BarChart2 size={36} className="text-line mb-3" />
             <p className="text-[14px] font-semibold text-faint mb-1">Даних немає</p>
-            <p className="text-[12px] text-[#e0e0e0]">Аналітика з’явиться після створення завдань</p>
+            <p className="text-[12px] text-faint">Аналітика з’явиться після створення завдань</p>
           </div>
         )}
 

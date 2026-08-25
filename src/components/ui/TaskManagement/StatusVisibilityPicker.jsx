@@ -61,7 +61,7 @@ export default function StatusVisibilityPicker({
                 ? <LockKeyhole size={17} />
                 : isHidden
                   ? <EyeOff size={18} />
-                  : <Eye size={18} className="text-[#10b981]" />}
+                  : <Eye size={18} className="text-success" />}
             </span>
           </button>
         );

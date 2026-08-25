@@ -157,7 +157,7 @@ export default function InviteMemberDialog({ isOpen, onClose, inviteMember }) {
                 {sent ? 'Надіслано' : 'Запросити'}
               </Button>
             </div>
-            {emailError && <span className="text-[11px] text-red-500">{emailError}</span>}
+            {emailError && <span className="text-[11px] text-danger">{emailError}</span>}
             {undelivered ? (
               <Alert variant="warning" title="Лист не надіслано">
                 Запрошення збережено — воно спрацює, щойно людина увійде з цією адресою.

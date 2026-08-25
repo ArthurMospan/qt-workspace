@@ -4,7 +4,7 @@ import { Lock } from 'lucide-react';
 import { Tabs } from '@/components/ui';
 import { canAccessStage, stageStatusMeta } from '@/lib/portal/qtplusStageModel.mjs';
 
-const TONE_DOT = { muted: 'bg-faint', active: 'bg-ink', done: 'bg-[#10b981]' };
+const TONE_DOT = { muted: 'bg-faint', active: 'bg-ink', done: 'bg-success-solid' };
 
 export default function StageStepper({ stages, activeId, onSelect }) {
   const scrollRef = useRef(null);

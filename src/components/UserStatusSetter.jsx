@@ -16,7 +16,7 @@ export default function UserStatusSetter() {
     <>
       <button
         onClick={() => setIsEditing(true)}
-        className="flex items-center gap-1.5 mr-1 bg-canvas px-3 py-1.5 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors"
+        className="flex items-center gap-1.5 mr-1 bg-canvas px-3 py-1.5 rounded-full cursor-pointer hover:bg-line transition-colors"
       >
         {currentUser?.status || currentUser?.statusEmoji ? (
           <>

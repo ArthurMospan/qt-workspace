@@ -93,8 +93,8 @@ export default function InviteLinkSection({ role = 'member' }) {
               <p className="text-[11px] text-muted">Діє 7 днів · до {link.maxUses} використань</p>
             </div>
           </div>
-          <div data-ui-surface="local" className="mt-4 rounded-[12px] border border-dashed border-[#cfcfcf] bg-white p-2">
-            <p className="truncate px-2 py-1 text-[12px] font-medium text-[#5a5a5a]">{link.url}</p>
+          <div data-ui-surface="local" className="mt-4 rounded-[12px] border border-dashed border-faint bg-white p-2">
+            <p className="truncate px-2 py-1 text-[12px] font-medium text-muted">{link.url}</p>
             {/* The confirmation used to be a green fill. The kit's Button has
                 two colours — dark and red — and painting a third one on from
                 here is exactly the chrome override the drift guard forbids, so

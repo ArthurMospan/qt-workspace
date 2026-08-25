@@ -57,7 +57,7 @@ export default function FormGroup({
       )}
       {control}
       {error && (
-        <span id={errorId} className="text-[11px] text-red-500 mt-[2px] block">{error}</span>
+        <span id={errorId} className="text-[11px] text-danger mt-[2px] block">{error}</span>
       )}
     </div>
   );

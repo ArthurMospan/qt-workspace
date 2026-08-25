@@ -159,7 +159,7 @@ test('a timesheet card is the link, not the identifier inside it', async () => {
   assert.match(timesheet, /const href = issue \? issuePath\(issue\) : event \? calendarEventHref\(event\) : null;/);
   assert.match(timesheet, /<Link key=\{targetKey\} href=\{href\}/);
   // The hover affordance appears only where there is somewhere to go.
-  assert.match(timesheet, /href \? 'hover:border-\[#d0d0d0\]' : ''/);
+  assert.match(timesheet, /href \? 'hover:border-faint' : ''/);
   // «???» told nobody anything. What is left says one thing only: the task
   // behind this hour no longer exists.
   assert.doesNotMatch(timesheet, /\?\?\?/);

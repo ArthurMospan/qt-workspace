@@ -150,8 +150,8 @@ test('QUI-134 gives the neutral dot the surface opposite, not a brand hue', asyn
   assert.match(counter, /info: 'bg-white shadow-\[0_0_8px_rgba\(255,255,255,0\.45\)\]'/);
   assert.match(counter, /info: 'bg-ink'/);
   // Colours that mean something keep meaning it.
-  assert.match(counter, /danger: 'bg-\[#ef4444\]'/);
-  assert.match(counter, /success: 'bg-\[#10b981\]'/);
+  assert.match(counter, /danger: 'bg-danger-solid'/);
+  assert.match(counter, /success: 'bg-success-solid'/);
 });
 
 test('QUI-135 keeps every status pill readable against its own tint', async () => {
@@ -238,7 +238,7 @@ test('QUI-140 removes the unreachable portal route and the variant it kept alive
 
 // QUI-141 / QUI-142. The previews were hand-copies of the two rails, and the
 // copies were wrong in five ways at once — 8px radius drawn as 10px, the
-// `#ebebeb` selected row drawn as white-with-a-shadow, a 32px avatar drawn at
+// `bg-line` selected row drawn as white-with-a-shadow, a 32px avatar drawn at
 // 24px, a muted name drawn as bold ink, no presence dot. A copy will always
 // drift; the fix is that there is no copy. One component, three call sites.
 test('the chat and team rails exist once, and the pages and catalogue all render it', async () => {
@@ -252,8 +252,8 @@ test('the chat and team rails exist once, and the pages and catalogue all render
 
   // The markup lives in the components and nowhere else.
   assert.match(rail, /data-ui-control="chat-list-action"/);
-  assert.match(rail, /bg-\[#ebebeb\] text-ink font-semibold/);
-  assert.match(memberRail, /rounded-\[8px\][\s\S]{0,80}isSelected \? 'bg-\[#ebebeb\]'/);
+  assert.match(rail, /bg-line text-ink font-semibold/);
+  assert.match(memberRail, /rounded-\[8px\][\s\S]{0,80}isSelected \? 'bg-line'/);
   assert.match(memberRail, /<UserAvatar user=\{member\} size="md" \/>/);
   assert.match(memberRail, /text-\[13px\] font-medium truncate/);
   // The presence mark is one component now: it was drawn four different ways
@@ -263,7 +263,7 @@ test('the chat and team rails exist once, and the pages and catalogue all render
   for (const [name, source] of [['chat', chat], ['team', team], ['kit', kit]]) {
     assert.doesNotMatch(
       source,
-      /data-ui-control="chat-list-action"|isSelected \? 'bg-\[#ebebeb\]'/,
+      /data-ui-control="chat-list-action"|isSelected \? 'bg-line'/,
       `${name} must render the shared rail, not its own copy of the markup`,
     );
   }

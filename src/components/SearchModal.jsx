@@ -40,9 +40,9 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
 
   return (
     <div id="search-dropdown" className="absolute top-[calc(100%+8px)] left-[8px] right-[8px] sm:left-[16px] sm:right-auto z-50 flex items-start">
-      <div data-ui-surface="local" className="bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col">
+      <div data-ui-surface="local" className="bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-line w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#f0f0f0] shrink-0 bg-[#fbfbfb]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-line shrink-0 bg-canvas">
           <div>
             <h2 className="ui-type-item-title text-ink">Результати пошуку</h2>
             {query && <p className="text-[11px] text-muted mt-[2px]">Запит: «{query}»</p>}
@@ -68,7 +68,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-[#f0f0f0]">
+            <div className="divide-y divide-line">
               {results.map(issue => {
                 const type = types.find(item => item.id === issue.type)
                   || types.find(item => item.id === 'task')
@@ -85,7 +85,7 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                       {/* Left: Type Icon */}
-                      <div data-ui-surface="local" className="w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm">
+                      <div data-ui-surface="local" className="w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-line shadow-sm">
                         <TypeIcon size={12} style={{ color: type.color }} />
                       </div>
 

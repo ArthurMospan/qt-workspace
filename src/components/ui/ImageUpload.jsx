@@ -60,7 +60,7 @@ export default function ImageUpload({
   // takes a colour when the cursor is on it.
   const removeColor = isDark
     ? 'text-white/40 hover:text-red-300 hover:bg-white/10'
-    : 'text-faint hover:text-[#ef4444] hover:bg-canvas';
+    : 'text-faint hover:text-danger hover:bg-canvas';
   const bgClass = isDark ? 'bg-[#2a2a2a] border-white/10 hover:border-white/30' : 'bg-canvas border-line hover:border-faint';
   const iconColor = isDark ? 'text-white/50' : 'text-muted';
 
@@ -163,7 +163,7 @@ export default function ImageUpload({
           </button>
         )}
         {uploadError && (
-          <span className="text-[12px] font-medium text-red-500">{uploadError}</span>
+          <span className="text-[12px] font-medium text-danger">{uploadError}</span>
         )}
       </div>
 

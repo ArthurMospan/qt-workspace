@@ -26,7 +26,7 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 45,
+    "localSurfaceExceptions": 46,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
@@ -112,7 +112,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:236",
+      "location": "src/components/MobileNav.jsx:240",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -128,7 +128,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:296",
+      "location": "src/components/MobileNav.jsx:300",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -144,7 +144,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:368",
+      "location": "src/components/MobileNav.jsx:372",
       "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
       "text": "",
       "childElements": [
@@ -223,7 +223,7 @@
     {
       "tag": "button",
       "location": "src/components/UserStatusSetter.jsx:17",
-      "className": "flex items-center gap-1.5 mr-1 bg-canvas px-3 py-1.5 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors",
+      "className": "flex items-center gap-1.5 mr-1 bg-canvas px-3 py-1.5 rounded-full cursor-pointer hover:bg-line transition-colors",
       "text": "",
       "childElements": [],
       "ariaLabel": "",
@@ -386,7 +386,7 @@
     {
       "tag": "button",
       "location": "src/components/WorkspaceSidebar.jsx:453",
-      "className": "flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${…}",
+      "className": "flex items-center justify-center rounded-[8px] bg-danger-solid text-white hover:bg-danger transition-colors shrink-0 ${…}",
       "text": "",
       "childElements": [
         "StopIcon"
@@ -469,7 +469,7 @@
       "context": "auth-footer-support"
     },
     {
-      "location": "src/components/MobileNav.jsx:368",
+      "location": "src/components/MobileNav.jsx:372",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
@@ -562,7 +562,7 @@
     {
       "location": "src/app/(app)/sprints/page.js:1046",
       "tag": "div",
-      "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
+      "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-line"
     },
     {
       "location": "src/app/(app)/sprints/page.js:877",
@@ -612,7 +612,7 @@
     {
       "location": "src/components/InviteLinkSection.jsx:96",
       "tag": "div",
-      "className": "mt-4 rounded-[12px] border border-dashed border-[#cfcfcf] bg-white p-2"
+      "className": "mt-4 rounded-[12px] border border-dashed border-faint bg-white p-2"
     },
     {
       "location": "src/components/migrations/DataMigrationSettings.jsx:90",
@@ -622,17 +622,22 @@
     {
       "location": "src/components/SearchModal.jsx:43",
       "tag": "div",
-      "className": "bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-[#f0f0f0] w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col"
+      "className": "bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-line w-full sm:w-[480px] max-h-[480px] overflow-hidden flex flex-col"
     },
     {
       "location": "src/components/SearchModal.jsx:88",
       "tag": "div",
-      "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-[#f0f0f0] shadow-sm"
+      "className": "w-5 h-5 flex items-center justify-center rounded-[6px] shrink-0 bg-white border border-line shadow-sm"
     },
     {
       "location": "src/components/workspace/AgileBoard.jsx:470",
       "tag": "div",
-      "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
+      "className": "flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-line transition-colors"
+    },
+    {
+      "location": "src/components/workspace/AgileBoard.jsx:557",
+      "tag": "div",
+      "className": "sticky left-0 flex items-center bg-canvas rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]"
     },
     {
       "location": "src/components/workspace/BillingTab.jsx:494",
@@ -722,7 +727,7 @@
     {
       "location": "src/components/WorkspaceHeader.jsx:529",
       "tag": "div",
-      "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
+      "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-line bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },
     {
       "location": "src/components/WorkspaceOrganizationRouteGuard.jsx:50",

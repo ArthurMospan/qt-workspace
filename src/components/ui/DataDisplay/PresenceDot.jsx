@@ -45,7 +45,7 @@ export default function PresenceDot({
       aria-label={label}
       title={label}
       data-ui-presence={size}
-      className={`absolute bottom-0 right-0 shrink-0 rounded-full bg-[#10b981] ${
+      className={`absolute bottom-0 right-0 shrink-0 rounded-full bg-success-solid ${
         SIZES[size] ?? SIZES.md
       } ${COLLARS[collar] ?? COLLARS.canvas} ${className}`}
     />

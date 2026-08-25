@@ -453,7 +453,7 @@ export default function WorkspaceSidebar() {
             <button
               onClick={handleStopGlobalTimer}
               title="Зупинити та зберегти"
-              className={`flex items-center justify-center rounded-[8px] bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors shrink-0 ${collapsed ? 'w-[24px] h-[24px] mt-1' : 'w-[28px] h-[28px]'}`}
+              className={`flex items-center justify-center rounded-[8px] bg-danger-solid text-white hover:bg-danger transition-colors shrink-0 ${collapsed ? 'w-[24px] h-[24px] mt-1' : 'w-[28px] h-[28px]'}`}
             >
               <StopIcon size={12} className="fill-current" />
             </button>

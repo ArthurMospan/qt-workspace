@@ -114,8 +114,8 @@ function responseLabel(value) {
 }
 
 function responseClass(value) {
-  if (value === 'accepted') return 'text-emerald-600';
-  if (value === 'declined') return 'text-red-500';
+  if (value === 'accepted') return 'text-success';
+  if (value === 'declined') return 'text-danger';
   return 'text-muted';
 }
 
@@ -256,7 +256,7 @@ function CalendarEventTimeSheet({
               />
             </div>
 
-            {error && <p className="text-[12px] font-medium text-red-600">{error}</p>}
+            {error && <p className="text-[12px] font-medium text-danger">{error}</p>}
 
             <div className="flex items-center gap-2">
               <Button type="submit" size="md" loading={saving} disabled={form.minutes <= 0}>
@@ -1184,7 +1184,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
 
                     {showsTracking && (
                     <div
-                      className={`${attributeItemClass} ${canTrackTime ? 'cursor-pointer hover:bg-[#ebebeb]' : ''}`}
+                      className={`${attributeItemClass} ${canTrackTime ? 'cursor-pointer hover:bg-line' : ''}`}
                       title={canTrackTime ? 'Відкрити трекінг часу' : trackingDisabledMessage}
                       onClick={clickEvent => {
                         if (!canTrackTime || clickEvent.target.closest('button')) return;
@@ -1433,7 +1433,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
             )}
 
           {actionError && !timePanelOpen && (
-            <p className="text-[12px] font-medium text-red-600">{actionError}</p>
+            <p className="text-[12px] font-medium text-danger">{actionError}</p>
           )}
       </DetailLayout>
 

@@ -183,7 +183,7 @@ export default function HoverCard({ type = 'user', value, members, dark = false 
                 </span>
               </span>
               <span className="mt-1 flex items-center gap-1 text-[11px] text-muted">
-                <span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-[#10b981]' : 'bg-faint'}`} />
+                <span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-success-solid' : 'bg-faint'}`} />
                 {formatLastSeenUk(member.lastActive, { now, online: isOnline })}
               </span>
             </span>

@@ -77,7 +77,7 @@ export const HeaderSearch = forwardRef(({
         }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="h-full min-w-0 w-full bg-transparent pl-[24px] pr-[76px] text-[13px] text-ink outline-none placeholder:text-[#a3a3a3] max-md:pr-[28px]"
+        className="h-full min-w-0 w-full bg-transparent pl-[24px] pr-[76px] text-[13px] text-ink outline-none placeholder:text-muted max-md:pr-[28px]"
         {...props}
       />
       {value && (

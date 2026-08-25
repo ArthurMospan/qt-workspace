@@ -390,7 +390,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
                 <ChatIcon size={13} />
                 <span className="hidden sm:inline">QuickTeam+</span>
                 {project?.hasUnreadPortal && (
-                  <span className="absolute -top-[3px] -right-[3px] w-[10px] h-[10px] rounded-full bg-[#ef4444] border-2 border-white" />
+                  <span className="absolute -top-[3px] -right-[3px] w-[10px] h-[10px] rounded-full bg-danger-solid border-2 border-white" />
                 )}
               </Link>
             )}

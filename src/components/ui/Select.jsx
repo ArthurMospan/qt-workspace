@@ -199,7 +199,7 @@ export function Select({
   const listboxId = useId();
   const dropdownPosition = useDropdownPosition(isOpen, containerRef, dropdownRef);
   const filterWidth = getFilterControlWidth(filterRole, filterContext);
-  const defaultButtonClass = `bg-canvas hover:bg-[#ebebeb] px-[12px] ${CONTROL_SIZES[size] ?? CONTROL_SIZES.lg}`;
+  const defaultButtonClass = `bg-canvas hover:bg-line px-[12px] ${CONTROL_SIZES[size] ?? CONTROL_SIZES.lg}`;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -306,7 +306,7 @@ export function Select({
         data-ui-composition={composition}
         onKeyDown={handleKeyDown}
         onClick={() => (isOpen ? close({ focusTrigger: false }) : open())}
-        className={`ui-control w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? `bg-transparent hover:bg-[#ebebeb] !rounded-[8px] px-[10px] ${filterWidth ? 'w-full' : 'w-auto'} inline-flex gap-1.5` : (buttonClassName || defaultButtonClass)}`}
+        className={`ui-control w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? `bg-transparent hover:bg-line !rounded-[8px] px-[10px] ${filterWidth ? 'w-full' : 'w-auto'} inline-flex gap-1.5` : (buttonClassName || defaultButtonClass)}`}
       >
         <div className={`flex items-center overflow-hidden ${compact ? 'gap-1' : 'gap-[8px]'}`}>
           {ResolvedTriggerIcon && <ResolvedTriggerIcon size={14} className="text-muted shrink-0" />}
@@ -333,7 +333,7 @@ export function Select({
         <div
           ref={dropdownRef}
           data-qt-floating-overlay
-          className={`fixed z-[1100] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] ${searchable ? 'pb-[6px]' : 'py-[6px]'} overflow-hidden ${dropdownClassName}`}
+          className={`fixed z-[1100] max-w-[calc(100vw-16px)] bg-white border border-line rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] ${searchable ? 'pb-[6px]' : 'py-[6px]'} overflow-hidden ${dropdownClassName}`}
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -344,7 +344,7 @@ export function Select({
           }}
         >
           {searchable && (
-            <div className="shrink-0 border-b border-[#f0f0f0] p-[8px]">
+            <div className="shrink-0 border-b border-line p-[8px]">
               <div className="relative">
                 <Search size={14} className="absolute left-[10px] top-1/2 -translate-y-1/2 text-muted" />
                 <input
@@ -521,7 +521,7 @@ export function MultiSelect({
       ? `${selectedLabels[0]} +${value.length - 1}`
       : `Обрано (${value.length})`;
   }
-  const defaultButtonClass = `bg-canvas hover:bg-[#ebebeb] px-[12px] ${CONTROL_SIZES[size] ?? CONTROL_SIZES.lg}`;
+  const defaultButtonClass = `bg-canvas hover:bg-line px-[12px] ${CONTROL_SIZES[size] ?? CONTROL_SIZES.lg}`;
 
   return (
     <div className={`relative ${filterWidth} ${className}`} ref={containerRef}>
@@ -542,7 +542,7 @@ export function MultiSelect({
           }
         }}
         onClick={() => setIsOpen(!isOpen)}
-        className={`ui-control w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? `bg-transparent hover:bg-[#ebebeb] !rounded-[8px] px-[10px] ${filterWidth ? 'w-full' : 'w-auto'} inline-flex gap-1.5` : (buttonClassName || defaultButtonClass)}`}
+        className={`ui-control w-full flex items-center justify-between text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50 disabled:cursor-not-allowed ${variant === 'ghost' ? `bg-transparent hover:bg-line !rounded-[8px] px-[10px] ${filterWidth ? 'w-full' : 'w-auto'} inline-flex gap-1.5` : (buttonClassName || defaultButtonClass)}`}
       >
         <div className={`flex items-center overflow-hidden ${compact ? 'gap-1' : 'gap-[8px]'}`}>
           {ResolvedTriggerIcon && <ResolvedTriggerIcon size={14} className="text-muted shrink-0" />}
@@ -568,7 +568,7 @@ export function MultiSelect({
         <div
           ref={dropdownRef}
           data-qt-floating-overlay
-          className={`fixed z-[1100] max-w-[calc(100vw-16px)] bg-white border border-[#f0f0f0] rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden flex flex-col ${dropdownClassName}`}
+          className={`fixed z-[1100] max-w-[calc(100vw-16px)] bg-white border border-line rounded-[12px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden flex flex-col ${dropdownClassName}`}
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -578,7 +578,7 @@ export function MultiSelect({
             visibility: dropdownPosition.visible ? 'visible' : 'hidden',
           }}
         >
-          <div className="p-[8px] border-b border-[#f0f0f0] shrink-0">
+          <div className="p-[8px] border-b border-line shrink-0">
             <div className="relative">
               <Search size={14} className="absolute left-[10px] top-1/2 -translate-y-1/2 text-muted" />
               <input
@@ -655,7 +655,7 @@ export function MultiSelect({
             )}
           </div>
           {footer && (
-            <div className="shrink-0 border-t border-[#f0f0f0] p-[8px]">
+            <div className="shrink-0 border-t border-line p-[8px]">
               {footer}
             </div>
           )}

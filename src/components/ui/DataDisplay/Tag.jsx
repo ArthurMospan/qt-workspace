@@ -40,10 +40,10 @@ export default function Tag({
   className = '',
 }) {
   const variants = {
-    default: 'bg-ink/5 text-[#404040]',
-    success: 'bg-[#10b981]/8 text-[#047857]',
+    default: 'bg-ink/5 text-ink',
+    success: 'bg-success-solid/8 text-success',
     warning: 'bg-[#fbbf24]/8 text-[#b45309]',
-    danger: 'bg-[#ef4444]/8 text-[#b91c1c]',
+    danger: 'bg-danger-solid/8 text-danger',
     error: 'bg-[#f97316]/8 text-[#c2410c]',
     info: 'bg-[#6366f1]/8 text-[#4338ca]',
   };

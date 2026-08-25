@@ -100,10 +100,10 @@ function DayHeading({ label, day, isToday, size = 'md' }) {
 // Colored capacity chip: "6г 20хв з 8г"
 function DayChip({ minutes, capacity = DAY_MIN, compact = false }) {
   const cls = minutes >= capacity
-    ? 'bg-[#e6f2ea] text-[#2f6b4b]'
+    ? 'bg-success-soft text-success'
     : minutes > 0
-      ? 'bg-[#fdf0e3] text-[#9a5b18]'
-      : 'bg-[#efefef] text-muted';
+      ? 'bg-warning-soft text-warning'
+      : 'bg-line text-muted';
   return (
     <span className={`inline-flex items-center text-[11px] font-bold px-[8px] py-[3px] rounded-[6px] whitespace-nowrap ${cls}`}>
       {compact ? fmtMin(minutes) : `${fmtMin(minutes)} з ${capacity / 60}г`}
@@ -206,7 +206,7 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
                 </>
               );
               const cardClass = `block bg-white border border-line rounded-[12px] px-[10px] py-[8px] transition-colors ${
-                href ? 'hover:border-[#d0d0d0]' : ''
+                href ? 'hover:border-faint' : ''
               }`;
               return href ? (
                 <Link key={targetKey} href={href} data-ui-surface="local" className={cardClass}>
@@ -310,10 +310,10 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
             <th className="px-4 py-3 text-center text-[11px] font-bold text-ink uppercase tracking-wider w-[13%]">Всього</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#eeeeee]">
+        <tbody className="divide-y divide-line">
           {rows.map(({ m, uid, byDay, total }) => (
             <tr key={uid} onClick={() => onSelectMember?.(uid)}
-              className="bg-white hover:bg-[#fafafa] transition-colors cursor-pointer" title="Відкрити табель учасника">
+              className="bg-white hover:bg-canvas transition-colors cursor-pointer" title="Відкрити табель учасника">
               <td className="px-5 py-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <UserAvatar user={m} size="sm" />
@@ -337,7 +337,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
           ))}
           {/* Team totals */}
           <tr className="border-t border-line bg-white">
-            <td className="px-5 py-3 text-right text-[11px] font-bold text-[#4a4a4a] uppercase tracking-wider">Разом</td>
+            <td className="px-5 py-3 text-right text-[11px] font-bold text-ink uppercase tracking-wider">Разом</td>
             {dayTotals.map((min, i) => (
               <td key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center">
                 <span className={`text-[12px] font-bold ${min > 0 ? 'text-ink' : 'text-muted'}`}>{min > 0 ? fmtMin(min) : '—'}</span>

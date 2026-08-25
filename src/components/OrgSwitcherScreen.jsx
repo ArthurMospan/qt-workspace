@@ -123,7 +123,7 @@ export default function OrgSwitcherScreen({ onClose }) {
       aria-modal={onClose ? 'true' : undefined}
       aria-label={onClose ? 'Вибір організації' : undefined}
       data-ui-overlay="workspace-mode"
-      className={`fixed inset-0 z-[200] ${onClose ? 'bg-transparent' : 'bg-[#f5f5f5]'}`}
+      className={`fixed inset-0 z-[200] ${onClose ? 'bg-transparent' : 'bg-canvas'}`}
     >
       <AuthLayout hideCreateOrg={false} onClose={onClose}>
         

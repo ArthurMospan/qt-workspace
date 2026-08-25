@@ -252,12 +252,12 @@ export const DatePicker = forwardRef(({
         className={`${inputClassName || `
             ui-control w-full bg-canvas border border-transparent
             text-[13px] focus:border-ink outline-none
-            transition-colors placeholder:text-[#a3a3a3]
+            transition-colors placeholder:text-muted
             ${hideIcon ? 'pl-[12px]' : 'pl-[36px]'} pr-[12px] cursor-pointer
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-            ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
+            ${error ? 'border-danger focus:border-danger bg-danger-soft' : ''}
           `} ${
-            textTone === 'danger' ? 'text-[#ef4444]' : textTone === 'faint' ? 'text-faint' : 'text-ink'
+            textTone === 'danger' ? 'text-danger' : textTone === 'faint' ? 'text-faint' : 'text-ink'
           } ${compact ? 'pr-[22px]' : ''}`}
           {...props}
         />

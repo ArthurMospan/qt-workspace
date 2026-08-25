@@ -35,9 +35,9 @@ const TONES = {
   // Secondary: the quiet half (Скасувати, Редагувати) and quiet navigation.
   muted: 'text-muted hover:text-ink',
   // Destructive and visible about it.
-  danger: 'text-red-500 hover:text-red-700',
+  danger: 'text-danger hover:text-danger',
   // Destructive but resting: an icon that only turns red under the pointer.
-  'danger-quiet': 'text-faint hover:text-red-500',
+  'danger-quiet': 'text-faint hover:text-danger',
 };
 
 /**

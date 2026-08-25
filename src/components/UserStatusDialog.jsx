@@ -87,7 +87,7 @@ export default function UserStatusDialog({ onClose }) {
           ))}
         </div>
 
-        <div className="h-[1px] bg-[#f0f0f0]" />
+        <div className="h-[1px] bg-canvas" />
 
         <div className="flex flex-col gap-[16px]">
           <div className="grid grid-cols-7 gap-[8px]">
@@ -95,7 +95,7 @@ export default function UserStatusDialog({ onClose }) {
               <button
                 key={e}
                 onClick={() => setEmoji(e)}
-                className={`w-[36px] h-[36px] rounded-full flex items-center justify-center text-[18px] transition-all ${emoji === e ? 'bg-canvas scale-110 shadow-sm' : 'hover:bg-[#fcfcfc]'}`}
+                className={`w-[36px] h-[36px] rounded-full flex items-center justify-center text-[18px] transition-all ${emoji === e ? 'bg-canvas scale-110 shadow-sm' : 'hover:bg-canvas'}`}
               >
                 {e}
               </button>

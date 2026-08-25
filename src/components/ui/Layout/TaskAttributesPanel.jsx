@@ -13,14 +13,14 @@ const CONTEXT_GRIDS = {
 
 export function getTaskAttributeChrome({ condensed = false } = {}) {
   return {
-    attributeItemClass: `flex min-w-0 flex-1 cursor-pointer flex-col rounded-[10px] px-2 transition-[padding,gap,background-color] duration-200 hover:bg-[#ebebeb] ${condensed ? 'gap-0 py-1' : 'gap-[4px] py-1.5'}`,
+    attributeItemClass: `flex min-w-0 flex-1 cursor-pointer flex-col rounded-[10px] px-2 transition-[padding,gap,background-color] duration-200 hover:bg-line ${condensed ? 'gap-0 py-1' : 'gap-[4px] py-1.5'}`,
     attributeLabelClass: `block h-[14px] overflow-hidden text-[10px] font-bold leading-[14px] uppercase tracking-wider text-muted transition-[height,max-height,opacity] duration-200 ${condensed ? 'h-0 max-h-0 opacity-0' : 'max-h-[14px] opacity-100'}`,
     compactSelectClass: 'h-[22px] w-full justify-start gap-1 rounded-[10px] bg-transparent px-0 text-[13px] font-medium leading-[22px]',
     compactInputClass: 'm-0 h-[22px] w-full cursor-pointer rounded-[10px] bg-transparent p-0 text-[13px] font-medium leading-[22px] text-ink outline-none placeholder:font-medium placeholder:text-faint placeholder:opacity-100',
     // `max-sm:h-[44px]`: the condensed strip halves this control's height, which
     // is fine under a mouse and not fine under a thumb. A phone keeps the full
     // target whether or not the header has condensed.
-    detailsButtonClass: `flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-[height,background-color,color] duration-200 hover:bg-[#ebebeb] hover:text-ink max-sm:h-[44px] ${condensed ? 'h-[28px]' : 'h-[42px]'}`,
+    detailsButtonClass: `flex w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-bold transition-[height,background-color,color] duration-200 hover:bg-line hover:text-ink max-sm:h-[44px] ${condensed ? 'h-[28px]' : 'h-[42px]'}`,
   };
 }
 

@@ -183,7 +183,7 @@ export default function ChatComposerCore({
             ref, one caret and one selection. */}
         <div className="max-md:flex max-md:items-end max-md:gap-1 max-md:p-1">
           {textarea}
-          <div className="flex items-center justify-between border-t border-[#f0f0f0] px-3 pb-3 pt-2 max-md:contents">
+          <div className="flex items-center justify-between border-t border-line px-3 pb-3 pt-2 max-md:contents">
             {/* One line of the field tall, on a phone: 15px text at
                 `leading-relaxed` plus the field's 7px above and below — 38px.
                 The row is bottom-aligned so that a field grown to several lines
@@ -201,7 +201,7 @@ export default function ChatComposerCore({
               aria-label={sendAriaLabel}
               className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-[13px] font-semibold transition-all max-md:h-[38px] max-md:w-[38px] max-md:shrink-0 max-md:justify-center max-md:gap-0 max-md:rounded-full max-md:px-0 max-md:py-0 ${
                 sendDisabled
-                  ? 'cursor-not-allowed bg-[#f0f0f0] text-[#b0b0b0]'
+                  ? 'cursor-not-allowed bg-canvas text-[#b0b0b0]'
                   : 'bg-ink text-white shadow-sm hover:bg-[#333] active:scale-95'
               }`}
             >

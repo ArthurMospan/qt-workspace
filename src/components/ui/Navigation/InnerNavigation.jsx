@@ -49,10 +49,10 @@ export function InnerNavigation({
                     icon={Icon}
                     className={`w-full justify-start transition-colors ${
                       active
-                        ? '!bg-[#ebebeb] !text-ink !font-bold !border-transparent'
+                        ? '!bg-line !text-ink !font-bold !border-transparent'
                         : item.danger
-                        ? 'font-medium text-red-500 hover:bg-red-50'
-                        : 'font-medium text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
+                        ? 'font-medium text-danger hover:bg-danger-soft'
+                        : 'font-medium text-muted hover:bg-line/50 hover:text-ink'
                     }`}
                   >
                     {item.label}

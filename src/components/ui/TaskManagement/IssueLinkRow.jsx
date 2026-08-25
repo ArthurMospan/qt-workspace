@@ -47,7 +47,7 @@ export default function IssueLinkRow({
     <div
       data-ui-surface="nested-card"
       data-ui-padding="row"
-      className="ui-surface group flex items-center justify-between gap-3 border border-[#f0f0f0] transition-all duration-200 hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#ECECEC]"
+      className="ui-surface group flex items-center justify-between gap-3 border border-line transition-all duration-200 hover:bg-canvas hover:ring-4 hover:ring-line"
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Pill tone="neutral" size="sm" shape="badge" uppercase>
@@ -68,7 +68,7 @@ export default function IssueLinkRow({
       {canRemove && (
         <button
           onClick={onRemove}
-          className="text-faint hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50"
+          className="text-faint hover:text-danger transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-danger-soft"
           title="Видалити зв'язок"
         >
           <Trash2 size={13} />

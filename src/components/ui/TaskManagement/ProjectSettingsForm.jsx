@@ -137,7 +137,7 @@ export default function ProjectSettingsForm({
                     placeholder={'ivan@company.com\nolena@company.com'}
                     error={Boolean(inviteEmailsError)}
                   />
-                  <p className={`text-[11px] ${inviteEmailsError ? 'text-[#ef4444]' : 'text-muted'}`}>
+                  <p className={`text-[11px] ${inviteEmailsError ? 'text-danger' : 'text-muted'}`}>
                     {inviteEmailsError || inviteEmailsHint}
                   </p>
                 </div>

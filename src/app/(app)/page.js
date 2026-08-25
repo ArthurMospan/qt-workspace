@@ -427,7 +427,7 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           href={issuePath(stats.lastAction)}
           onClick={(e) => e.stopPropagation()}
           title="Відкрити завдання"
-          className="group/activity no-nav bg-[#fafafa]/80 hover:bg-[#f0f0f0] rounded-[12px] p-3 text-[12px] text-[#2a2a2a] flex items-start gap-2.5 transition-colors"
+          className="group/activity no-nav bg-canvas/80 hover:bg-canvas rounded-[12px] p-3 text-[12px] text-ink flex items-start gap-2.5 transition-colors"
         >
           {/* No avatar and no name line when nothing recorded who acted —
               an empty bold line above the sentence read as a person whose
@@ -591,7 +591,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
     }>
       {limitReached ? (
         <div className="flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-[#eef2ff] rounded-[12px] flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-info-soft rounded-[12px] flex items-center justify-center mb-4">
             <Lock size={28} className="text-muted" />
           </div>
           <h3 className="ui-type-feature-title text-ink mb-2">Ліміт Free плану</h3>

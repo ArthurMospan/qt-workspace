@@ -53,7 +53,7 @@ export default function KpiCard({
   className = '',
 }) {
   const content = (
-    <div className={`rounded-[16px] border border-transparent bg-white p-5 transition-all duration-200 max-md:p-4 ${onClick ? 'cursor-pointer hover:ring-4 hover:ring-[#ECECEC]' : ''} ${className}`}>
+    <div className={`rounded-[16px] border border-transparent bg-white p-5 transition-all duration-200 max-md:p-4 ${onClick ? 'cursor-pointer hover:ring-4 hover:ring-line' : ''} ${className}`}>
       <div className="mb-3 flex items-start justify-between gap-2">
         {Icon && (
           <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-canvas">
@@ -61,7 +61,7 @@ export default function KpiCard({
           </div>
         )}
         {trend !== undefined && trend !== null && (
-          <span className={`flex items-center gap-1 text-[11px] font-semibold ${trend >= 0 ? 'text-[#047857]' : 'text-[#ef4444]'}`}>
+          <span className={`flex items-center gap-1 text-[11px] font-semibold ${trend >= 0 ? 'text-success' : 'text-danger'}`}>
             {trend >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
             {Math.abs(trend)}%
           </span>

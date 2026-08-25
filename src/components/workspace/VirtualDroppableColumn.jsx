@@ -138,7 +138,7 @@ export default function VirtualDroppableColumn({
           }}
           {...provided.droppableProps}
           onScroll={measureViewport}
-          className={`${className} ${snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''}`}
+          className={`${className} ${snapshot.isDraggingOver ? 'bg-chart-track/50' : ''}`}
         >
           <div
             className="relative shrink-0"

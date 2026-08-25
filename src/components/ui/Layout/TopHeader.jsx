@@ -163,7 +163,7 @@ export default function TopHeader({
   };
 
   return (
-    <header className={`h-[56px] shrink-0 bg-white flex items-center pl-[12px] pr-[8px] sm:pl-[16px] sm:pr-[10px] justify-between z-30 w-full ${!hideBorder ? 'border-b border-[#f0f0f0]' : ''}`}>
+    <header className={`h-[56px] shrink-0 bg-white flex items-center pl-[12px] pr-[8px] sm:pl-[16px] sm:pr-[10px] justify-between z-30 w-full ${!hideBorder ? 'border-b border-line' : ''}`}>
       <div className="flex-1 min-w-0 flex items-center">
         {renderLeft()}
       </div>
@@ -192,7 +192,7 @@ export default function TopHeader({
           )}
 
           {mode === 'chat' && (
-            <div className="flex items-center gap-1.5 mr-2 bg-canvas px-2 py-1 rounded-full cursor-pointer hover:bg-[#efefef] transition-colors">
+            <div className="flex items-center gap-1.5 mr-2 bg-canvas px-2 py-1 rounded-full cursor-pointer hover:bg-line transition-colors">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
               <span className="text-[11px] font-bold text-ink">В мережі</span>
             </div>

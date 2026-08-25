@@ -95,7 +95,7 @@ export default function AttachmentRow({
     <div
       data-ui-surface="nested-card"
       data-ui-padding="compact-row"
-      className="ui-surface flex min-w-0 items-center gap-3 border border-[#f0f0f0] transition-all duration-200 hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#ECECEC]"
+      className="ui-surface flex min-w-0 items-center gap-3 border border-line transition-all duration-200 hover:bg-canvas hover:ring-4 hover:ring-line"
     >
       {kind === 'audio' ? (
         // The row *is* the player. Nothing here opens a viewer: the file is

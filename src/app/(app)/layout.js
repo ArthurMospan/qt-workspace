@@ -122,7 +122,7 @@ export default function WorkspaceLayout({ children }) {
   // 1. Auth loading
   if (authLoading || orgLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5]">
+      <div className="w-full h-full flex items-center justify-center bg-canvas">
         <div className="w-8 h-8 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
       </div>
     );
@@ -135,7 +135,7 @@ export default function WorkspaceLayout({ children }) {
     const errorKind = organizationLoadErrorKind(orgError);
     const accessFailure = errorKind === 'permission-denied' || errorKind === 'not-found';
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5] p-6">
+      <div className="w-full h-full flex items-center justify-center bg-canvas p-6">
         <div data-ui-surface="local" className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
           <h1 className="ui-type-section-title text-ink mb-2">
             {errorKind === 'permission-denied'
@@ -178,7 +178,7 @@ export default function WorkspaceLayout({ children }) {
   // 3. Authenticated but not in any org → redirect immediately to onboarding
   if (noOrg) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#f5f5f5]">
+      <div className="w-full h-full flex items-center justify-center bg-canvas">
         <div className="w-8 h-8 border-[3px] border-line border-t-[#1f1f1f] rounded-full animate-spin" />
       </div>
     );
@@ -193,7 +193,7 @@ export default function WorkspaceLayout({ children }) {
     const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL;
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-canvas p-8 text-center">
-        <div className="w-[64px] h-[64px] bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6">
+        <div className="w-[64px] h-[64px] bg-danger-soft text-danger rounded-full flex items-center justify-center mb-6">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </div>
         <h1 className="ui-type-page-title text-ink mb-2">Доступ заборонено</h1>
@@ -206,7 +206,7 @@ export default function WorkspaceLayout({ children }) {
             Перейти на клієнтський портал
           </a>
         ) : (
-          <p className="text-[13px] text-red-600">URL клієнтського порталу не налаштовано. Зверніться до адміністратора.</p>
+          <p className="text-[13px] text-danger">URL клієнтського порталу не налаштовано. Зверніться до адміністратора.</p>
         )}
       </div>
     );
@@ -231,13 +231,13 @@ export default function WorkspaceLayout({ children }) {
     <IssueReadStateBridge />
     <WorkspaceDocumentTitle />
     <FaviconBadge />
-    <Suspense fallback={<div className="w-full h-full bg-[#f5f5f5]" />}>
+    <Suspense fallback={<div className="w-full h-full bg-canvas" />}>
     <WorkspaceOrganizationRouteGuard>
     {/* The grey is the gutter *between* the floating panels, and on a phone
         there are no floating panels: the content fills the width edge to edge.
         Below md the shell is the same white as the pane, so the bar floats over
         the page instead of over a wall of its own. */}
-    <div className="w-full h-full flex overflow-hidden bg-white md:bg-[#f5f5f5]">
+    <div className="w-full h-full flex overflow-hidden bg-white md:bg-canvas">
       {/* The first stop for Tab, invisible until it is focused. */}
       <a href="#qt-main" className="qt-skip-link rounded-[10px] bg-ink px-[14px] py-[8px] text-[13px] font-bold text-white">
         Перейти до вмісту

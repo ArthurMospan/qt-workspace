@@ -224,7 +224,7 @@ export default function ChannelInfoPanel({
                     Додати всіх учасників
                   </button>
                   {membersOutChannel.length > 0 && (
-                    <div className="border-t border-[#f0f0f0] pt-2 max-h-[140px] overflow-y-auto custom-scrollbar flex flex-col gap-1">
+                    <div className="border-t border-line pt-2 max-h-[140px] overflow-y-auto custom-scrollbar flex flex-col gap-1">
                       {membersOutChannel.map(m => (
                         <button
                           key={m.id || m.uid}
@@ -283,7 +283,7 @@ export default function ChannelInfoPanel({
                   key={message.id}
                   type="button"
                   onClick={() => onJumpToMessage(message.id)}
-                  className="rounded-xl border border-line/70 bg-white p-3 text-left transition-colors hover:border-[#cfcfcf]"
+                  className="rounded-xl border border-line/70 bg-white p-3 text-left transition-colors hover:border-faint"
                 >
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <span className="truncate text-[11px] font-semibold text-muted">{message.user}</span>
@@ -315,7 +315,7 @@ export default function ChannelInfoPanel({
                 value={materialSearch}
                 onChange={event => setMaterialSearch(event.target.value)}
                 placeholder="Пошук матеріалів..."
-                className="w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-[12px] text-ink outline-none transition-colors hover:border-[#cfcfcf] focus:border-[#cfcfcf]"
+                className="w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-[12px] text-ink outline-none transition-colors hover:border-faint focus:border-faint"
               />
             </label>
             <div className="flex gap-1">

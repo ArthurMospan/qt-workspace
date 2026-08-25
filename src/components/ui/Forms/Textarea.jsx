@@ -42,10 +42,10 @@ export const Textarea = forwardRef(({
         className={`
           ui-textarea w-full border rounded-[10px] ${SURFACES[surface] ?? SURFACES.canvas}
           text-[13px] text-ink focus:border-ink outline-none
-          transition-colors placeholder:text-[#a3a3a3] resize-none
+          transition-colors placeholder:text-muted resize-none
           disabled:opacity-50 disabled:cursor-not-allowed
           px-[12px] py-[10px]
-          ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
+          ${error ? 'border-danger focus:border-danger bg-danger-soft' : ''}
           ${className}
         `}
         {...props}

@@ -150,7 +150,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
     // lift shadow below — and the cursor is by definition over the card being
     // dragged. Dropping the ring while lifted lets the lift actually show, and
     // stops the shadow swapping abruptly the moment the card is released.
-    const hoverRing = lifted || !interactive || selected ? '' : 'hover:!ring-4 hover:!ring-[#ECECEC]';
+    const hoverRing = lifted || !interactive || selected ? '' : 'hover:!ring-4 hover:!ring-line';
     const cardClassName = `relative group overflow-hidden rounded-[16px] bg-white ${interactive ? 'cursor-pointer' : ''} select-none transition-[box-shadow,border-color] duration-200 flex flex-col justify-between ${hoverRing} ${selected ? 'ring-2 ring-ink' : ''} shrink-0 ${className}`;
     // `none` is the library asking for an instant snap and cannot be combined
     // with further entries — appending to it would void the whole declaration.
@@ -275,22 +275,22 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           </div>
 
           {/* Row 2: Title */}
-          <p className="text-[13px] font-bold text-[#1a1a1a] leading-[1.35] line-clamp-3 mb-[12px]">
+          <p className="text-[13px] font-bold text-ink leading-[1.35] line-clamp-3 mb-[12px]">
             {issue.title}
           </p>
 
           {/* Real child issues roll up into the parent card. */}
           {childAll > 0 && (
-            <div className="mb-[12px] flex items-center gap-[8px] select-none text-[10px] text-[#555555] font-medium">
+            <div className="mb-[12px] flex items-center gap-[8px] select-none text-[10px] text-muted font-medium">
               <span className="shrink-0">
-                <strong className="text-[#1a1a1a] font-semibold">{childDone}/{childAll}</strong> підзавдань
+                <strong className="text-ink font-semibold">{childDone}/{childAll}</strong> підзавдань
               </span>
               <div className="flex items-center gap-[3px] shrink-0">
                 {Array.from({ length: childAll }).map((_, idx) => (
                   <div 
                     key={idx}
                     className={`h-[2.5px] w-[12px] rounded-full transition-all duration-300 ${
-                      idx < childDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
+                      idx < childDone ? 'bg-ink' : 'bg-chart-track'
                     }`}
                   />
                 ))}
@@ -369,7 +369,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           {/* Row 5: Due date (thinner medium weight, lighter text, thinner stroke width) */}
           {due && (
             <div className={`flex items-center gap-[5px] mb-[12px] text-[11px] font-medium ${
-              isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'
+              isOverdue ? 'text-danger' : 'text-muted'
             }`}>
               <CalendarIcon size={11} strokeWidth={1.8} className="shrink-0" />
               <span>{formatDate(due, { timeZone })}</span>
@@ -378,7 +378,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
           )}
 
           {/* Row 6: Footer with task participants and flat modern indigo chat indicator */}
-          <div className="border-t border-[#f5f5f5] pt-[10px] flex items-center justify-between gap-2 mt-auto">
+          <div className="border-t border-line pt-[10px] flex items-center justify-between gap-2 mt-auto">
             <div className="flex -space-x-[8px] overflow-visible" aria-label="Учасники завдання">
               {participants.length > 0 ? (
                 participants.slice(0, 5).map(({ id, member, roles }) => {

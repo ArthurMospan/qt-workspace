@@ -19,8 +19,8 @@ import { Check, CircleHelp, X } from 'lucide-react';
 
 const CHOICES = [
   { value: 'accepted', label: 'Буду', icon: Check, activeClass: 'border-emerald-600 bg-emerald-600 text-white' },
-  { value: 'tentative', label: 'Можливо', icon: CircleHelp, activeClass: 'border-amber-500 bg-amber-500 text-white' },
-  { value: 'declined', label: 'Не буду', icon: X, activeClass: 'border-red-500 bg-red-500 text-white' },
+  { value: 'tentative', label: 'Можливо', icon: CircleHelp, activeClass: 'border-warning-solid bg-warning-solid text-white' },
+  { value: 'declined', label: 'Не буду', icon: X, activeClass: 'border-danger bg-danger-solid text-white' },
 ];
 
 // `off` is keyed by the background the group sits on, because an unselected

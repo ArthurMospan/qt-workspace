@@ -470,7 +470,7 @@ export default function AgileBoard({
                   <div
                     key={col.id}
                     data-ui-surface="local"
-                    className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-[#f0f0f2] transition-colors"
+                    className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-line transition-colors"
                     onClick={() => toggleColumnCollapse(col.id)}
                     // The strip holds the chevron button, so it is not a
                     // `<button>` itself; it still answers the same two keys.
@@ -550,8 +550,11 @@ export default function AgileBoard({
           {swimlanes.map(lane => (
             <div key={lane.id} className={`mb-4 ${swimlanes.length === 1 ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
               
+              {/* A sticky heading strip, not a card: it holds the swimlane's
+                  name while the board scrolls sideways under it. Marked local
+                  for the same reason the other structural one-offs are. */}
               {swimlanes.length > 1 && (
-                <div className="sticky left-0 flex items-center bg-[#f0f0f0] rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]">
+                <div data-ui-surface="local" className="sticky left-0 flex items-center bg-canvas rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]">
                   <h3 className="ui-type-item-title text-ink">{lane.title}</h3>
                   <Pill tone="count" size="md" className="ml-2">{lane.issues.length}</Pill>
                 </div>
@@ -583,7 +586,7 @@ export default function AgileBoard({
                         // Its start edge lands on the gutter, so the whole
                         // 48px reads. Above md the scroller does not snap at
                         // all and this changes nothing.
-                        className={`flex flex-col w-[48px] shrink-0 snap-start bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-[#f0f0f2] transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`}
+                        className={`flex flex-col w-[48px] shrink-0 snap-start bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-line transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`}
                         style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}
                         onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}
                         // Only the single-swimlane strip is clickable at all;
@@ -620,7 +623,7 @@ export default function AgileBoard({
                   }
 
                   return (
-                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-canvas hover:bg-[#f0f0f2] transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px] h-full overflow-hidden' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}>
+                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-canvas hover:bg-line transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px] h-full overflow-hidden' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}>
                       
                       {/* Integrated header if no swimlanes */}
                       {swimlanes.length === 1 && (
@@ -718,7 +721,7 @@ export default function AgileBoard({
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
                                 className={`qt-nav-scroll flex-1 p-[8px] flex flex-col transition-colors hide-scrollbar ${swimlanes.length === 1 ? 'rounded-b-[16px] overflow-y-auto' : 'rounded-[12px]'} ${
-                                  snapshot.isDraggingOver ? 'bg-[#e5e7eb]/50' : ''
+                                  snapshot.isDraggingOver ? 'bg-chart-track/50' : ''
                                 }`}
                               >
                                 {colIssues.map((issue, index) => renderIssueCard(issue, index))}

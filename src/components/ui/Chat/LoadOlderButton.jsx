@@ -21,7 +21,7 @@ export default function LoadOlderButton({ onClick, children = 'Показати 
       <button
         type="button"
         onClick={onClick}
-        className="rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-[#ebebeb] hover:text-ink"
+        className="rounded-full bg-canvas px-3 py-1 text-[12px] font-semibold text-muted transition-colors hover:bg-line hover:text-ink"
       >
         {children}
       </button>

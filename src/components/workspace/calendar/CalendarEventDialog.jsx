@@ -326,7 +326,7 @@ export function CalendarEventDetails({
                 <span className="h-8 w-8 overflow-hidden rounded-full"><UserAvatar user={member || { name: memberLabel(member || {}) }} size="md" /></span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[12px] font-bold text-ink">{memberLabel(member || {})}</p>
-                  <p className={`text-[10px] font-semibold ${state === 'accepted' ? 'text-emerald-600' : state === 'declined' ? 'text-red-500' : state === 'tentative' ? 'text-amber-600' : 'text-muted'}`}>{responseLabel(state)}</p>
+                  <p className={`text-[10px] font-semibold ${state === 'accepted' ? 'text-success' : state === 'declined' ? 'text-danger' : state === 'tentative' ? 'text-warning' : 'text-muted'}`}>{responseLabel(state)}</p>
                 </div>
               </div>
             );
@@ -403,7 +403,7 @@ export function CalendarEventDetails({
           )}
         </div>
       )}
-      {error && <p className="text-[12px] font-medium text-red-600">{error}</p>}
+      {error && <p className="text-[12px] font-medium text-danger">{error}</p>}
     </div>
   );
 }
@@ -818,7 +818,7 @@ export default function CalendarEventDialog({
                 return (
                   <Pill key={uid} tone="neutral" size="wide-sm" weight="medium">
                     {memberLabel(member || {})}
-                    <span className={state === 'accepted' ? 'text-emerald-600' : state === 'declined' ? 'text-red-500' : 'text-muted'}>
+                    <span className={state === 'accepted' ? 'text-success' : state === 'declined' ? 'text-danger' : 'text-muted'}>
                       · {state === 'accepted' ? 'буде' : state === 'tentative' ? 'можливо' : state === 'declined' ? 'не буде' : 'очікуємо'}
                     </span>
                   </Pill>
@@ -858,7 +858,7 @@ export default function CalendarEventDialog({
           />
         </div>
 
-        {error && <p className="text-[12px] font-medium text-red-600">{error}</p>}
+        {error && <p className="text-[12px] font-medium text-danger">{error}</p>}
       </form>
     </Dialog>
   );

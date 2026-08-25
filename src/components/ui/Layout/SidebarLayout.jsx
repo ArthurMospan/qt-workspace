@@ -84,7 +84,7 @@ export function SidebarLayout({
 
         {/* Main Content container */}
         {wrapsContent ? (
-          <div className={`${mobilePane === 'sidebar' ? 'hidden' : 'flex'} md:flex flex-1 bg-white flex-col overflow-hidden relative rounded-[16px] ${hasBorder ? 'border border-[#f0f0f0]' : ''}`}>
+          <div className={`${mobilePane === 'sidebar' ? 'hidden' : 'flex'} md:flex flex-1 bg-white flex-col overflow-hidden relative rounded-[16px] ${hasBorder ? 'border border-line' : ''}`}>
             {children}
           </div>
         ) : children}

@@ -685,9 +685,9 @@ export default function YouTrackImportCard({
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-canvas">
                     <div className="h-full rounded-full bg-ink transition-[width]" style={{ width: `${progress}%` }} />
                   </div>
-                  {job.lastError && <p className="mt-2 break-words text-[11px] text-red-500">{job.lastError}</p>}
+                  {job.lastError && <p className="mt-2 break-words text-[11px] text-danger">{job.lastError}</p>}
                   {job.warnings?.length > 0 && (
-                    <p className="mt-2 text-[11px] text-amber-600">
+                    <p className="mt-2 text-[11px] text-warning">
                       {job.warnings.length} {plural(job.warnings.length, ['попередження', 'попередження', 'попереджень'])}. Дані без помилок продовжують імпортуватися.
                     </p>
                   )}

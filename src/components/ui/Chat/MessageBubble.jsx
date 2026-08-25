@@ -142,7 +142,7 @@ export default function MessageBubble({
   if (msg.isSystem) {
     return (
       <div className="flex justify-center my-3">
-        <span className="text-[12px] text-muted bg-white px-3 py-1 rounded-full border border-[#f0f0f0]">
+        <span className="text-[12px] text-muted bg-white px-3 py-1 rounded-full border border-line">
           {msg.text}
         </span>
       </div>

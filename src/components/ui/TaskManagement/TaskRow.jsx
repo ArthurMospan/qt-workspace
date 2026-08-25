@@ -233,7 +233,7 @@ export default function TaskRow({
 
   const blockedBadge = isBlocked ? (
     <span
-      className="flex items-center gap-[4px] text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 bg-[#fef2f2] text-[#ef4444]"
+      className="flex items-center gap-[4px] text-[10px] font-medium px-[6px] py-[1.5px] rounded-[4px] shrink-0 bg-danger-soft text-danger"
       title="Заблоковано іншою задачею"
     >
       <Lock size={10} />
@@ -242,7 +242,7 @@ export default function TaskRow({
   ) : null;
 
   const sprintBadge = task.sprintId ? (
-    <span className="inline-flex items-center px-[6px] py-[1.5px] bg-[#f0f0f0] text-[#555555] rounded-[4px] text-[10px] font-medium shrink-0">
+    <span className="inline-flex items-center px-[6px] py-[1.5px] bg-canvas text-muted rounded-[4px] text-[10px] font-medium shrink-0">
       {sprints.find(s => s.id === task.sprintId)?.name || 'Спринт'}
     </span>
   ) : null;
@@ -265,8 +265,8 @@ export default function TaskRow({
   // the right of them need. The phone gets the readable scale instead.
   const renderDue = dense => (due ? (
     <div className={dense
-      ? `flex items-center gap-[3px] text-[9px] font-bold shrink-0 ml-1 ${isOverdue ? 'text-[#ef4444]' : 'text-[#a3a3a3]'}`
-      : `flex items-center gap-[4px] text-[11px] font-semibold shrink-0 ${isOverdue ? 'text-[#ef4444]' : 'text-muted'}`}>
+      ? `flex items-center gap-[3px] text-[9px] font-bold shrink-0 ml-1 ${isOverdue ? 'text-danger' : 'text-muted'}`
+      : `flex items-center gap-[4px] text-[11px] font-semibold shrink-0 ${isOverdue ? 'text-danger' : 'text-muted'}`}>
       <CalendarIcon size={dense ? 10 : 12} strokeWidth={2} className="shrink-0" />
       <span>{fmtDate(due, timeZone)}</span>
       {isOverdue && (
@@ -279,15 +279,15 @@ export default function TaskRow({
 
   const renderChildProgress = dense => (childAll > 0 ? (
     <div className={dense
-      ? 'flex items-center gap-[4px] text-[9px] text-[#555555] font-bold shrink-0 ml-1'
+      ? 'flex items-center gap-[4px] text-[9px] text-muted font-bold shrink-0 ml-1'
       : 'flex items-center gap-[5px] text-[11px] text-muted font-semibold shrink-0'}>
-      <span className="text-[#1a1a1a]">{childDone}/{childAll} підзавдань</span>
+      <span className="text-ink">{childDone}/{childAll} підзавдань</span>
       <div className="flex gap-[2px]">
         {Array.from({ length: childAll }).map((_, idx) => (
           <div
             key={idx}
             className={`${dense ? 'h-[1.5px] w-[6px]' : 'h-[2px] w-[8px]'} rounded-full transition-all duration-300 ${
-              idx < childDone ? 'bg-[#1a1a1a]' : 'bg-[#e5e7eb]'
+              idx < childDone ? 'bg-ink' : 'bg-chart-track'
             }`}
           />
         ))}
@@ -339,7 +339,7 @@ export default function TaskRow({
         event.preventDefault();
         handleRowClick(event);
       }}
-      className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-[#f0f0f0] transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-[#fcfcfc] ${selected ? 'ring-2 ring-ink' : 'hover:!ring-4 hover:!ring-[#ECECEC]'} ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
+      className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-line transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-canvas ${selected ? 'ring-2 ring-ink' : 'hover:!ring-4 hover:!ring-line'} ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
     >
       {/* ── One line, from md up ───────────────────────────────────────────── */}
       <div className="hidden items-center justify-between w-full gap-[16px] min-w-0 md:flex">
@@ -370,7 +370,7 @@ export default function TaskRow({
 
           {/* Title & Chat Indicator (Bottom Row) */}
           <div className="flex items-center gap-[8px] min-w-0">
-            <p className="text-[13px] font-bold text-[#1a1a1a] truncate" title={task.title}>
+            <p className="text-[13px] font-bold text-ink truncate" title={task.title}>
               {task.title}
             </p>
             {countersNode}
@@ -457,7 +457,7 @@ export default function TaskRow({
         </div>
 
         <p
-          className="line-clamp-2 text-[14px] font-bold leading-[19px] text-[#1a1a1a] [overflow-wrap:anywhere]"
+          className="line-clamp-2 text-[14px] font-bold leading-[19px] text-ink [overflow-wrap:anywhere]"
           title={task.title}
         >
           {task.title}

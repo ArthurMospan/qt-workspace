@@ -1716,7 +1716,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       compact
                       disabled={isArchived}
                       hideIcon 
-                      inputClassName={`${compactInputClass} ${isOverdue ? 'text-[#ef4444]' : dueStr ? 'text-ink' : 'text-faint'}`}
+                      inputClassName={`${compactInputClass} ${isOverdue ? 'text-danger' : dueStr ? 'text-ink' : 'text-faint'}`}
                       value={isEditing ? (draft.dueDate || '') : (issue.dueDate || '')}
                       onChange={(val) => {
                         if (isEditing) setDraft(d => ({ ...d, dueDate: val }));
@@ -2131,7 +2131,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   {childIssues.length > 0 && (
                     <div className="mb-1 h-[4px] overflow-hidden rounded-full bg-line">
                       <div
-                        className="h-full rounded-full bg-[#10b981] transition-all"
+                        className="h-full rounded-full bg-success-solid transition-all"
                         style={{ width: `${(childIssuesDone / childIssues.length) * 100}%` }}
                       />
                     </div>
@@ -2216,7 +2216,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                 Це старий формат. Нові чеклісти додавайте як checkbox у описі задачі.
               </p>
               <div className="h-[4px] bg-line rounded-full mb-1 overflow-hidden">
-                <div className="h-full bg-[#10b981] rounded-full transition-all" style={{ width: `${(checklistDone / checklistAll) * 100}%` }} />
+                <div className="h-full bg-success-solid rounded-full transition-all" style={{ width: `${(checklistDone / checklistAll) * 100}%` }} />
               </div>
               <div className="flex flex-col gap-[6px]">
                  {(issue.subtasks || []).map((s, i) => (
@@ -2224,10 +2224,10 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     key={s.id || i}
                     data-ui-surface="nested-card"
                     data-ui-padding="row"
-                    className="ui-surface flex items-center gap-3 border border-[#f0f0f0]"
+                    className="ui-surface flex items-center gap-3 border border-line"
                   >
                     {s.done
-                      ? <CheckSquare size={16} className="shrink-0 text-[#10b981]" />
+                      ? <CheckSquare size={16} className="shrink-0 text-success" />
                       : <Square size={16} className="shrink-0 text-faint" />}
                     <span className={`text-[13px] font-medium ${s.done ? 'line-through text-faint' : 'text-ink'}`}>
                       {s.title}

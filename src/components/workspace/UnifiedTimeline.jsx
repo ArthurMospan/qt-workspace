@@ -281,7 +281,7 @@ function PendingMessage({ draft, members, onRetry, onDiscard }) {
       <div className="col-start-1 row-start-2 mt-1 flex flex-row-reverse items-center gap-1 justify-self-end">
         {failed ? (
           <>
-            <span className="px-1 text-[10px] font-medium text-red-500">Не надіслано</span>
+            <span className="px-1 text-[10px] font-medium text-danger">Не надіслано</span>
             {/* The same two controls the row under a real message carries, in
                 the same size and shape — a failed message is a message, and
                 sending it again is one of the things you do to one. */}
@@ -289,7 +289,7 @@ function PendingMessage({ draft, members, onRetry, onDiscard }) {
             <IconAction label="Прибрати повідомлення" icon={Trash2} size="micro" composition="chat-micro-action" appearance="quiet-danger" shape="micro" onClick={onDiscard} title="Прибрати" />
           </>
         ) : (
-          <span className="inline-flex items-center gap-1 px-1 text-[10px] font-medium text-[#a1a1a1]">
+          <span className="inline-flex items-center gap-1 px-1 text-[10px] font-medium text-muted">
             <Clock size={11} aria-hidden />
             Надсилається
           </span>
@@ -1394,7 +1394,7 @@ export default function UnifiedTimeline({
                         four messages a minute apart used to stamp «20:47» four
                         times. Inside a run it is there on hover, for the one
                         time somebody wants the exact minute. */}
-                    <span className={`px-1 text-[10px] font-medium text-[#a1a1a1] transition-opacity ${endsRun || item.editedAt ? '' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`}>
+                    <span className={`px-1 text-[10px] font-medium text-muted transition-opacity ${endsRun || item.editedAt ? '' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`}>
                       {fmtClock(item.createdAt)}{item.editedAt ? ' · змінено' : ''}
                     </span>
                     {/* Read receipt на своїх повідомленнях: ✓ надіслано / ✓✓ прочитано іншими.
@@ -1409,7 +1409,7 @@ export default function UnifiedTimeline({
                       >
                         {commentReaders(item, myReceiptMarks).length > 0
                           ? <CheckCheck size={13} className="text-muted" aria-label="Прочитано" />
-                          : <Check size={13} className="text-[#a1a1a1]" aria-label="Надіслано" />}
+                          : <Check size={13} className="text-muted" aria-label="Надіслано" />}
                       </span>
                     )}
                     {!isArchived && (
@@ -1541,7 +1541,7 @@ export default function UnifiedTimeline({
               real blur, with a hairline to end it. */}
           {(replyTo || editingComment) && (
             <div data-ui-surface="local" className="mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl">
-              <div className="min-w-0 flex-1 border-l-2 border-[#8d8d8d] pl-2">
+              <div className="min-w-0 flex-1 border-l-2 border-muted pl-2">
                 <div className="text-[11px] font-bold text-ink">{editingComment ? 'Редагування повідомлення' : `Відповідь для ${replyTo.authorName || 'учасника'}`}</div>
                 <div className="truncate text-[11px] text-muted">{editingComment?.text || replyTo?.text || 'Вкладення'}</div>
               </div>

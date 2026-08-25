@@ -77,7 +77,7 @@ function StatusBubble({ emoji, text, onClick }) {
     <Shell
       {...(onClick ? { type: 'button', onClick, title: 'Змінити статус' } : {})}
       data-ui-surface="local"
-      className={`absolute top-[-20px] left-[65%] z-20 flex min-w-[50px] max-w-[180px] items-center gap-[6px] rounded-[18px] border border-[#f0f0f0] bg-white px-[12px] py-[8px] shadow-lg ${
+      className={`absolute top-[-20px] left-[65%] z-20 flex min-w-[50px] max-w-[180px] items-center gap-[6px] rounded-[18px] border border-line bg-white px-[12px] py-[8px] shadow-lg ${
         onClick ? 'cursor-pointer transition-colors hover:border-line hover:bg-canvas' : ''
       }`}
     >
@@ -235,7 +235,7 @@ export default function ProfileView({ user, onClose }) {
             <p className="text-[14px] text-muted font-medium">
               {positionName}
             </p>
-            <p className={`text-[11px] font-medium ${isOnline ? 'text-[#10b981]' : 'text-faint'}`}>
+            <p className={`text-[11px] font-medium ${isOnline ? 'text-success' : 'text-faint'}`}>
               {presenceLabel}
             </p>
           </div>

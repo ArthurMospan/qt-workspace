@@ -409,7 +409,7 @@ function ThreadSidebar({
               <span className="font-semibold text-[13px] text-ink">{parentMsg.user}</span>
               <span className="text-[10px] text-muted">{parentMsg.time}</span>
             </div>
-            <p className="text-[13px] text-[#333] leading-relaxed line-clamp-4">{parentMsg.text}</p>
+            <p className="text-[13px] text-ink leading-relaxed line-clamp-4">{parentMsg.text}</p>
           </div>
         </div>
       </div>

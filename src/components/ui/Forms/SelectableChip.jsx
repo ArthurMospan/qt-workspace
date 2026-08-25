@@ -29,7 +29,7 @@ const STATES = {
   },
   label: {
     on: '',
-    off: 'bg-ink/5 text-[#404040] hover:bg-ink/10',
+    off: 'bg-ink/5 text-ink hover:bg-ink/10',
   },
 };
 

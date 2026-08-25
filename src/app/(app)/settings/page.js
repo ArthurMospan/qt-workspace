@@ -263,8 +263,8 @@ function Row({ label, desc, children, danger = false }) {
       switchOnly ? 'flex-row items-center' : 'flex-col items-stretch'
     }`}>
       <div className="min-w-0 flex-1">
-        <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-red-600' : 'text-ink'}`}>{label}</p>
-        {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-red-400' : 'text-muted'}`}>{desc}</p>}
+        <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-danger' : 'text-ink'}`}>{label}</p>
+        {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-danger' : 'text-muted'}`}>{desc}</p>}
       </div>
       <div className={switchOnly ? 'shrink-0' : 'w-full sm:w-auto sm:shrink-0'}>{children}</div>
     </div>
@@ -3465,29 +3465,29 @@ export default function SettingsPage() {
                 <div className="flex flex-col gap-4">
                   <div>
                     <div className="flex items-center justify-between text-[13px] font-medium mb-2">
-                      <span className="text-[#4a4a4a]">Учасники команди</span>
+                      <span className="text-ink">Учасники команди</span>
                       <span className="text-ink">{members.length} / Необмежено</span>
                     </div>
-                    <div className="h-[6px] bg-[#f0f0f0] rounded-full overflow-hidden">
-                      <div className="h-full bg-[#10b981] rounded-full" style={{ width: '15%' }} />
+                    <div className="h-[6px] bg-canvas rounded-full overflow-hidden">
+                      <div className="h-full bg-success-solid rounded-full" style={{ width: '15%' }} />
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-[13px] font-medium mb-2">
-                      <span className="text-[#4a4a4a]">Активні проєкти</span>
+                      <span className="text-ink">Активні проєкти</span>
                       <span className="text-ink">{projectsCount} / {isPro ? 'Необмежено' : projectLimit}</span>
                     </div>
-                    <div className="h-[6px] bg-[#f0f0f0] rounded-full overflow-hidden">
-                      <div className={`h-full ${isPro ? 'bg-[#10b981]' : (projectsCount >= projectLimit ? 'bg-[#ef4444]' : 'bg-[#eab308]')} rounded-full transition-all`} style={{ width: `${projectsPercent}%` }} />
+                    <div className="h-[6px] bg-canvas rounded-full overflow-hidden">
+                      <div className={`h-full ${isPro ? 'bg-success-solid' : (projectsCount >= projectLimit ? 'bg-danger-solid' : 'bg-warning-solid')} rounded-full transition-all`} style={{ width: `${projectsPercent}%` }} />
                     </div>
                     {!isPro && projectsCount >= projectLimit && (
-                      <p className="text-[11px] text-[#ef4444] mt-1 font-medium">Ліміт досягнуто. Перейдіть на Pro для створення нових проєктів.</p>
+                      <p className="text-[11px] text-danger mt-1 font-medium">Ліміт досягнуто. Перейдіть на Pro для створення нових проєктів.</p>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-4 bg-[#fcfcfc] border-t border-line flex justify-end">
+              <div className="px-6 py-4 bg-canvas border-t border-line flex justify-end">
                 {isPro ? (
                   <Button onClick={() => handleUpgradePlan('free')} disabled={upgrading} loading={upgrading} style="secondary" size="lg">
                     {upgrading ? 'Завантаження...' : 'Скасувати підписку'}
@@ -3521,13 +3521,13 @@ export default function SettingsPage() {
           <Button onClick={() => setShowInviteModal(true)} style="primary" size="md" icon={Plus}>Запросити</Button>
         ) : null}>
           <Surface preset="card" padding="none" className="overflow-hidden relative z-10">
-            <div className="flex flex-col divide-y divide-[#f0f0f0] rounded-[16px]">
+            <div className="flex flex-col divide-y divide-line rounded-[16px]">
               {directoryMembers.map((member, i) => {
                 const isMe = member.id === (currentUser?.uid || currentUser?.id);
                 const positionLabel = positions.find(position => position.id === member.positionId)?.label || 'Без посади';
                 const deactivated = !isActiveMember(member);
                 return (
-                  <div key={member.id} className={`flex items-center justify-between gap-4 px-5 py-4 hover:bg-[#fcfcfc] transition-colors ${i === 0 ? 'rounded-t-[16px]' : ''} ${i === directoryMembers.length - 1 ? 'rounded-b-[16px]' : ''} ${deactivated ? 'opacity-60' : ''}`}>
+                  <div key={member.id} className={`flex items-center justify-between gap-4 px-5 py-4 hover:bg-canvas transition-colors ${i === 0 ? 'rounded-t-[16px]' : ''} ${i === directoryMembers.length - 1 ? 'rounded-b-[16px]' : ''} ${deactivated ? 'opacity-60' : ''}`}>
                     <div className="flex min-w-0 items-center gap-3">
                       <UserAvatar user={member} size="lg" />
                       <div className="min-w-0">

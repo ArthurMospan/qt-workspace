@@ -79,7 +79,7 @@ function fmtH(min) {
 }
 
 function FilterDivider() {
-  return <span className="w-[1px] h-[16px] bg-[#e3e3e3] mx-[2px] shrink-0" />;
+  return <span className="w-[1px] h-[16px] bg-line mx-[2px] shrink-0" />;
 }
 
 // ── ОГЛЯД: стан воркспейсу «на зараз» ────────────────────────────────
@@ -433,7 +433,7 @@ function AnalyticsContent({
                 header: 'Прострочено',
                 size: 'figure',
                 cell: row => (row.overdue > 0
-                  ? <span className="font-semibold text-[#ef4444]">{row.overdue}</span>
+                  ? <span className="font-semibold text-danger">{row.overdue}</span>
                   : <span className="text-faint">—</span>),
               },
               { id: 'time', header: `Час · ${period}д`, size: 'figure', cell: row => fmtH(row.minutes) },

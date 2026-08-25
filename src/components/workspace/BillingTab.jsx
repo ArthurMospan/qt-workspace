@@ -522,14 +522,14 @@ function InvoicePreview({
               <tbody>
                 {invoiceItems.map((item, index) => (
                   <tr key={item.itemId || item.issueId || item.key || index}>
-                    <td className="py-3 border-b border-[#f0f0f0]">
+                    <td className="py-3 border-b border-line">
                       <p className="text-[13px] font-medium text-ink">{item.title}</p>
                       <p className="text-[10px] text-muted">{item.key} · {item.status}</p>
                     </td>
-                    <td className="py-3 border-b border-[#f0f0f0] text-center text-[12px] text-muted">
+                    <td className="py-3 border-b border-line text-center text-[12px] text-muted">
                       {item.minutes > 0 ? fmtMin(item.minutes) : '—'}
                     </td>
-                    <td className="py-3 border-b border-[#f0f0f0] text-right text-[13px] font-semibold text-ink">
+                    <td className="py-3 border-b border-line text-right text-[13px] font-semibold text-ink">
                       {fmtMoney(item.price, invoice.currency)}
                     </td>
                   </tr>
@@ -545,7 +545,7 @@ function InvoicePreview({
               {invoice.discount > 0 && (
                 <div className="flex w-full justify-between sm:w-[240px]">
                   <span className="text-[12px] text-muted">Знижка ({invoice.discountPct}%)</span>
-                  <span className="text-[13px] font-medium text-green-600">−{fmtMoney(invoice.discount, invoice.currency)}</span>
+                  <span className="text-[13px] font-medium text-success">−{fmtMoney(invoice.discount, invoice.currency)}</span>
                 </div>
               )}
               {invoice.tax > 0 && (
@@ -561,9 +561,9 @@ function InvoicePreview({
             </div>
 
             {invoice.notes && (
-              <div className="mt-8 pt-6 border-t border-[#f0f0f0]">
+              <div className="mt-8 pt-6 border-t border-line">
                 <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Примітки</p>
-                <p className="text-[12px] text-[#4a4a4a] whitespace-pre-line">{invoice.notes}</p>
+                <p className="text-[12px] text-ink whitespace-pre-line">{invoice.notes}</p>
               </div>
             )}
           </div>
@@ -1273,8 +1273,11 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
               {savedInvoices.length === 0 ? (
                 <div className="py-12 text-center text-[13px] text-faint font-semibold">Немає збережених рахунків</div>
               ) : (
+                // A bordered grey card at the surface radius — which is a named
+                // preset, not four utilities. It read as `#fafafa` before, one
+                // of six near-whites the product had invented for the same fill.
                 savedInvoices.map(inv => (
-                  <div key={inv.id} className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-line bg-[#fafafa] p-4 sm:flex-row sm:items-center">
+                  <Surface key={inv.id} preset="bordered-panel" padding="md" className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-[13px] font-bold text-ink">{inv.number}</p>
@@ -1309,7 +1312,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                         />
                       )}
                     </div>
-                  </div>
+                  </Surface>
                 ))
               )}
             </div>
@@ -1395,7 +1398,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
             {discountPct > 0 && (
               <div className="flex justify-between text-[13px]">
                 <span className="text-muted">Знижка ({discountPct}%)</span>
-                <span className="font-bold text-green-600">−{fmtMoney(discount, currency)}</span>
+                <span className="font-bold text-success">−{fmtMoney(discount, currency)}</span>
               </div>
             )}
             {taxPct > 0 && (
@@ -1404,7 +1407,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                 <span className="font-bold text-ink">+{fmtMoney(tax, currency)}</span>
               </div>
             )}
-            <div className="flex justify-between pt-3 border-t border-[#e4e4e4] items-center">
+            <div className="flex justify-between pt-3 border-t border-line items-center">
               <span className="text-[13px] font-bold text-ink">До оплати</span>
               <span className="text-[20px] font-black text-ink">{fmtMoney(total, currency)}</span>
             </div>

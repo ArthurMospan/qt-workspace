@@ -550,7 +550,7 @@ export default function TaskTableView({
         const overdue = isDueDateOverdue(issue.dueDate, { timeZone })
           && !closedStatusIds.includes(columnOf(issue));
         return (
-          <span className={`flex items-center gap-[4px] text-[12px] font-semibold ${overdue ? 'text-[#ef4444]' : 'text-ink'}`}>
+          <span className={`flex items-center gap-[4px] text-[12px] font-semibold ${overdue ? 'text-danger' : 'text-ink'}`}>
             <CalendarIcon size={11} strokeWidth={2} className="shrink-0" />
             {text}
           </span>
@@ -597,7 +597,7 @@ export default function TaskTableView({
       }
       case 'blocked':
         return blockedIssueIds.has(issue.id) ? (
-          <span className="inline-flex items-center gap-[4px] rounded-[4px] bg-[#fef2f2] px-[6px] py-[1.5px] text-[10px] font-medium text-[#ef4444]">
+          <span className="inline-flex items-center gap-[4px] rounded-[4px] bg-danger-soft px-[6px] py-[1.5px] text-[10px] font-medium text-danger">
             <Lock size={10} />
             Заблоковано
           </span>
@@ -842,12 +842,12 @@ export default function TaskTableView({
             <tbody>
               {drawnRows.map(issue => {
                 const selected = activeSelectedIds.has(issue.id);
-                const rowTone = selected ? 'bg-[#f1f1f1]' : 'bg-white group-hover:bg-[#fafafa]';
+                const rowTone = selected ? 'bg-[#f1f1f1]' : 'bg-white group-hover:bg-canvas';
                 return (
                   <tr
                     key={issue.id}
                     className={`group border-b border-[#f4f4f5] transition-colors ${
-                      selected ? 'bg-[#f1f1f1]' : 'hover:bg-[#fafafa]'
+                      selected ? 'bg-[#f1f1f1]' : 'hover:bg-canvas'
                     }`}
                   >
                     <td

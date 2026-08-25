@@ -48,7 +48,7 @@ export default function TimeTrackingControl({
         // square looked exactly the same whether or not it could be pressed.
         // The state matrix is where that showed up — the disabled cell was a
         // photograph of the resting one.
-        className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${running ? 'bg-[#ef4444] text-white hover:bg-[#dc2626]' : 'bg-line text-ink hover:bg-[#d9d9d9]'}`}
+        className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[6px] leading-none transition-colors disabled:opacity-50 ${running ? 'bg-danger-solid text-white hover:bg-danger' : 'bg-line text-ink hover:bg-faint'}`}
       >
         {running ? (
           <StopIcon size={10} className="block fill-current" />

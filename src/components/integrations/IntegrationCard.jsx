@@ -4,17 +4,17 @@ import Image from 'next/image';
 import { Button, Card, ToggleSwitch } from '@/components/ui';
 
 const STATUS_STYLES = {
-  connected: 'bg-green-50 text-[#10b981]',
-  pending: 'bg-amber-50 text-amber-700',
-  error: 'bg-red-50 text-red-600',
-  unavailable: 'bg-[#f5f5f5] text-muted',
-  off: 'bg-[#f5f5f5] text-muted',
+  connected: 'bg-success-soft text-success',
+  pending: 'bg-warning-soft text-warning',
+  error: 'bg-danger-soft text-danger',
+  unavailable: 'bg-canvas text-muted',
+  off: 'bg-canvas text-muted',
 };
 
 const STATUS_DOTS = {
-  connected: 'bg-[#10b981]',
-  pending: 'bg-amber-500',
-  error: 'bg-red-500',
+  connected: 'bg-success-solid',
+  pending: 'bg-warning-solid',
+  error: 'bg-danger-solid',
   unavailable: 'bg-faint',
   off: 'bg-faint',
 };
@@ -116,7 +116,7 @@ export default function IntegrationCard({
             )}
           </div>
 
-          <div className="mt-3 border-t border-[#f0f0f0] pt-3">
+          <div className="mt-3 border-t border-line pt-3">
             <div className="flex flex-wrap items-center gap-3">
               <span className={`inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[11px] font-semibold ${statusStyle}`}>
                 <span className={`h-[5px] w-[5px] rounded-full ${dotStyle}`} />

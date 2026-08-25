@@ -33,7 +33,7 @@ function LinkedRow({ name, stale, menuItems, href, progress }) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-[32px] shrink-0 items-center gap-1.5 rounded-[10px] bg-canvas px-3 text-[12px] font-bold text-ink transition-colors hover:bg-[#ebebeb]"
+            className="inline-flex h-[32px] shrink-0 items-center gap-1.5 rounded-[10px] bg-canvas px-3 text-[12px] font-bold text-ink transition-colors hover:bg-line"
             title="Відкрити цей проєкт у QuickTeam+"
           >
             <ExternalLink size={13} />

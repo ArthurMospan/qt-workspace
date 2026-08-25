@@ -38,7 +38,7 @@ export default function OptionCard({
       disabled={disabled}
       aria-pressed={selected}
       className={`flex items-start gap-3 rounded-[16px] border-2 p-4 text-left transition-all disabled:cursor-default disabled:opacity-55 ${
-        selected ? 'border-ink bg-canvas' : 'border-transparent bg-canvas hover:bg-[#efefef]'
+        selected ? 'border-ink bg-canvas' : 'border-transparent bg-canvas hover:bg-line'
       } ${className}`}
     >
       {Icon && (
@@ -50,7 +50,7 @@ export default function OptionCard({
         <span className="block text-[14px] font-bold text-ink">{title}</span>
         {description && <span className="mt-1 block text-[11px] leading-4 text-muted">{description}</span>}
       </span>
-      <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${selected ? 'bg-ink text-white' : 'border border-[#cfcfcf]'}`}>
+      <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${selected ? 'bg-ink text-white' : 'border border-faint'}`}>
         {selected && <Check size={12} />}
       </span>
     </button>

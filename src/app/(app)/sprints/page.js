@@ -887,7 +887,7 @@ export default function GlobalSprintsPage() {
                             tasks look like a different kind of control from the
                             two others that do exactly that. */}
                         <div
-                          className="-my-2 -ml-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[10px] py-2 pl-2 pr-3 transition-colors hover:bg-[#ebebeb]"
+                          className="-my-2 -ml-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[10px] py-2 pl-2 pr-3 transition-colors hover:bg-line"
                           onClick={() => toggleSection(sprint.id, isExpanded)}
                           role="button"
                           tabIndex={0}
@@ -1045,7 +1045,7 @@ export default function GlobalSprintsPage() {
               {backlogCollapsed && !isPhone ? (
                 <div
                   data-ui-surface="local"
-                  className="flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-[#f0f0f2]"
+                  className="flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-line"
                   onClick={() => setBacklogCollapsed(false)}
                   role="button"
                   tabIndex={0}

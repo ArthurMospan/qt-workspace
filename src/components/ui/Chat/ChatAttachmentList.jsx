@@ -136,7 +136,7 @@ function AttachmentTile({
     const className = `group block w-full overflow-hidden rounded-[10px] border text-left transition-colors ${
       dark
         ? 'border-white/10 text-white hover:border-white/20'
-        : 'border-black/[0.06] text-ink hover:border-[#d7d7d7]'
+        : 'border-black/[0.06] text-ink hover:border-faint'
     }`;
 
     return onRemove
@@ -164,7 +164,7 @@ function AttachmentTile({
   const className = `flex min-w-0 w-full items-center gap-2.5 rounded-[8px] border border-transparent px-2 py-2 text-left transition-colors ${
     dark
       ? 'bg-white/10 text-white hover:bg-white/15'
-      : 'bg-white/80 text-ink hover:border-[#d7d7d7] hover:bg-white'
+      : 'bg-white/80 text-ink hover:border-faint hover:bg-white'
   }`;
 
   return url && !onRemove

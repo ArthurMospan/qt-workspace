@@ -46,8 +46,8 @@ export default function Counter({
       muted: 'bg-[#a3a3a3]',
     } : {
       info: 'bg-ink',
-      danger: 'bg-[#ef4444]',
-      success: 'bg-[#10b981]',
+      danger: 'bg-danger-solid',
+      success: 'bg-success-solid',
       muted: 'bg-muted',
     };
 

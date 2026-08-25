@@ -56,7 +56,7 @@ export default function TimeLogRow({
       {canEdit && (onEdit || onDelete) && (
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-sm:opacity-100">
           {onEdit && <button type="button" onClick={onEdit} className="rounded-[6px] p-1.5 text-muted hover:bg-white hover:text-ink" aria-label="Редагувати запис"><Pencil size={13} /></button>}
-          {onDelete && <button type="button" onClick={onDelete} className="rounded-[6px] p-1.5 text-muted hover:bg-red-50 hover:text-red-500" aria-label="Видалити запис"><Trash2 size={13} /></button>}
+          {onDelete && <button type="button" onClick={onDelete} className="rounded-[6px] p-1.5 text-muted hover:bg-danger-soft hover:text-danger" aria-label="Видалити запис"><Trash2 size={13} /></button>}
         </div>
       )}
     </div>

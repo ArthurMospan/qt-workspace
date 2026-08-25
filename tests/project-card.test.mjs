@@ -35,5 +35,5 @@ test('project-card footer uses literal task, progress and assignee semantics', (
 test('the last-action block is a target, not a caption', () => {
   // The whole block links to the task and answers the pointer; only the title
   // used to be clickable, with nothing on the card saying so.
-  assert.match(projectPage, /stats\.lastAction && \([\s\S]{0,700}<Link[\s\S]{0,400}hover:bg-\[#f0f0f0\]/);
+  assert.match(projectPage, /stats\.lastAction && \([\s\S]{0,700}<Link[\s\S]{0,400}hover:bg-canvas/);
 });

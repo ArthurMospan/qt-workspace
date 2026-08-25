@@ -39,10 +39,10 @@ export const TimePicker = forwardRef(({
           ui-time-input
           ui-control w-full bg-canvas border border-transparent rounded-[10px]
           text-[13px] text-ink focus:border-ink outline-none
-          transition-colors placeholder:text-[#a3a3a3] flex items-center
+          transition-colors placeholder:text-muted flex items-center
           pl-[36px] pr-[12px]
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-          ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
+          ${error ? 'border-danger focus:border-danger bg-danger-soft' : ''}
         `}
         {...props}
       />

@@ -412,14 +412,14 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
             handleNotifClick(row);
           }}
           className={`group relative w-full flex items-start gap-3 px-4 py-[10px] text-left cursor-pointer hover:bg-canvas transition-colors ${
-            n.type === 'emergency' && !n.read ? 'bg-red-50' : !n.read ? 'bg-[#f5f7ff]' : ''
+            n.type === 'emergency' && !n.read ? 'bg-danger-soft' : !n.read ? 'bg-info-soft' : ''
           }`}>
           <NotifIcon n={n} />
           {/* The two row actions are pinned to the right edge — always visible
               on a phone, on hover on a desktop — so the text column reserves
               their width instead of running underneath them. */}
           <div className="flex-1 min-w-0 pr-[48px]">
-            <p className={`text-[12px] leading-snug ${!n.read ? 'font-semibold text-ink' : 'text-[#4a4a4a]'}`}>
+            <p className={`text-[12px] leading-snug ${!n.read ? 'font-semibold text-ink' : 'text-ink'}`}>
               {row.title}
             </p>
             {n.body && <p className="text-[11px] text-muted mt-[2px] line-clamp-2">{n.body}</p>}
@@ -532,7 +532,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
               role="dialog"
               aria-label="Центр сповіщень"
               data-qt-global-notification-layer
-              data-ui-surface="local" className="fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
+              data-ui-surface="local" className="fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-line bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
               style={{
                 top: notificationPanelPosition.top,
                 left: notificationPanelPosition.left,
@@ -565,7 +565,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
 
               {/* Footer */}
               {notificationFooter && (
-                <div className="flex items-center justify-between px-4 py-[10px] border-t border-canvas bg-[#fafafa]">
+                <div className="flex items-center justify-between px-4 py-[10px] border-t border-canvas bg-canvas">
                   {notificationFooter}
                 </div>
               )}

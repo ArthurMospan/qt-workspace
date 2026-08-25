@@ -32,7 +32,7 @@ const DENSITIES = {
   },
   // Task timeline: a compact bordered list with an arrow-key cursor.
   timeline: {
-    list: 'rounded-[10px] border border-[#d7d7d7] bg-white p-1 max-h-[160px] overflow-y-auto',
+    list: 'rounded-[10px] border border-faint bg-white p-1 max-h-[160px] overflow-y-auto',
     row: 'flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-left text-[13px] font-medium',
     idle: 'text-muted hover:bg-[#f7f7f7]',
     selected: 'bg-canvas text-ink',

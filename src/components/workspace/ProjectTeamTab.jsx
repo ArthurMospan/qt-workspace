@@ -139,7 +139,7 @@ export default function ProjectTeamTab({
                     params.set('member', uid);
                     router.push(`${pathname}?${params.toString()}`);
                   }}
-                  className="bg-white rounded-[12px] p-5 flex flex-col gap-4 text-left hover:ring-4 hover:ring-[#ECECEC] transition-all"
+                  className="bg-white rounded-[12px] p-5 flex flex-col gap-4 text-left hover:ring-4 hover:ring-line transition-all"
                 >
                   <div className="flex items-start gap-4 w-full">
                     <UserAvatar user={member} size="xl" />

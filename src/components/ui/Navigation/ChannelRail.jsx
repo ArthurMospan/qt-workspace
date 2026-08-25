@@ -47,8 +47,8 @@ export default function ChannelRail({ groups = [], activeId, onSelect = () => {}
                   data-ui-control="chat-list-action"
                   className={`ui-native-control ${
                     active
-                      ? 'bg-[#ebebeb] text-ink font-semibold'
-                      : 'text-muted hover:bg-[#ebebeb]/50 hover:text-ink'
+                      ? 'bg-line text-ink font-semibold'
+                      : 'text-muted hover:bg-line/50 hover:text-ink'
                   }`}
                 >
                   {item.kind === 'dm' ? (

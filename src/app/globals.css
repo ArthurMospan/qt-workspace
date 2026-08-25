@@ -22,6 +22,39 @@
   --color-muted:      #9a9a9a;  /* secondary text, placeholders */
   --color-faint:      #cfcfcf;  /* disabled / very light text */
 
+  /* ── Status tokens ───────────────────────────────────────────────────
+     Success, warning, danger and info — the four things the product says about
+     a state, in the three roles each of them is actually drawn in.
+
+     They existed already; they just had no names. Sixty-six places picked their
+     own: eleven different reds (`text-red-500`, `text-red-600`, `#ef4444`,
+     `#dc2626`), six greens (`#10b981`, `emerald-600`, `green-600`, a
+     hand-mixed `#e6f2ea`/`#2f6b4b` pair in the timesheet), six ambers and three
+     blues. Nothing meant anything twice, so "this failed" was a different red
+     on the settings screen than in a dialog, and the only place the set was
+     written down at all was the `Pill` tone rules below — which is why these
+     are exactly those values, promoted rather than re-chosen.
+
+     Three roles, because a status colour is genuinely drawn three ways and one
+     value cannot do all three: the ink is what text and icons take and it is
+     the only one that has to clear AA on white (all four do, 4.8–5.5:1); the
+     solid is a fill — a dot, a bar, an indicator square — where a saturated
+     mid-tone reads better than the darker ink; the soft is the wash behind a
+     line of that ink. Reach for `text-danger`, `bg-danger-solid`,
+     `bg-danger-soft`, and never for a hue. */
+  --color-success:        #047857;
+  --color-success-solid:  #10b981;
+  --color-success-soft:   #ecfdf5;
+  --color-warning:        #b45309;
+  --color-warning-solid:  #f59e0b;
+  --color-warning-soft:   #fffbeb;
+  --color-danger:         #dc2626;
+  --color-danger-solid:   #ef4444;
+  --color-danger-soft:    #fef2f2;
+  --color-info:           #2f6fd0;
+  --color-info-solid:     #3b82f6;
+  --color-info-soft:      #eff6ff;
+
   /* ── Chart tokens ────────────────────────────────────────────────────
      Analytics used to pick a colour per chart, and there were eleven of them:
      emerald for "done", cyan for "logged", #0891b2 for "open", a hand-mixed
@@ -787,7 +820,7 @@
     box-shadow: 0 8px 40px rgb(0 0 0 / 12%);
   }
   .ui-surface[data-ui-surface='notification'][data-ui-tone='emergency'] {
-    border: 2px solid #ef4444;
+    border: 2px solid var(--color-danger-solid);
   }
   .ui-surface[data-ui-padding='none'] { padding: 0; }
   .ui-surface[data-ui-padding='xxs'] { padding: 4px; }
@@ -1023,21 +1056,25 @@
     background: rgb(31 31 31 / 8%);
     color: var(--color-ink);
   }
+  /* These four rules were the only written-down copy of the product's status
+     palette, which is why the tokens above carry exactly their values. The one
+     value that moved is the danger text: `#ef4444` on `#fef2f2` is 3.4:1, and
+     the ink token is the same red the rest of the product now uses. */
   .ui-pill[data-ui-pill-tone='success'] {
-    background: #ecfdf5;
-    color: #047857;
+    background: var(--color-success-soft);
+    color: var(--color-success);
   }
   .ui-pill[data-ui-pill-tone='warning'] {
-    background: #fffbeb;
-    color: #b45309;
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
   }
   .ui-pill[data-ui-pill-tone='danger'] {
-    background: #fef2f2;
-    color: #ef4444;
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
   }
   .ui-pill[data-ui-pill-tone='info'] {
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-info-soft);
+    color: var(--color-info-solid);
   }
   .ui-pill[data-ui-pill-tone='surface'] {
     background: var(--color-surface);

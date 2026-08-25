@@ -76,7 +76,7 @@ export default function MessageContent({ text, members, searchTerm, issueMention
                 return <del key={tokenIndex}>{highlightText(token.value)}</del>;
               case 'code':
                 return (
-                  <code key={tokenIndex} className="bg-[#f0f0f0] text-[#e01e5a] px-1 py-0.5 rounded text-[13px] font-mono">
+                  <code key={tokenIndex} className="bg-canvas text-[#e01e5a] px-1 py-0.5 rounded text-[13px] font-mono">
                     {token.value}
                   </code>
                 );

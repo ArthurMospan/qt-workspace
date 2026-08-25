@@ -50,7 +50,7 @@ export default function Card({
       className={`
         ui-surface
         ${onClick ? 'block w-full text-left' : ''}
-        ${interactive ? 'cursor-pointer hover:bg-[#fcfcfc] hover:ring-4 hover:ring-[#ECECEC] transition-all duration-200' : ''}
+        ${interactive ? 'cursor-pointer hover:bg-canvas hover:ring-4 hover:ring-line transition-all duration-200' : ''}
         ${className}
       `}
       onClick={onClick}

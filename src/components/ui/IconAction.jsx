@@ -4,8 +4,8 @@ import React from 'react';
 import Button from './Button';
 
 export const APPEARANCES = {
-  quiet: '!bg-transparent !text-muted hover:!bg-[#f0f0f0] hover:!text-ink',
-  soft: '!bg-canvas !text-muted hover:!bg-[#ebebeb] hover:!text-ink',
+  quiet: '!bg-transparent !text-muted hover:!bg-canvas hover:!text-ink',
+  soft: '!bg-canvas !text-muted hover:!bg-line hover:!text-ink',
   // Like `soft`, but the icon carries the weight rather than the fill: a dark
   // glyph on a flat #f1f1f1 disc. Used where the action *is* the control and
   // there is no label beside it to say what it does.
@@ -15,13 +15,13 @@ export const APPEARANCES = {
   // The same disc as `surface`, and only its hover differs. It used to carry a
   // shadow as well, which is why the two of them side by side — the notification
   // row's «прочитано» and «видалити» — read as two different controls.
-  'surface-danger': '!border !border-line !bg-white !text-muted hover:!bg-red-50 hover:!text-red-500',
+  'surface-danger': '!border !border-line !bg-white !text-muted hover:!bg-danger-soft hover:!text-danger',
   'surface-plain': '!bg-white !text-faint hover:!text-ink',
   overlay: '!bg-black/50 !text-white hover:!bg-black/70',
   inverse: '!bg-white/10 !text-white hover:!bg-white/20',
   'auth-close': '!border !border-white/10 !bg-[#2a2a2a] !text-white/70 hover:!bg-white/10 hover:!text-white',
-  danger: '!bg-[#ef4444] !text-white hover:!bg-[#dc2626]',
-  'quiet-danger': '!bg-transparent !text-muted hover:!bg-red-100 hover:!text-red-500',
+  danger: '!bg-danger-solid !text-white hover:!bg-danger',
+  'quiet-danger': '!bg-transparent !text-muted hover:!bg-danger-soft hover:!text-danger',
 };
 
 export const BUTTON_SIZES = {

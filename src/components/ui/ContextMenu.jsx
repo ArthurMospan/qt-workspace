@@ -94,7 +94,7 @@ export default function ContextMenu({
           <div
             ref={menuRef}
             data-qt-floating-overlay
-            className={`fixed z-[1000] w-[200px] max-w-[calc(100vw-16px)] rounded-[12px] border border-[#f0f0f0] bg-white py-[6px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] ${dropdownClassName}`}
+            className={`fixed z-[1000] w-[200px] max-w-[calc(100vw-16px)] rounded-[12px] border border-line bg-white py-[6px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] ${dropdownClassName}`}
             style={{
               top: menuPosition.top,
               left: menuPosition.left,
@@ -103,7 +103,7 @@ export default function ContextMenu({
           >
             {items.map((item, idx) => {
               if (item.isDivider) {
-                return <div key={`div-${idx}`} className="h-[1px] bg-[#f0f0f0] my-[4px] mx-[14px]" />;
+                return <div key={`div-${idx}`} className="h-[1px] bg-canvas my-[4px] mx-[14px]" />;
               }
 
               const Icon = item.icon;
@@ -128,7 +128,7 @@ export default function ContextMenu({
                     item.selected ? 'font-bold' : 'font-medium'
                   } ${
                     isDanger
-                      ? 'text-[#ef4444] hover:bg-red-50'
+                      ? 'text-danger hover:bg-danger-soft'
                       : 'text-ink hover:bg-canvas'
                   }`}
                   style={item.color && !isDanger ? { color: item.color } : {}}
@@ -141,7 +141,7 @@ export default function ContextMenu({
                   {Icon && (
                     <Icon
                       size={14}
-                      className={isDanger ? 'text-[#ef4444]' : 'text-muted'}
+                      className={isDanger ? 'text-danger' : 'text-muted'}
                     />
                   )}
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>

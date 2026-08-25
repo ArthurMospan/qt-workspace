@@ -80,7 +80,7 @@ export default function Checkbox({
             peer-focus-visible:ring-2 peer-focus-visible:ring-ink/20 peer-focus-visible:ring-offset-0
             hover:border-[#d1d5db]
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-            ${error ? 'border-red-500' : ''}
+            ${error ? 'border-danger' : ''}
           `}
         >
           {checked
@@ -100,7 +100,7 @@ export default function Checkbox({
         </label>
       )}
 
-      {error && <span className="text-[11px] text-red-500 ml-1">{error}</span>}
+      {error && <span className="text-[11px] text-danger ml-1">{error}</span>}
     </div>
   );
 }

@@ -77,7 +77,7 @@ export default function MemberRail({
                 type="button"
                 onClick={() => onSelect(member)}
                 className={`w-full text-left px-3 py-2 rounded-[8px] transition-colors flex items-center gap-3 ${
-                  isSelected ? 'bg-[#ebebeb]' : 'hover:bg-[#ebebeb]/50'
+                  isSelected ? 'bg-line' : 'hover:bg-line/50'
                 }`}
               >
                 <div className="relative shrink-0">
@@ -86,7 +86,7 @@ export default function MemberRail({
                 </div>
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <span className={`text-[13px] font-medium truncate transition-colors flex items-center gap-1 ${
-                    isSelected ? 'text-ink' : 'text-[#4a4a4a] group-hover:text-ink'
+                    isSelected ? 'text-ink' : 'text-ink group-hover:text-ink'
                   }`}
                   >
                     {member.name || member.email}

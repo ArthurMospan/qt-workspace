@@ -127,8 +127,8 @@ export const SHAPES = {
 
 export const SURFACES = {
   default: '',
-  canvas: '!bg-canvas !text-ink hover:!bg-[#ebebeb]',
-  'danger-subtle': '!border !border-[#ef4444] !bg-red-50 hover:!bg-red-100',
+  canvas: '!bg-canvas !text-ink hover:!bg-line',
+  'danger-subtle': '!border !border-danger !bg-danger-soft hover:!bg-danger-soft',
 };
 
 // collapseAt="sm"|"md": below that breakpoint the label hides and the button
@@ -153,19 +153,19 @@ const COLLAPSE_LABEL = { sm: 'max-sm:hidden', md: 'max-md:hidden' };
 export const STYLES = {
   primary: {
     dark: 'bg-ink text-white hover:bg-ink-hover',
-    red:  'bg-[#ef4444] text-white hover:bg-[#dc2626]',
+    red:  'bg-danger-solid text-white hover:bg-danger',
   },
   secondary: {
-    dark: 'bg-[#f5f5f5] text-ink hover:bg-[#ebebeb]',
-    red:  'bg-[#f5f5f5] text-[#ef4444] hover:bg-[#ebebeb]',
+    dark: 'bg-canvas text-ink hover:bg-line',
+    red:  'bg-canvas text-danger hover:bg-line',
   },
   outline: {
     dark: 'bg-transparent text-ink border-2 border-ink hover:bg-canvas',
-    red:  'bg-transparent text-[#ef4444] border-2 border-[#ef4444] hover:bg-[#fee2e2]',
+    red:  'bg-transparent text-danger border-2 border-danger hover:bg-danger-soft',
   },
   ghost: {
-    dark: 'bg-transparent text-muted hover:text-ink hover:bg-[#f0f0f0]',
-    red:  'bg-transparent text-[#ef4444] hover:bg-[#fee2e2]',
+    dark: 'bg-transparent text-muted hover:text-ink hover:bg-canvas',
+    red:  'bg-transparent text-danger hover:bg-danger-soft',
   },
 };
 

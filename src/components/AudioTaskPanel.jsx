@@ -205,7 +205,7 @@ export default function AudioTaskPanel({
             <IconAction label="Прибрати файл" icon={X} size="sm" appearance="soft" onClick={() => setAudioFile(null)} />
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[16px] border-2 border-dashed border-[#d7d7d7] bg-canvas px-5 py-8 text-center transition-colors hover:border-muted">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[16px] border-2 border-dashed border-faint bg-canvas px-5 py-8 text-center transition-colors hover:border-muted">
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink"><Upload size={18} /></span>
             <span className="text-[13px] font-bold text-ink">Оберіть аудіофайл</span>
             <span className="text-[11px] text-muted">MP3, M4A, WAV, WEBM або OGG · до 14 МБ</span>

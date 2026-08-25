@@ -64,10 +64,14 @@ function SheetTimerCapsule({ onNavigate, onStop }) {
           event.preventDefault();
           onNavigate(activeTimer);
         }}
-        className="bg-[#333333] rounded-[12px] flex items-center justify-between pl-[12px] pr-[6px] py-[6px] cursor-pointer">
+        // The bar paints itself from the sidebar's own tokens, so a brand
+        // colour reaches the sheet too. `#333333` was a dark grey chosen when
+        // the only rail was the dark one, and on a light brand it was a black
+        // slab with white text sitting in a white sheet.
+        className="bg-[var(--sb-active)] rounded-[12px] flex items-center justify-between pl-[12px] pr-[6px] py-[6px] cursor-pointer">
         <div className="flex items-center gap-[8px]">
-          <Clock size={14} className="text-[#3b82f6] animate-pulse" />
-          <span className="text-white text-[13px] font-mono font-medium">{formatElapsed(timerElapsed)}</span>
+          <Clock size={14} className="animate-pulse text-[var(--sb-text)]" />
+          <span className="text-[var(--sb-text)] text-[13px] font-mono font-medium">{formatElapsed(timerElapsed)}</span>
         </div>
         <IconAction
           label="Зупинити та зберегти"
@@ -247,7 +251,7 @@ export default function MobileNav({ keyboardOpen = false }) {
           <Menu size={20} />
           <span className="text-[10px] font-semibold leading-none">Ще</span>
           {activeTimer && (
-            <span className="absolute top-[8px] left-[calc(50%+6px)] w-[8px] h-[8px] bg-[#ef4444] rounded-full animate-pulse" />
+            <span className="absolute top-[8px] left-[calc(50%+6px)] w-[8px] h-[8px] bg-danger-solid rounded-full animate-pulse" />
           )}
           {otherOrgUnreadCount > 0 && !activeTimer && (
             <span className="absolute top-[6px] left-[calc(50%+4px)]">
@@ -329,7 +333,7 @@ export default function MobileNav({ keyboardOpen = false }) {
 
             {/* Projects */}
             <div className="flex items-center justify-between px-[20px] pb-[8px]">
-              <p className="text-[11px] font-bold text-[#666666] uppercase tracking-wider">Проєкти</p>
+              <p className="text-[11px] font-bold text-[var(--sb-muted)] uppercase tracking-wider">Проєкти</p>
               {can(orgRole, 'create:project') && (
                 <IconAction
                   label="Новий проєкт"
@@ -349,7 +353,7 @@ export default function MobileNav({ keyboardOpen = false }) {
                   return (
                     <Link key={p.id} href={`/${p.id}`}
                       className={`flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] transition-colors ${
-                        active ? 'bg-[#333333] text-white' : 'text-muted'
+                        active ? 'bg-[var(--sb-active)] text-[var(--sb-text)]' : 'text-[var(--sb-muted)]'
                       }`}>
                       <Folder size={16} className="shrink-0" />
                       <span className="text-[13px] font-medium truncate">{p.name}</span>

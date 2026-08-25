@@ -105,7 +105,7 @@ function UpcomingProviderCard({ provider }) {
         </div>
       </div>
 
-      <div className="mt-4 border-t border-[#f0f0f0] pt-3">
+      <div className="mt-4 border-t border-line pt-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-faint">
           Заплановане покриття
         </p>
@@ -209,10 +209,10 @@ export default function DataMigrationSettings({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 border-t border-[#f0f0f0] pt-5 md:grid-cols-3">
+        <div className="mt-5 grid gap-3 border-t border-line pt-5 md:grid-cols-3">
           {SAFEGUARDS.map(({ icon: Icon, title, description }) => (
             <div key={title} className="flex gap-2.5">
-              <Icon size={16} className="mt-0.5 shrink-0 text-[#10b981]" />
+              <Icon size={16} className="mt-0.5 shrink-0 text-success" />
               <div>
                 <p className="text-[11px] font-bold text-ink">{title}</p>
                 <p className="mt-0.5 text-[10px] leading-relaxed text-muted">{description}</p>
@@ -242,9 +242,9 @@ export default function DataMigrationSettings({
         />
       </section>
 
-      <div className="flex items-start gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3">
-        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-700" />
-        <p className="text-[11px] leading-relaxed text-amber-900">
+      <div className="flex items-start gap-2.5 rounded-[12px] border border-warning/25 bg-warning-soft px-4 py-3">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" />
+        <p className="text-[11px] leading-relaxed text-warning">
           Автоматизації, права доступу, ролі адміністраторів, API-ключі, білінг і налаштування
           сторонніх інтеграцій не можна безпечно перенести один в один. Перед запуском кожного
           імпорту QuickTeam окремо покаже, що буде перенесено, зіставлено або пропущено.

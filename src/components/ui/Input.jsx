@@ -69,9 +69,9 @@ export const Input = forwardRef(({
         className={`
           ui-control ui-field ${sizeClass} w-full bg-canvas border border-transparent
           text-ink focus:border-ink outline-none
-          transition-colors placeholder:text-[#a3a3a3] flex items-center
+          transition-colors placeholder:text-muted flex items-center
           disabled:opacity-50 disabled:cursor-not-allowed
-          ${error ? 'border-red-500 focus:border-red-500 bg-red-50' : ''}
+          ${error ? 'border-danger focus:border-danger bg-danger-soft' : ''}
           ${INPUT_PRESETS[preset] || ''}
           ${className}
         `}

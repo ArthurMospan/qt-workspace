@@ -31,7 +31,7 @@ export default function UserMenu({ user, open = false, onToggle, onSettings, onS
         <UserAvatar user={user} size="sm" />
       </button>
       {open && (
-        <div data-ui-surface="local" className="absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-[#f0f0f0] rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
+        <div data-ui-surface="local" className="absolute right-0 top-[calc(100%+8px)] w-[200px] bg-white border border-line rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.10)] overflow-hidden z-50">
           <div className="px-4 py-3 border-b border-canvas">
             <p className="text-[13px] font-bold text-ink truncate">{user?.name}</p>
             <p className="text-[11px] text-muted truncate">{user?.email}</p>
@@ -45,7 +45,7 @@ export default function UserMenu({ user, open = false, onToggle, onSettings, onS
           <div className="border-t border-canvas">
             <button
               onClick={onSignOut}
-              className="flex w-full px-4 py-[10px] text-[13px] text-red-500 hover:bg-red-50 transition-colors font-medium"
+              className="flex w-full px-4 py-[10px] text-[13px] text-danger hover:bg-danger-soft transition-colors font-medium"
             >
               Вийти
             </button>

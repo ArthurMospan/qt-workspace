@@ -90,7 +90,7 @@ export default function ChatConversationHeader({
         <button
           type="button"
           onClick={onOpenPinned}
-          className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-[#cfcfcf]"
+          className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink transition-colors hover:border-faint"
         >
           <Pin size={12} />
           <span className="sm:hidden">{pinnedCount}</span>
