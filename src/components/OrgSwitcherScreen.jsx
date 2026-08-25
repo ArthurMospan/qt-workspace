@@ -10,6 +10,7 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { Counter } from '@/components/ui';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
 import { organizationRoleLabel } from '@/lib/utils/orgMembership.mjs';
+import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 
 // Логотипи бувають темні/прозорі (png, svg) і зливаються з темним фоном
 // пікера. Тому під лого завжди є підложка: біла за замовчуванням, або колір
@@ -99,7 +100,10 @@ export default function OrgSwitcherScreen({ onClose }) {
       sessionStorage.removeItem('just_logged_in');
       switchOrg(org.id);
       onClose?.();
-      router.push('/');
+      // The destination carries the selection itself. Relying on React state to
+      // settle before a bare `/` navigation let the route guard restore the
+      // organization that was active one render earlier.
+      router.push(withNotificationOrganization('/', org.id));
     }, 700); // 700ms for smooth transition
   };
 

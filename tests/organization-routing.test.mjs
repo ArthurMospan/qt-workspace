@@ -16,10 +16,11 @@ import {
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('each browser tab owns its organization selection and keeps it in the URL', async () => {
-  const [context, onboarding, guard] = await Promise.all([
+  const [context, onboarding, guard, switcher] = await Promise.all([
     read('../src/lib/context/OrgContext.js'),
     read('../src/app/onboarding/page.js'),
     read('../src/components/WorkspaceOrganizationRouteGuard.jsx'),
+    read('../src/components/OrgSwitcherScreen.jsx'),
   ]);
 
   assert.match(context, /sessionStorage\.setItem\(TAB_STORAGE_KEY, orgId\)/);
@@ -29,6 +30,10 @@ test('each browser tab owns its organization selection and keeps it in the URL',
   assert.match(onboarding, /sessionStorage\.setItem\('qt_active_org_id', orgId\)/);
   assert.doesNotMatch(onboarding, /localStorage\.setItem\('qt_active_org_id'/);
   assert.match(guard, /withNotificationOrganization\(current, activeOrgId\)/);
+  // A click must navigate to the organization it selected. A bare `/` races
+  // the state update and lets the guard restore the previous organization.
+  assert.match(switcher, /router\.push\(withNotificationOrganization\('\/', org\.id\)\)/);
+  assert.doesNotMatch(switcher, /router\.push\('\/'\)/);
 });
 
 test('project and issue routes derive organization scope from the project resource', async () => {
