@@ -16,6 +16,7 @@
     "kit:states": "node scripts/kit-states.mjs",
     "kit:props": "node scripts/kit-props.mjs",
     "kit:a11y": "node scripts/kit-a11y.mjs",
+    "kit:colors": "node scripts/kit-colors.mjs",
     "test": "npm run test:unit",
     "test:unit": "node --test --test-reporter=spec \"tests/!(firestore.rules).test.mjs\"",
     "test:visual": "playwright test",

@@ -1057,9 +1057,11 @@
     color: var(--color-ink);
   }
   /* These four rules were the only written-down copy of the product's status
-     palette, which is why the tokens above carry exactly their values. The one
-     value that moved is the danger text: `#ef4444` on `#fef2f2` is 3.4:1, and
-     the ink token is the same red the rest of the product now uses. */
+     palette, which is why the tokens above carry exactly their values. The two
+     that moved are the texts: `#ef4444` on `#fef2f2` was 3.4:1 and `#3b82f6` on
+     `#eff6ff` was 2.6:1 — a pill saying "danger" in a voice you cannot read.
+     Both take the ink token now, the same red and the same blue the rest of the
+     product uses, at 4.4 and 4.5:1. */
   .ui-pill[data-ui-pill-tone='success'] {
     background: var(--color-success-soft);
     color: var(--color-success);
@@ -1074,7 +1076,7 @@
   }
   .ui-pill[data-ui-pill-tone='info'] {
     background: var(--color-info-soft);
-    color: var(--color-info-solid);
+    color: var(--color-info);
   }
   .ui-pill[data-ui-pill-tone='surface'] {
     background: var(--color-surface);
