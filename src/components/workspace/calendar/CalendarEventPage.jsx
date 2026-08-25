@@ -88,6 +88,7 @@ import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
+import { timerDraftNeedsDismissal } from '@/lib/utils/timerState.mjs';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 
 const VISIBILITY_OPTIONS = [
@@ -396,6 +397,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
   const [timeSaving, setTimeSaving] = useState(false);
   const [timePanelOpen, setTimePanelOpen] = useState(false);
   const [timerMinutes, setTimerMinutes] = useState(0);
+  const [timerSessionId, setTimerSessionId] = useState('');
   const [actionError, setActionError] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
@@ -442,10 +444,24 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
     if (!canTrackTime || !pendingMinutesForThisEvent) return;
     queueMicrotask(() => {
       setTimerMinutes(current => current || pendingMinutesForThisEvent);
+      setTimerSessionId(pendingTimeLog.id);
       setTimePanelOpen(true);
       setActionError('');
     });
-  }, [canTrackTime, pendingMinutesForThisEvent]);
+  }, [canTrackTime, pendingMinutesForThisEvent, pendingTimeLog?.id]);
+
+  // A stopped timer is a server-owned draft. Saving or discarding it in a
+  // different tab invalidates this panel immediately instead of leaving a
+  // stale form that could later be submitted as unrelated manual time.
+  useEffect(() => {
+    if (!timerDraftNeedsDismissal(timerSessionId, pendingTimeLog)) return;
+    queueMicrotask(() => {
+      setTimePanelOpen(false);
+      setTimerMinutes(0);
+      setTimerSessionId('');
+      setActionError('');
+    });
+  }, [pendingTimeLog, timerSessionId]);
 
   useEffect(() => {
     if (!event || !logTimeParam) return;
@@ -679,6 +695,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
           return;
         }
         setTimerMinutes(result?.minutes || 0);
+        setTimerSessionId(result?.id || '');
         setTimePanelOpen(true);
         return;
       }
@@ -706,7 +723,6 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
         await updateTimeLog(form.id, {
           spentMinutes: form.minutes,
           description: form.description,
-          timerSessionId: pendingMinutesForThisEvent ? pendingTimeLog?.id : undefined,
         });
         showToast('Запис часу оновлено', 'success');
       } else {
@@ -714,12 +730,14 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
           userId: currentUserId,
           spentMinutes: form.minutes,
           description: form.description,
+          timerSessionId: timerSessionId || undefined,
         });
         showToast('Час події додано в аналітику', 'success');
       }
       setTimerMinutes(0);
+      setTimerSessionId('');
       // Written down — the stopped timer no longer owes the user anything.
-      if (pendingMinutesForThisEvent) acknowledgePendingTimeLog(pendingTimeLog?.id);
+      if (timerSessionId) acknowledgePendingTimeLog(timerSessionId);
       return true;
     } catch (timeError) {
       setActionError(timeError.message || 'Не вдалося зберегти час');
@@ -1171,6 +1189,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                       onClick={clickEvent => {
                         if (!canTrackTime || clickEvent.target.closest('button')) return;
                         setTimerMinutes(0);
+                        setTimerSessionId('');
                         setTimePanelOpen(true);
                       }}
                       // It opens the time panel and holds the timer buttons, so
@@ -1182,6 +1201,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                         if (keyEvent.key !== 'Enter' && keyEvent.key !== ' ') return;
                         keyEvent.preventDefault();
                         setTimerMinutes(0);
+                        setTimerSessionId('');
                         setTimePanelOpen(true);
                       }) : undefined}
                     >
@@ -1197,6 +1217,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                         onToggle={handleTimerToggle}
                         onOpen={() => {
                           setTimerMinutes(0);
+                          setTimerSessionId('');
                           setTimePanelOpen(true);
                         }}
                       />
@@ -1430,11 +1451,12 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
           onClose={() => {
             setTimePanelOpen(false);
             setTimerMinutes(0);
+            setTimerSessionId('');
             setActionError('');
             // Closing the panel is the decision not to log those minutes;
             // without this the pending log would reopen it on every visit.
-            if (pendingMinutesForThisEvent) {
-              clearPendingTimeLog().catch(error => {
+            if (timerSessionId) {
+              clearPendingTimeLog(timerSessionId).catch(error => {
                 setActionError(error.message || 'Не вдалося відхилити відстежений час');
               });
             }

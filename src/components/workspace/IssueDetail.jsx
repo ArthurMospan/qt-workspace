@@ -85,6 +85,7 @@ import {
   issueRouteIdentifier,
 } from '@/lib/utils/issueKeys.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
+import { timerDraftNeedsDismissal } from '@/lib/utils/timerState.mjs';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -505,7 +506,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   }, [canonicalIssuePath, isModal, issue, issueLocator, project, router, searchParams]);
 
   // Minutes a stopped timer produced and nobody has written down yet. They live
-  // in the store (and localStorage), not in the URL: the canonical-key redirect
+  // in the server-backed store, not in the URL: the canonical-key redirect
   // above remounts this component a beat after the task loads, and a `logTime`
   // query param consumed into local state did not survive that — the dialog
   // vanished a second after it appeared and the tracked time went with it.
@@ -527,8 +528,20 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       minutes,
       desc: '',
       fromTimer: true,
+      timerSessionId: pendingTimeLog.id,
     })));
-  }, [pendingForThisIssue, pendingTimeLog?.minutes, pendingTimeLog?.stoppedAt]);
+  }, [pendingForThisIssue, pendingTimeLog?.id, pendingTimeLog?.minutes, pendingTimeLog?.stoppedAt]);
+
+  // The server pending record is authoritative across tabs and devices. A
+  // dialog opened from it cannot remain saveable after another client has
+  // saved or discarded that same timer session.
+  useEffect(() => {
+    const timerSessionId = logForm?.timerSessionId;
+    if (!timerDraftNeedsDismissal(timerSessionId, pendingTimeLog)) return;
+    queueMicrotask(() => setLogForm(current => (
+      current?.timerSessionId === timerSessionId ? null : current
+    )));
+  }, [logForm?.timerSessionId, pendingTimeLog]);
 
   // Legacy `?logTime=` links (bookmarks, the older mobile nav) still work; the
   // param is only stripped once its minutes are safely in the store.
@@ -561,7 +574,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       });
       if (!discard) return;
       try {
-        await clearPendingTimeLog();
+        await clearPendingTimeLog(logForm.timerSessionId);
       } catch (error) {
         showToast(error.message || 'Не вдалося відхилити відстежений час', 'error');
         return;
@@ -958,7 +971,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
         if (result?.queued) {
           showToast('Зупинку таймера збережено — час синхронізується після відновлення мережі', 'warning');
         } else if (result?.minutes > 0) {
-          setLogForm({ minutes: result.minutes, desc: '', fromTimer: true });
+          setLogForm({
+            minutes: result.minutes,
+            desc: '',
+            fromTimer: true,
+            timerSessionId: result.id,
+          });
         }
       } else {
         if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
@@ -1008,7 +1026,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
         } else {
           const uid = currentUser?.id || currentUser?.uid;
           await addTimeLog(issueId, projectId, uid, logForm.minutes, logForm.desc, {
-            timerSessionId: logForm.fromTimer ? pendingTimeLog?.id : undefined,
+            timerSessionId: logForm.timerSessionId,
           });
           showToast(`${logForm.minutes} хв зафіксовано`);
         }
@@ -1020,7 +1038,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
       showToast('Оцінку часу оновлено');
     }
     // Saved — the stopped timer's minutes now live in a time log.
-    if (logForm.fromTimer) acknowledgePendingTimeLog(pendingTimeLog?.id);
+    if (logForm.timerSessionId) acknowledgePendingTimeLog(logForm.timerSessionId);
     setLogForm(null);
   };
 

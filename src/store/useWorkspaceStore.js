@@ -163,9 +163,9 @@ const useWorkspaceStore = create((set, get) => ({
   },
 
   /** The user saved the minutes, or knowingly threw them away. */
-  clearPendingTimeLog: async () => {
+  clearPendingTimeLog: async expectedTimerId => {
     const pending = get().pendingTimeLog;
-    if (!pending?.id) return null;
+    if (!pending?.id || (expectedTimerId && pending.id !== expectedTimerId)) return null;
     const generation = get()._timerAccountGeneration;
     const result = await discardPendingUserTimer(pending.id);
     if (get()._timerAccountGeneration === generation) {

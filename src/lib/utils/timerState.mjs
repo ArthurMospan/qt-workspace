@@ -13,6 +13,14 @@ export function timerStopDecision(state, timerId) {
   return 'stop';
 }
 
+// A form opened from a stopped timer is only a view of the server-owned
+// pending record. If another tab saves or discards that record, this local
+// draft must disappear too; otherwise it can be submitted later as unrelated
+// manual time and resurrect minutes the user already dealt with elsewhere.
+export function timerDraftNeedsDismissal(timerSessionId, pendingTimer) {
+  return Boolean(timerSessionId && pendingTimer?.id !== timerSessionId);
+}
+
 export function clampedTimerStopMillis(startedAtMs, requestedAtMs, nowMs) {
   if (!Number.isFinite(startedAtMs) || !Number.isFinite(nowMs)) return null;
   const candidate = Number.isFinite(requestedAtMs) ? requestedAtMs : nowMs;

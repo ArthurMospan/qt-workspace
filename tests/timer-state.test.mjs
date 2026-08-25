@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import {
   clampedTimerStopMillis,
   MAX_TIMER_DURATION_MS,
+  timerDraftNeedsDismissal,
   timerMinutes,
   timerStartBlock,
   timerStopDecision,
@@ -26,6 +27,13 @@ test('stop is idempotent for the same timer and rejects a stale tab', () => {
     'idempotent',
   );
   assert.equal(timerStopDecision(null, 'timer-a'), 'missing');
+});
+
+test('a timer-backed form expires with its authoritative pending session', () => {
+  assert.equal(timerDraftNeedsDismissal('', null), false);
+  assert.equal(timerDraftNeedsDismissal('timer-a', { id: 'timer-a' }), false);
+  assert.equal(timerDraftNeedsDismissal('timer-a', { id: 'timer-b' }), true);
+  assert.equal(timerDraftNeedsDismissal('timer-a', null), true);
 });
 
 test('an offline stop keeps the requested instant and caps forgotten timers', () => {
@@ -68,4 +76,18 @@ test('timer APIs and log commits share the same account-owned transaction state'
   assert.match(rules, /match \/timerStates\/\{uid\}/);
   assert.match(rules, /allow read: if signedIn\(\) && request\.auth\.uid == uid;/);
   assert.match(rules, /allow create, update, delete: if false;/);
+});
+
+test('task and calendar drafts preserve the timer session across tab races', async () => {
+  const [detail, calendar, store] = await Promise.all([
+    read('../src/components/workspace/IssueDetail.jsx'),
+    read('../src/components/workspace/calendar/CalendarEventPage.jsx'),
+    read('../src/store/useWorkspaceStore.js'),
+  ]);
+  assert.match(detail, /timerSessionId: pendingTimeLog\.id/);
+  assert.match(detail, /timerSessionId: logForm\.timerSessionId/);
+  assert.match(detail, /timerDraftNeedsDismissal\(timerSessionId, pendingTimeLog\)/);
+  assert.match(calendar, /timerSessionId: timerSessionId \|\| undefined/);
+  assert.match(calendar, /timerDraftNeedsDismissal\(timerSessionId, pendingTimeLog\)/);
+  assert.match(store, /expectedTimerId && pending\.id !== expectedTimerId/);
 });

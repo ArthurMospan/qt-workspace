@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 255,
-    "parsedFiles": 255,
+    "productFiles": 256,
+    "parsedFiles": 256,
     "parseErrors": 0,
     "nativeControls": 20,
     "structures": {
@@ -640,7 +640,7 @@
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:288",
+      "location": "src/components/workspace/calendar/CalendarEventPage.jsx:289",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas px-4 py-8 text-center"
     },
