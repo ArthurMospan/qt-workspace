@@ -70,7 +70,7 @@ export async function PATCH(request, context) {
         throw archiveError('ISSUE_DELETING', 409, 'Завдання вже видаляється');
       }
       const accessError = projectWriteError(
-        projectSnap.exists ? { id: projectSnap.id, ...projectSnap.data() } : null,
+        projectSnap.exists ? { ...projectSnap.data(), id: projectSnap.id } : null,
         current.organizationId,
         authorization.membership?.role,
         authorization.user.uid,

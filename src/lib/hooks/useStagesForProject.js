@@ -15,8 +15,8 @@ export function useStagesForProject(projectId) {
     const q = query(collection(db, 'stages'), where('projectId', '==', projectId));
     const unsub = onSnapshot(q, async snap => {
       const stagesData = snap.docs.map(d => ({
+        ...d.data(),
         id: d.id,
-        ...d.data()
       }));
       stagesData.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
@@ -25,8 +25,8 @@ export function useStagesForProject(projectId) {
         try {
           const matSnap = await getDocs(collection(db, 'stages', stage.id, 'materials'));
           const materials = matSnap.docs.map(d => ({
+            ...d.data(),
             id: d.id,
-            ...d.data()
           }));
           return {
             ...stage,

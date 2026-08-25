@@ -86,7 +86,7 @@ export async function PATCH(request, context) {
         throw cancelError('ISSUE_DELETING', 409, 'Завдання вже видаляється');
       }
       const accessError = projectWriteError(
-        projectSnap.exists ? { id: projectSnap.id, ...projectSnap.data() } : null,
+        projectSnap.exists ? { ...projectSnap.data(), id: projectSnap.id } : null,
         current.organizationId,
         authorization.membership?.role,
         authorization.user.uid,
@@ -112,7 +112,7 @@ export async function PATCH(request, context) {
         db.collection('timeLogs').where('issueId', '==', issueId),
       );
       const ownLogs = timeLogs.docs
-        .map(document => ({ id: document.id, ...document.data() }))
+        .map(document => ({ ...document.data(), id: document.id }))
         .filter(log => (
           log.organizationId === current.organizationId
           && log.projectId === current.projectId

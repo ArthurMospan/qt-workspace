@@ -147,8 +147,8 @@ export function useIssues(projectId, { includeLinks = true, includeSetAside = fa
         return;
       }
       const docs = snap.docs.map(d => ({
+        ...d.data({ serverTimestamps: 'estimate' }),
         id: d.id,
-        ...d.data({ serverTimestamps: 'estimate' })
       }));
       // Sort client-side by order ASC, fallback to createdAt asc
       docs.sort(compareIssues);
@@ -180,7 +180,7 @@ export function useIssues(projectId, { includeLinks = true, includeSetAside = fa
         where('projectId', '==', projectId),
       );
       unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
-        setIssueLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setIssueLinks(snap.docs.map(d => ({ ...d.data(), id: d.id })));
         setLinksReady(true);
         setLinksError(null);
       }, err => {

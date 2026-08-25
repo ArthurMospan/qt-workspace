@@ -711,8 +711,8 @@ export default function WorkspacePage() {
       { includeMetadataChanges: true },
       (snapshot) => {
         buckets.set(chunkIndex, snapshot.docs.map(doc => ({
-          id: doc.id,
           ...doc.data({ serverTimestamps: 'estimate' }),
+          id: doc.id,
         })));
         // This screen has its own subscription rather than going through
         // `useWorkspaceAnalytics`, so the rule has to be applied by hand here

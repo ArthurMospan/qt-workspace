@@ -97,7 +97,7 @@ export default function MyTasksPage() {
   // Filters and the kanban/list choice live in the address. `assignee` is not
   // one of them: this screen already carries that parameter for the composer.
   const [filters, setFilters] = useViewState(MY_TASKS_VIEW_SCHEMA, {
-    storageKey: 'qt:view:my-tasks',
+    storageKey: `qt:view:${activeOrgId}:my-tasks`,
   });
   const savedViewMode = filters.view;
   const setViewMode = useCallback(value => setFilters({ view: value }), [setFilters]);

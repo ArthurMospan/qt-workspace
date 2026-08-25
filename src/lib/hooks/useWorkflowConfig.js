@@ -245,17 +245,23 @@ const emptyWorkflowStore = {
   getServerSnapshot: () => EMPTY_WORKFLOW_SNAPSHOT,
 };
 
-function getWorkflowStore(organizationId) {
-  if (!organizationId) return emptyWorkflowStore;
-  if (!workflowStores.has(organizationId)) {
-    workflowStores.set(organizationId, createWorkflowStore(organizationId));
+function getWorkflowStore(organizationId, viewerScope) {
+  if (!organizationId || !viewerScope) return emptyWorkflowStore;
+  const key = `${organizationId}:${viewerScope}`;
+  if (!workflowStores.has(key)) {
+    workflowStores.set(key, createWorkflowStore(organizationId));
   }
-  return workflowStores.get(organizationId);
+  return workflowStores.get(key);
 }
 
 export function useWorkflowConfig() {
-  const { activeOrgId } = useAppContext();
-  const store = useMemo(() => getWorkflowStore(activeOrgId), [activeOrgId]);
+  const { activeOrgId, currentUser, orgRole } = useAppContext();
+  const viewerId = currentUser?.uid || currentUser?.id || '';
+  const viewerScope = viewerId ? `${viewerId}:${orgRole || 'pending'}` : '';
+  const store = useMemo(
+    () => getWorkflowStore(activeOrgId, viewerScope),
+    [activeOrgId, viewerScope],
+  );
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
   // Both ends of a task, derived from the live config. Ask for the one you mean:
   // `closedStatusIds` for "is there work left", `deliveredStatusIds` for "was

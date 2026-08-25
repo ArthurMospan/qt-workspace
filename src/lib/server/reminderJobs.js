@@ -229,7 +229,7 @@ async function loadReminderEvents({ nowMs, lookBackMs, organizationId, recipient
     if (organizationId) query = query.where('organizationId', '==', organizationId);
     if (recipientId) query = query.where('participantIds', 'array-contains', recipientId);
     const snapshot = await query.select(...CALENDAR_FIELDS).get();
-    return snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
+    return snapshot.docs.map(document => ({ ...document.data(), id: document.id }));
   }
 
   const [upcoming, recurring] = await Promise.all([
@@ -246,7 +246,7 @@ async function loadReminderEvents({ nowMs, lookBackMs, organizationId, recipient
 
   const events = new Map();
   for (const document of [...upcoming.docs, ...recurring.docs]) {
-    events.set(document.id, { id: document.id, ...document.data() });
+    events.set(document.id, { ...document.data(), id: document.id });
   }
   return [...events.values()];
 }
@@ -328,7 +328,7 @@ export async function collectDeadlineCandidates({ nowMs = Date.now(), lookAheadM
       'cancelledAt',
     )
     .get();
-  const issues = snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
+  const issues = snapshot.docs.map(document => ({ ...document.data(), id: document.id }));
   const organizationIds = [...new Set(issues.map(issue => issue.organizationId).filter(Boolean))];
   if (!organizationIds.length) return [];
 

@@ -38,7 +38,7 @@ export function usePortalChat(qtProjectId, portalUser) {
     const q = query(collection(db, 'projects', qtProjectId, 'messages'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, (snap) => {
       if (cancelled) return;
-      setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setMessages(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
       setError(null);
     }, (err) => {
       if (cancelled) return;

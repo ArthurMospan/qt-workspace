@@ -107,7 +107,7 @@ export async function GET(request) {
       if (!canOpen) {
         return NextResponse.json({ error: 'Project not found' }, { status: 404 });
       }
-      scopedProject = { id: scopedProjectSnapshot.id, ...data };
+      scopedProject = { ...data, id: scopedProjectSnapshot.id };
     }
     // Picking a task to mention asks about tasks. It used to read the people,
     // the projects' calendars and every membership beside them and then throw
@@ -158,7 +158,7 @@ export async function GET(request) {
       };
     });
 
-    const projectRecords = projectsSnapshot.docs.map(document => ({ id: document.id, ...document.data() }));
+    const projectRecords = projectsSnapshot.docs.map(document => ({ ...document.data(), id: document.id }));
     const projectsById = new Map(projectRecords.map(project => [project.id, project]));
     const visibleProjectIds = isPrivileged
       ? null
@@ -180,7 +180,7 @@ export async function GET(request) {
           issueKey: taskDisplayKey(storedIssue, projectsById.get(storedIssue.projectId)),
         };
         const score = mention ? scoreIssueMention(issue, term) : scoreIssue(issue, term);
-        return { id: item.id, ...issue, score };
+        return { ...issue, id: item.id, score };
       })
       .filter(issue => issue.score > 0)
       .filter(issue => !visibleProjectIds || visibleProjectIds.has(issue.projectId))
@@ -255,7 +255,7 @@ export async function GET(request) {
     // The same visibility rule the calendar itself applies: a private event is
     // the organizer's alone, a participant-only event reaches its participants.
     const events = eventsSnapshot.docs
-      .map(document => ({ id: document.id, ...document.data() }))
+      .map(document => ({ ...document.data(), id: document.id }))
       .filter(event => (
         event.visibility === 'private'
           ? event.organizerId === uid

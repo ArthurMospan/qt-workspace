@@ -10,7 +10,7 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 362,
+    "files": 363,
     "elements": 4333,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
@@ -281,7 +281,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/workspace/IssueMentionChip.jsx:189",
+      "location": "src/components/workspace/IssueMentionChip.jsx:191",
       "attributes": [
         "title"
       ]

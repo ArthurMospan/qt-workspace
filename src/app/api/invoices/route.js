@@ -316,7 +316,7 @@ export async function POST(request) {
       const sourceIssuesById = new Map();
       sourceIssueSnapshots.forEach((snapshot, index) => {
         const issue = snapshot.exists
-          ? { id: snapshot.id, ...snapshot.data() }
+          ? { ...snapshot.data(), id: snapshot.id }
           : null;
         if (
           !issue

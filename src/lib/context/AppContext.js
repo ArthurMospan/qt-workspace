@@ -1,6 +1,6 @@
 'use client';
 // src/lib/context/AppContext.js
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth }         from '@/lib/hooks/useAuth';
 import { useProjects }     from '@/lib/hooks/useProjects';
 import { acceptPendingInvitation } from '@/lib/hooks/useOrganization';
@@ -30,6 +30,18 @@ function AppProviderInner({
   const invitationUid = user?.id || user?.uid;
   const invitationEmail = user?.email;
   const { projects, loading: projectsLoading, error: projectsError } = useProjects(userId, activeOrgId, orgRole);
+  const resetOrganizationScope = useWorkspaceStore(state => state.resetOrganizationScope);
+  const previousOrganizationId = useRef(undefined);
+
+  // React-local screens are remounted by the workspace layout's organization
+  // key. Zustand deliberately lives above that tree, so clear its org-scoped
+  // records before the browser paints the newly selected workspace.
+  useLayoutEffect(() => {
+    if (previousOrganizationId.current !== activeOrgId) {
+      resetOrganizationScope();
+      previousOrganizationId.current = activeOrgId;
+    }
+  }, [activeOrgId, resetOrganizationScope]);
 
   useEffect(() => {
     if (user?.localization) {

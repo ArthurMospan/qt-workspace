@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 250,
-    "parsedFiles": 250,
+    "productFiles": 251,
+    "parsedFiles": 251,
     "parseErrors": 0,
     "nativeControls": 20,
     "structures": {
@@ -160,7 +160,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/OrgSwitcherScreen.jsx:29",
+      "location": "src/components/OrgSwitcherScreen.jsx:30",
       "className": "flex flex-col items-center gap-4 transition-all duration-300 group/item w-[160px] group-hover/list:opacity-30 hover:!opacity-100",
       "text": "",
       "childElements": [
@@ -263,7 +263,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/workspace/IssueMentionChip.jsx:189",
+      "location": "src/components/workspace/IssueMentionChip.jsx:191",
       "className": "",
       "text": "",
       "childElements": [

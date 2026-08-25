@@ -104,8 +104,8 @@ export async function POST(req) {
         .where('organizationId', '==', organizationId);
       const organizationProjectsSnap = await transaction.get(organizationProjectsQuery);
       const organizationProjects = organizationProjectsSnap.docs.map(document => ({
-        id: document.id,
         ...document.data(),
+        id: document.id,
       }));
       const issuePrefix = suggestAvailableIssuePrefix(
         { name: normalizedName },

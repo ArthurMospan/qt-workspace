@@ -31,8 +31,8 @@ export function useSprints() {
       serverTimestamps: 'estimate'
     }, snap => {
       const docs = snap.docs.map(d => ({
+        ...d.data(),
         id: d.id,
-        ...d.data()
       }));
       // Sort by createdAt ascending (oldest first)
       docs.sort((a, b) => {

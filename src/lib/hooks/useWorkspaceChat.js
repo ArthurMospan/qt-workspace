@@ -151,7 +151,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
     const uid = currentUserId;
     const channelsRef = collection(db, 'organizations', activeOrgId, 'channels');
     const unsubChannels = onSnapshot(query(channelsRef), snap => {
-      const allChannels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const allChannels = snap.docs.map(d => ({ ...d.data(), id: d.id }));
       setDmChannels(allChannels.filter(channel => isVisibleChatChannel(channel, uid) && isDirectRoomId(channel.id)));
 
       const visible = allChannels.filter(channel =>

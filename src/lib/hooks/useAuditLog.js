@@ -40,7 +40,7 @@ export function useAuditLog(issueId, windowSize = AUDIT_WINDOW) {
     const unsub = onSnapshot(historyQuery, {
       serverTimestamps: 'estimate',
     }, snap => {
-      setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setEntries(snap.docs.map(d => ({ ...d.data(), id: d.id })));
       setHasMore(snap.size >= windowSize);
       setLoading(false);
     }, err => {

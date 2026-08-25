@@ -49,8 +49,8 @@ export function useTimeLogs(issueId, projectId) {
     }, snapshot => {
       if (cancelled) return;
       const nextLogs = snapshot.docs.map(document => ({
-        id: document.id,
         ...document.data(),
+        id: document.id,
       }));
       nextLogs.sort((left, right) => (
         (right.loggedAt?.toMillis?.() ?? 0)

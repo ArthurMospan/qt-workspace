@@ -297,8 +297,8 @@ export async function POST(request, context) {
         );
       }
       const statusConflict = issueBlockLinkStatusConflict({
-        sourceIssue: { id: sourceSnap.id, ...sourceSnap.data() },
-        targetIssue: { id: targetSnap.id, ...targetSnap.data() },
+        sourceIssue: { ...sourceSnap.data(), id: sourceSnap.id },
+        targetIssue: { ...targetSnap.data(), id: targetSnap.id },
         relationType: requested.relationType,
         closedStatusIds: resolveClosedStatusIds(workflowSnap.data()?.statuses),
       });

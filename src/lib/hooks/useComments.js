@@ -37,7 +37,7 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
       serverTimestamps: 'estimate'
     }, snap => {
       // Newest first out of the query, oldest first into the conversation.
-      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse());
+      setComments(snap.docs.map(d => ({ ...d.data(), id: d.id })).reverse());
       setHasMore(snap.size >= windowSize);
       setLoading(false);
     }, err => {

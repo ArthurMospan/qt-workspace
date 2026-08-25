@@ -107,7 +107,7 @@ export async function DELETE(request, context) {
         );
       }
       const projectAccessError = projectWriteError(
-        { id: projectSnap.id, ...projectSnap.data() },
+        { ...projectSnap.data(), id: projectSnap.id },
         current.organizationId,
         authorization.membership?.role,
         authorization.user.uid,
@@ -149,7 +149,7 @@ export async function DELETE(request, context) {
             && data.projectId === current.projectId
             && isBilledTimeLog(data);
         })
-        .map(document => ({ id: document.id, ...document.data() }));
+        .map(document => ({ ...document.data(), id: document.id }));
       if (billedLogs.length > 0) {
         const details = billedTimeLogDetails(billedLogs);
         throw apiTransactionError(
@@ -205,7 +205,7 @@ export async function DELETE(request, context) {
         issueId,
         organizationId: current.organizationId,
         projectId: current.projectId,
-        issue: { id: issueId, ...current },
+        issue: { ...current, id: issueId },
         childPolicy,
         childCount: children.length,
         deletedBy: authorization.user.uid,

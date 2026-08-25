@@ -226,14 +226,14 @@ export async function POST(request) {
 
     const db = getAdminDb();
     const issueSnaps = await db.getAll(...issueIds.map(id => db.collection('issues').doc(id)));
-    const issues = issueSnaps.map((snap, index) => snap.exists ? { id: snap.id, ...snap.data() } : { id: issueIds[index], missing: true });
+    const issues = issueSnaps.map((snap, index) => snap.exists ? { ...snap.data(), id: snap.id } : { id: issueIds[index], missing: true });
     const projectIds = [...new Set(issues.filter(issue => !issue.missing).map(issue => issue.projectId).filter(Boolean))];
     const [projectSnaps, workflowSnap, organizationSnap] = await Promise.all([
       projectIds.length ? db.getAll(...projectIds.map(id => db.collection('projects').doc(id))) : [],
       db.collection('organizations').doc(organizationId).collection('settings').doc('workflow').get(),
       db.collection('organizations').doc(organizationId).get(),
     ]);
-    const projects = new Map(projectSnaps.map(snap => [snap.id, snap.exists ? { id: snap.id, ...snap.data() } : null]));
+    const projects = new Map(projectSnaps.map(snap => [snap.id, snap.exists ? { ...snap.data(), id: snap.id } : null]));
     const workflow = workflowSnap.exists ? workflowSnap.data() : {};
     const timeZone = organizationSnap.data()?.timezone || DEFAULT_ORGANIZATION_TIME_ZONE;
     const statuses = fallbackStatuses(workflow);
@@ -250,7 +250,7 @@ export async function POST(request) {
     let sprint = null;
     if (actionId === 'sprint') {
       const sprintSnap = await db.collection('sprints').doc(body.value).get();
-      sprint = sprintSnap.exists ? { id: sprintSnap.id, ...sprintSnap.data() } : null;
+      sprint = sprintSnap.exists ? { ...sprintSnap.data(), id: sprintSnap.id } : null;
       if (!sprint || sprint.organizationId !== organizationId || sprint.status === 'completed') {
         return NextResponse.json({ error: 'Спринт не належить організації або вже завершений' }, { status: 400 });
       }
@@ -327,10 +327,10 @@ export async function POST(request) {
           const freshProjectSnap = await transaction.get(projectRef);
           const freshSprintSnap = sprintRef ? await transaction.get(sprintRef) : null;
           if (!freshSnap.exists) throw new Error('Завдання більше не існує');
-          const fresh = { id: freshSnap.id, ...freshSnap.data() };
+          const fresh = { ...freshSnap.data(), id: freshSnap.id };
           if (fresh.organizationId !== organizationId || fresh.projectId !== issue.projectId) throw new Error('Область задачі змінилася');
           const freshProject = freshProjectSnap.exists
-            ? { id: freshProjectSnap.id, ...freshProjectSnap.data() }
+            ? { ...freshProjectSnap.data(), id: freshProjectSnap.id }
             : null;
           const freshAccessError = projectAccessError(freshProject, organizationId, authorization);
           if (freshAccessError) throw new Error(freshAccessError);

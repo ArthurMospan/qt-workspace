@@ -44,7 +44,7 @@ export async function GET(request) {
     const uid = authorization.user.uid;
 
     const items = tombstones.docs
-      .map(document => ({ id: document.id, ...document.data() }))
+      .map(document => ({ ...document.data(), id: document.id }))
       // Still restorable only. An entry the sweep has already claimed, or whose
       // window has run out, is not something a button should offer to undo.
       .filter(tombstone => canRestoreIssueTombstone(tombstone))

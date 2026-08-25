@@ -23,7 +23,7 @@ export function usePortalStageMaterials(stageId) {
     const q = query(collection(db, 'stages', stageId, 'materials'), orderBy('order', 'asc'));
     const unsub = onSnapshot(q, (snap) => {
       if (cancelled) return;
-      setMaterials(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setMaterials(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
       setError(null);
     }, (err) => {
       if (cancelled) return;

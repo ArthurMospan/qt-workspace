@@ -31,7 +31,7 @@ async function loadIssueRelationsAndTimeLogs(db, issue) {
   ]);
   return {
     billedLogs: timeLogs.docs.filter(document => isBilledTimeLog(document.data())),
-    timeLogs: timeLogs.docs.map(document => ({ id: document.id, ...document.data() })),
+    timeLogs: timeLogs.docs.map(document => ({ ...document.data(), id: document.id })),
     refs: [
       ...sourceLinks.docs
         .filter(document => document.data().organizationId === issue.organizationId)

@@ -226,7 +226,7 @@ export default function WorkspaceLayout({ children }) {
   }
 
   return (
-    <ConfirmProvider>
+    <ConfirmProvider key={activeOrgId}>
     <WorkspaceNotificationBridge />
     <IssueReadStateBridge />
     <WorkspaceDocumentTitle />

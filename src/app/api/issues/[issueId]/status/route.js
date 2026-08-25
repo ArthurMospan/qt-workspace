@@ -41,14 +41,14 @@ function jsonError(error, status, code, details = {}) {
 
 function serializedLink(document) {
   return {
-    id: document.id,
     ...document.data(),
+    id: document.id,
   };
 }
 
 function issueRecord(document) {
   return document?.exists
-    ? { id: document.id, ...document.data() }
+    ? { ...document.data(), id: document.id }
     : null;
 }
 
@@ -147,7 +147,7 @@ export async function PATCH(request, context) {
         );
       }
 
-      const current = { id: currentSnap.id, ...currentSnap.data() };
+      const current = { ...currentSnap.data(), id: currentSnap.id };
       if (
         current.organizationId !== initialIssue.organizationId
         || current.projectId !== initialIssue.projectId

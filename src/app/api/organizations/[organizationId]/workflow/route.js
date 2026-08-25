@@ -37,7 +37,7 @@ function workflowError(code, status, message, details = {}) {
 }
 
 function serializedLink(document) {
-  return { id: document.id, ...document.data() };
+  return { ...document.data(), id: document.id };
 }
 
 function statusIdOf(issue) {
@@ -256,8 +256,8 @@ export async function PATCH(request, context) {
         db.collection('projects').where('organizationId', '==', organizationId),
       );
       const currentIssues = issuesSnapshot.docs.map(document => ({
-        id: document.id,
         ...document.data(),
+        id: document.id,
       }));
       const missingMigrationCounts = new Map();
       const nextIssues = currentIssues.map(issue => {

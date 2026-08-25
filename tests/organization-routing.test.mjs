@@ -12,6 +12,7 @@ import {
   organizationMembershipSignature,
   parseOrganizationDirectory,
 } from '../src/lib/utils/organizationList.mjs';
+import { firestoreDocumentData } from '../src/lib/utils/firestoreDocument.mjs';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -190,6 +191,59 @@ test('a membership names its workspace once, whatever the snapshot holds', () =>
   // this person's however it got into the read.
   assert.deepEqual(organizations.map(organization => organization.id), ['org-one']);
   assert.deepEqual(roles, { 'org-one': 'owner' });
+});
+
+test('a cached organization field cannot replace its Firestore path id', () => {
+  const organization = firestoreDocumentData({
+    id: 'org-oneb',
+    data: () => ({ id: 'org-arthur-team', name: 'OneB' }),
+  });
+
+  assert.deepEqual(organization, { id: 'org-oneb', name: 'OneB' });
+});
+
+test('the workspace remounts and clears shared UI state when organization scope changes', async () => {
+  const [layout, context, store] = await Promise.all([
+    read('../src/app/(app)/layout.js'),
+    read('../src/lib/context/AppContext.js'),
+    read('../src/store/useWorkspaceStore.js'),
+  ]);
+
+  assert.match(layout, /<ConfirmProvider key=\{activeOrgId\}>/);
+  assert.match(context, /useLayoutEffect\(\(\) => \{[\s\S]*resetOrganizationScope\(\)/);
+  assert.match(store, /resetOrganizationScope:[\s\S]*quickView: null,[\s\S]*breadcrumbs: \[\],[\s\S]*sidebarPreview: null/);
+});
+
+test('role-filtered organization caches are isolated by organization, user and role', async () => {
+  const [organizationHook, workflowHook, issueLinks, members, mentions] = await Promise.all([
+    read('../src/lib/hooks/useOrganization.js'),
+    read('../src/lib/hooks/useWorkflowConfig.js'),
+    read('../src/lib/hooks/useIssueLinks.js'),
+    read('../src/lib/services/members.js'),
+    read('../src/components/workspace/IssueMentionChip.jsx'),
+  ]);
+
+  for (const hook of [organizationHook, workflowHook]) {
+    assert.match(hook, /const viewerScope = viewerId \? `\$\{viewerId\}:\$\{orgRole \|\| 'pending'\}` : '';/);
+    assert.match(hook, /const key = `\$\{organizationId\}:\$\{viewerScope\}`;/);
+  }
+  assert.match(issueLinks, /linkRequestCacheKey\(viewerScope, issueId\)/);
+  assert.match(issueLinks, /activeOrgId \|\| 'none'[\s\S]*viewerId \|\| 'anonymous'[\s\S]*orgRole \|\| 'pending'/);
+  assert.match(members, /\$\{organizationId\}_\$\{currentUser\.uid\}_\$\{cacheScope \|\| 'default'\}/);
+  assert.match(mentions, /pendingKeysByOrganization\.get\(organizationId\)/);
+  assert.match(mentions, /scheduledOrganizations\.has\(organizationId\)/);
+});
+
+test('remembered workspace filters are scoped to the organization', async () => {
+  const [myTasks, sprints, projectBoard] = await Promise.all([
+    read('../src/app/(app)/my/page.js'),
+    read('../src/app/(app)/sprints/page.js'),
+    read('../src/app/(app)/[projectId]/ProjectBoardClient.jsx'),
+  ]);
+
+  assert.match(myTasks, /storageKey: `qt:view:\$\{activeOrgId\}:my-tasks`/);
+  assert.match(sprints, /storageKey: `qt:view:\$\{activeOrgId\}:sprints`/);
+  assert.match(projectBoard, /storageKey: `qt:view:\$\{resourceOrganizationId \|\| activeOrgId\}:board:\$\{projectId\}`/);
 });
 
 test('membership signatures ignore snapshot order but notice access changes', () => {

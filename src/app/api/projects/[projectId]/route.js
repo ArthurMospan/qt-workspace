@@ -127,8 +127,8 @@ export async function PATCH(request, context) {
               .where('organizationId', '==', project.organizationId),
           );
           const organizationProjects = projectsSnapshot.docs.map(document => ({
-            id: document.id,
             ...document.data(),
+            id: document.id,
           }));
           resolvedIssuePrefix = suggestAvailableIssuePrefix(
             { name },
@@ -164,8 +164,8 @@ export async function PATCH(request, context) {
           : null;
         const currentIssues = issuesSnapshot
           ? issuesSnapshot.docs.map(document => ({
-            id: document.id,
             ...document.data(),
+            id: document.id,
           }))
           : [];
         const issueIdsToMove = new Set(
@@ -190,7 +190,7 @@ export async function PATCH(request, context) {
           );
           const projectIssueIds = new Set(currentIssues.map(issue => issue.id));
           scopedLinks = linksSnapshot.docs
-            .map(document => ({ id: document.id, ...document.data() }))
+            .map(document => ({ ...document.data(), id: document.id }))
             .filter(link => (
               projectIssueIds.has(link.sourceIssueId)
               && projectIssueIds.has(link.targetIssueId)

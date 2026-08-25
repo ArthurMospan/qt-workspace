@@ -69,7 +69,7 @@ export async function POST(request) {
     if (!channelSnapshot.exists) {
       return NextResponse.json({ error: 'Attachment not found' }, { status: 404 });
     }
-    const channel = { id: channelSnapshot.id, ...channelSnapshot.data() };
+    const channel = { ...channelSnapshot.data(), id: channelSnapshot.id };
     if (!canAccessChatChannel(channel, authorization.user.uid)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

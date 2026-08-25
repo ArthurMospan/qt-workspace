@@ -18,9 +18,11 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import { firestoreDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 export function useProjects(userId, activeOrgId, orgRole) {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
+  const [loadedOrganizationId, setLoadedOrganizationId] = useState(null);
   // Start as loading=true so callers don't flash an empty state
   // while auth/org context is still resolving.
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,7 @@ export function useProjects(userId, activeOrgId, orgRole) {
       queueMicrotask(() => {
         setProjects([]);
         setError(null);
+        setLoadedOrganizationId(null);
         setLoading(false);
       });
       return;
@@ -45,7 +48,16 @@ export function useProjects(userId, activeOrgId, orgRole) {
       // userId exists but orgId not yet resolved — keep loading
       return;
     }
-    queueMicrotask(() => setLoading(true));
+    // Project records belong to exactly one organization. Keeping the previous
+    // organization's array visible while the new query is still resolving can
+    // make an old project route switch the workspace straight back to the old
+    // organization. Clear the old scope before subscribing to the new one.
+    queueMicrotask(() => {
+      setProjects([]);
+      setError(null);
+      setLoadedOrganizationId(null);
+      setLoading(true);
+    });
     // Privileged roles see all org projects; everyone else (including an
     // as-yet-unresolved role) gets the restrictive team-scoped query so we
     // never over-expose while orgRole is still loading.
@@ -67,10 +79,10 @@ export function useProjects(userId, activeOrgId, orgRole) {
         setLoading(true);
         return;
       }
-      const docs = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data({ serverTimestamps: 'estimate' })
-      }));
+      const docs = snap.docs.map(d => firestoreDocumentData(
+        d,
+        { serverTimestamps: 'estimate' },
+      ));
       docs.sort((a, b) => {
         const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -78,18 +90,21 @@ export function useProjects(userId, activeOrgId, orgRole) {
       });
       setProjects(docs);
       setError(null);
+      setLoadedOrganizationId(activeOrgId);
       setLoading(false);
     }, err => {
       reportLoadError('[useProjects]', err);
       setError(err);
+      setLoadedOrganizationId(activeOrgId);
       setLoading(false);
     });
     return () => unsub();
   }, [userId, activeOrgId, orgRole]);
+  const scopeMatches = Boolean(activeOrgId) && loadedOrganizationId === activeOrgId;
   return {
-    projects,
-    loading,
-    error
+    projects: scopeMatches ? projects : [],
+    loading: userId === null ? loading : (loading || !scopeMatches),
+    error: scopeMatches ? error : null,
   };
 }
 

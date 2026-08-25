@@ -375,7 +375,7 @@ export default function GlobalSprintsPage() {
   const [sectionExpansion, setSectionExpansion] = useState({});
   // Filters live in the address, so a sprint board can be bookmarked and sent.
   const [sprintFilters, setSprintFilters] = useViewState(SPRINTS_VIEW_SCHEMA, {
-    storageKey: 'qt:view:sprints',
+    storageKey: `qt:view:${activeOrgId}:sprints`,
   });
   const {
     projects: projectFilters,

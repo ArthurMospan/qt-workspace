@@ -27,7 +27,7 @@ export function usePortalStages(qtProjectId) {
     );
     const unsub = onSnapshot(q, (snap) => {
       if (cancelled) return;
-      setStages(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setStages(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
       setError(null);
     }, (err) => {
       if (cancelled) return;

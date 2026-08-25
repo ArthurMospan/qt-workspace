@@ -383,7 +383,7 @@ function readBucket({
     if (readyStreams.size >= expectedStreamCount) onReady();
   };
   const deliver = docs => {
-    buckets.set(key, docs.map(document => ({ id: document.id, ...document.data() })));
+    buckets.set(key, docs.map(document => ({ ...document.data(), id: document.id })));
     publish(flattenDocumentBuckets(buckets));
     markReady();
   };

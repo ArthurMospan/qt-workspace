@@ -25,8 +25,8 @@ export function usePortalMaterial(linkedId) {
     }
     getDoc(ref).then(snap => {
       setMaterial(snap.exists() ? {
+        ...snap.data(),
         id: snap.id,
-        ...snap.data()
       } : null);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -52,8 +52,8 @@ export function usePortalChat(projectId) {
     const q = query(collection(db, 'projects', projectId, 'messages'), limit(60));
     const unsub = onSnapshot(q, snap => {
       const msgs = snap.docs.map(d => ({
+        ...d.data(),
         id: d.id,
-        ...d.data()
       }));
       // Sort client-side: oldest first (ascending createdAt)
       msgs.sort((a, b) => {
@@ -103,8 +103,8 @@ export function usePortalStage(stageId) {
     }
     getDoc(doc(db, 'stages', stageId)).then(snap => {
       setStage(snap.exists() ? {
+        ...snap.data(),
         id: snap.id,
-        ...snap.data()
       } : null);
       setLoading(false);
     }).catch(() => setLoading(false));

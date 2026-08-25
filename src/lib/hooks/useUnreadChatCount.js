@@ -41,7 +41,7 @@ export function useUnreadChatCount() {
     if (!activeOrgId) return undefined;
     const qChannels = query(collection(db, 'organizations', activeOrgId, 'channels'));
     const unsub = onSnapshot(qChannels, snap => {
-      setChannels(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setChannels(snap.docs.map(d => ({ ...d.data(), id: d.id })));
     }, err => {
       reportLoadError('[useUnreadChatCount] channels', err);
     });

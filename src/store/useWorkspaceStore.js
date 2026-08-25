@@ -328,6 +328,39 @@ const useWorkspaceStore = create((set, get) => ({
   sidebarPreview: null,  // { theme: 'dark'|'light'|'custom', color: '#hex' } | null
   setSidebarPreview: (preview) => set({ sidebarPreview: preview }),
   clearSidebarPreview: () => set({ sidebarPreview: null }),
+
+  // UI state below the AppContext outlives React route trees. On an
+  // organization switch that is useful for account-wide notifications and a
+  // running timer, but dangerous for records that belong to the workspace we
+  // just left. Clear every organization-scoped surface as one transaction.
+  resetOrganizationScope: () => {
+    const toastTimer = get()._toastTimer;
+    const liveNotifTimer = get()._liveNotifTimer;
+    if (toastTimer) clearTimeout(toastTimer);
+    if (liveNotifTimer) clearTimeout(liveNotifTimer);
+    set({
+      quickView: null,
+      toast: null,
+      _toastTimer: null,
+      liveNotif: null,
+      _liveNotifTimer: null,
+      unreadChatCount: 0,
+      issueReadState: {},
+      issueReadStateLoaded: false,
+      breadcrumbs: [],
+      chatSearch: '',
+      teamSearch: '',
+      workspaceSearch: '',
+      myTaskSearch: '',
+      projectSearch: '',
+      sprintSearch: '',
+      analyticsSearch: '',
+      calendarSearch: '',
+      localSearchFeedback: null,
+      chatOnlineUsers: [],
+      sidebarPreview: null,
+    });
+  },
 }));
 
 export default useWorkspaceStore;

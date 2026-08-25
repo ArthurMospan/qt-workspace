@@ -161,7 +161,7 @@ async function claimImportStep(jobRef, organizationId) {
       stepLeaseUntil: Timestamp.fromMillis(now + IMPORT_STEP_LEASE_MS),
       updatedAt: FieldValue.serverTimestamp(),
     });
-    claimedJob = { id: snapshot.id, ...data };
+    claimedJob = { ...data, id: snapshot.id };
   });
 
   return { leaseId, claimedJob, terminalSnapshot, busySnapshot };
@@ -302,8 +302,8 @@ async function ensureTargetProject(job, sourceProject) {
       }
     }
     const organizationProjectValues = organizationProjects.docs.map(document => ({
-      id: document.id,
       ...document.data(),
+      id: document.id,
     }));
     const issuePrefix = suggestAvailableIssuePrefix(
       { name: sourceProject.name, issuePrefix: sourceProject.shortName },
@@ -357,14 +357,14 @@ function workflowValues(snapshot) {
 
 function issueRecord(document) {
   return document?.exists
-    ? { id: document.id, ...document.data() }
+    ? { ...document.data(), id: document.id }
     : null;
 }
 
 function serializedLink(document) {
   return {
-    id: document.id,
     ...document.data(),
+    id: document.id,
   };
 }
 
@@ -1406,12 +1406,12 @@ async function processPendingLink(jobRef, job) {
       );
       const statusConflict = issueBlockLinkStatusConflict({
         sourceIssue: {
-          id: freshSource.id,
           ...freshSource.data(),
+          id: freshSource.id,
         },
         targetIssue: {
-          id: freshTarget.id,
           ...freshTarget.data(),
+          id: freshTarget.id,
         },
         relationType: canonical.relationType,
         closedStatusIds,
@@ -1427,8 +1427,8 @@ async function processPendingLink(jobRef, job) {
 
       const graphLinks = normalizeStoredIssueLinks(
         organizationRelations.docs.map(document => ({
-          id: document.id,
           ...document.data(),
+          id: document.id,
         })),
       );
       const knownIssueIds = projectIssues.docs

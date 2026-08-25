@@ -22,6 +22,7 @@ import {
   organizationLoadRetryDelay,
   shouldRetryOrganizationLoad,
 } from '@/lib/utils/organizationLoadErrors.mjs';
+import { firestoreDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 
 const TAB_STORAGE_KEY = 'qt_active_org_id';
 const ORG_LOAD_RETRY_LIMIT = 3;
@@ -130,7 +131,7 @@ export function OrgProvider({ user, children }) {
         const request = query(collection(db, 'organizations'), where('__name__', 'in', ids));
         return fromServer ? getDocsFromServer(request) : getDocs(request);
       }));
-      return snapshots.flatMap(orgSnap => orgSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      return snapshots.flatMap(orgSnap => orgSnap.docs.map(d => firestoreDocumentData(d)));
     };
 
     // `getDocs` answers from the local cache whenever the SDK believes it is
@@ -375,7 +376,7 @@ export function OrgProvider({ user, children }) {
     // Sync organization data
     const unsubOrg = onSnapshot(doc(db, 'organizations', activeOrgId), (snap) => {
       if (snap.exists()) {
-        const data = { id: snap.id, ...snap.data() };
+        const data = firestoreDocumentData(snap);
         setActiveOrg(data);
         setAllOrgs(prev => {
           const exists = prev.find(o => o.id === snap.id);

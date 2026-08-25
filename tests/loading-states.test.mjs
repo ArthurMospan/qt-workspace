@@ -59,3 +59,13 @@ test('the member page waits for the member list before saying "not found"', asyn
   assert.match(page, /loading: membersLoading/);
   assert.match(page, /if \(!urlReady \|\| loading \|\| calendarLoading \|\| membersLoading\)/);
 });
+
+test('projects from the previous organization are cleared before a new scope subscribes', async () => {
+  const source = await read('../src/lib/hooks/useProjects.js');
+  assert.match(
+    source,
+    /queueMicrotask\(\(\) => \{\s*setProjects\(\[\]\);\s*setError\(null\);\s*setLoadedOrganizationId\(null\);\s*setLoading\(true\);\s*\}\);/,
+  );
+  assert.match(source, /loadedOrganizationId === activeOrgId/);
+  assert.match(source, /projects: scopeMatches \? projects : \[\]/);
+});

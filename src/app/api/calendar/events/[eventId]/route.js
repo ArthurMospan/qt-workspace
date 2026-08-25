@@ -446,8 +446,8 @@ export async function PATCH(request, context) {
           .limit(1),
       );
       const logs = logsSnapshot.docs.map(document => ({
-        id: document.id,
         ...document.data(),
+        id: document.id,
       }));
       if (
         logs.length > 0

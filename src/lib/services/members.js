@@ -40,12 +40,18 @@ function writePersistentMembers(cacheKey, members) {
   }
 }
 
-export async function fetchOrganizationMembers(organizationId, { force = false } = {}) {
+export async function fetchOrganizationMembers(
+  organizationId,
+  { force = false, cacheScope = '' } = {},
+) {
   if (!organizationId) return [];
   await auth.authStateReady?.();
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('Authentication required');
-  const cacheKey = `${organizationId}_${currentUser.uid}`;
+  // The directory is role-filtered: owner/admin responses include billing
+  // rates, member responses do not. A role change in the same browser must not
+  // be allowed to fall back to a privileged persistent response.
+  const cacheKey = `${organizationId}_${currentUser.uid}_${cacheScope || 'default'}`;
   const cached = memberCache.get(cacheKey);
   if (!force && cached && Date.now() - cached.createdAt < CACHE_MS) return cached.promise;
 

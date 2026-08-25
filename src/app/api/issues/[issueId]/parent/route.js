@@ -159,7 +159,7 @@ export async function PATCH(request, context) {
           db.collection('issues').doc(parentIssueId),
         );
         parent = parentSnap.exists
-          ? { id: parentSnap.id, ...parentSnap.data() }
+          ? { ...parentSnap.data(), id: parentSnap.id }
           : null;
 
         const canonicalChildren = await transaction.get(
@@ -188,7 +188,7 @@ export async function PATCH(request, context) {
       });
       if (hierarchyError) throw hierarchyTransactionError(hierarchyError);
       const statusConflict = issueParentStatusConflict({
-        issue: { id: issueId, ...current },
+        issue: { ...current, id: issueId },
         parentIssue: parent,
         closedStatusIds,
       });

@@ -24,8 +24,8 @@ export async function resolveProjectIssuePrefixInTransaction({
     db.collection('projects').where('organizationId', '==', organizationId),
   );
   const organizationProjects = projectsSnapshot.docs.map(document => ({
-    id: document.id,
     ...document.data(),
+    id: document.id,
   }));
 
   return suggestAvailableIssuePrefix(project, organizationProjects, projectId);

@@ -15,6 +15,7 @@ import {
 } from '@/lib/services/members';
 import { reportLoadError } from '@/lib/utils/errors';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
+import { firestoreDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 
 const ORGANIZATION_SERVER_SNAPSHOT = Object.freeze({
   org: null,
@@ -30,7 +31,7 @@ const EMPTY_ORGANIZATION_SNAPSHOT = Object.freeze({
 
 const organizationStores = new Map();
 
-function createOrganizationStore(organizationId) {
+function createOrganizationStore(organizationId, viewerScope) {
   let snapshot = ORGANIZATION_SERVER_SNAPSHOT;
   let unsubscribeOrg = null;
   let unsubscribeMembers = null;
@@ -48,7 +49,10 @@ function createOrganizationStore(organizationId) {
   const refresh = async () => {
     const version = ++requestVersion;
     try {
-      const members = await fetchOrganizationMembers(organizationId, { force: true });
+      const members = await fetchOrganizationMembers(organizationId, {
+        force: true,
+        cacheScope: viewerScope,
+      });
       if (version === requestVersion) {
         emit({ ...snapshot, members, loading: false, error: null });
       }
@@ -68,7 +72,7 @@ function createOrganizationStore(organizationId) {
         emit({ org: null, members: [], loading: false, error: null });
         return;
       }
-      const nextOrg = { id: orgSnap.id, ...orgSnap.data() };
+      const nextOrg = firestoreDocumentData(orgSnap);
       const nextDirectoryVersion = Number(nextOrg.memberDirectoryVersion) || 0;
       if (
         memberDirectoryVersion !== undefined
@@ -130,17 +134,23 @@ const emptyOrganizationStore = {
   getServerSnapshot: () => EMPTY_ORGANIZATION_SNAPSHOT,
 };
 
-function getOrganizationStore(organizationId) {
-  if (!organizationId) return emptyOrganizationStore;
-  if (!organizationStores.has(organizationId)) {
-    organizationStores.set(organizationId, createOrganizationStore(organizationId));
+function getOrganizationStore(organizationId, viewerScope) {
+  if (!organizationId || !viewerScope) return emptyOrganizationStore;
+  const key = `${organizationId}:${viewerScope}`;
+  if (!organizationStores.has(key)) {
+    organizationStores.set(key, createOrganizationStore(organizationId, viewerScope));
   }
-  return organizationStores.get(organizationId);
+  return organizationStores.get(key);
 }
 
 export function useOrganization() {
-  const { activeOrgId } = useAppContext();
-  const store = useMemo(() => getOrganizationStore(activeOrgId), [activeOrgId]);
+  const { activeOrgId, currentUser, orgRole } = useAppContext();
+  const viewerId = currentUser?.uid || currentUser?.id || '';
+  const viewerScope = viewerId ? `${viewerId}:${orgRole || 'pending'}` : '';
+  const store = useMemo(
+    () => getOrganizationStore(activeOrgId, viewerScope),
+    [activeOrgId, viewerScope],
+  );
   const { org, members, loading, error } = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
@@ -168,8 +178,8 @@ export function useOrganization() {
   const changeMemberRole = useCallback(async (uid, newRole) => {
     if (!activeOrgId) return;
     await updateOrganizationMember(activeOrgId, uid, { action: 'role', role: newRole });
-    await getOrganizationStore(activeOrgId).refresh();
-  }, [activeOrgId]);
+    await store.refresh();
+  }, [activeOrgId, store]);
 
   // Change hourly rate
   const setMemberRate = useCallback(async (uid, rate) => {
@@ -178,8 +188,8 @@ export function useOrganization() {
       action: 'rate',
       hourlyRate: Number(rate),
     });
-    await getOrganizationStore(activeOrgId).refresh();
-  }, [activeOrgId]);
+    await store.refresh();
+  }, [activeOrgId, store]);
 
   // Change position
   const setMemberPosition = useCallback(async (uid, positionId) => {
@@ -188,8 +198,8 @@ export function useOrganization() {
       action: 'position',
       positionId: positionId || '',
     });
-    await getOrganizationStore(activeOrgId).refresh();
-  }, [activeOrgId]);
+    await store.refresh();
+  }, [activeOrgId, store]);
 
   const getMemberRemovalImpact = useCallback(async uid => {
     if (!activeOrgId) return { projectCount: 0, assignedIssueCount: 0, watchedIssueCount: 0 };
@@ -201,16 +211,16 @@ export function useOrganization() {
   const deactivateMember = useCallback(async uid => {
     if (!activeOrgId) return;
     const result = await deactivateOrganizationMember(activeOrgId, uid);
-    await getOrganizationStore(activeOrgId).refresh();
+    await store.refresh();
     return result;
-  }, [activeOrgId]);
+  }, [activeOrgId, store]);
 
   const reactivateMember = useCallback(async uid => {
     if (!activeOrgId) return;
     const result = await reactivateOrganizationMember(activeOrgId, uid);
-    await getOrganizationStore(activeOrgId).refresh();
+    await store.refresh();
     return result;
-  }, [activeOrgId]);
+  }, [activeOrgId, store]);
   return {
     org,
     members,

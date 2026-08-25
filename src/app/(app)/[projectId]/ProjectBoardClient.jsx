@@ -110,7 +110,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   // Board filters and the kanban/list choice live in the address, so this board
   // can be bookmarked, sent to somebody, and stepped back out of.
   const [boardViewState, setBoardViewState] = useViewState(BOARD_VIEW_SCHEMA, {
-    storageKey: `qt:view:board:${projectId}`,
+    storageKey: `qt:view:${resourceOrganizationId || activeOrgId}:board:${projectId}`,
     ready: resourceContextReady,
   });
   const {

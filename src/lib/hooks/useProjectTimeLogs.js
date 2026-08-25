@@ -59,8 +59,8 @@ export function useProjectTimeLogs(projectId) {
       snapshot => {
         if (cancelled) return;
         buckets[key] = snapshot.docs.map(document => ({
-          id: document.id,
           ...document.data(),
+          id: document.id,
         }));
         ready.add(key);
         publish();

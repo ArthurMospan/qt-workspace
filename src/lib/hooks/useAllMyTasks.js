@@ -138,7 +138,7 @@ export function useAllMyTasks(userId) {
           where('assigneeIds', 'array-contains', userId),
         ),
         snap => {
-          issueBuckets.set(issuesKey, snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          issueBuckets.set(issuesKey, snap.docs.map(d => ({ ...d.data(), id: d.id })));
           publishIssues();
           markReady(issuesKey);
         },
@@ -158,7 +158,7 @@ export function useAllMyTasks(userId) {
           where('projectId', 'in', chunk),
         ),
         snap => {
-          linkBuckets.set(linksKey, snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          linkBuckets.set(linksKey, snap.docs.map(d => ({ ...d.data(), id: d.id })));
           setIssueLinks(flattenDocumentBuckets(linkBuckets));
           markReady(linksKey);
         },

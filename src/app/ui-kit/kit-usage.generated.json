@@ -6645,7 +6645,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/OrgSwitcherScreen.jsx:47",
+            "src/components/OrgSwitcherScreen.jsx:48",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         }
@@ -6664,7 +6664,7 @@
             "src/components/MobileNav.jsx:222",
             "src/components/MobileNav.jsx:246",
             "src/components/MobileNav.jsx:293",
-            "src/components/OrgSwitcherScreen.jsx:47",
+            "src/components/OrgSwitcherScreen.jsx:48",
             "src/components/WorkspaceSidebar.jsx:344",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
@@ -6688,7 +6688,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:388",
-            "src/components/OrgSwitcherScreen.jsx:47",
+            "src/components/OrgSwitcherScreen.jsx:48",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6740,7 +6740,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/OrgSwitcherScreen.jsx:47"
+            "src/components/OrgSwitcherScreen.jsx:48"
           ]
         }
       }

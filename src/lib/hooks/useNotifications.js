@@ -105,8 +105,8 @@ export function useNotifications(userId, {
       );
     const unsub = onSnapshot(q, snap => {
       const docs = snap.docs.map(d => ({
+        ...d.data(),
         id: d.id,
-        ...d.data()
       }))
         // `inapp: false` marks a document written purely as the cross-channel
         // dedupe claim for someone who wanted this event by email or Telegram

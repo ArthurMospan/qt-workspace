@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { reportLoadError } from '@/lib/utils/errors';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
@@ -12,8 +13,12 @@ export {
 
 const requestCache = new Map();
 
-async function requestLinks(issueId, method = 'GET', body = null) {
-  const cacheKey = String(issueId);
+function linkRequestCacheKey(viewerScope, issueId) {
+  return `${viewerScope}:${issueId}`;
+}
+
+async function requestLinks(issueId, viewerScope, method = 'GET', body = null) {
+  const cacheKey = linkRequestCacheKey(viewerScope, issueId);
   if (method === 'GET') {
     const cached = requestCache.get(cacheKey);
     if (cached) return cached;
@@ -45,7 +50,10 @@ async function performRequest(issueId, method, body) {
 }
 
 export function useIssueLinks(issueId) {
+  const { activeOrgId, currentUser, orgRole } = useAppContext();
   const { closedStatusIds } = useWorkflowConfig();
+  const viewerId = currentUser?.uid || currentUser?.id || '';
+  const viewerScope = `${activeOrgId || 'none'}:${viewerId || 'anonymous'}:${orgRole || 'pending'}`;
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,7 +67,7 @@ export function useIssueLinks(issueId) {
     }
     setLoading(true);
     try {
-      const result = await requestLinks(issueId);
+      const result = await requestLinks(issueId, viewerScope);
       const nextLinks = result.links || [];
       setLinks(nextLinks);
       setError(null);
@@ -72,7 +80,7 @@ export function useIssueLinks(issueId) {
     } finally {
       setLoading(false);
     }
-  }, [issueId]);
+  }, [issueId, viewerScope]);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,19 +94,19 @@ export function useIssueLinks(issueId) {
 
   const addLink = useCallback(async (sourceId, targetId, relationType) => {
     const request = issueLinkRequestFromPerspective(sourceId, targetId, relationType);
-    await requestLinks(request.sourceIssueId, 'POST', {
+    await requestLinks(request.sourceIssueId, viewerScope, 'POST', {
       targetIssueId: request.targetIssueId,
       relationType: request.relationType,
     });
-    requestCache.delete(String(sourceId));
-    requestCache.delete(String(targetId));
+    requestCache.delete(linkRequestCacheKey(viewerScope, sourceId));
+    requestCache.delete(linkRequestCacheKey(viewerScope, targetId));
     await refresh();
-  }, [refresh]);
+  }, [refresh, viewerScope]);
 
   const removeLink = useCallback(async linkId => {
-    await requestLinks(issueId, 'DELETE', { linkId });
+    await requestLinks(issueId, viewerScope, 'DELETE', { linkId });
     await refresh();
-  }, [issueId, refresh]);
+  }, [issueId, refresh, viewerScope]);
 
   const hasBlocker = useCallback((targetIssueId, allIssues) => {
     const blockingLinks = links.filter(link => link.relationType === 'blocks' && link.targetIssueId === targetIssueId);

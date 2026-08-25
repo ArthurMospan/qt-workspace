@@ -118,8 +118,8 @@ export function useAnalyticsRollups(projectIds = [], { dayRange = null } = {}) {
       }
       const snapshots = results.map(result => result.value);
       setRollups(snapshots.flatMap(snapshot => snapshot.docs.map(document => ({
-        id: document.id,
         ...document.data(),
+        id: document.id,
       }))));
       setError(null);
       setReadAt(Date.now());

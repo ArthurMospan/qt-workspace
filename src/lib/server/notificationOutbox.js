@@ -62,7 +62,7 @@ export async function materialiseCandidates(candidates, { windowStartMs, windowE
     : [];
   const existing = new Map(existingSnapshots.map(snapshot => [
     snapshot.id,
-    snapshot.exists ? { id: snapshot.id, ...snapshot.data() } : null,
+    snapshot.exists ? { ...snapshot.data(), id: snapshot.id } : null,
   ]));
 
   let created = 0;
@@ -231,7 +231,7 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
   if (!documents.size) return { due: 0, sent: 0, failed: 0, telegram: 0, email: 0 };
 
   const rows = dueRows(
-    [...documents.values()].map(document => ({ id: document.id, ...document.data() })),
+    [...documents.values()].map(document => ({ ...document.data(), id: document.id })),
     nowMs,
     limit,
   );

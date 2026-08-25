@@ -67,7 +67,7 @@ export async function GET(request) {
       .get();
 
     const found = snapshot.docs
-      .map(document => ({ id: document.id, ...document.data() }))
+      .map(document => ({ ...document.data(), id: document.id }))
       .filter(issue => issue.organizationId === organizationId);
     if (found.length === 0) return NextResponse.json({ results: [] });
 
@@ -82,7 +82,7 @@ export async function GET(request) {
       : [];
     const projectsById = new Map(projectSnapshots
       .filter(document => document.exists)
-      .map(document => [document.id, { id: document.id, ...document.data() }]));
+      .map(document => [document.id, { ...document.data(), id: document.id }]));
 
     const isPrivileged = ['owner', 'admin'].includes(authorization.membership?.role);
     const results = found

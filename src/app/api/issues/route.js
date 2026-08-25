@@ -270,7 +270,7 @@ export async function POST(request) {
       if (parentIssueId) {
         const parentSnap = await transaction.get(db.collection('issues').doc(parentIssueId));
         const parent = parentSnap.exists
-          ? { id: parentSnap.id, ...parentSnap.data() }
+          ? { ...parentSnap.data(), id: parentSnap.id }
           : null;
         parentIssueKey = parent?.issueKey || '';
         const hierarchyError = validateIssueParentAssignment({

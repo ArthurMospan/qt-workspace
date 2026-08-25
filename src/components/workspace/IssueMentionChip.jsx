@@ -58,16 +58,16 @@ function recallFromSession(id) {
 
 // Capsules mount in the same commit, so the keys they want are collected within
 // one microtask and asked for together.
-let pendingKeys = new Map();
-let flushScheduled = false;
+const pendingKeysByOrganization = new Map();
+const scheduledOrganizations = new Set();
 // The endpoint answers up to twenty keys at a time; a conversation with more
 // distinct tasks in it is asked in as many requests, never as many as keys.
 const LOOKUP_BATCH = 20;
 
 async function flush(organizationId) {
-  const batch = pendingKeys;
-  pendingKeys = new Map();
-  flushScheduled = false;
+  const batch = pendingKeysByOrganization.get(organizationId) || new Map();
+  pendingKeysByOrganization.delete(organizationId);
+  scheduledOrganizations.delete(organizationId);
   const allKeys = [...batch.keys()];
   for (let index = 0; index < allKeys.length; index += LOOKUP_BATCH) {
     const slice = allKeys.slice(index, index + LOOKUP_BATCH);
@@ -122,11 +122,13 @@ function resolveIssueMention(organizationId, issueKey) {
   }
 
   const request = new Promise(resolve => {
+    const pendingKeys = pendingKeysByOrganization.get(organizationId) || new Map();
+    pendingKeysByOrganization.set(organizationId, pendingKeys);
     const waiting = pendingKeys.get(issueKey) || [];
     waiting.push(resolve);
     pendingKeys.set(issueKey, waiting);
-    if (!flushScheduled) {
-      flushScheduled = true;
+    if (!scheduledOrganizations.has(organizationId)) {
+      scheduledOrganizations.add(organizationId);
       queueMicrotask(() => flush(organizationId));
     }
   });
