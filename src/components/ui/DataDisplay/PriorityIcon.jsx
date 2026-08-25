@@ -7,10 +7,13 @@ const SIZE_CLASSES = {
   md: 'h-5 w-5',
 };
 
+const NO_PRIORITY_STROKE_WIDTH = 1.4;
+
 /**
- * Canonical priority mark: one solid colour dot on a 40%-opacity halo of the
- * same colour. Every level shares the same geometry, so colour communicates
- * priority without making people decode a second ring system.
+ * Canonical priority mark: ranked priorities use one solid colour dot on a
+ * 40%-opacity halo of the same colour. The system «Без пріоритету» state uses
+ * a neutral dashed ring, so an intentional lack of rank does not look like a
+ * missing icon.
  *
  * @param {object|string} props.priority Priority item, id, or presentation.
  * @param {object[]} props.priorities Ordered workflow priorities for custom rank.
@@ -19,9 +22,32 @@ const SIZE_CLASSES = {
  */
 export default function PriorityIcon({ priority, priorities = [], size = 'sm', className = '' }) {
   const config = priorityPresentation(priority, priorities);
-  if (config.isNoPriority) return null;
   const title = `Пріоритет: ${config.label}`;
   const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.sm;
+
+  if (config.isNoPriority) {
+    return (
+      <svg
+        viewBox="0 0 16 16"
+        role="img"
+        aria-label={title}
+        title={title}
+        className={`${sizeClass} shrink-0 ${className}`.trim()}
+      >
+        <circle
+          cx="8"
+          cy="8"
+          r="5.5"
+          fill="none"
+          stroke={config.color}
+          strokeWidth={NO_PRIORITY_STROKE_WIDTH}
+          strokeDasharray="1.8 2.1"
+          strokeLinecap="round"
+          opacity="0.82"
+        />
+      </svg>
+    );
+  }
 
   return (
     <svg

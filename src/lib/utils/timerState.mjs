@@ -1,5 +1,30 @@
 export const MAX_TIMER_DURATION_MS = 12 * 60 * 60 * 1000;
 
+export function timerClockOffsetMillis({ serverNow, clientReceivedAt } = {}) {
+  const serverNowMs = Number(serverNow);
+  const clientReceivedAtMs = Number(clientReceivedAt);
+  if (!Number.isFinite(serverNowMs) || !Number.isFinite(clientReceivedAtMs)) return null;
+  return serverNowMs - clientReceivedAtMs;
+}
+
+export function timerNowMillis(localNowMs, clockOffsetMs = 0) {
+  if (!Number.isFinite(localNowMs)) return null;
+  return localNowMs + (Number.isFinite(clockOffsetMs) ? clockOffsetMs : 0);
+}
+
+export function timerElapsedSeconds(startedAtMs, localNowMs, clockOffsetMs = 0) {
+  const nowMs = timerNowMillis(localNowMs, clockOffsetMs);
+  if (!Number.isFinite(startedAtMs) || !Number.isFinite(nowMs)) return 0;
+  return Math.max(0, Math.floor((nowMs - startedAtMs) / 1000));
+}
+
+// A rejected user action is not an application failure. Only transport and
+// server failures should offer the error-report action in the toast.
+export function timerFeedbackVariant(error) {
+  const status = Number(error?.status);
+  return Number.isFinite(status) && status >= 400 && status < 500 ? 'warning' : 'error';
+}
+
 export function timerStartBlock(state) {
   if (state?.pending) return 'pending';
   if (state?.active) return 'active';

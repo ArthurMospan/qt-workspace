@@ -77,9 +77,7 @@ function OptionMark({ color }) {
 }
 
 function OptionPriority({ option }) {
-  // «Без пріоритету» draws no mark at all, and an empty slot would still take
-  // its 14px plus the row's gap — so the slot exists only when the mark does.
-  if (!option?.priorityMark || option.priorityMark.isNoPriority) return null;
+  if (!option?.priorityMark) return null;
   return (
     <span className={MARK_SLOT}>
       <PriorityIcon priority={option.priorityMark} />

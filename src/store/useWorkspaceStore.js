@@ -5,6 +5,11 @@ import {
   startUserTimer,
   stopUserTimer,
 } from '@/lib/services/userTimer';
+import {
+  timerClockOffsetMillis,
+  timerElapsedSeconds,
+  timerNowMillis,
+} from '@/lib/utils/timerState.mjs';
 
 function formatElapsed(seconds) {
   const s   = Math.max(0, Math.floor(seconds));
@@ -63,8 +68,6 @@ function writeStopIntent(userId, intent) {
   } catch { /* the server state remains authoritative */ }
 }
 
-const elapsedSeconds = startedAt => Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-
 const useWorkspaceStore = create((set, get) => ({
 
   // ── Quick view ────────────────────────────────────────────────────
@@ -101,6 +104,8 @@ const useWorkspaceStore = create((set, get) => ({
   timerOwnerUserId: null,
   timerMutationPending: false,
   timerStopQueued: false,
+  timerClockOffsetMs: 0,
+  timerClockReady: false,
   _timerAccountGeneration: 0,
 
   // Returns false when a timer is already running instead of silently
@@ -112,6 +117,7 @@ const useWorkspaceStore = create((set, get) => ({
     try {
       const result = await startUserTimer({ ...context, issueId, projectId });
       if (get()._timerAccountGeneration === _timerAccountGeneration) {
+        get().calibrateTimerClock(result.clockSample);
         get().applyUserTimerState(result.state, result.state?.userId);
       }
       return result.state?.active || true;
@@ -130,12 +136,15 @@ const useWorkspaceStore = create((set, get) => ({
       _timerAccountGeneration,
     } = get();
     if (!activeTimer || timerMutationPending) return null;
-    const requestedAt = new Date().toISOString();
+    const requestedAt = new Date(timerNowMillis(Date.now(), get().timerClockOffsetMs)).toISOString();
     set({ timerMutationPending: true });
     try {
-      const result = await stopUserTimer(activeTimer.id, requestedAt);
+      // Online stops use the server receipt time. `requestedAt` is reserved for
+      // a stop that could not reach the server and must be replayed later.
+      const result = await stopUserTimer(activeTimer.id);
       writeStopIntent(timerOwnerUserId, null);
       if (get()._timerAccountGeneration === _timerAccountGeneration) {
+        get().calibrateTimerClock(result.clockSample);
         get().applyUserTimerState(result.state, timerOwnerUserId);
       }
       return result.state?.pending || null;
@@ -169,6 +178,7 @@ const useWorkspaceStore = create((set, get) => ({
     const generation = get()._timerAccountGeneration;
     const result = await discardPendingUserTimer(pending.id);
     if (get()._timerAccountGeneration === generation) {
+      get().calibrateTimerClock(result.clockSample);
       get().applyUserTimerState(result.state, get().timerOwnerUserId);
     }
     return result.state;
@@ -177,6 +187,18 @@ const useWorkspaceStore = create((set, get) => ({
   acknowledgePendingTimeLog: timerId => set(state => (
     state.pendingTimeLog?.id === timerId ? { pendingTimeLog: null } : {}
   )),
+
+  calibrateTimerClock: sample => {
+    const offset = timerClockOffsetMillis(sample);
+    if (!Number.isFinite(offset)) return false;
+    const active = get().activeTimer;
+    set({
+      timerClockOffsetMs: offset,
+      timerClockReady: true,
+      ...(active ? { timerElapsed: timerElapsedSeconds(active.startedAt, Date.now(), offset) } : {}),
+    });
+    return true;
+  },
 
   applyUserTimerState: (state, userId) => {
     const interval = get()._timerInterval;
@@ -193,11 +215,13 @@ const useWorkspaceStore = create((set, get) => ({
       timerElapsed: active
         ? (stopQueued
           ? elapsedAt(active.startedAt, new Date(stopIntent.requestedAt).getTime())
-          : elapsedSeconds(active.startedAt))
+          : timerElapsedSeconds(active.startedAt, Date.now(), get().timerClockOffsetMs))
         : 0,
       timerStopQueued: stopQueued,
       _timerInterval: active && !stopQueued
-        ? setInterval(() => set({ timerElapsed: elapsedSeconds(active.startedAt) }), 1000)
+        ? setInterval(() => set({
+          timerElapsed: timerElapsedSeconds(active.startedAt, Date.now(), get().timerClockOffsetMs),
+        }), 1000)
         : null,
     });
   },
@@ -231,6 +255,7 @@ const useWorkspaceStore = create((set, get) => ({
       const result = await stopUserTimer(intent.timerId, intent.requestedAt);
       writeStopIntent(userId, null);
       if (get()._timerAccountGeneration === generation) {
+        get().calibrateTimerClock(result.clockSample);
         get().applyUserTimerState(result.state, userId);
       }
       return result.state;

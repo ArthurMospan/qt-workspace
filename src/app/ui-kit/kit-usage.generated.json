@@ -5657,8 +5657,8 @@
             "src/components/workspace/BillingTab.jsx:267",
             "src/components/workspace/BillingTab.jsx:470",
             "src/components/workspace/BillingTab.jsx:472",
-            "src/components/workspace/IssueCard.jsx:331",
-            "src/components/workspace/IssueCard.jsx:387",
+            "src/components/workspace/IssueCard.jsx:348",
+            "src/components/workspace/IssueCard.jsx:404",
             "src/components/workspace/WorkloadTab.jsx:141",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:369",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819"
@@ -5694,7 +5694,7 @@
             "src/components/migrations/DataMigrationSettings.jsx:102",
             "src/components/migrations/DataMigrationSettings.jsx:114",
             "src/components/migrations/DataMigrationSettings.jsx:181",
-            "src/components/workspace/IssueCard.jsx:305"
+            "src/components/workspace/IssueCard.jsx:322"
           ]
         },
         "ink-subtle": {
@@ -5754,7 +5754,7 @@
           ]
         },
         "danger": {
-          "count": 3,
+          "count": 4,
           "routes": [
             "/",
             "/[projectId]",
@@ -5770,7 +5770,8 @@
             "/team"
           ],
           "files": [
-            "src/components/workspace/IssueCard.jsx:317",
+            "src/components/workspace/IssueCard.jsx:334",
+            "src/components/workspace/IssueCard.jsx:51",
             "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/WorkloadTab.jsx:139"
           ]
@@ -5866,7 +5867,7 @@
             "src/components/workspace/AgileBoard.jsx:612",
             "src/components/workspace/AgileBoard.jsx:639",
             "src/components/workspace/BillingTab.jsx:267",
-            "src/components/workspace/IssueCard.jsx:387",
+            "src/components/workspace/IssueCard.jsx:404",
             "src/components/workspace/WorkloadTab.jsx:139",
             "src/components/workspace/WorkloadTab.jsx:140",
             "src/components/workspace/WorkloadTab.jsx:141",
@@ -5874,7 +5875,7 @@
           ]
         },
         "sm": {
-          "count": 14,
+          "count": 15,
           "routes": [
             "/",
             "/[projectId]",
@@ -5900,9 +5901,10 @@
             "src/components/workspace/BillingTab.jsx:240",
             "src/components/workspace/BillingTab.jsx:470",
             "src/components/workspace/BillingTab.jsx:472",
-            "src/components/workspace/IssueCard.jsx:305",
-            "src/components/workspace/IssueCard.jsx:317",
-            "src/components/workspace/IssueCard.jsx:331",
+            "src/components/workspace/IssueCard.jsx:322",
+            "src/components/workspace/IssueCard.jsx:334",
+            "src/components/workspace/IssueCard.jsx:348",
+            "src/components/workspace/IssueCard.jsx:51",
             "src/components/workspace/IssueDetail.jsx:1581"
           ]
         },
@@ -5944,7 +5946,7 @@
       },
       "shape": {
         "badge": {
-          "count": 12,
+          "count": 13,
           "routes": [
             "/",
             "/[projectId]",
@@ -5969,9 +5971,10 @@
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/workspace/BillingTab.jsx:237",
             "src/components/workspace/BillingTab.jsx:240",
-            "src/components/workspace/IssueCard.jsx:305",
-            "src/components/workspace/IssueCard.jsx:317",
-            "src/components/workspace/IssueCard.jsx:331"
+            "src/components/workspace/IssueCard.jsx:322",
+            "src/components/workspace/IssueCard.jsx:334",
+            "src/components/workspace/IssueCard.jsx:348",
+            "src/components/workspace/IssueCard.jsx:51"
           ]
         },
         "(default)": {
@@ -6015,7 +6018,7 @@
             "src/components/workspace/BillingTab.jsx:267",
             "src/components/workspace/BillingTab.jsx:470",
             "src/components/workspace/BillingTab.jsx:472",
-            "src/components/workspace/IssueCard.jsx:387",
+            "src/components/workspace/IssueCard.jsx:404",
             "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/UnifiedTimeline.jsx:161",
             "src/components/workspace/WorkloadTab.jsx:139",
@@ -6034,7 +6037,7 @@
       },
       "appearance": {
         "(default)": {
-          "count": 44,
+          "count": 45,
           "routes": [
             "/",
             "/[projectId]",
@@ -6079,10 +6082,11 @@
             "src/components/workspace/BillingTab.jsx:267",
             "src/components/workspace/BillingTab.jsx:470",
             "src/components/workspace/BillingTab.jsx:472",
-            "src/components/workspace/IssueCard.jsx:305",
-            "src/components/workspace/IssueCard.jsx:317",
-            "src/components/workspace/IssueCard.jsx:331",
-            "src/components/workspace/IssueCard.jsx:387",
+            "src/components/workspace/IssueCard.jsx:322",
+            "src/components/workspace/IssueCard.jsx:334",
+            "src/components/workspace/IssueCard.jsx:348",
+            "src/components/workspace/IssueCard.jsx:404",
+            "src/components/workspace/IssueCard.jsx:51",
             "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/UnifiedTimeline.jsx:161",
             "src/components/workspace/WorkloadTab.jsx:139",
@@ -6123,7 +6127,7 @@
       },
       "preset": {
         "(default)": {
-          "count": 47,
+          "count": 48,
           "routes": [
             "/",
             "/[projectId]",
@@ -6170,9 +6174,10 @@
             "src/components/workspace/BillingTab.jsx:240",
             "src/components/workspace/BillingTab.jsx:470",
             "src/components/workspace/BillingTab.jsx:472",
-            "src/components/workspace/IssueCard.jsx:305",
-            "src/components/workspace/IssueCard.jsx:317",
-            "src/components/workspace/IssueCard.jsx:331",
+            "src/components/workspace/IssueCard.jsx:322",
+            "src/components/workspace/IssueCard.jsx:334",
+            "src/components/workspace/IssueCard.jsx:348",
+            "src/components/workspace/IssueCard.jsx:51",
             "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/UnifiedTimeline.jsx:161",
             "src/components/workspace/WorkloadTab.jsx:139",
@@ -6206,7 +6211,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:207",
-            "src/components/workspace/IssueCard.jsx:387"
+            "src/components/workspace/IssueCard.jsx:404"
           ]
         },
         "avatar-counter-xs": {
@@ -6265,7 +6270,7 @@
             "src/components/workspace/BillingTab.jsx:267",
             "src/components/workspace/BillingTab.jsx:470",
             "src/components/workspace/BillingTab.jsx:472",
-            "src/components/workspace/IssueCard.jsx:387",
+            "src/components/workspace/IssueCard.jsx:404",
             "src/components/workspace/IssueDetail.jsx:1581",
             "src/components/workspace/WorkloadTab.jsx:139",
             "src/components/workspace/WorkloadTab.jsx:140",
@@ -6279,7 +6284,7 @@
           ]
         },
         "medium": {
-          "count": 11,
+          "count": 12,
           "routes": [
             "/",
             "/[projectId]",
@@ -6300,9 +6305,10 @@
             "src/components/SearchModal.jsx:118",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:114",
-            "src/components/workspace/IssueCard.jsx:305",
-            "src/components/workspace/IssueCard.jsx:317",
-            "src/components/workspace/IssueCard.jsx:331",
+            "src/components/workspace/IssueCard.jsx:322",
+            "src/components/workspace/IssueCard.jsx:334",
+            "src/components/workspace/IssueCard.jsx:348",
+            "src/components/workspace/IssueCard.jsx:51",
             "src/components/workspace/UnifiedTimeline.jsx:161",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:819",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1413"
@@ -6361,7 +6367,7 @@
           "files": [
             "src/app/(app)/page.js:435",
             "src/components/workspace/AnalyticsTab.jsx:382",
-            "src/components/workspace/IssueCard.jsx:379",
+            "src/components/workspace/IssueCard.jsx:396",
             "src/components/workspace/TimesheetTab.jsx:266",
             "src/components/workspace/TimesheetTab.jsx:319",
             "src/components/workspace/TimesheetTab.jsx:703"
@@ -8086,7 +8092,7 @@
             "/team"
           ],
           "files": [
-            "src/components/workspace/IssueCard.jsx:341"
+            "src/components/workspace/IssueCard.jsx:358"
           ]
         },
         "(default)": {

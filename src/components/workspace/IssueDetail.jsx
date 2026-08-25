@@ -85,7 +85,7 @@ import {
   issueRouteIdentifier,
 } from '@/lib/utils/issueKeys.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
-import { timerDraftNeedsDismissal } from '@/lib/utils/timerState.mjs';
+import { timerDraftNeedsDismissal, timerFeedbackVariant } from '@/lib/utils/timerState.mjs';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -979,15 +979,15 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
           });
         }
       } else {
-        if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'error'); return; }
+        if (activeTimer) { showToast('Зупини поточний таймер спочатку', 'warning'); return; }
         const started = await startTimer(issueId, projectId, {
           entityType: 'issue',
           organizationId: activeOrgId,
         });
-        if (!started) showToast('Спершу збережи або відхили попередній відстежений час', 'error');
+        if (!started) showToast('Спершу збережи або відхили попередній відстежений час', 'warning');
       }
     } catch (error) {
-      showToast(error.message || 'Не вдалося змінити таймер', 'error');
+      showToast(error.message || 'Не вдалося змінити таймер', timerFeedbackVariant(error));
     }
   };
 

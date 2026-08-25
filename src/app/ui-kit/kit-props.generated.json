@@ -4618,7 +4618,7 @@
     },
     "PriorityIcon": {
       "file": "src/components/ui/DataDisplay/PriorityIcon.jsx",
-      "summary": "Canonical priority mark: one solid colour dot on a 40%-opacity halo of the same colour.",
+      "summary": "Canonical priority mark: ranked priorities use one solid colour dot on a 40%-opacity halo of the same colour.",
       "props": [
         {
           "name": "className",

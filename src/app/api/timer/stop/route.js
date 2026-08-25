@@ -51,7 +51,7 @@ export async function POST(request) {
       });
       return next;
     });
-    return NextResponse.json({ state: serializeTimerState(state) });
+    return NextResponse.json({ state: serializeTimerState(state), serverNow: Date.now() });
   } catch (error) {
     if (error?.userTimer) return timerStateErrorResponse(error);
     return routeErrorResponse(error, {

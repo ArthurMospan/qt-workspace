@@ -14,11 +14,13 @@ test('priority presentation keeps the configured semantic colour', () => {
   assert.equal(priorityPresentation('low', DEFAULT_SYSTEM_PRIORITIES).color, '#9a9a9a');
 });
 
-test('priority icon is one solid dot on a forty-percent same-colour halo', () => {
+test('ranked priority uses a solid dot and no priority uses a dashed ring', () => {
   const icon = readFileSync(new URL('../src/components/ui/DataDisplay/PriorityIcon.jsx', import.meta.url), 'utf8');
   assert.match(icon, /r="5\.5" fill=\{config\.color\} fillOpacity="0\.4"/);
   assert.match(icon, /r="2\.5" fill=\{config\.color\}/);
-  assert.doesNotMatch(icon, /strokeDasharray|outerColor|innerColor/);
+  assert.match(icon, /if \(config\.isNoPriority\)/);
+  assert.match(icon, /strokeDasharray="1\.8 2\.1"/);
+  assert.doesNotMatch(icon, /outerColor|innerColor/);
 });
 
 // Nothing said about priority means no priority.

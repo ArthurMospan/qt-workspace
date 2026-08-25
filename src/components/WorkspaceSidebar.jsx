@@ -439,7 +439,7 @@ export default function WorkspaceSidebar() {
           >
             {!collapsed && (
               <div className="flex items-center gap-[8px]">
-                <Clock size={14} className="text-[#3b82f6] animate-pulse" />
+                <Clock size={14} style={{ color: 'var(--sb-text)' }} />
                 <span className="text-[13px] font-mono font-medium" style={{ color: 'var(--sb-text)' }}>{formatElapsed(timerElapsed)}</span>
               </div>
             )}

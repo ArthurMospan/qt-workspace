@@ -5,6 +5,9 @@ import {
   clampedTimerStopMillis,
   MAX_TIMER_DURATION_MS,
   timerDraftNeedsDismissal,
+  timerClockOffsetMillis,
+  timerElapsedSeconds,
+  timerFeedbackVariant,
   timerMinutes,
   timerStartBlock,
   timerStopDecision,
@@ -29,6 +32,39 @@ test('stop is idempotent for the same timer and rejects a stale tab', () => {
   assert.equal(timerStopDecision(null, 'timer-a'), 'missing');
 });
 
+test('the visible timer ignores a client clock that is thirteen seconds fast', () => {
+  const serverStartedAt = Date.UTC(2026, 7, 25, 15, 0, 0);
+  const clientReceivedAt = serverStartedAt + 13_000;
+  const offset = timerClockOffsetMillis({
+    serverNow: serverStartedAt,
+    clientReceivedAt,
+  });
+  assert.equal(offset, -13_000);
+  assert.equal(timerElapsedSeconds(serverStartedAt, clientReceivedAt, offset), 0);
+  assert.equal(timerElapsedSeconds(serverStartedAt, clientReceivedAt + 1_000, offset), 1);
+});
+
+test('expected timer conflicts are warnings, while actual failures remain reportable', () => {
+  assert.equal(timerFeedbackVariant({ status: 409 }), 'warning');
+  assert.equal(timerFeedbackVariant({ status: 403 }), 'warning');
+  assert.equal(timerFeedbackVariant({ status: 500 }), 'error');
+  assert.equal(timerFeedbackVariant(new Error('network failed')), 'error');
+});
+
+test('a running board card shows live time as a red badge, not a blinking dot', async () => {
+  const [card, sidebar] = await Promise.all([
+    read('../src/components/workspace/IssueCard.jsx'),
+    read('../src/components/WorkspaceSidebar.jsx'),
+  ]);
+  assert.match(card, /function ActiveTimerBadge\(\)/);
+  assert.match(card, /<Pill\s+tone="danger"/);
+  assert.match(card, /isTimerActive && <ActiveTimerBadge \/>/);
+  assert.doesNotMatch(card, /bg-ink rounded-full animate-pulse ml-1/);
+  assert.doesNotMatch(card, /isTimerActive \? 'ring-2 ring-ink\/20'/);
+  assert.doesNotMatch(sidebar, /text-\[#3b82f6\] animate-pulse/);
+  assert.match(sidebar, /<Clock size=\{14\} style=\{\{ color: 'var\(--sb-text\)' \}\} \/>/);
+});
+
 test('a timer-backed form expires with its authoritative pending session', () => {
   assert.equal(timerDraftNeedsDismissal('', null), false);
   assert.equal(timerDraftNeedsDismissal('timer-a', { id: 'timer-a' }), false);
@@ -50,9 +86,11 @@ test('an offline stop keeps the requested instant and caps forgotten timers', ()
 });
 
 test('timer APIs and log commits share the same account-owned transaction state', async () => {
-  const [start, stop, issueLog, eventLog, store, listener, rules] = await Promise.all([
+  const [start, stop, clock, service, issueLog, eventLog, store, listener, rules] = await Promise.all([
     read('../src/app/api/timer/start/route.js'),
     read('../src/app/api/timer/stop/route.js'),
+    read('../src/app/api/timer/clock/route.js'),
+    read('../src/lib/services/userTimer.js'),
     read('../src/app/api/issues/[issueId]/time-logs/route.js'),
     read('../src/app/api/calendar/events/[eventId]/time-logs/route.js'),
     read('../src/store/useWorkspaceStore.js'),
@@ -61,7 +99,10 @@ test('timer APIs and log commits share the same account-owned transaction state'
   ]);
   assert.match(start, /db\.runTransaction/);
   assert.match(start, /timerStartBlock\(current\)/);
+  assert.match(start, /serverNow: Date\.now\(\)/);
   assert.match(stop, /timerStopDecision\(current, timerId\)/);
+  assert.match(clock, /Cache-Control': 'no-store'/);
+  assert.match(service, /readServerTimerClock/);
   for (const route of [issueLog, eventLog]) {
     assert.match(route, /timerLogDocumentId/);
     assert.match(route, /requireMatchingPendingTimer/);
@@ -69,6 +110,8 @@ test('timer APIs and log commits share the same account-owned transaction state'
   }
   assert.match(store, /STOP_INTENT_PREFIX = 'qt_timer_stop_intent:'/);
   assert.match(store, /_timerAccountGeneration/);
+  assert.match(store, /timerClockOffsetMs/);
+  assert.match(store, /stopUserTimer\(activeTimer\.id\)/);
   assert.match(store, /navigator\.onLine === false \|\| !Number\.isFinite\(Number\(error\?\.status\)\)/);
   assert.doesNotMatch(store, /qt_active_timer|qt_pending_time_log/);
   assert.match(listener, /let cancelled = false;/);

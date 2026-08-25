@@ -159,7 +159,7 @@ export async function POST(request) {
       return { userId: uid, active, pending: null, revision: (Number(current?.revision) || 0) + 1 };
     });
 
-    return NextResponse.json({ state: serializeTimerState(state) }, { status: 201 });
+    return NextResponse.json({ state: serializeTimerState(state), serverNow: Date.now() }, { status: 201 });
   } catch (error) {
     if (error?.userTimer) return timerStateErrorResponse(error);
     return routeErrorResponse(error, {

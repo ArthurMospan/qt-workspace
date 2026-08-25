@@ -42,6 +42,25 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+function ActiveTimerBadge() {
+  const elapsed = useWorkspaceStore(state => state.timerElapsed);
+  const formatElapsed = useWorkspaceStore(state => state.formatElapsed);
+  const label = formatElapsed(elapsed);
+
+  return (
+    <Pill
+      tone="danger"
+      size="sm"
+      shape="badge"
+      weight="medium"
+      title={`Таймер запущено: ${label}`}
+      aria-label={`Таймер запущено: ${label}`}
+    >
+      {label}
+    </Pill>
+  );
+}
+
 
 
 // `showProjectName` is opt-in: cross-project lists (Мої завдання, спринти) need
@@ -132,7 +151,7 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
     // dragged. Dropping the ring while lifted lets the lift actually show, and
     // stops the shadow swapping abruptly the moment the card is released.
     const hoverRing = lifted || !interactive || selected ? '' : 'hover:!ring-4 hover:!ring-[#ECECEC]';
-    const cardClassName = `relative group overflow-hidden rounded-[16px] bg-white ${interactive ? 'cursor-pointer' : ''} select-none transition-[box-shadow,border-color] duration-200 flex flex-col justify-between ${hoverRing} ${selected ? 'ring-2 ring-ink' : ''} ${isTimerActive ? 'ring-2 ring-ink/20' : ''} shrink-0 ${className}`;
+    const cardClassName = `relative group overflow-hidden rounded-[16px] bg-white ${interactive ? 'cursor-pointer' : ''} select-none transition-[box-shadow,border-color] duration-200 flex flex-col justify-between ${hoverRing} ${selected ? 'ring-2 ring-ink' : ''} shrink-0 ${className}`;
     // `none` is the library asking for an instant snap and cannot be combined
     // with further entries — appending to it would void the whole declaration.
     const cardTransition = !libraryTransition || libraryTransition === 'none'
@@ -236,10 +255,6 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
               className="max-w-[220px]"
             />
 
-            {isTimerActive && (
-              <span className="w-[5px] h-[5px] bg-ink rounded-full animate-pulse ml-1 shrink-0" />
-            )}
-
             {selectionActive && onSelect ? (
               <span
                 className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center"
@@ -292,6 +307,8 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
 
           {/* Row 4: Sprint + Type + Labels (Using strict UI Kit Tag atom styling) */}
           <div className="flex flex-wrap gap-[6px] mb-[12px] items-center">
+            {isTimerActive && <ActiveTimerBadge />}
+
             {typeObj && (
               <TypeBadge
                 label={typeLabel}

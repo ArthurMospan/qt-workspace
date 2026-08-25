@@ -19,7 +19,7 @@ test('task selection is entered from kebab menus, never from hover', async () =>
   assert.doesNotMatch(row, /group-hover[^\n]*(Checkbox|checkbox)/);
 });
 
-test('card and row checkbox replace the priority slot', async () => {
+test('card and row checkbox replace the priority slot, including no priority', async () => {
   const [card, row, priorityIcon] = await Promise.all([
     read('src/components/workspace/IssueCard.jsx'),
     read('src/components/ui/TaskManagement/TaskRow.jsx'),
@@ -27,7 +27,8 @@ test('card and row checkbox replace the priority slot', async () => {
   ]);
   assert.ok(card.indexOf('selectionActive && onSelect ?') < card.indexOf('<PriorityIcon priority={priorityConfig}'));
   assert.ok(row.indexOf('selectionActive && onSelect ?') < row.indexOf('<PriorityIcon priority={priorityConfig}'));
-  assert.match(priorityIcon, /if \(config\.isNoPriority\) return null/);
+  assert.match(priorityIcon, /if \(config\.isNoPriority\)/);
+  assert.match(priorityIcon, /strokeDasharray="1\.8 2\.1"/);
 });
 
 test('requested navigation and readability regressions stay fixed', async () => {

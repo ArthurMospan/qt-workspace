@@ -88,7 +88,7 @@ import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
-import { timerDraftNeedsDismissal } from '@/lib/utils/timerState.mjs';
+import { timerDraftNeedsDismissal, timerFeedbackVariant } from '@/lib/utils/timerState.mjs';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 
 const VISIBILITY_OPTIONS = [
@@ -700,7 +700,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
         return;
       }
       if (activeTimer) {
-        showToast('Зупини поточний таймер спочатку', 'error');
+        showToast('Зупини поточний таймер спочатку', 'warning');
         return;
       }
       const started = await startTimer(timerKey, event.projectId || '', {
@@ -709,9 +709,9 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
         eventId: sourceEventId,
         occurrenceStartAt: event.startAt,
       });
-      if (!started) showToast('Спершу збережи або відхили попередній відстежений час', 'error');
+      if (!started) showToast('Спершу збережи або відхили попередній відстежений час', 'warning');
     } catch (error) {
-      showToast(error.message || 'Не вдалося змінити таймер', 'error');
+      showToast(error.message || 'Не вдалося змінити таймер', timerFeedbackVariant(error));
     }
   };
 
