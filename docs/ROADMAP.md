@@ -94,6 +94,49 @@ The project board's third view shipped (see
   record of what was lost.
 - Set a bundle budget. Nothing fails today when a page's JavaScript doubles.
 
+### Chat read state, and the card that announces it
+
+One subject, two implementations, and that is why this area produces a new bug
+report every few weeks. The workspace chat (`/chat`) keeps a per-room cursor in
+`organizations/{orgId}/readState/{uid}_{channelId}` and carries the whole scroll
+behaviour — jump-to-latest, a resize correction, an at-bottom threshold. The
+task chat (`UnifiedTimeline`) keeps a `readBy` array on every comment and owns
+the unread divider the workspace chat has never had. Repairing one leaves the
+other holding its own half of the same defect.
+
+The first pass is done — the git log carries what changed and why. What remains,
+in the order it was agreed:
+
+**Next: behaviour**
+
+- Queue or stack the live notification cards. `showLiveNotif` replaces whatever
+  is on screen, so three notifications in ten seconds show one.
+- Respect tab visibility. Neither a card's six seconds nor a read receipt should
+  be spent while the tab is hidden. `/chat` checks `document.visibilityState`;
+  the task chat's two observers do not.
+- Optimistic sending in the task chat: the message appears at once, marked as
+  sending, and settles when the snapshot lands. Today it waits for Firestore.
+- A typing indicator in the task chat. `activeTypingUserIds` and its render
+  already exist on the workspace chat side.
+- Mark a channel's bell records read while that channel is open. Direct messages
+  and tasks already do it; a channel cannot yet, because a `chat_message`
+  record carries no channel id — only its link does (`/chat?channel=…`), so
+  either that link is parsed or the field is added first.
+
+**After that: cost and hygiene**
+
+- One cursor per conversation instead of a mark per message. Reading fifty
+  messages costs fifty writes today where the workspace chat costs one; keep the
+  per-message mark only for the ✓✓ receipt, which genuinely needs it. See the
+  read-budget rules in «Вартість читання» in [ARCHITECTURE.md](ARCHITECTURE.md).
+- Group bell records by task and conversation: one row saying «3 нові
+  повідомлення в QT-12» rather than three identical ones.
+- Expire read notifications. Nothing removes them but the manual «очистити
+  прочитані», and each one is also a dedupe claim, so expiry has to leave the
+  scheduled-outbox row as the guard against a resend.
+- Drop the dead `birthday` notification type. It sits in the client's type table,
+  the server's `ALLOWED_TYPES` rejects it, and nothing sends it.
+
 ### Notification delivery
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the two paths and their guarantees.
