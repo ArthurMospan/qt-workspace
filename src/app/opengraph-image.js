@@ -3,14 +3,14 @@
 // Until this existed, a workspace URL dropped into Telegram or Slack unfurled
 // as the bare host and nothing else: no name, no mark, no clue whether the link
 // went to a task or to a login screen. The workspace is shared by link dozens
-// of times a day, so the preview is a real surface.
+// of times a day — an invite most of all — so the preview is a real surface.
 //
 // Drawn rather than stored, so it stays in step with the palette: the two
 // colours below are the same `--color-ink` / `--color-canvas` every screen uses.
 
 import { ImageResponse } from 'next/og';
 
-export const alt = 'QuickTeam — внутрішній простір команди';
+export const alt = 'QuickTeam';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -19,8 +19,15 @@ const CANVAS = '#f4f4f5';
 const MUTED = '#9a9a9a';
 
 const TITLE = 'QuickTeam';
-const TAGLINE = 'Внутрішній простір команди';
-const CHIPS = ['Задачі', 'Спринти', 'Час', 'Чат', 'Календар'];
+const TAGLINE = 'Одна робота, а не сім інструментів';
+
+// The real mark, copied from `public/logo-min.svg`. Inlined rather than read
+// off disk on purpose: a file under `public/` is served to browsers but is not
+// guaranteed to be inside the function bundle that renders this card, and a
+// card that throws in production is worse than a line to keep in step. If the
+// logo ever changes, this string changes with it.
+const MARK = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 16C0 8.80395 0 5.20593 2.0716 2.84372C2.31185 2.56977 2.56977 2.31185 2.84372 2.0716C5.20593 0 8.80395 0 16 0C23.196 0 26.7941 0 29.1563 2.0716C29.4302 2.31185 29.6882 2.56977 29.9284 2.84372C32 5.20593 32 8.80395 32 16C32 23.196 32 26.7941 29.9284 29.1563C29.6882 29.4302 29.4302 29.6882 29.1563 29.9284C26.7941 32 23.196 32 16 32C8.80395 32 5.20593 32 2.84372 29.9284C2.56977 29.6882 2.31185 29.4302 2.0716 29.1563C0 26.7941 0 23.196 0 16Z" fill="#f4f4f5"/><path d="M3.2 14.4C3.2 11.3072 5.70721 8.8 8.8 8.8C11.8928 8.8 14.4 11.3072 14.4 14.4V15.2C14.4 18.2928 11.8928 20.8 8.8 20.8C5.70721 20.8 3.2 18.2928 3.2 15.2V14.4Z" fill="#1F1F1F"/><path d="M17.6 14.4C17.6 11.3072 20.1072 8.8 23.2 8.8C26.2928 8.8 28.8 11.3072 28.8 14.4V15.2C28.8 18.2928 26.2928 20.8 23.2 20.8C20.1072 20.8 17.6 18.2928 17.6 15.2V14.4Z" fill="#1F1F1F"/><path d="M21.6 13.4C21.6 11.7431 22.9431 10.4 24.6 10.4C26.2569 10.4 27.6 11.7431 27.6 13.4C27.6 15.0569 26.2569 16.4 24.6 16.4C22.9431 16.4 21.6 15.0569 21.6 13.4Z" fill="#f4f4f5"/><path d="M7.2 13.4C7.2 11.7431 8.54315 10.4 10.2 10.4C11.8569 10.4 13.2 11.7431 13.2 13.4C13.2 15.0569 11.8569 16.4 10.2 16.4C8.54315 16.4 7.2 15.0569 7.2 13.4Z" fill="#f4f4f5"/></svg>`;
+const MARK_SRC = `data:image/svg+xml;base64,${Buffer.from(MARK).toString('base64')}`;
 
 // Google decides the format from the user agent, and satori reads exactly one
 // of them. A modern string gets WOFF2 back and the build fails outright with
@@ -65,7 +72,7 @@ export default async function Image() {
   const fonts = (
     await Promise.all([
       interSubset('InterBold', 700, `${TITLE}QT`),
-      interSubset('InterMedium', 500, `${TAGLINE}${CHIPS.join('')}quickteam.app`),
+      interSubset('InterMedium', 500, TAGLINE),
     ])
   ).filter(Boolean);
 
@@ -83,33 +90,13 @@ export default async function Image() {
           fontFamily: 'InterMedium, sans-serif',
         }}
       >
-        {/* The mark: the same rounded-square silhouette the sidebar logo has,
-            built from divs so the card carries no binary asset of its own. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 72,
-              height: 72,
-              borderRadius: 22,
-              background: CANVAS,
-              color: INK,
-              fontFamily: 'InterBold, sans-serif',
-              fontSize: 34,
-              letterSpacing: -1,
-            }}
-          >
-            QT
-          </div>
-          <div style={{ display: 'flex', height: 40, width: 2, background: '#3a3a3a' }} />
-          <div style={{ display: 'flex', color: MUTED, fontSize: 26 }}>
-            quickteam.app
-          </div>
-        </div>
+        {/* The product mark itself — not a stand-in built out of letters.
+            `next/image` has nothing to do here: satori draws the card, and the
+            only element it understands for an image is a plain `img`. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={MARK_SRC} width={84} height={84} alt="" />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
           <div
             style={{
               display: 'flex',
@@ -122,28 +109,9 @@ export default async function Image() {
           >
             {TITLE}
           </div>
-          <div style={{ display: 'flex', color: MUTED, fontSize: 38 }}>
+          <div style={{ display: 'flex', color: MUTED, fontSize: 40 }}>
             {TAGLINE}
           </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 14 }}>
-          {CHIPS.map(chip => (
-            <div
-              key={chip}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '12px 24px',
-                borderRadius: 999,
-                border: '2px solid #3a3a3a',
-                color: CANVAS,
-                fontSize: 26,
-              }}
-            >
-              {chip}
-            </div>
-          ))}
         </div>
       </div>
     ),
