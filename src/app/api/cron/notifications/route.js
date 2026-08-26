@@ -1,6 +1,16 @@
+import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { runScheduledNotificationSweep } from '@/lib/server/reminderJobs';
+
+// The last secret here still compared with `!==`. Telegram's webhook secret and
+// the API keys both use a constant-time comparison already; this one is the odd
+// one out rather than a new risk, and matching them costs a function call.
+function presentedSecretMatches(header, expected) {
+  const a = Buffer.from(String(header || ''));
+  const b = Buffer.from(`Bearer ${expected}`);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 // `mode` splits the cheap half from the expensive one so an external scheduler
 // can drive delivery on a tight interval without paying for a collection scan
@@ -15,7 +25,7 @@ const MODES = new Set(['full', 'dispatch', 'materialise']);
 
 export async function GET(request) {
   const cronSecret = process.env.CRON_SECRET?.trim() || '';
-  if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || !presentedSecretMatches(request.headers.get('authorization'), cronSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -7,7 +7,11 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 test('scheduled notifications require a production bearer secret', async () => {
   const source = await read('../src/app/api/cron/notifications/route.js');
   assert.match(source, /process\.env\.CRON_SECRET/);
-  assert.match(source, /request\.headers\.get\('authorization'\) !== `Bearer \$\{cronSecret\}`/);
+  // Compared in constant time, the way the Telegram webhook secret and the API
+  // keys already are — this was the last secret here still on `!==`.
+  assert.match(source, /timingSafeEqual/);
+  assert.match(source, /presentedSecretMatches\(request\.headers\.get\('authorization'\), cronSecret\)/);
+  assert.doesNotMatch(source, /!== `Bearer/);
   assert.match(source, /runScheduledNotificationSweep\(\{ mode: requested \}\)/);
 });
 

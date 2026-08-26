@@ -25,6 +25,26 @@ function getAdminApp() {
 
   if (!projectId) throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID is not configured');
 
+  // Missing credentials used to be entirely silent: the app initialised without
+  // them and the first Firestore call failed instead, deep inside some route,
+  // with a message about credentials that reads like a rules problem — an hour
+  // of looking in the wrong file. Say it here, where the cause is, and say which
+  // half is missing.
+  //
+  // Said rather than thrown, deliberately. Throwing would be the better error
+  // and the worse failure: this runs on every server request, so a deployment
+  // whose variables were named slightly differently would go from degraded to
+  // completely down, and the emulator legitimately needs no credentials at all.
+  // A line in the log costs nothing and is enough to find this in one search.
+  if (!process.env.FIRESTORE_EMULATOR_HOST && !(clientEmail && privateKey)) {
+    console.error('[firebase-admin] No service-account credentials configured', {
+      hasClientEmail: Boolean(clientEmail),
+      hasPrivateKey: Boolean(privateKey),
+      projectId,
+      note: 'Set FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY. Every Admin SDK call will fail without them.',
+    });
+  }
+
   const options = { projectId };
   if (clientEmail && privateKey) {
     options.credential = cert({ projectId, clientEmail, privateKey });
