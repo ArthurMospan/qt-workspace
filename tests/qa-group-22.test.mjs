@@ -74,7 +74,11 @@ test('calendar rejects inverted ranges in the form and server normalizer', async
     read('src/lib/server/calendarEvents.js'),
   ]);
   assert.match(dialog, /if \(endAt <= startAt\) throw new Error\('Завершення має бути пізніше за початок'\)/);
-  assert.match(dialog, /payload = calendarEventFormPayload\(form, currentUserId\);[\s\S]*?await onSave\(payload\)/);
+  // What this is about is the order: the payload is built — and therefore the
+  // range is validated — before anything is sent. The save now carries one more
+  // field beside the payload (the project-roster consent), so it is the build
+  // reaching `onSave` that is asserted, not the shape of its argument.
+  assert.match(dialog, /payload = calendarEventFormPayload\(form, currentUserId\);[\s\S]*?await onSave\(\{\s*\.\.\.payload,/);
   assert.match(server, /if \(endAt\.toMillis\(\) <= startAt\.toMillis\(\)\)/);
 });
 
