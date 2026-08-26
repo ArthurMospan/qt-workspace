@@ -1042,9 +1042,35 @@ export default function SettingsPage() {
   const seatsBlocked = planLimits.blocked('members');
   const openPlanUpgrade = useWorkspaceStore(s => s.openPlanUpgrade);
 
-  // Live preview: push changes to sidebar in real-time
+  // ── Billing ──
+  //
+  // The plan is the live organization document's, not a read of this screen's
+  // own. It used to be local state seeded with «free» and filled in by a
+  // `getDoc` at the end of a chain of awaits, so every visit here spent about
+  // two seconds telling a paying workspace it was on Free: the badge went red,
+  // and crowns appeared beside «Інтеграції» and «Перенесення даних» before
+  // disappearing again.
+  //
+  // `planOverride` is the moment between pressing a plan and the snapshot that
+  // confirms it — the write goes through a server route, and the listener is a
+  // round trip behind it.
+  const [planOverride, setPlanOverride] = useState('');
+  const orgPlan = planOverride || planLimits.plan;
+  const planKnown = planLimits.planKnown;
+  // «Not read yet» is not «not allowed». See `usePlanLimits`.
+  const allowsOnPlan = capabilityId => !planKnown || planAllows(orgPlan, capabilityId);
+
+  // Live preview: push changes to sidebar in real-time.
+  //
+  // Gated on the plan like everything else that paints a brand. A workspace
+  // that paid for a month and went back to Free still carries
+  // `customBranding: true` — the setting is kept on purpose, so it comes back
+  // with the plan — and this effect was handing it straight to the sidebar.
+  // The logo therefore reappeared the moment its owner opened Settings, on the
+  // one screen where it is most obviously supposed to be off.
+  const brandingPreviewAllowed = allowsOnPlan('branding');
   useEffect(() => {
-    if (orgCustomBranding) {
+    if (orgCustomBranding && brandingPreviewAllowed) {
       setSidebarPreview({
         theme: sidebarTheme,
         color: sidebarColor,
@@ -1054,7 +1080,7 @@ export default function SettingsPage() {
     } else {
       clearSidebarPreview();
     }
-  }, [orgCustomBranding, sidebarTheme, sidebarColor, orgLogo, setSidebarPreview, clearSidebarPreview]);
+  }, [orgCustomBranding, brandingPreviewAllowed, sidebarTheme, sidebarColor, orgLogo, setSidebarPreview, clearSidebarPreview]);
 
   // Leaving Settings drops the live preview so the sidebar falls back to the
   // saved org document (which branding auto-save has already persisted).
@@ -1231,22 +1257,6 @@ export default function SettingsPage() {
   const [generatingKey, setGeneratingKey] = useState(false);
 
   // ── Billing ──
-  //
-  // The plan is the live organization document's, not a read of this screen's
-  // own. It used to be local state seeded with «free» and filled in by a
-  // `getDoc` at the end of a chain of awaits, so every visit here spent about
-  // two seconds telling a paying workspace it was on Free: the badge went red,
-  // and crowns appeared beside «Інтеграції» and «Перенесення даних» before
-  // disappearing again.
-  //
-  // `planOverride` is the moment between pressing a plan and the snapshot that
-  // confirms it — the write goes through a server route, and the listener is a
-  // round trip behind it.
-  const [planOverride, setPlanOverride] = useState('');
-  const orgPlan = planOverride || planLimits.plan;
-  const planKnown = planLimits.planKnown;
-  // «Not read yet» is not «not allowed». See `usePlanLimits`.
-  const allowsOnPlan = capabilityId => !planKnown || planAllows(orgPlan, capabilityId);
   const [projectsCount,  setProjectsCount]  = useState(0);
   // Which plan is being switched to, not merely that one is: with three plans a
   // boolean put the spinner on both buttons that were not the current one.
