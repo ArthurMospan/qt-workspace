@@ -15,8 +15,11 @@
 // Gemini — тобто поява ключа тихо перевела б безкоштовний провайдер на
 // платний, без жодного рішення з чийогось боку.
 import { NextResponse } from 'next/server';
-import { authorizeOrgRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { organizationRollupTimeZone } from '@/lib/server/analyticsRollups';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { organizationIdFromPath } from '@/lib/utils/uploadPaths.mjs';
+import { dayKeyInTimeZone } from '@/lib/utils/timeZone.mjs';
 import {
   classifyGeminiFailure,
   geminiFailureMessage,
@@ -59,8 +62,15 @@ const GEMINI_SCHEMA = {
   },
 };
 
-function buildPrompt({ members, projectName, hasAudio }) {
-  const today = new Date().toISOString().slice(0, 10);
+// A project may be called anything, and whatever it is called lands inside the
+// instructions. Bounded so a name cannot become a second prompt.
+const MAX_PROJECT_NAME = 100;
+
+function buildPrompt({ members, projectName, hasAudio, timeZone }) {
+  // Kyiv, not Greenwich. `toISOString()` here meant that after 21:00 local the
+  // model was told yesterday's date, so «до п'ятниці» resolved a day early —
+  // for a feature whose whole output is deadlines.
+  const today = dayKeyInTimeZone(new Date(), timeZone);
   return [
     'Ти асистент проєктного менеджера у таск-трекері QuickTeam.',
     hasAudio
@@ -81,10 +91,33 @@ function buildPrompt({ members, projectName, hasAudio }) {
   ].filter(Boolean).join('\n');
 }
 
-function audioUrlAllowed(url) {
+// Our own storage, and our own caller's corner of it.
+//
+// The host check alone stops the request going anywhere but Cloudinary, which
+// is what it was written for. It does not stop it going to a *different
+// workspace's* recording, because every organization shares one cloud: a member
+// of A holding a URL from B could have the model listen to B's meeting and hand
+// back the summary. `/api/upload/sign` already refuses to sign into another
+// tenant's folder for exactly this reason — the same path rule answers the same
+// question here, on the way in rather than on the way out.
+//
+// The folder is the middle of a delivery URL:
+//   https://res.cloudinary.com/{cloud}/video/upload/v1234/quickteam/organizations/{orgId}/ai-calls/{id}.m4a
+function audioStoragePath(url, cloud) {
+  if (typeof url !== 'string') return '';
+  const prefix = `https://res.cloudinary.com/${cloud}/`;
+  if (!url.startsWith(prefix)) return '';
+  // …/{resource_type}/{delivery_type}/[v123/]{public_id}.{ext}
+  const rest = url.slice(prefix.length).split(/[?#]/, 1)[0];
+  const match = /^[a-z]+\/[a-z]+\/(?:v\d+\/)?(.+)$/.exec(rest);
+  return match ? match[1].replace(/\.[A-Za-z0-9]+$/, '') : '';
+}
+
+function audioUrlAllowed(url, organizationId) {
   const cloud = process.env.CLOUDINARY_CLOUD_NAME;
-  return Boolean(cloud) && typeof url === 'string' &&
-    url.startsWith(`https://res.cloudinary.com/${cloud}/`);
+  if (!cloud) return false;
+  const path = audioStoragePath(url, cloud);
+  return Boolean(path) && organizationIdFromPath(path) === organizationId;
 }
 
 const ALLOWED_AUDIO_MIME_TYPES = new Set([
@@ -103,7 +136,18 @@ async function fetchAudio(audioUrl, declaredMimeType = '') {
     return { error: 'Не вдалося завантажити аудіофайл зі сховища' };
   }
   if (!response.ok) return { error: 'Не вдалося завантажити аудіофайл' };
+  // Ask before pulling. The size check used to run on the buffer, which meant
+  // the whole file was already in memory by the time it was found to be too
+  // large — a big enough one takes the function down instead of producing the
+  // sentence below, and the caller sees the platform's 500 rather than an
+  // answer they can act on.
+  const declaredLength = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_AUDIO_BYTES) {
+    return { error: 'Аудіо завелике для аналізу (ліміт ~14 МБ). Вставте текст транскрипту.' };
+  }
   const buffer = Buffer.from(await response.arrayBuffer());
+  // Still checked afterwards: a chunked response carries no length, so the
+  // header is the cheap path and this is the one that cannot be skipped.
   if (buffer.length > MAX_AUDIO_BYTES) {
     return { error: 'Аудіо завелике для аналізу (ліміт ~14 МБ). Вставте текст транскрипту.' };
   }
@@ -212,7 +256,7 @@ export async function POST(request) {
     const text = typeof transcript === 'string' ? transcript.trim() : '';
     let audio = null;
     if (!text && audioUrl) {
-      if (!audioUrlAllowed(audioUrl)) {
+      if (!audioUrlAllowed(audioUrl, organizationId)) {
         return NextResponse.json({ error: 'Недозволений URL аудіо' }, { status: 400 });
       }
       const fetched = await fetchAudio(audioUrl, audioMimeType);
@@ -229,7 +273,15 @@ export async function POST(request) {
     const members = Array.isArray(memberNames)
       ? memberNames.filter(name => typeof name === 'string').slice(0, 50)
       : [];
-    const prompt = buildPrompt({ members, projectName, hasAudio: Boolean(audio) });
+    const prompt = buildPrompt({
+      members,
+      projectName: typeof projectName === 'string' ? projectName.trim().slice(0, MAX_PROJECT_NAME) : '',
+      hasAudio: Boolean(audio),
+      // The same cached reader the time rollups use, rather than a second copy
+      // of "which timezone is this organization in" — it holds the answer for
+      // the life of the process, so this costs no read of its own.
+      timeZone: await organizationRollupTimeZone(getAdminDb(), organizationId),
+    });
 
     // Gemini слухає аудіо напряму, тож обидва шляхи ведуть в один виклик.
     const result = audio
