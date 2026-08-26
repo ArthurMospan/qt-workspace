@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { deleteProjectAnalyticsRollups } from '@/lib/server/analyticsRollups';
+import { recordPlanUsage } from '@/lib/server/planLimits';
+import { normalizePlan, planLimit, planLimitRefusal } from '@/lib/utils/plans.mjs';
 import { introducedIssueExecutionViolations } from '@/lib/utils/issueStatusTransition.mjs';
 import {
   DEFAULT_STATUS_IDS,
@@ -36,6 +38,10 @@ async function loadAuthorizedProject(request, projectId) {
 }
 
 export async function PATCH(request, context) {
+  // Read inside the transaction and answered in the catch, which cannot see
+  // into the try block above it.
+  let restoredPlan = '';
+  let restoredCount = 0;
   try {
     const { projectId } = await context.params;
     const loaded = await loadAuthorizedProject(request, projectId);
@@ -320,12 +326,21 @@ export async function PATCH(request, context) {
     await db.runTransaction(async transaction => {
       const [freshProject, orgSnap] = await Promise.all([transaction.get(ref), transaction.get(orgRef)]);
       if (!freshProject.exists || !orgSnap.exists) throw new Error('NOT_FOUND');
-      if (action === 'restore' && freshProject.data().status !== 'active' && (orgSnap.data().plan || 'free') !== 'pro') {
+      restoredPlan = normalizePlan(orgSnap.data().plan);
+      // Bringing a project back is creating one as far as the ceiling is
+      // concerned, so it asks the same registry the create route asks. It used
+      // to read `plan !== 'pro'` with a hardcoded three — the exact bug the
+      // create route was fixed for, still living in the other half of the same
+      // pair, which is what happens when a ceiling is written twice.
+      if (action === 'restore' && freshProject.data().status !== 'active') {
         const activeQuery = db.collection('projects')
           .where('organizationId', '==', project.organizationId)
           .where('status', '==', 'active');
         const activeSnap = await transaction.get(activeQuery);
-        if (activeSnap.size >= 3) throw new Error('PROJECT_LIMIT_REACHED');
+        restoredCount = activeSnap.size;
+        if (activeSnap.size >= planLimit(restoredPlan, 'projects')) {
+          throw new Error('PROJECT_LIMIT_REACHED');
+        }
       }
       transaction.update(ref, {
         status: action === 'archive' ? 'archived' : 'active',
@@ -333,6 +348,12 @@ export async function PATCH(request, context) {
       });
       transaction.update(orgRef, { projectMutationVersion: FieldValue.increment(1) });
     });
+    // A restore has just counted the active projects for real; an archive knows
+    // the count moved but not to what, so it leaves the cache alone rather than
+    // guessing — every screen that shows it also holds the project list itself.
+    if (action === 'restore' && restoredCount) {
+      await recordPlanUsage(db, project.organizationId, { projects: restoredCount + 1 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error?.projectApi) {
@@ -344,7 +365,8 @@ export async function PATCH(request, context) {
     }
     if (error.message === 'PROJECT_LIMIT_REACHED') {
       return NextResponse.json({
-        error: 'Ліміт активних проєктів вичерпано. Змініть тариф або заархівуйте проєкт.',
+        error: planLimitRefusal(restoredPlan, 'projects', restoredCount),
+        planLimit: { id: 'projects', plan: restoredPlan, ceiling: planLimit(restoredPlan, 'projects'), used: restoredCount },
       }, { status: 403 });
     }
     return routeErrorResponse(error, { context: 'Project PATCH', fallbackMessage: 'Internal Server Error' });

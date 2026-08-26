@@ -46,16 +46,46 @@
 
 export const DEFAULT_PLAN = 'free';
 
-/** Rendered by `planLimitRows`: `0` is «–», `Infinity` is «Безліміт». */
+/**
+ * Rendered by `planLimitRows`: `0` is «–», `Infinity` is «Безліміт».
+ *
+ * Each one also carries the two sentences it says when it is met, because a
+ * refusal written at the place that refuses is a refusal written three times.
+ * `title` names what ran out; `hint` names the way out that is not money,
+ * since every one of these has one — archive a project, deactivate a seat,
+ * wait for the month to turn.
+ */
 export const PLAN_LIMITS = [
   {
     id: 'projects',
     label: 'Активні проєкти',
+    title: 'Ліміт активних проєктів вичерпано',
+    hint: 'Заархівуйте непотрібний проєкт або перейдіть на тариф із більшою стелею.',
+    absentTitle: 'Проєкти недоступні на цьому тарифі',
+    absentHint: 'Проєкти зʼявляються на платному тарифі.',
     enforced: true,
     enforcedAt: 'src/app/api/projects/route.js',
   },
-  { id: 'members', label: 'Учасники команди', enforced: false },
-  { id: 'aiCalls', label: 'Розбір дзвінків / міс', enforced: false },
+  {
+    id: 'members',
+    label: 'Учасники команди',
+    title: 'Ліміт учасників команди вичерпано',
+    hint: 'Деактивуйте учасника, який більше не працює, або перейдіть на тариф із більшою стелею.',
+    absentTitle: 'Запрошення недоступні на цьому тарифі',
+    absentHint: 'Запрошення зʼявляються на платному тарифі.',
+    enforced: true,
+    enforcedAt: 'src/app/api/invitations/route.js',
+  },
+  {
+    id: 'aiCalls',
+    label: 'Розбір дзвінків / міс',
+    title: 'Розбори дзвінків на цей місяць вичерпано',
+    hint: 'Лічильник обнулиться першого числа. Або перейдіть на тариф із більшою стелею.',
+    absentTitle: 'Розбір дзвінків недоступний на цьому тарифі',
+    absentHint: 'Запис наради стає саммарі, рішеннями й чернетками задач — на платному тарифі.',
+    enforced: true,
+    enforcedAt: 'src/app/api/ai/call-to-tasks/route.js',
+  },
 ];
 
 // Deliberately not a limit: the number of tasks.
@@ -298,4 +328,172 @@ export function planInheritanceLabel(value) {
 export function storedPlanLimit(value, key) {
   const limit = planLimit(value, key);
   return Number.isFinite(limit) ? limit : null;
+}
+
+// ── Where a ceiling stops being a page and starts being a gate ───────────
+//
+// Everything below answers one question in one place: given a plan, a ceiling
+// and how much of it is spent, what does the product do and what does it say?
+//
+// It is one function because it was going to be six otherwise — the API route
+// that refuses, the button that has to look refused before it is pressed, the
+// strip across the top, the dialog that opens from the crown, and whatever
+// comes next. Six copies of «is this full» is how a price list ends up promising
+// one thing while the code does another, which is the whole failure this
+// registry exists to prevent.
+
+export function planLimitById(key) {
+  return PLAN_LIMITS.find(limit => limit.id === key) || null;
+}
+
+/**
+ * What a ceiling is doing right now.
+ *
+ * `absent` — the plan does not have this at all (a ceiling of zero), which is a
+ * different sentence from `reached` and a different one from being close to it.
+ * `blocked` is the one a caller usually wants: it is true for both.
+ *
+ * @param {string} planId
+ * @param {string} key One of `PLAN_LIMITS`.
+ * @param {number} used How many are in use. A number nobody knows yet is `null`.
+ */
+export function planLimitState(planId, key, used) {
+  const ceiling = planLimit(planId, key);
+  const spent = Number.isFinite(used) && used >= 0 ? used : null;
+  const unlimited = ceiling === Infinity;
+  const absent = ceiling === 0;
+  const known = spent !== null;
+  const reached = !absent && !unlimited && known && spent >= ceiling;
+  return {
+    id: key,
+    planId: normalizePlan(planId),
+    ceiling,
+    used: spent,
+    unlimited,
+    absent,
+    reached,
+    blocked: absent || reached,
+    // «3 з 3». Nothing to print where there is no ceiling or no count.
+    reading: unlimited || absent || !known ? '' : `${spent} з ${ceiling}`,
+  };
+}
+
+/**
+ * The sentence that goes with that state, or `null` while nothing is wrong.
+ *
+ * Both halves come from `PLAN_LIMITS`, so the API route, the strip and the
+ * dialog cannot word the same refusal three different ways.
+ */
+export function planLimitNotice(planId, key, used) {
+  const state = planLimitState(planId, key, used);
+  const limit = planLimitById(key);
+  if (!limit || !state.blocked) return null;
+  return {
+    ...state,
+    title: state.absent ? limit.absentTitle : limit.title,
+    hint: state.absent ? (limit.absentHint || limit.hint) : limit.hint,
+    label: limit.label,
+  };
+}
+
+/**
+ * The plans that would raise this ceiling, cheapest first, each with what it
+ * raises it to. This is what the dialog offers, and it offers nothing when the
+ * workspace is already on the plan with the highest ceiling — a dialog that
+ * tries to sell Pro to somebody on Pro is worse than no dialog.
+ */
+export function plansRaisingLimit(planId, key) {
+  const current = planLimit(planId, key);
+  return PLANS
+    .filter(plan => planLimit(plan.id, key) > current)
+    .map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      priceLabel: plan.priceLabel,
+      currencyLabel: plan.currencyLabel,
+      value: planLimitValue(plan.id, key),
+    }));
+}
+
+/**
+ * «На Lite — 10, на Pro — Безліміт». One line, for the places too small to
+ * hold the price list itself: a tooltip, a toast, the body of a 403.
+ */
+export function planUpgradeLine(planId, key) {
+  const raised = plansRaisingLimit(planId, key);
+  if (!raised.length) return '';
+  return raised.map(plan => `на ${plan.name} — ${plan.value}`).join(', ');
+}
+
+/**
+ * The whole refusal as one string, for a server that has no components.
+ *
+ * `/api/projects` used to write its own — «Ліміт активних проєктів вичерпано.
+ * Змініть тариф або заархівуйте проєкт.» — which is the same sentence as the
+ * dialog's, kept in a different file, and the two would have parted company the
+ * first time either was edited.
+ */
+export function planLimitRefusal(planId, key, used) {
+  const notice = planLimitNotice(planId, key, used);
+  if (!notice) return '';
+  const line = planUpgradeLine(planId, key);
+  return [notice.title, notice.hint, line && `Стеля ${line}.`].filter(Boolean).join(' ');
+}
+
+/**
+ * The month a per-month ceiling is counted in, as `YYYY-MM`.
+ *
+ * Written from the organization's own timezone rather than the server's: a call
+ * analysed at 01:00 Kyiv on the first belongs to the month that has just begun
+ * for the team, not to the one still running in UTC.
+ */
+export function planUsagePeriod(date = new Date(), timeZone = 'Europe/Kyiv') {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find(part => part.type === 'year')?.value || '0000';
+  const month = parts.find(part => part.type === 'month')?.value || '00';
+  return `${year}-${month}`;
+}
+
+/**
+ * How much of each ceiling an organization has spent, read from the shape the
+ * organization document carries.
+ *
+ * `usage` is a **display cache**, not the gate. Every refusal counts for real on
+ * the server at the moment of the write — the project transaction counts
+ * projects, the invitation counts memberships — and this exists so that a
+ * button can look refused before it is pressed, and a strip can appear on a
+ * screen that has loaded nothing but the organization. A client could write a
+ * smaller number into it and change nothing about what it is allowed to do.
+ *
+ * A count nobody has written yet reads as `null`, which every caller here
+ * treats as «not known», never as zero.
+ */
+export function planUsage(organization, { period = planUsagePeriod() } = {}) {
+  const usage = organization?.usage || {};
+  const number = value => (typeof value === 'number' && value >= 0 ? value : null);
+  return {
+    projects: number(usage.projects),
+    members: number(usage.members),
+    // A counter from a month that has ended is not a smaller number, it is no
+    // number at all — the ceiling has already reset.
+    aiCalls: usage.aiCallsPeriod === period ? number(usage.aiCalls) : 0,
+  };
+}
+
+/**
+ * Every ceiling that is currently in the way, worst first. What the strip
+ * across the top of the workspace prints, and what decides whether it is there.
+ */
+export function planLimitNotices(planId, used = {}) {
+  return PLAN_LIMITS
+    .map(limit => planLimitNotice(planId, limit.id, used[limit.id]))
+    .filter(Boolean)
+    // Something that ran out is louder than something the plan never had: the
+    // first is a wall somebody just walked into, the second is a line on the
+    // price list they have already read.
+    .sort((a, b) => Number(b.reached) - Number(a.reached));
 }

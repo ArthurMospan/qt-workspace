@@ -13,7 +13,7 @@
     "long-text"
   ],
   "totals": {
-    "components": 116,
+    "components": 118,
     "stateful": 104,
     "hover": 68,
     "focus": 68,
@@ -343,9 +343,11 @@
       "long-text": "children, label"
     },
     "PlanCards": {},
+    "PlanLimitBanner": {},
     "PlanMark": {
       "long-text": "label"
     },
+    "PlanUpgradeDialog": {},
     "Popover": {
       "focus": "global",
       "long-text": "children"
@@ -790,8 +792,15 @@
     "PlanCards": [
       "surfaces"
     ],
+    "PlanLimitBanner": [
+      "feedback"
+    ],
     "PlanMark": [
-      "badges"
+      "badges",
+      "feedback"
+    ],
+    "PlanUpgradeDialog": [
+      "feedback"
     ],
     "Popover": [
       "task-attributes",

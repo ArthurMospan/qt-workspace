@@ -3,16 +3,18 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { Alert, ConnectionBanner, LoadingSpinner, EmptyState } from '@/components/ui';
+import { Alert, ConnectionBanner, LoadingSpinner, EmptyState, PlanLimitBanner, PlanMark, PlanUpgradeDialog } from '@/components/ui';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { User, Folder, Plug } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
+import { planLimitNotice } from '@/lib/utils/plans.mjs';
 import { PreviewBlock } from '../preview';
 
 export default function FeedbackSection() {
   const [qtPlusProject, setQtPlusProject] = useState('');
   const [toast, setToast] = useState(null);
   const [offline, setOffline] = useState(false);
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="Alerts" component="Alert" description="Компонент сповіщень. Має скруглення L3 (8px) відповідно до токенів." fullWidth>
@@ -145,6 +147,54 @@ export default function FeedbackSection() {
           {offline ? 'Повернути звʼязок' : 'Імітувати офлайн'}
         </Button>
         <ConnectionBanner offline={offline} />
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="PlanLimitBanner — стеля тарифу, сказана один раз нагорі"
+        component="PlanLimitBanner"
+        description="Корона біля контрола відповідає тому, хто вже тягнеться саме до цього контрола. На питання «чому нічого не створюється» вона відповісти не може: людина, яка його ставить, не дивиться на жоден конкретний контрол. Смуга висить у каркасі й зникає разом з умовою. Золота, а не червона: нічого не зламалось і нічого не втрачено — робочий простір робить рівно те, що написано в тарифі."
+        filePath="src/components/ui/Feedback/PlanLimitBanner.jsx"
+        fullWidth
+      >
+        <div className="flex flex-col gap-3">
+          <PlanLimitBanner notice={planLimitNotice('free', 'projects', 3)} onOpen={() => {}} />
+          <PlanLimitBanner notice={planLimitNotice('free', 'aiCalls', 0)} extra={2} onOpen={() => {}} />
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="PlanMark — корона біля того, куди тариф не пускає"
+        component="PlanMark"
+        description="Стоїть біля контрола, а не в прайслисті: прайс уже сказав, що входить у тариф, а корисне місце для позначки — момент, коли людина тягнеться до перемикача і він не рухається. Була чорною зірочкою — тим самим гліфом, яким кожен продукт позначає «улюблене», — і не клікалась, тож відповідь зупинялась на підказці. Тепер відкриває прайслист на тій стелі, що заважає."
+        filePath="src/components/ui/DataDisplay/PlanMark.jsx"
+      >
+        <div className="flex flex-col gap-[10px]">
+          <span className="flex items-center gap-2 text-[13px] text-ink">
+            Власний брендинг
+            <PlanMark capabilityId="branding" label="тільки в Lite і Pro" />
+          </span>
+          <span className="flex items-center gap-2 text-[13px] text-ink">
+            Пріоритетна підтримка
+            <PlanMark capabilityId="priority-support" label="тільки в Pro" />
+          </span>
+        </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="PlanUpgradeDialog — що відкриває корона"
+        component="PlanUpgradeDialog"
+        description="Тіло діалогу — той самий PlanCards, що в налаштуваннях і в онбордингу. У цьому і суть: діалог, який цитував би власні стелі, був би четвертим прайслистом. Понад картки він додає одне, чого прайслист не знає, — у що саме щойно вперлись і наскільки воно повне."
+        filePath="src/components/ui/Feedback/PlanUpgradeDialog.jsx"
+        fullWidth
+      >
+        <Button style="secondary" onClick={() => setPlanDialogOpen(true)}>Показати діалог</Button>
+        <PlanUpgradeDialog
+          isOpen={planDialogOpen}
+          onClose={() => setPlanDialogOpen(false)}
+          notice={planLimitNotice('free', 'projects', 3)}
+          currentPlanId="free"
+          onChoose={() => setPlanDialogOpen(false)}
+        />
       </PreviewBlock>
 
     </div>

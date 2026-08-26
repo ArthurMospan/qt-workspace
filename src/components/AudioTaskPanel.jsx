@@ -57,6 +57,7 @@ export default function AudioTaskPanel({
   const { activeOrgId, activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
   const showToast = useWorkspaceStore(state => state.showToast);
+  const openPlanUpgrade = useWorkspaceStore(state => state.openPlanUpgrade);
   const availableProjects = useMemo(
     () => (projects?.length ? projects : projectContext ? [projectContext] : []).filter(Boolean),
     [projects, projectContext],
@@ -131,7 +132,17 @@ export default function AudioTaskPanel({
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Не вдалося проаналізувати аудіо');
+      if (!response.ok) {
+        // A ceiling comes back named, so the answer is the price list on that
+        // ceiling rather than a toast the reader can do nothing with. «Розбір
+        // дзвінків / міс» is a line on the price list, and this is where it
+        // stops being only that.
+        if (data.planLimit?.id) {
+          openPlanUpgrade({ limitId: data.planLimit.id });
+          return;
+        }
+        throw new Error(data.error || 'Не вдалося проаналізувати аудіо');
+      }
       setResult({
         summary: data.summary || '',
         decisions: data.decisions || [],

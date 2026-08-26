@@ -106,6 +106,8 @@ export { default as LoadingSpinner } from './Feedback/LoadingSpinner'
 export { default as Skeleton } from './Feedback/Skeleton'
 export { default as EmptyState } from './Feedback/EmptyState'
 export { default as SignalList } from './Feedback/SignalList'
+export { default as PlanLimitBanner } from './Feedback/PlanLimitBanner'
+export { default as PlanUpgradeDialog } from './Feedback/PlanUpgradeDialog'
 
 // ===== LAYOUT COMPONENTS =====
 export { default as Card } from './Layout/Card'

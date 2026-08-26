@@ -32,19 +32,37 @@ test('every project restore surface shows the actionable API error', async () =>
 });
 
 // «Перейдіть на Pro план» named the most expensive way out and the only one
-// this file knew about, while the product has offered Lite since sign-up. Both
-// routes that refuse a project now name the two things that actually help:
-// change the plan, or archive something already finished.
-test('the project limit names a way out that is not only the top plan', async () => {
-  const unarchive = await read('../src/app/api/projects/[projectId]/route.js');
-  const create = await read('../src/app/api/projects/route.js');
+// this file knew about, while the product has offered Lite since sign-up. Then
+// both routes carried the replacement sentence in full, which is the same
+// mistake one level up: two copies of one refusal, in two files, either of
+// which could be edited without the other. Neither writes it any more — the
+// registry does, and both routes ask it.
+test('both routes that refuse a project ask the registry for the sentence', async () => {
+  // Without comments: what was taken out of these files is described in prose
+  // right beside where it used to be, and a description of deleted code is not
+  // code.
+  const withoutComments = source => source
+    .split(/\r?\n/)
+    .filter(line => !/^\s*(\/\/|\*|\/\*)/.test(line))
+    .join('\n');
+  const unarchive = withoutComments(await read('../src/app/api/projects/[projectId]/route.js'));
+  const create = withoutComments(await read('../src/app/api/projects/route.js'));
 
   for (const route of [unarchive, create]) {
-    assert.match(
-      route,
-      /Ліміт активних проєктів вичерпано\. Змініть тариф або заархівуйте проєкт\./,
-    );
+    assert.match(route, /planLimitRefusal\([^)]*'projects'/);
+    assert.match(route, /planLimit\([^)]*'projects'\)/);
     assert.doesNotMatch(route, /Перейдіть на Pro план/);
+    // The sentence itself lives in exactly one place, and it is not here.
+    assert.doesNotMatch(route, /Ліміт активних проєктів вичерпано/);
+    // And the ceiling is the registry's too. Restoring an archived project was
+    // still refusing at a hardcoded three for anything that was not Pro —
+    // the same bug the create route had been fixed for, still alive in the
+    // other half of the same pair.
+    assert.doesNotMatch(route, /!== 'pro'/);
+    assert.doesNotMatch(route, /size >= 3/);
+    // The body names the ceiling, so the screen can open the price list on it
+    // instead of looking for the word «Pro» in a Ukrainian sentence.
+    assert.match(route, /planLimit: \{ id: 'projects'/);
   }
 });
 

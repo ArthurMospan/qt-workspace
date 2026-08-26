@@ -4,6 +4,12 @@ import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { deliverEmail, invitationEmailHtml } from '@/lib/server/email';
 import { reactivateMembership } from '@/lib/server/orgMembership';
+import {
+  countActiveMembers,
+  organizationPlan,
+  planLimitRefusalResponse,
+  recordPlanUsage,
+} from '@/lib/server/planLimits';
 
 // The invitation must be created even when the email provider is down or not
 // configured — the pending doc alone already works (it is auto-accepted on the
@@ -70,6 +76,37 @@ export async function POST(request) {
     }
     const safeRole = role === 'admin' ? 'admin' : 'member';
     const db = getAdminDb();
+
+    // The seat ceiling, counted here rather than promised on the price list.
+    // «До 5 учасників» has been on the free plan since before this route
+    // existed and nothing ever counted them, so the number was a sentence on a
+    // page. A pending invitation counts as a seat: one that has been offered is
+    // taken, or a workspace could invite its way past any ceiling and find out
+    // only when everybody accepted at once.
+    //
+    // Asked for at the moment a seat is actually about to be taken, not at the
+    // top of the route — somebody who is already on the team gets «вже в
+    // команді», which is what happened, rather than a refusal about a ceiling
+    // their invitation was never going to cross.
+    const refuseWithoutSeat = async () => {
+      const [organizationSnapshot, seatsTaken, pendingSeats] = await Promise.all([
+        db.collection('organizations').doc(organizationId).get(),
+        countActiveMembers(db, organizationId),
+        db.collection('invitations')
+          .where('organizationId', '==', organizationId)
+          .where('status', '==', 'pending')
+          .count()
+          .get()
+          .then(snapshot => snapshot.data().count),
+      ]);
+      await recordPlanUsage(db, organizationId, { members: seatsTaken });
+      return planLimitRefusalResponse(
+        organizationPlan(organizationSnapshot),
+        'members',
+        seatsTaken + pendingSeats,
+      );
+    };
+
     const invitedProjectIds = await resolveInvitedProjectIds(db, projectIds, organizationId);
 
     const userSnap = await db.collection('users').where('email', '==', normalizedEmail).limit(1).get();
@@ -80,6 +117,8 @@ export async function POST(request) {
       if ((await membershipRef.get()).exists) {
         return NextResponse.json({ error: 'User is already a member' }, { status: 409 });
       }
+      const seatRefusal = await refuseWithoutSeat();
+      if (seatRefusal) return seatRefusal;
 
       // Someone who used to be here comes back to their own seat, not to a
       // blank one: the same position, the same projects, and every task still
@@ -147,6 +186,8 @@ export async function POST(request) {
     if (!pendingSnap.empty) {
       return NextResponse.json({ error: 'Invitation is already pending' }, { status: 409 });
     }
+    const seatRefusal = await refuseWithoutSeat();
+    if (seatRefusal) return seatRefusal;
 
     await db.collection('invitations').add({
       email: normalizedEmail,

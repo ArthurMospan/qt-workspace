@@ -8,7 +8,7 @@ import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchR
 import { useOrganizationIssues } from '@/lib/hooks/useOrganizationIssues';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, Settings2 } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, MoreVertical, Trash2, User, Settings2 } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -44,15 +44,15 @@ import { createIssueViaApi } from '@/lib/services/issues';
 import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
 import { sendProjectInvitations } from '@/lib/services/projectInvitations';
-import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 import {
   failedInvitesMessage,
   malformedEmailsMessage,
   parseInviteEmails,
   undeliveredEmailsMessage,
 } from '@/lib/utils/inviteEmails';
-import { planById, planLimit } from '@/lib/utils/plans.mjs';
-import { plural } from '@/lib/utils/plural.mjs';
+import { planLimitNotice } from '@/lib/utils/plans.mjs';
+import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
+import { PlanCrownIcon } from '@/lib/design/icons';
 
 
 // ── Project Card ─────────────────────────────────────────────────────────────
@@ -457,11 +457,14 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
   const [inviteEmailsError, setInviteEmailsError] = useState('');
   const { inviteMember } = useOrganization();
 
-  // Read from the plan registry rather than restated. `orgPlan !== 'pro'` with a
-  // hardcoded three had Lite refusing a fourth project like a free workspace,
-  // which is the same bug the create route carried.
-  const projectCeiling = planLimit(orgPlan, 'projects');
-  const limitReached = activeProjectsCount >= projectCeiling;
+  // Read from the plan registry rather than restated — the ceiling, and the two
+  // sentences that go with it. This screen used to word its own refusal («На
+  // тарифі Free дозволено 3 активні проєкти…»), the create route worded another
+  // one, and the two would have parted company the first time either was
+  // edited. Now both print `planLimitNotice`.
+  const openPlanUpgrade = useWorkspaceStore(state => state.openPlanUpgrade);
+  const limitNotice = planLimitNotice(orgPlan, 'projects', activeProjectsCount);
+  const limitReached = Boolean(limitNotice);
 
   const [error, setError] = useState(null);
   const handleCreate = async () => {
@@ -501,7 +504,18 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
         body: JSON.stringify(payload),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Не вдалося створити проєкт');
+      if (!response.ok) {
+        // A ceiling comes back named, so the alert can offer the price list on
+        // that ceiling instead of the screen guessing from the word «Pro» in a
+        // sentence — which is what it used to do, and what stopped working the
+        // moment the refusal named a cheaper plan.
+        setError({
+          message: result.error || 'Не вдалося створити проєкт',
+          limitId: result.planLimit?.id || '',
+        });
+        setSaving(false);
+        return;
+      }
 
       // Invitations are sent after the project exists so each one can carry its
       // id: accepting then joins the organization and this project in one step.
@@ -523,7 +537,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
       onClose();
     } catch (err) {
       console.error('[NewProject]', err);
-      setError(err.message);
+      setError({ message: err.message, limitId: '' });
     }
     setSaving(false);
   };
@@ -532,7 +546,10 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
     <Dialog isOpen={true} onClose={onClose} title="Новий проєкт" size="sm" footer={
       limitReached ? (
         <div className="flex flex-col gap-2 w-full">
-          <Button onClick={() => { onClose(); navigateAfterOverlayClose(() => router.push('/settings#billing')); }} style="primary" size="md" className="w-full">Перейти на PRO →</Button>
+          {/* The price list, not a route to a settings section — and not «Pro»,
+              which was the only way out this offered while a cheaper plan
+              existed that also raises this ceiling. */}
+          <Button onClick={() => { onClose(); openPlanUpgrade({ limitId: 'projects' }); }} style="primary" size="md" className="w-full">Тарифні плани</Button>
           <Button onClick={onClose} style="secondary" size="md" className="w-full">Закрити</Button>
         </div>
       ) : (
@@ -544,29 +561,29 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
     }>
       {limitReached ? (
         <div className="flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-info-soft rounded-[12px] flex items-center justify-center mb-4">
-            <Lock size={28} className="text-muted" />
+          {/* Gold, not a grey padlock on a blue square. Nothing has broken and
+              nothing was lost: the workspace is doing exactly what the plan
+              says it does, and a lock is the product's word for «no». */}
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[12px] bg-plan-soft">
+            <PlanCrownIcon size={28} className="text-plan" aria-hidden />
           </div>
-          <h3 className="ui-type-feature-title text-ink mb-2">Ліміт тарифу</h3>
+          <h3 className="ui-type-feature-title text-ink mb-2">{limitNotice.title}</h3>
           <p className="text-[13px] text-muted leading-relaxed">
-            На тарифі {planById(orgPlan).name} дозволено <strong>{projectCeiling}</strong>{' '}
-            {plural(projectCeiling, ['активний проєкт', 'активні проєкти', 'активних проєктів'])}.
-            Змініть тариф у «Налаштуваннях» або заархівуйте те, що вже завершено.
+            Використано {limitNotice.reading}. {limitNotice.hint}
           </p>
         </div>
       ) : (
         <div className="flex flex-col gap-[16px]">
           {error && (
-            <Alert variant="error" title={error}>
-              {error.includes('Pro') ? (
+            <Alert variant="error" title={error.message}>
+              {error.limitId ? (
                 <Button
                   style="primary"
-                  color="red"
                   size="sm"
                   className="mt-1"
-                  onClick={() => { onClose(); navigateAfterOverlayClose(() => router.push('/settings#billing')); }}
+                  onClick={() => { onClose(); openPlanUpgrade({ limitId: error.limitId }); }}
                 >
-                  Перейти на PRO →
+                  Тарифні плани
                 </Button>
               ) : null}
             </Alert>
@@ -616,6 +633,11 @@ export default function WorkspacePage() {
   const router       = useRouter();
   const [showNewProject, setShowNewProject] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  // The ceiling, on the button that would meet it. A control that opens a form
+  // in order to tell you the form is closed wastes the click that told you.
+  const planLimits = usePlanLimits();
+  const projectsBlocked = planLimits.blocked('projects');
+  const openPlanUpgrade = useWorkspaceStore(s => s.openPlanUpgrade);
 
   // Real-time issues state
 
@@ -869,13 +891,19 @@ export default function WorkspacePage() {
           actions={
             can(orgRole, 'create:project') && (
               <Button
-                onClick={() => setShowNewProject(true)}
+                onClick={() => (projectsBlocked
+                  ? openPlanUpgrade({ limitId: 'projects' })
+                  : setShowNewProject(true))}
                 style="primary"
                 color="dark"
                 size="lg"
-                icon={Plus}
+                // The crown replaces the plus when there is no room left. The
+                // button still works — it opens the price list on the ceiling
+                // that is in the way instead of a form that cannot be
+                // submitted — and it says so before it is pressed.
+                icon={projectsBlocked ? PlanCrownIcon : Plus}
                 collapseAt="sm"
-                title="Новий проєкт"
+                title={projectsBlocked ? planLimits.notice('projects').title : 'Новий проєкт'}
               >
                 Новий проєкт
               </Button>

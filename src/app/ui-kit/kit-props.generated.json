@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 116,
-    "props": 864,
-    "documentedProps": 864,
+    "components": 118,
+    "props": 877,
+    "documentedProps": 877,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2860,6 +2860,7 @@
             "danger",
             "inverse",
             "overlay",
+            "plan",
             "primary",
             "quiet",
             "quiet-danger",
@@ -4508,10 +4509,51 @@
         }
       ]
     },
+    "PlanLimitBanner": {
+      "file": "src/components/ui/Feedback/PlanLimitBanner.jsx",
+      "summary": "The strip that says a ceiling has been met, across the top of the workspace. A crown beside a control answers «чому» to somebody already reaching for that control.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "extra",
+          "default": "0",
+          "type": "number",
+          "values": [],
+          "description": "How many further ceilings are also met, named in one clause."
+        },
+        {
+          "name": "notice",
+          "default": "",
+          "type": "{title: string, hint: string}",
+          "values": [],
+          "description": "What ran out; from `planLimitNotice`."
+        },
+        {
+          "name": "onOpen",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Opens the price list on that ceiling."
+        }
+      ]
+    },
     "PlanMark": {
       "file": "src/components/ui/DataDisplay/PlanMark.jsx",
-      "summary": "A filled black star beside something the current plan does not include. It belongs next to the control, not on the price list.",
+      "summary": "A gold crown beside something this plan does not reach. It belongs next to the control, not on the price list.",
       "props": [
+        {
+          "name": "capabilityId",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Which capability, when it is one of `PLAN_CAPABILITIES`."
+        },
         {
           "name": "className",
           "default": "''",
@@ -4524,7 +4566,69 @@
           "default": "",
           "type": "string",
           "values": [],
-          "description": "What the plan is missing — becomes the tooltip."
+          "description": "Why the control will not move — the tooltip and the accessible name."
+        },
+        {
+          "name": "limitId",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Which ceiling, when it is one of `PLAN_LIMITS`."
+        },
+        {
+          "name": "size",
+          "default": "'micro'",
+          "type": "'micro'|'xs'|'sm'",
+          "values": [],
+          "description": "Box size; `micro` is the inline mark beside a label."
+        }
+      ]
+    },
+    "PlanUpgradeDialog": {
+      "file": "src/components/ui/Feedback/PlanUpgradeDialog.jsx",
+      "summary": "What the crown opens, and what the strip's button opens, and where a 403 from a route that counted for real sends the reader.",
+      "props": [
+        {
+          "name": "busyPlanId",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "The plan being switched to right now."
+        },
+        {
+          "name": "currentPlanId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The plan the workspace is on."
+        },
+        {
+          "name": "isOpen",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether it is on screen."
+        },
+        {
+          "name": "notice",
+          "default": "",
+          "type": "{title: string, hint: string, reading?: string}",
+          "values": [],
+          "description": "What was in the way, if anything."
+        },
+        {
+          "name": "onChoose",
+          "default": "",
+          "type": "(planId: string) => void",
+          "values": [],
+          "description": "Fires with the plan whose button was pressed."
+        },
+        {
+          "name": "onClose",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Closes it: the ×, the overlay and Escape all call this."
         }
       ]
     },

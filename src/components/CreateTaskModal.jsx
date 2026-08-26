@@ -6,7 +6,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { uploadFile } from '@/lib/utils/uploadFile';
 import { hasProjectAccess, hasRecordedTeam, isOnProjectTeam, isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
 import { Check, Play, Tag as TagIcon } from 'lucide-react';
-import { TaskIcon } from '@/lib/design/icons';
+import { PlanCrownIcon, TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import MarkdownEditor from '@/components/ui/Forms/MarkdownEditor';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
@@ -23,6 +23,8 @@ import { fromDateInput } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import Tabs from '@/components/ui/Tabs';
 import AudioTaskPanel from '@/components/AudioTaskPanel';
+import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
+import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import Alert from '@/components/ui/Feedback/Alert';
@@ -48,6 +50,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   const timeZone = organizationTimeZone(activeOrg);
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
   const [mode, setMode] = useState('task');
+  // «Розбір дзвінків / міс» is a ceiling the price list has always carried, and
+  // until now nothing counted it. The tab reads it before anything is uploaded.
+  const planLimits = usePlanLimits();
+  const aiCallsBlocked = planLimits.blocked('aiCalls');
+  const openPlanUpgrade = useWorkspaceStore(state => state.openPlanUpgrade);
 
   const [form, setForm] = useState({
     title: '', description: '', status: 'backlog',
@@ -424,10 +431,21 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           <Tabs
             tabs={[
               { id: 'task', label: 'Завдання', icon: TaskIcon },
-              { id: 'audio', label: 'Аудіо-завдання (AI)', icon: Play },
+              // The crown replaces the play glyph when the month's calls are
+              // spent, or when the plan never had them: the tab still opens
+              // something, and what it opens is the price list on that ceiling
+              // rather than a panel that would be refused after an upload.
+              {
+                id: 'audio',
+                label: 'Аудіо-завдання (AI)',
+                icon: aiCallsBlocked ? PlanCrownIcon : Play,
+                title: aiCallsBlocked ? planLimits.notice('aiCalls').title : undefined,
+              },
             ]}
             activeTab={mode}
-            onTabChange={setMode}
+            onTabChange={next => (next === 'audio' && aiCallsBlocked
+              ? openPlanUpgrade({ limitId: 'aiCalls' })
+              : setMode(next))}
             composition="pane-switch"
           />
         </div>

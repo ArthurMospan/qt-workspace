@@ -37,6 +37,9 @@ import {
   planAllows,
   planName,
 } from '@/lib/utils/plans.mjs';
+import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
+import { switchOrganizationPlan } from '@/lib/services/organizationPlan';
+import { PlanCrownIcon } from '@/lib/design/icons';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -1030,6 +1033,11 @@ export default function SettingsPage() {
   const [sidebarColor,    setSidebarColor]    = useState('#1f1f1f');  // HEX for custom theme
   const setSidebarPreview = useWorkspaceStore(s => s.setSidebarPreview);
   const clearSidebarPreview = useWorkspaceStore(s => s.clearSidebarPreview);
+  // Every ceiling this screen can meet, from the one hook that knows them. The
+  // seat ceiling is the one with a control on this page.
+  const planLimits = usePlanLimits();
+  const seatsBlocked = planLimits.blocked('members');
+  const openPlanUpgrade = useWorkspaceStore(s => s.openPlanUpgrade);
 
   // Live preview: push changes to sidebar in real-time
   useEffect(() => {
@@ -2203,20 +2211,18 @@ export default function SettingsPage() {
   //
   // This used to open a toast saying the payment system was in development,
   // which was true and also the whole of the feature. Until money is involved
-  // the honest version is that an owner picks a plan and the workspace changes
-  // — written the same way branding is written, straight to the organization
-  // document, because that is the only writer there is.
+  // the honest version is that an owner picks a plan and the workspace changes.
   //
-  // When billing is real this becomes a server route and `plan` joins `apiKeys`
-  // among the fields firestore.rules refuses from a client. Until then it is not
-  // a paywall and nothing here pretends otherwise: what it gates is what the
-  // workspace looks like, not who may use it.
+  // The write itself is `switchOrganizationPlan`, because there are two screens
+  // that do it now — this one and the dialog the crown opens — and one field
+  // written from two places is one field that will be written two ways. What
+  // stays here is what belongs to this screen: the local state and the toast.
   const handleUpgradePlan = async (newPlan) => {
     const next = normalizePlan(newPlan);
     if (next === orgPlan || upgradingTo) return;
     setUpgradingTo(next);
     try {
-      await updateDoc(doc(db, 'organizations', activeOrgId), { plan: next });
+      await switchOrganizationPlan(activeOrgId, next);
       setOrgPlan(next);
       // The plan's own name. The toast had two branches for three plans, so
       // switching to Lite announced «Тариф змінено на Безкоштовний».
@@ -3066,7 +3072,7 @@ export default function SettingsPage() {
                 switch and it will not move. */}
             <GroupLabel
               label="Брендинг"
-              action={!brandingAllowed && <PlanMark label={capabilityAvailability('branding')} />}
+              action={!brandingAllowed && <PlanMark capabilityId="branding" label={capabilityAvailability('branding')} />}
             />
             {!brandingAllowed ? (
               <p className="text-[12px] text-muted mb-3">
@@ -3552,7 +3558,13 @@ export default function SettingsPage() {
         ));
         return (
         <Section title="Учасники команди" rightAction={isAdmin ? (
-          <Button onClick={() => setShowInviteModal(true)} style="primary" size="md" icon={Plus}>Запросити</Button>
+          <Button
+            onClick={() => (seatsBlocked ? openPlanUpgrade({ limitId: 'members' }) : setShowInviteModal(true))}
+            style="primary"
+            size="md"
+            icon={seatsBlocked ? PlanCrownIcon : Plus}
+            title={seatsBlocked ? planLimits.notice('members').title : undefined}
+          >Запросити</Button>
         ) : null}>
           <Surface preset="card" padding="none" className="overflow-hidden relative z-10">
             <div className="flex flex-col divide-y divide-line rounded-[16px]">

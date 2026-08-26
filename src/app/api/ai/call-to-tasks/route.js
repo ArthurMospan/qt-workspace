@@ -17,6 +17,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { organizationRollupTimeZone } from '@/lib/server/analyticsRollups';
+import { commitAiCall, planLimitRefusalResponse, reserveAiCall } from '@/lib/server/planLimits';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { organizationIdFromPath } from '@/lib/utils/uploadPaths.mjs';
 import { dayKeyInTimeZone } from '@/lib/utils/timeZone.mjs';
@@ -273,14 +274,24 @@ export async function POST(request) {
     const members = Array.isArray(memberNames)
       ? memberNames.filter(name => typeof name === 'string').slice(0, 50)
       : [];
+    // The same cached reader the time rollups use, rather than a second copy of
+    // "which timezone is this organization in" — it holds the answer for the
+    // life of the process, so this costs no read of its own.
+    const timeZone = await organizationRollupTimeZone(getAdminDb(), organizationId);
+
+    // «Розбір дзвінків / міс» is a ceiling on the price list, and until now it
+    // was only that. A workspace on Free has none at all, one on Lite has ten a
+    // month — asked before the model is called, so a workspace at its ceiling
+    // never spends one of our Gemini quota either.
+    const allowance = await reserveAiCall(getAdminDb(), organizationId, timeZone);
+    const refusal = planLimitRefusalResponse(allowance.plan, 'aiCalls', allowance.used);
+    if (refusal) return refusal;
+
     const prompt = buildPrompt({
       members,
       projectName: typeof projectName === 'string' ? projectName.trim().slice(0, MAX_PROJECT_NAME) : '',
       hasAudio: Boolean(audio),
-      // The same cached reader the time rollups use, rather than a second copy
-      // of "which timezone is this organization in" — it holds the answer for
-      // the life of the process, so this costs no read of its own.
-      timeZone: await organizationRollupTimeZone(getAdminDb(), organizationId),
+      timeZone,
     });
 
     // Gemini слухає аудіо напряму, тож обидва шляхи ведуть в один виклик.
@@ -292,6 +303,10 @@ export async function POST(request) {
       return NextResponse.json({ error: result.error }, { status: result.status || 502 });
     }
     const extraction = result.extraction;
+
+    // Counted only now. A call Gemini dropped, timed out on or refused is not
+    // one of somebody's ten — they got nothing for it.
+    await commitAiCall(getAdminDb(), organizationId, allowance.period);
 
     return NextResponse.json({
       summary: extraction.summary || '',

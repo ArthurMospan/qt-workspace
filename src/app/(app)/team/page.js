@@ -24,6 +24,8 @@ import {
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ProfileView from '@/components/profile/ProfileView';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
+import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
+import { PlanCrownIcon } from '@/lib/design/icons';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
 import { useOrganizationPresence } from '@/lib/hooks/useOrganizationPresence';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
@@ -37,6 +39,11 @@ export default function TeamPage() {
   const presenceByUserId = useOrganizationPresence();
   
   const [showInviteModal, setShowInviteModal] = useState(false);
+  // The seat ceiling, on the control that would meet it. The invite dialog used
+  // to open, take an address and only then be refused by the route.
+  const planLimits = usePlanLimits();
+  const seatsBlocked = planLimits.blocked('members');
+  const openPlanUpgrade = useWorkspaceStore(state => state.openPlanUpgrade);
   // QUI-104. Search can now answer with a person, and an answer has to land on
   // that person rather than on whoever happens to be first in the list.
   const searchParams = useSearchParams();
@@ -109,12 +116,14 @@ export default function TeamPage() {
           loading={loading}
           action={isAdmin ? (
             <Button
-              onClick={() => setShowInviteModal(true)}
+              onClick={() => (seatsBlocked
+                ? openPlanUpgrade({ limitId: 'members' })
+                : setShowInviteModal(true))}
               style="ghost"
               size="icon-xs"
-              icon={Plus}
+              icon={seatsBlocked ? PlanCrownIcon : Plus}
               className="hover:!bg-white"
-              title="Запросити"
+              title={seatsBlocked ? planLimits.notice('members').title : 'Запросити'}
             />
           ) : null}
         />

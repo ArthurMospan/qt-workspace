@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 265,
-    "parsedFiles": 265,
+    "productFiles": 269,
+    "parsedFiles": 269,
     "parseErrors": 0,
     "nativeControls": 21,
     "structures": {
@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 116,
-      "used": 116,
+      "components": 118,
+      "used": 118,
       "unused": 0,
-      "covered": 111,
+      "covered": 113,
       "uncovered": 0,
       "routes": 12,
-      "previews": 147,
+      "previews": 150,
       "internal": 5,
       "unlisted": 0
     },
@@ -528,7 +528,7 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:91",
+      "location": "src/app/(app)/layout.js:93",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -543,22 +543,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:529",
+      "location": "src/app/(app)/settings/page.js:532",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:549",
+      "location": "src/app/(app)/settings/page.js:552",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:593",
+      "location": "src/app/(app)/settings/page.js:596",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:712",
+      "location": "src/app/(app)/settings/page.js:715",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -578,22 +578,22 @@
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:200",
+      "location": "src/components/AudioTaskPanel.jsx:211",
       "tag": "div",
       "className": "flex items-center gap-3 rounded-[14px] bg-canvas px-4 py-3"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:242",
+      "location": "src/components/AudioTaskPanel.jsx:253",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:248",
+      "location": "src/components/AudioTaskPanel.jsx:259",
       "tag": "div",
       "className": "rounded-[14px] bg-canvas p-4"
     },
     {
-      "location": "src/components/AudioTaskPanel.jsx:277",
+      "location": "src/components/AudioTaskPanel.jsx:288",
       "tag": "div",
       "className": "rounded-[14px] border border-line bg-white p-4 transition-opacity ${…}"
     },

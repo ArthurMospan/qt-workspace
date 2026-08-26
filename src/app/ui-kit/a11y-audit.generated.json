@@ -10,14 +10,14 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 379,
-    "elements": 4391,
+    "files": 385,
+    "elements": 4408,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
     "fakeButtons": 0,
     "contrastFailures": 0,
-    "runtimeNameVerification": 42
+    "runtimeNameVerification": 44
   },
   "namelessControls": [],
   "imagesWithoutAlt": [],
@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:3649",
+      "location": "src/app/(app)/settings/page.js:3661",
       "attributes": [
         "title",
         "aria-label"
@@ -35,7 +35,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:674",
+      "location": "src/app/(app)/settings/page.js:677",
       "attributes": [
         "aria-label",
         "title"
@@ -47,6 +47,13 @@
       "attributes": [
         "title",
         "aria-label"
+      ]
+    },
+    {
+      "element": "Button",
+      "location": "src/app/(app)/team/page.js:118",
+      "attributes": [
+        "title"
       ]
     },
     {
@@ -138,6 +145,13 @@
       "location": "src/components/ui/ContextMenu.jsx:114",
       "attributes": [
         "title"
+      ]
+    },
+    {
+      "element": "IconAction",
+      "location": "src/components/ui/DataDisplay/PlanMark.jsx:42",
+      "attributes": [
+        "label"
       ]
     },
     {

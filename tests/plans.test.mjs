@@ -27,9 +27,16 @@ import {
   planById,
   planInheritanceLabel,
   planLimit,
+  planLimitNotices,
+  planLimitRefusal,
   planLimitRows,
+  planLimitState,
   planLimitValue,
   planName,
+  planUpgradeLine,
+  planUsage,
+  planUsagePeriod,
+  plansRaisingLimit,
   previousPlan,
   storedPlanLimit,
 } from '../src/lib/utils/plans.mjs';
@@ -202,12 +209,106 @@ test('кожен enforced-прапорець вказує на код, який 
   for (const entry of enforced) {
     assert.ok(entry.enforcedAt, `${entry.id}: enforced: true без enforcedAt — нікому перевірити`);
     const source = await read(entry.enforcedAt);
-    assert.ok(
-      source.includes(`planAllows(orgPlan, '${entry.id}')`)
-      || source.includes(`planLimit(orgSnap.data().plan, '${entry.id}')`),
-      `${entry.id}: ${entry.enforcedAt} не питає про тариф`,
+    // Стеля мусить бути прочитана з реєстру в тому самому файлі, який відмовляє.
+    // Раніше тут стояли два дослівні виклики, і це тримало рівно один роут:
+    // будь-яке інше місце, що читає тариф якось інакше, могло поставити
+    // `enforced: true` й нічого не стерегти.
+    const asks = new RegExp(
+      `(planAllows|planLimit|planLimitRefusalResponse|reserveAiCall)\\b[\\s\\S]{0,120}?'${entry.id}'`
+      + `|'${entry.id}'[\\s\\S]{0,120}?(planAllows|planLimit)\\b`,
+    );
+    assert.match(
+      source,
+      asks,
+      `${entry.id}: ${entry.enforcedAt} не питає реєстр про цю стелю`,
     );
   }
+});
+
+test('стан стелі — одна функція, а не шість копій «чи повно»', () => {
+  const full = planLimitState('free', 'projects', 3);
+  assert.equal(full.reached, true);
+  assert.equal(full.blocked, true);
+  assert.equal(full.absent, false);
+  assert.equal(full.reading, '3 з 3');
+
+  const room = planLimitState('free', 'projects', 2);
+  assert.equal(room.reached, false);
+  assert.equal(room.blocked, false);
+  assert.equal(room.reading, '2 з 3');
+
+  // Безліміт не буває повним, скільки б там не було.
+  const unlimited = planLimitState('pro', 'projects', 9999);
+  assert.equal(unlimited.unlimited, true);
+  assert.equal(unlimited.blocked, false);
+  assert.equal(unlimited.reading, '');
+
+  // Стеля в нуль — це не «вичерпано», це «цього тут немає»: інше речення і
+  // інша відповідь.
+  const none = planLimitState('free', 'aiCalls', 0);
+  assert.equal(none.absent, true);
+  assert.equal(none.reached, false);
+  assert.equal(none.blocked, true);
+
+  // Число, якого ніхто ще не порахував, — це не нуль. Інакше порожній кеш
+  // означав би «все вільно» саме тоді, коли він нічого не знає.
+  const unknown = planLimitState('free', 'members', null);
+  assert.equal(unknown.used, null);
+  assert.equal(unknown.reached, false);
+  assert.equal(unknown.reading, '');
+});
+
+test('речення відмови збирається з реєстру, і в ньому є вихід', () => {
+  const refusal = planLimitRefusal('free', 'projects', 3);
+  assert.match(refusal, /Ліміт активних проєктів вичерпано/);
+  // Вихід, що не коштує грошей, названий першим.
+  assert.match(refusal, /Заархівуйте/);
+  // І названі обидва тарифи, що піднімають цю стелю, а не тільки найдорожчий.
+  assert.match(refusal, /на Lite — 10/);
+  assert.match(refusal, /на Pro — Безліміт/);
+
+  // Того, чого в тарифі немає, не «вичерпано».
+  assert.match(planLimitRefusal('free', 'aiCalls', 0), /Розбір дзвінків недоступний/);
+  // А там, де все гаразд, речення немає взагалі.
+  assert.equal(planLimitRefusal('free', 'projects', 2), '');
+  assert.equal(planLimitRefusal('pro', 'projects', 9999), '');
+});
+
+test('діалог не продає Pro тому, хто вже на Pro', () => {
+  assert.deepEqual(plansRaisingLimit('free', 'projects').map(plan => plan.id), ['lite', 'pro']);
+  assert.deepEqual(plansRaisingLimit('lite', 'projects').map(plan => plan.id), ['pro']);
+  assert.deepEqual(plansRaisingLimit('pro', 'projects'), []);
+  assert.equal(planUpgradeLine('pro', 'projects'), '');
+});
+
+test('місяць для помісячної стелі рахується в часовому поясі команди', () => {
+  // 31 серпня 23:30 у Києві — це вже 1 вересня для команди, і саме тоді
+  // лічильник має обнулитись, а не через дві години за Гринвічем.
+  assert.equal(planUsagePeriod(new Date('2026-08-31T20:30:00Z'), 'Europe/Kyiv'), '2026-08');
+  assert.equal(planUsagePeriod(new Date('2026-08-31T22:30:00Z'), 'Europe/Kyiv'), '2026-09');
+});
+
+test('лічильник із минулого місяця — це не менше число, а жодного', () => {
+  const organization = { usage: { projects: 2, members: 7, aiCalls: 9, aiCallsPeriod: '2026-07' } };
+  assert.deepEqual(planUsage(organization, { period: '2026-08' }), {
+    projects: 2, members: 7, aiCalls: 0,
+  });
+  assert.deepEqual(planUsage(organization, { period: '2026-07' }), {
+    projects: 2, members: 7, aiCalls: 9,
+  });
+  // Організація, у якої лічильників ще немає, не вдає, що вони нульові.
+  assert.deepEqual(planUsage({}, { period: '2026-08' }), {
+    projects: null, members: null, aiCalls: 0,
+  });
+});
+
+test('смуга нагорі веде тим, у що вперлись, а не тим, чого ніколи не було', () => {
+  const notices = planLimitNotices('free', { projects: 3, members: 2, aiCalls: 0 });
+  assert.deepEqual(notices.map(notice => notice.id), ['projects', 'aiCalls']);
+  assert.equal(notices[0].reached, true);
+  assert.equal(notices[1].absent, true);
+  // Там, де все вільно, смуги немає.
+  assert.deepEqual(planLimitNotices('pro', { projects: 100, members: 100, aiCalls: 10 }), []);
 });
 
 // Без коментарів у обох файлах: те, що звідти прибрано, описане прозою поруч,
@@ -223,8 +324,12 @@ test('обидва місця, що рахують проєкти, читают�
   // Захардкоджена трійка мала на один тариф менше, ніж продукт.
   assert.doesNotMatch(createRoute, /!== 'pro' && activeProjectsCount >= 3/);
   assert.doesNotMatch(home, /orgPlan !== 'pro'/);
-  assert.match(createRoute, /planLimit\(orgSnap\.data\(\)\.plan, 'projects'\)/);
-  assert.match(home, /planLimit\(orgPlan, 'projects'\)/);
+  assert.match(createRoute, /planLimit\(refusedPlan, 'projects'\)/);
+  // Екран більше не рахує стелю сам: він друкує те саме `planLimitNotice`, з
+  // якого зібрана відмова роуту, тож речення на екрані й речення з сервера — це
+  // одне речення.
+  assert.match(home, /planLimitNotice\(orgPlan, 'projects', activeProjectsCount\)/);
+  assert.doesNotMatch(home, /На тарифі \{planById/);
   // І відмова більше не називає єдиним виходом найдорожчий тариф.
   assert.doesNotMatch(createRoute, /Перейдіть на Pro план/);
 });
@@ -251,9 +356,13 @@ test('прайслист один на весь продукт', async () => {
   assert.match(onboarding, /storedPlanLimit\(selectedPlan, 'projects'\)/);
   assert.doesNotMatch(onboarding, /maxProjects: 3/);
 
-  // Перемикання щось робить, а не показує тост про майбутнє.
+  // Перемикання щось робить, а не показує тост про майбутнє. І пише його одне
+  // місце: два екрани, що пишуть одне поле, писали б його двома способами.
   assert.doesNotMatch(settings, /Підключення платіжної системи в розробці/);
-  assert.match(settings, /updateDoc\(doc\(db, 'organizations', activeOrgId\), \{ plan: next \}\)/);
+  assert.match(settings, /switchOrganizationPlan\(activeOrgId, next\)/);
+  assert.doesNotMatch(settings, /updateDoc\(doc\(db, 'organizations', activeOrgId\), \{ plan/);
+  const service = await read('src/lib/services/organizationPlan.js');
+  assert.match(service, /updateDoc\(doc\(db, 'organizations', organizationId\), \{ plan: next \}\)/);
   assert.match(settings, /Оплата ще не підключена/);
   // Тост називає тариф його іменем: на трьох тарифах дві гілки казали «Тариф
   // змінено на Безкоштовний» тому, хто щойно взяв Lite.
@@ -267,9 +376,10 @@ test('прайслист один на весь продукт', async () => {
   const nav = await read('src/components/ui/Navigation/InnerNavigation.jsx');
   assert.match(nav, /tone=\{item\.badgeAlert \? 'danger-strong' : 'dark'\}/);
 
-  // Зірочка живе біля контрола в продукті, а не в прайслисті: прайс уже сказав,
-  // що входить у тариф, тим що перелічив це.
-  assert.match(settings, /<PlanMark label=\{capabilityAvailability\('branding'\)\} \/>/);
+  // Корона живе біля контрола в продукті, а не в прайслисті: прайс уже сказав,
+  // що входить у тариф, тим що перелічив це. І вона знає, про що вона, —
+  // інакше клік відкрив би просто прайслист і лишив читача шукати рядок.
+  assert.match(settings, /<PlanMark capabilityId="branding" label=\{capabilityAvailability\('branding'\)\} \/>/);
 });
 
 test('картка тарифу вирівнює колонки сіткою, а не сподіванням', async () => {
@@ -306,6 +416,84 @@ test('картка тарифу вирівнює колонки сіткою, а
 
   // Бейджа «Ваш тариф» немає: кнопка тієї самої картки вже це каже.
   assert.doesNotMatch(card, /Ваш тариф/);
+});
+
+// ── Стеля мусить бути видною до кліку, а не тільки після нього ───────────
+test('кожен контрол, що впреться в стелю, носить корону', async () => {
+  const surfaces = [
+    // «Новий проєкт»
+    ['src/app/(app)/page.js', 'projects'],
+    // «Запросити» — обидва місця, звідки запрошують
+    ['src/app/(app)/team/page.js', 'members'],
+    ['src/app/(app)/settings/page.js', 'members'],
+    // Вкладка «Аудіо-завдання (AI)»
+    ['src/components/CreateTaskModal.jsx', 'aiCalls'],
+  ];
+  for (const [path, limitId] of surfaces) {
+    const source = withoutComments(await read(path));
+    assert.match(source, /usePlanLimits\(\)/, `${path}: не питає, чи є місце`);
+    assert.match(source, /PlanCrownIcon/, `${path}: контрол не носить корону`);
+    assert.match(
+      source,
+      new RegExp(`openPlanUpgrade\\(\\{ limitId: '${limitId}' \\}\\)`),
+      `${path}: корона не відкриває прайслист на тій стелі, що заважає`,
+    );
+  }
+});
+
+test('корона — це корона, і вона клікається', async () => {
+  const mark = await read('src/components/ui/DataDisplay/PlanMark.jsx');
+  // Зірочка означає «улюблене» в кожному продукті, який людина бачила, — і в
+  // цьому теж. Позначати нею «сюди не можна» означало малювати одним гліфом
+  // дві протилежні речі.
+  assert.doesNotMatch(mark, /\bStar\b/);
+  assert.match(mark, /PlanCrownIcon/);
+  assert.match(mark, /openPlanUpgrade\(/);
+  const icons = await read('src/lib/design/icons.js');
+  assert.match(icons, /export const PlanCrownIcon/);
+  assert.match(icons, /fill="currentColor"/);
+});
+
+test('смуга і діалог висять у каркасі, а не на кожному екрані окремо', async () => {
+  const layout = await read('src/app/(app)/layout.js');
+  assert.match(layout, /<WorkspacePlanLimitBanner \/>/);
+  assert.match(layout, /<WorkspacePlanUpgradeHost \/>/);
+
+  const store = await read('src/store/useWorkspaceStore.js');
+  assert.match(store, /openPlanUpgrade: \(context = \{\}\) =>/);
+  // Перемикання організації не має лишати на екрані діалог про тариф тієї, з
+  // якої щойно вийшли.
+  assert.match(store, /resetOrganizationScope[\s\S]{0,600}planUpgrade: null/);
+
+  // Прайслист у діалозі — той самий компонент, а не четверта копія цін.
+  const dialog = await read('src/components/ui/Feedback/PlanUpgradeDialog.jsx');
+  assert.match(dialog, /<PlanCards/);
+  assert.doesNotMatch(dialog, /\d+ грн|\$\d/);
+});
+
+test('усі три стелі мають роут, який справді рахує', async () => {
+  const invitations = withoutComments(await read('src/app/api/invitations/route.js'));
+  const ai = withoutComments(await read('src/app/api/ai/call-to-tasks/route.js'));
+
+  // Місця рахуються агрегатом, а не вичиткою всієї колекції: у продукту денний
+  // бюджет читань, і «порахувати команду» не має його з'їдати.
+  assert.match(invitations, /countActiveMembers\(db, organizationId\)/);
+  assert.match(invitations, /planLimitRefusalResponse\([\s\S]{0,120}?'members'/);
+  // Запрошення, яке ще висить, — це вже зайняте місце. Інакше можна було б
+  // нарозсилати їх скільки завгодно й дізнатись про стелю, коли всі приймуть.
+  assert.match(invitations, /pendingSeats/);
+  assert.match(invitations, /seatsTaken \+ pendingSeats/);
+
+  // Дзвінок питають ДО моделі, а рахують ПІСЛЯ відповіді: те, що Gemini не
+  // віддав, не має з'їдати чийсь місяць.
+  // Скрізь `await`: без нього перший збіг — це рядок імпорту вгорі файлу або
+  // оголошення самої функції, а не те місце, де її викликають.
+  const reserve = ai.indexOf('await reserveAiCall(');
+  const refuse = ai.indexOf("planLimitRefusalResponse(allowance.plan, 'aiCalls'");
+  const analyze = ai.indexOf('await analyzeWithGemini(');
+  const commit = ai.indexOf('await commitAiCall(');
+  assert.ok(reserve > 0 && refuse > reserve && analyze > refuse && commit > analyze,
+    'reserve -> refuse -> analyze -> commit');
 });
 
 test('брендинг зачинений тарифом, але не вимикається заднім числом', async () => {

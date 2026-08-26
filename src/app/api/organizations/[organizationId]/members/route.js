@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import { recordPlanUsage } from '@/lib/server/planLimits';
 import {
   MEMBER_STATUS,
   MEMBERSHIP_ARCHIVE,
@@ -110,6 +111,15 @@ export async function GET(request, context) {
           ) || 0,
         } : {}),
       };
+    });
+
+    // The seat ceiling is enforced when an invitation is sent, but a button has
+    // to look refused before it is pressed and the strip across the workspace
+    // appears on screens that never load a directory. This is the one request
+    // that already knows the number, so it leaves it on the organization —
+    // written only when it has moved, which on a settled team is never.
+    await recordPlanUsage(db, organizationId, {
+      members: members.filter(member => member.status !== MEMBER_STATUS.deactivated).length,
     });
 
     return NextResponse.json({ members }, { headers: { 'Cache-Control': 'private, no-store' } });
