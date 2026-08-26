@@ -51,6 +51,8 @@ import {
   parseInviteEmails,
   undeliveredEmailsMessage,
 } from '@/lib/utils/inviteEmails';
+import { planById, planLimit } from '@/lib/utils/plans.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 
 // ── Project Card ─────────────────────────────────────────────────────────────
@@ -455,8 +457,11 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
   const [inviteEmailsError, setInviteEmailsError] = useState('');
   const { inviteMember } = useOrganization();
 
-  const isFree      = orgPlan !== 'pro';
-  const limitReached = isFree && activeProjectsCount >= 3;
+  // Read from the plan registry rather than restated. `orgPlan !== 'pro'` with a
+  // hardcoded three had Lite refusing a fourth project like a free workspace,
+  // which is the same bug the create route carried.
+  const projectCeiling = planLimit(orgPlan, 'projects');
+  const limitReached = activeProjectsCount >= projectCeiling;
 
   const [error, setError] = useState(null);
   const handleCreate = async () => {
@@ -542,10 +547,11 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
           <div className="w-16 h-16 bg-info-soft rounded-[12px] flex items-center justify-center mb-4">
             <Lock size={28} className="text-muted" />
           </div>
-          <h3 className="ui-type-feature-title text-ink mb-2">Ліміт Free плану</h3>
+          <h3 className="ui-type-feature-title text-ink mb-2">Ліміт тарифу</h3>
           <p className="text-[13px] text-muted leading-relaxed">
-            На безкоштовному тарифі дозволено максимум <strong>3 проєкти</strong>.
-            Перейдіть на Pro для необмеженої кількості проєктів.
+            На тарифі {planById(orgPlan).name} дозволено <strong>{projectCeiling}</strong>{' '}
+            {plural(projectCeiling, ['активний проєкт', 'активні проєкти', 'активних проєктів'])}.
+            Змініть тариф у «Налаштуваннях» або заархівуйте те, що вже завершено.
           </p>
         </div>
       ) : (

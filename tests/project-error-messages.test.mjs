@@ -31,13 +31,21 @@ test('every project restore surface shows the actionable API error', async () =>
   assert.match(modal, /await onArchive\(project\.id\) !== false/);
 });
 
-test('the project limit explains the available Pro path', async () => {
-  const route = await read('../src/app/api/projects/[projectId]/route.js');
+// «Перейдіть на Pro план» named the most expensive way out and the only one
+// this file knew about, while the product has offered Lite since sign-up. Both
+// routes that refuse a project now name the two things that actually help:
+// change the plan, or archive something already finished.
+test('the project limit names a way out that is not only the top plan', async () => {
+  const unarchive = await read('../src/app/api/projects/[projectId]/route.js');
+  const create = await read('../src/app/api/projects/route.js');
 
-  assert.match(
-    route,
-    /Ліміт активних проєктів вичерпано\. Перейдіть на Pro план\./,
-  );
+  for (const route of [unarchive, create]) {
+    assert.match(
+      route,
+      /Ліміт активних проєктів вичерпано\. Змініть тариф або заархівуйте проєкт\./,
+    );
+    assert.doesNotMatch(route, /Перейдіть на Pro план/);
+  }
 });
 
 test('settings API actions no longer replace server errors with generic toasts', async () => {

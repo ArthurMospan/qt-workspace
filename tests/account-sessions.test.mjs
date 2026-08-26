@@ -170,15 +170,17 @@ test('панель пропонує одну дію і не пояснює, як
   assert.match(page, /accountSecurity\.endOtherSessions\(\)/);
   assert.match(page, /Вийти з усіх, крім цього/);
   // Та сама червона кнопка виходу, що й «Вийти з акаунта» нижче на екрані —
-  // одна дія, один вигляд.
-  assert.match(page, /style="ghost"\s+color="red"\s+size="sm"\s+icon=\{LogOut\}/);
-  // І заголовок блоку — заголовок, а не рядок налаштування: `Row` кладе
-  // підпис ліворуч і контрол праворуч, тож назва секції в ньому читалась як
-  // налаштування, яке нікому не змінити.
-  assert.match(page, /<CardHeading\s+icon=\{MonitorSmartphone\}/);
-  assert.match(page, /<CardHeading\s+icon=\{ShieldCheck\}/);
-  // Один компонент, не два: «Сповіщення» малювали цю ж шапку власною розміткою.
-  assert.match(page, /<CardHeading icon=\{ChannelIcon\}/);
+  // одна дія, один вигляд. Без іконки: підпис уже каже, що вона робить.
+  assert.match(page, /style="ghost"\s+color="red"\s+size="sm"\s+loading=/);
+  // Підпис групи — той самий, що в «Загальних»: малий капс, без іконки. `Row`
+  // кладе підпис ліворуч і контрол праворуч, тож назва секції в ньому читалась
+  // як налаштування, яке нікому не змінити.
+  assert.match(page, /<GroupLabel\s+label="Пристрої"/);
+  assert.match(page, /<GroupLabel label="Способи входу" \/>/);
+  // Один компонент, не три: «Загальні» малювали цей підпис власними утилітами.
+  assert.match(page, /<GroupLabel label="Організація" \/>/);
+  assert.match(page, /<GroupLabel label="Брендинг" \/>/);
+  assert.doesNotMatch(page, /text-\[11px\] font-bold text-muted uppercase tracking-wider/);
   // Пояснення, як це влаштовано, пішло: людині, яка вийшла з чужого ноутбука,
   // назва платформи не допомагає ніяк. (Firebase лишається згаданим на цьому
   // екрані в іншому місці — там, де власник іде вмикати OAuth, і це для нього

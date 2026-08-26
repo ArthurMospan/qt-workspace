@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 234,
+    "usedAndPreviewed": 235,
     "usedWithoutPreview": 0,
-    "declaredUnused": 113
+    "declaredUnused": 112
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -410,12 +410,6 @@
       "component": "Pill",
       "prop": "tone",
       "value": "accent",
-      "namespace": "*[data-ui-pill-tone]"
-    },
-    {
-      "component": "Pill",
-      "prop": "tone",
-      "value": "info",
       "namespace": "*[data-ui-pill-tone]"
     },
     {
@@ -1428,7 +1422,7 @@
     "Select.filterRole.sort": 1,
     "Surface.padding.md": 5,
     "EmptyState.context.page": 5,
-    "Pill.size.md": 24,
+    "Pill.size.md": 25,
     "MobilePaneBack.context.level": 1,
     "MobilePaneBack.context.pane": 1,
     "Input.composition.inline-edit": 1,
@@ -1438,8 +1432,8 @@
     "ColorSwatch.size.choice": 1,
     "Input.size.sm": 5,
     "Pill.weight.medium": 16,
-    "Card.preset.borderless": 22,
-    "Card.padding.lg": 17,
+    "Card.preset.borderless": 21,
+    "Card.padding.lg": 16,
     "Label.context.inline": 1,
     "Textarea.composition.settings-note": 1,
     "ToggleSwitch.size.sm": 6,
@@ -1451,6 +1445,7 @@
     "Card.padding.md": 4,
     "Pill.appearance.soft-outline": 4,
     "Card.padding.none": 2,
+    "Pill.tone.info": 1,
     "Surface.preset.card": 1,
     "Surface.padding.none": 4,
     "UserAvatar.size.lg": 2,

@@ -35,8 +35,8 @@ import {
   SHARED_FEATURES,
   normalizePlan,
   planAllows,
-  planFeatureGroups,
-  planLimit,
+  planCapabilityRows,
+  planLimitRows,
 } from '@/lib/utils/plans.mjs';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
@@ -44,7 +44,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firest
 import {
   User, Bell, Shield, Zap, Users, GitBranch,
   Shapes, Check, Plus, Trash2, Edit2, X, Save,
-  Building, LogOut, Download, RefreshCw, Mail, Clock,
+  Building, LogOut, Download, RefreshCw, Mail, Star,
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
@@ -267,13 +267,29 @@ const isSwitchNode = node => {
   return Children.toArray(node.props?.children).some(isSwitchNode);
 };
 
-// The heading of a block, as against the label of a setting.
+// The label above a group of settings inside a card.
 //
-// «Сповіщення» has had this shape all along — an icon in a tinted square, a
-// bold name, a quiet line under it — and «Безпека» used `Row` for the same job.
-// `Row` is built for a setting: a label on the left and its control on the
-// right. Handed a section name it reads as a setting nobody can change, which
-// is why those two headings looked like nothing else on the screen.
+// «Загальні» has spelled this by hand from the beginning — `text-[11px]
+// font-bold text-muted uppercase tracking-wider` — which is exactly what the
+// `ui-type-eyebrow` composition already renders, so the utilities go and the
+// name stays. «Безпека» used `Row` for the same job, and `Row` is built for a
+// setting: a label on the left with its control on the right. Handed a section
+// name it reads as a setting nobody can change.
+//
+// The optional action sits on the label's own line rather than in a row of its
+// own, which is what keeps the block's top edge one line tall instead of three.
+function GroupLabel({ label, action = null }) {
+  return (
+    <div className="flex min-h-[24px] items-center justify-between gap-3 pb-2">
+      <p className="ui-type-eyebrow">{label}</p>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  );
+}
+
+// The header of a channel card in «Сповіщення»: an icon, a name, the address it
+// delivers to, and the switch that governs every row beneath it. A different
+// thing from the label above, and named for the one it is.
 function CardHeading({ icon: Icon, title, caption, action = null }) {
   return (
     <div className="flex items-start justify-between gap-4 pb-1">
@@ -3022,7 +3038,7 @@ export default function SettingsPage() {
         <Section title="Загальні" desc="Загальні налаштування вашої організації" rightAction={saveButton}>
           {/* Zone 1: Organization */}
           <Card preset="borderless" padding="lg">
-            <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Організація</p>
+            <GroupLabel label="Організація" />
             <Row label="Назва організації" desc="Видима всім у вашій організації">
               <InlineEditField value={orgName} onChange={setOrgName} saved={org?.name || ''} onSave={saveOrgName} className="w-[260px]" />
             </Row>
@@ -3065,7 +3081,7 @@ export default function SettingsPage() {
             padding="lg"
             className={`transition-opacity ${!orgLogo || !brandingAllowed ? 'opacity-50 pointer-events-none' : ''}`}
           >
-            <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Брендинг</p>
+            <GroupLabel label="Брендинг" />
             {!brandingAllowed ? (
               <p className="text-[12px] text-muted mb-3">
                 Доступно на професійному тарифі — «Налаштування» → «Тарифний план».
@@ -3515,92 +3531,45 @@ export default function SettingsPage() {
           title="Тарифний план"
           desc="Що входить у кожен тариф і на якому ви зараз"
         >
-          {/* Two cards, side by side, because a plan means nothing on its own —
-              what a person is deciding is «чим цей відрізняється від того», and
-              two columns answer that without anybody reading twice.
+          {/* Three cards, one row, all the same height. `items-stretch` is the
+              grid default and the cards are `h-full` columns, so the row is as
+              tall as its tallest card whatever any of them contains.
 
-              What is on them comes from `plans.mjs` rather than from here. The
-              card this replaced was built from two ternaries — `isPro ? '$15' :
-              '$0'` — and the rest of the product had never heard of a plan at
-              all, so the button under it opened a toast about a payment system
-              in development. */}
-          <div className="grid gap-4 lg:grid-cols-2">
+              The button sits directly under the price rather than at the foot
+              of the card: what somebody is deciding is «скільки це коштує і чи
+              беру», and those two belong to each other. The list underneath is
+              the answer to «а що я за це отримую», which is read after.
+
+              Everything on them comes from `plans.mjs`. This card used to be
+              built from ternaries over two plans while the product offered
+              three, which is how Lite came to be refused a fourth project like
+              a free workspace. */}
+          <div className="grid gap-4 lg:grid-cols-3">
             {PLANS.map(plan => {
               const isCurrent = plan.id === orgPlan;
-              const groups = planFeatureGroups(plan.id);
-              const limit = planLimit(plan.id, 'projects');
               return (
                 <Card
                   key={plan.id}
                   preset="bordered"
                   padding="none"
-                  className={`flex flex-col overflow-hidden ${isCurrent ? 'border-ink' : ''}`}
+                  className={`flex h-full flex-col overflow-hidden ${isCurrent ? 'border-ink' : ''}`}
                 >
-                  <div className="flex flex-col gap-3 border-b border-line px-6 py-6">
+                  <div className="flex flex-col gap-4 border-b border-line px-6 py-6">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="ui-type-detail-title text-ink">{plan.name}</h3>
                         <p className="mt-1 text-[13px] leading-relaxed text-muted">{plan.tagline}</p>
                       </div>
-                      {isCurrent && <Pill size="md" className="shrink-0">Ваш тариф</Pill>}
+                      {isCurrent
+                        ? <Pill size="md" className="shrink-0">Ваш тариф</Pill>
+                        : plan.recommended && <Pill size="md" tone="info" className="shrink-0">Рекомендовано</Pill>}
                     </div>
+
                     <p className="flex items-baseline gap-1.5">
                       <span className="text-[32px] font-black leading-none text-ink">{plan.priceLabel}</span>
                       <span className="text-[13px] font-medium text-faint">{plan.periodLabel}</span>
                     </p>
-                  </div>
 
-                  <div className="flex flex-1 flex-col gap-5 px-6 py-5">
-                    <div>
-                      <p className="ui-type-eyebrow text-muted">Проєкти</p>
-                      <p className="mt-1 text-[13px] text-ink">
-                        {limit === Infinity ? 'Скільки завгодно' : `До ${limit}`}
-                        {isCurrent && <span className="text-muted">{` · зараз ${projectsCount}`}</span>}
-                      </p>
-                    </div>
-
-                    {groups.included.length > 0 && (
-                      <div>
-                        <p className="ui-type-eyebrow text-muted">Що додає</p>
-                        <ul className="mt-2 flex flex-col gap-2">
-                          {groups.included.map(capability => (
-                            <li key={capability.id} className="flex gap-2">
-                              <Check size={14} className="mt-[3px] shrink-0 text-success" />
-                              <span className="min-w-0">
-                                <span className="text-[13px] font-medium text-ink">{capability.label}</span>
-                                <span className="block text-[12px] leading-relaxed text-muted">{capability.detail}</span>
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Kept apart from the list above, and labelled. A pricing
-                        page that lists a feature nobody is stopped from using is
-                        not marketing — it is a bug with a price beside it.
-                        `enforced` in plans.mjs decides which group a line lands
-                        in, so a feature moves up here on the day something
-                        actually refuses it. */}
-                    {groups.planned.length > 0 && (
-                      <div>
-                        <p className="ui-type-eyebrow text-muted">Скоро в цьому тарифі</p>
-                        <ul className="mt-2 flex flex-col gap-2">
-                          {groups.planned.map(capability => (
-                            <li key={capability.id} className="flex gap-2">
-                              <Clock size={14} className="mt-[3px] shrink-0 text-faint" />
-                              <span className="min-w-0">
-                                <span className="text-[13px] font-medium text-muted">{capability.label}</span>
-                                <span className="block text-[12px] leading-relaxed text-faint">{capability.detail}</span>
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="border-t border-line bg-canvas px-6 py-4">
                     <Button
                       onClick={() => handleUpgradePlan(plan.id)}
                       style={isCurrent ? 'secondary' : 'primary'}
@@ -3609,32 +3578,57 @@ export default function SettingsPage() {
                       loading={upgrading && !isCurrent}
                       className="w-full"
                     >
-                      {isCurrent ? 'Це ваш тариф' : `Перейти на ${plan.name.toLowerCase()}`}
+                      {isCurrent ? 'Це ваш тариф' : `Перейти на ${plan.name}`}
                     </Button>
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-5 px-6 py-5">
+                    <ul className="flex flex-col gap-2">
+                      {planLimitRows(plan.id).map(limit => (
+                        <li key={limit.id} className="flex items-baseline justify-between gap-3 text-[13px]">
+                          <span className="min-w-0 text-muted">{limit.label}</span>
+                          <span className="shrink-0 font-semibold text-ink">{limit.value}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Every capability on every card, present or not.
+                        A card that prints only what a plan includes cannot
+                        answer «а що я втрачаю, лишившись тут» — which is the
+                        one question somebody on the free plan is asking. */}
+                    <ul className="flex flex-col gap-2 border-t border-line pt-4">
+                      {planCapabilityRows(plan.id).map(capability => (
+                        <li key={capability.id} className="flex gap-2">
+                          {capability.included
+                            ? <Check size={14} className="mt-[3px] shrink-0 text-success" />
+                            : <Star size={13} className="mt-[3px] shrink-0 fill-ink text-ink" />}
+                          <span className="min-w-0">
+                            <span className={`text-[13px] font-medium ${capability.included ? 'text-ink' : 'text-muted'}`}>
+                              {capability.label}
+                            </span>
+                            <span className="block text-[12px] leading-relaxed text-faint">
+                              {capability.included ? capability.detail : capability.availability}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* On every card and identical on every card, because that
+                        is what makes the free one a plan rather than a trial. */}
+                    <ul className="flex flex-col gap-2 border-t border-line pt-4">
+                      {SHARED_FEATURES.map(feature => (
+                        <li key={feature.id} className="flex gap-2">
+                          <Check size={14} className="mt-[3px] shrink-0 text-faint" />
+                          <span className="min-w-0 text-[13px] text-ink">{feature.label}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </Card>
               );
             })}
           </div>
-
-          {/* Said once, under both, rather than repeated on each card: what the
-              two have in common is what makes the free one a plan and not a
-              trial. */}
-          <Card preset="borderless" padding="lg">
-            <CardHeading
-              icon={Check}
-              title="В обох тарифах"
-              caption="Нічого з цього не вимикається"
-            />
-            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-              {SHARED_FEATURES.map(feature => (
-                <li key={feature} className="flex gap-2 text-[13px] text-ink">
-                  <Check size={14} className="mt-[3px] shrink-0 text-faint" />
-                  <span className="min-w-0">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
 
           {/* Nobody is charged yet, and a plan screen that did not say so would
               be the one dishonest thing left on it. */}
@@ -4069,17 +4063,14 @@ export default function SettingsPage() {
                 directly under it — a number the reader counts faster than they
                 read it, and one that said nothing about whether any of the
                 three is a stranger. */}
-            <CardHeading
-              icon={MonitorSmartphone}
-              title="Пристрої"
-              caption="Де відкривали цей обліковий запис"
+            <GroupLabel
+              label="Пристрої"
               action={(
                 <Button
                   onClick={endOthers}
                   style="ghost"
                   color="red"
                   size="sm"
-                  icon={LogOut}
                   loading={accountSecurity.busyId === 'others'}
                   disabled={Boolean(accountSecurity.busyId) || accountSecurity.sessions.length < 2}
                 >
@@ -4094,9 +4085,9 @@ export default function SettingsPage() {
                 Ще нічого не записано. Наступний вхід зʼявиться тут.
               </p>
             ) : (
-              <div className="flex flex-col divide-y divide-canvas -my-3">
+              <div className="flex flex-col divide-y divide-line">
                 {accountSecurity.sessions.map(session => (
-                  <div key={session.id} className="flex items-center justify-between gap-3 py-3">
+                  <div key={session.id} className="flex items-center gap-3 py-[10px] first:pt-0 last:pb-0">
                     <div className="flex min-w-0 items-center gap-3">
                       {/* The shape of the thing, not its name. Two laptops and
                           a phone are told apart before any of the text is
@@ -4139,13 +4130,7 @@ export default function SettingsPage() {
               «хто може сюди зайти», and the two halves were on two screens with
               a button on one pointing at the other. */}
           <Card preset="borderless" padding="lg">
-            <CardHeading
-              icon={ShieldCheck}
-              title="Способи входу"
-              caption={signInMethods.length
-                ? signInMethods.map(method => method.label).join(', ')
-                : 'Жодного сервісу не підключено'}
-            />
+            <GroupLabel label="Способи входу" />
             <div className="divide-y divide-canvas">
               <LoginMethodItem
                 icon={<GitHubLogo size={18} />}

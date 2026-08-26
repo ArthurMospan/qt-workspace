@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { planLimit } from '@/lib/utils/plans.mjs';
 import { DEFAULT_STATUS_IDS, workflowIds } from '@/lib/utils/workflowDefaults.mjs';
 import {
   suggestAvailableIssuePrefix,
@@ -113,7 +114,12 @@ export async function POST(req) {
       );
       const activeProjectsCount = organizationProjects
         .filter(project => project.status === 'active').length;
-      if ((orgSnap.data().plan || 'free') !== 'pro' && activeProjectsCount >= 3) {
+      // The ceiling comes from the plan registry, not from here. It used to be
+      // `plan !== 'pro' && count >= 3`, which had one plan too few in it: Lite
+      // exists, is offered at sign-up, and was being refused a fourth project
+      // like a free workspace. `planLimit` returns Infinity where a plan sets
+      // no ceiling, so the comparison is the same either way.
+      if (activeProjectsCount >= planLimit(orgSnap.data().plan, 'projects')) {
         throw new Error('PROJECT_LIMIT_REACHED');
       }
 
@@ -135,7 +141,11 @@ export async function POST(req) {
     return NextResponse.json({ success: true, id: projectRef.id });
   } catch (error) {
     if (error.message === 'PROJECT_LIMIT_REACHED') {
-      return NextResponse.json({ error: 'Ліміт проєктів вичерпано. Перейдіть на Pro план.' }, { status: 403 });
+      // Names the cheaper way out. «Перейдіть на Pro» was the only answer while
+      // there were two plans in this file and three in the product.
+      return NextResponse.json({
+        error: 'Ліміт активних проєктів вичерпано. Змініть тариф або заархівуйте проєкт.',
+      }, { status: 403 });
     }
     if (error.message === 'ORGANIZATION_NOT_FOUND') {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
