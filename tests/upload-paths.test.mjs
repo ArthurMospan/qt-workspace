@@ -86,3 +86,31 @@ test('private chat paths are exact and organization-scoped', () => {
     false,
   );
 });
+
+// Розмір, який назвав браузер, і розмір, який він насправді надсилає.
+//
+// `uploadFilePolicy` читає `params.file` — `{ name, size, type }` зі слів
+// клієнта. Підпис при цьому покриває формат і не покриває розмір, тож клієнт,
+// який оголосив «1 КБ» і надіслав 500 МБ, проходить усе. Стеля в Cloudinary
+// живе на upload preset, а підписаний `upload_preset` — це те, що привʼязує її
+// до нашого підпису.
+test('ліміт розміру вмикається пресетом і обидві сторони збігаються', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+
+  const route = await read('src/app/api/upload/sign/route.js');
+  const client = await read('src/lib/services/fileUpload.js');
+
+  // Підписується, а не просто надсилається: поле поза підписом Cloudinary
+  // відхиляє, і саме це робить ліміт неоминним.
+  assert.match(route, /upload_preset: uploadPreset/);
+  assert.match(route, /process\.env\.CLOUDINARY_UPLOAD_PRESET/);
+
+  // Умовно з обох боків. Без змінної поведінка рівно попередня — інакше це була
+  // б зміна, що ламає завантаження, доки хтось не зайде в консоль.
+  assert.match(route, /\.\.\.\(uploadPreset \? \{ upload_preset: uploadPreset \} : \{\}\)/);
+  assert.match(client, /if \(uploadPreset\) formData\.append\('upload_preset', uploadPreset\)/);
+
+  // І сервер має повернути назву клієнтові, інакше той нічого не додасть.
+  assert.match(route, /\.\.\.\(uploadPreset \? \{ uploadPreset \} : \{\}\)/);
+});

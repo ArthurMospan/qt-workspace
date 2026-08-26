@@ -48,6 +48,7 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
       deliveryType = 'upload',
       resourceType,
       allowedFormats = [],
+      uploadPreset = '',
     } = signing;
 
     const formData = new FormData();
@@ -59,6 +60,10 @@ export async function uploadFileToCloudinary(file, folder, onProgress = null) {
     formData.append('public_id', public_id);
     formData.append('overwrite', String(overwrite));
     formData.append('allowed_formats', allowedFormats.join(','));
+    // Only when the server signed one. The preset carries the size ceiling, and
+    // sending a field the signature does not cover is refused by Cloudinary —
+    // so this must mirror the server exactly rather than assume either way.
+    if (uploadPreset) formData.append('upload_preset', uploadPreset);
     if (deliveryType === 'authenticated') formData.append('type', deliveryType);
 
     // XHR rather than fetch: it is the only way to observe real upload

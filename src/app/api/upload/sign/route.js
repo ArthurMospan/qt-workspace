@@ -61,12 +61,29 @@ export async function POST(req) {
     const deliveryType = isOrganizationChatUploadFolder(folder, organizationId)
       ? 'authenticated'
       : 'upload';
+    // The size the browser declared, and the size it actually sends.
+    //
+    // `uploadFilePolicy` above checks `params.file`, which is `{ name, size,
+    // type }` as reported by the browser — so a client that says «1 KB» and
+    // sends 500 MB passes every check made here and is accepted by Cloudinary,
+    // because the signature covers the format and not the size. One member can
+    // exhaust a free-tier cloud that way, and what breaks then is everybody's
+    // avatars, logos and chat attachments rather than their own upload.
+    //
+    // Cloudinary has no per-request size parameter; the ceiling lives on an
+    // upload preset, and a signed `upload_preset` is what binds it to this
+    // signature. Naming one is a console step, so this is conditional: without
+    // CLOUDINARY_UPLOAD_PRESET the behaviour is exactly what it was, and with it
+    // the declared size stops being the only thing between us and the bill.
+    // See docs/MIGRATIONS.md for the four clicks that create it.
+    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET?.trim() || '';
     const signedParams = {
       folder,
       public_id: publicId,
       overwrite: false,
       timestamp,
       allowed_formats: filePolicy.value.allowedFormats.join(','),
+      ...(uploadPreset ? { upload_preset: uploadPreset } : {}),
       ...(deliveryType === 'authenticated' ? { type: deliveryType } : {}),
     };
     const signature = cloudinary.utils.api_sign_request(
@@ -78,6 +95,7 @@ export async function POST(req) {
       signature,
       timestamp,
       overwrite: false,
+      ...(uploadPreset ? { uploadPreset } : {}),
       deliveryType,
       resourceType: filePolicy.value.resourceType,
       allowedFormats: filePolicy.value.allowedFormats,
