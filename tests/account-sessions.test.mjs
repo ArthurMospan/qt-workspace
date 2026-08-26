@@ -139,17 +139,16 @@ test('рядок списку несе форму пристрою, навіть
 // прямо з браузера, а правило безпеки не знає, для якого пристрою випущено
 // токен. Кнопка в рядку зупиняла б запис і лишала читання, тобто робила б менше
 // за власну назву.
-
-test('маршрут пропонує рівно два масштаби і жодного «одного пристрою»', async () => {
+test('маршрут завершує все, крім пристрою, що просить', async () => {
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../src/app/api/account/sessions/route.js', import.meta.url), 'utf8');
   // Без коментарів: те, чому обидва виклики стоять саме в цьому порядку,
   // написано прозою над ними, і проза про виклик — не виклик.
   const route = source.split(/\r?\n/).filter(line => !/^\s*\/\//.test(line)).join('\n');
 
-  assert.match(route, /const SCOPES = new Set\(\['all', 'others'\]\)/);
-  // `others` мусить знати, кого лишити; `all` не лишає нікого.
-  assert.match(route, /scope === 'others' && !isSessionId\(sessionId\)/);
+  // Маршрут мусить знати, кого лишити, і робить рівно одну річ.
+  assert.match(route, /!isSessionId\(sessionId\)/);
+  assert.doesNotMatch(route, /SCOPES/);
   // Ключ випускається до відкликання і обмінюється після — саме це лишає
   // поточний пристрій усередині: відкликається refresh-токен, а цього ще немає.
   const mint = route.indexOf('createCustomToken');
@@ -157,22 +156,25 @@ test('маршрут пропонує рівно два масштаби і жо
   assert.ok(mint > 0 && revoke > 0 && mint < revoke, 'ключ випускається перед відкликанням');
   // Рядки завершених пристроїв прибираються, інакше список стверджував би, що
   // акаунт досі на них відкритий.
-  assert.match(route, /scope === 'all' \|\| id !== sessionId/);
+  assert.match(route, /id !== sessionId/);
 });
 
-test('панель називає масштаб до того, як його підтверджують', async () => {
+test('панель пропонує одну дію і не пояснює, як вона влаштована', async () => {
   const { readFile } = await import('node:fs/promises');
   const page = await readFile(new URL('../src/app/(app)/settings/page.js', import.meta.url), 'utf8');
 
   // Кнопки в рядку більше немає — вона робила вчетверо більше за свою назву і
   // казала про це лише у вже відкритому діалозі.
   assert.doesNotMatch(page, /accountSecurity\.endSession/);
+  assert.doesNotMatch(page, /endAllSessions/);
   assert.match(page, /accountSecurity\.endOtherSessions\(\)/);
-  assert.match(page, /accountSecurity\.endAllSessions\(\)/);
-  assert.match(page, /Вийти на інших пристроях/);
-  assert.match(page, /Вийти на всіх/);
-  // І обмеження сказане в самій панелі, а не тільки в підтвердженні.
-  assert.match(page, /Окремий пристрій завершити не можна/);
+  assert.match(page, /Вийти з усіх, крім цього/);
+  // Пояснення, як це влаштовано, пішло: людині, яка вийшла з чужого ноутбука,
+  // назва платформи не допомагає ніяк. (Firebase лишається згаданим на цьому
+  // екрані в іншому місці — там, де власник іде вмикати OAuth, і це для нього
+  // адреса, а не подробиця.)
+  assert.doesNotMatch(page, /Окремий пристрій завершити не можна/);
+  assert.doesNotMatch(page, /поки не спливе їхній ключ доступу/);
   // Іконка за формою пристрою.
   assert.match(page, /DEVICE_ICONS = \{ mobile: Smartphone, tablet: Tablet, desktop: Monitor \}/);
 });

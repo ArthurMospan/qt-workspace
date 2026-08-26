@@ -121,21 +121,6 @@ export function useAccountSessions(userId) {
     return () => { cancelled = true; };
   }, [currentSessionId, userId]);
 
-  // Everywhere, this device included. The caller signs out afterwards; there is
-  // nothing left to sign out of.
-  const endAllSessions = useCallback(async () => {
-    setBusyId('all');
-    try {
-      await authenticatedRequest(
-        '/api/account/sessions?scope=all',
-        { method: 'DELETE' },
-        'Не вдалося завершити сеанси',
-      );
-    } finally {
-      setBusyId(null);
-    }
-  }, []);
-
   // Everywhere but here. The server cuts every refresh token — Firebase has no
   // smaller unit than the account — and hands back a custom token minted for
   // this device, which is exchanged below for a session issued a moment after
@@ -145,7 +130,7 @@ export function useAccountSessions(userId) {
     setBusyId('others');
     try {
       const result = await authenticatedRequest(
-        `/api/account/sessions?scope=others&sessionId=${encodeURIComponent(currentSessionId)}`,
+        `/api/account/sessions?sessionId=${encodeURIComponent(currentSessionId)}`,
         { method: 'DELETE' },
         'Не вдалося завершити інші сеанси',
       );
@@ -172,7 +157,6 @@ export function useAccountSessions(userId) {
     sessions,
     loading,
     busyId,
-    endAllSessions,
     endOtherSessions,
     currentSessionId,
     providerData: signInUser?.providerData || [],

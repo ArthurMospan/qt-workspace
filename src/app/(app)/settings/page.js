@@ -3891,18 +3891,18 @@ export default function SettingsPage() {
           hour12: savedTimeFormat === '12h',
         }).format(date);
         const whenLabel = date => `${formatDate(date)}, ${clockLabel(date)}`;
-        // Firebase revokes an account, never a device: there is no API for
-        // «end this one session». So there is no per-row button, because the
-        // one that used to be there did something four times larger than its
-        // label and only said so once the confirmation was open. The two
-        // scopes that exist are both here instead, each named for what it does.
+        // One action, beside the heading. A button per row is not on offer —
+        // signing out takes an account and not a device — and «вийти всюди
+        // разом із цим» is a thing nobody came to this screen wanting. What a
+        // person is here for is «цей пристрій мій, решта хай вийдуть», and that
+        // is the whole panel.
         const DEVICE_ICONS = { mobile: Smartphone, tablet: Tablet, desktop: Monitor };
 
         const endOthers = async () => {
           const confirmed = await confirmDialog({
-            title: 'Вийти на інших пристроях?',
-            message: 'Цей пристрій лишиться в акаунті, решта вийдуть. Якщо щось піде не так на цьому кроці, вийти доведеться й тут — тоді просто увійдіть ще раз.',
-            confirmText: 'Вийти на інших',
+            title: 'Вийти з усіх, крім цього?',
+            message: 'Цей пристрій лишиться в акаунті. На решті доведеться увійти заново.',
+            confirmText: 'Вийти',
             danger: true,
           });
           if (!confirmed) return;
@@ -3912,23 +3912,7 @@ export default function SettingsPage() {
               ? `Завершено сеансів: ${result.endedCount}`
               : 'Інших пристроїв не було');
           } catch (error) {
-            showToast(userFacingErrorMessage(error, 'Не вдалося завершити інші сеанси'), 'error');
-          }
-        };
-
-        const endEverywhere = async () => {
-          const confirmed = await confirmDialog({
-            title: 'Вийти на всіх пристроях?',
-            message: 'Включно з цим — увійдіть ще раз там, де хочете лишитися.',
-            confirmText: 'Вийти всюди',
-            danger: true,
-          });
-          if (!confirmed) return;
-          try {
-            await accountSecurity.endAllSessions();
-            signOut();
-          } catch (error) {
-            showToast(userFacingErrorMessage(error, 'Не вдалося завершити сеанси'), 'error');
+            showToast(userFacingErrorMessage(error, 'Не вдалося вийти на інших пристроях'), 'error');
           }
         };
         return (
@@ -3937,7 +3921,7 @@ export default function SettingsPage() {
         // in at all. The screen used to open with a link to another screen.
         <Section
           title="Безпека"
-          desc="Хто заходив у цей обліковий запис і звідки. Якщо якийсь пристрій вам незнайомий — вийдіть на інших пристроях і перевірте, через які сервіси сюди можна увійти."
+          desc="Хто заходив у цей обліковий запис і звідки. Якщо якийсь пристрій вам незнайомий — вийдіть з усіх, крім цього, і перевірте, через які сервіси сюди можна увійти."
         >
           {/* Звідки заходили — first, because it is the answer. One row per
               browser the account has been opened in, newest first, this one at
@@ -3949,7 +3933,17 @@ export default function SettingsPage() {
                 directly under it — a number the reader counts faster than they
                 read it, and one that said nothing about whether any of the
                 three is a stranger. */}
-            <Row label="Пристрої" desc="Браузери, у яких відкривали цей обліковий запис" />
+            <Row label="Пристрої" desc="Браузери, у яких відкривали цей обліковий запис">
+              <Button
+                onClick={endOthers}
+                style="secondary"
+                size="sm"
+                loading={accountSecurity.busyId === 'others'}
+                disabled={Boolean(accountSecurity.busyId) || accountSecurity.sessions.length < 2}
+              >
+                Вийти з усіх, крім цього
+              </Button>
+            </Row>
             {accountSecurity.loading ? (
               <div className="flex justify-center py-8"><LoadingSpinner size="md" /></div>
             ) : accountSecurity.sessions.length === 0 ? (
@@ -3995,41 +3989,6 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {accountSecurity.sessions.length > 0 && (
-              <div className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
-                {/* Said here rather than in a confirmation nobody has opened
-                    yet. The scope of these buttons is the surprising thing
-                    about them, and a person deciding whether to press one is
-                    reading this line, not that dialog. */}
-                <p className="text-[12px] text-muted">
-                  Окремий пристрій завершити не можна — Firebase виходить з акаунта
-                  цілком. Одразу після виходу інші пристрої втрачають право щось
-                  змінювати; читати вже відкриту сторінку вони можуть ще до години,
-                  поки не спливе їхній ключ доступу.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={endOthers}
-                    style="secondary"
-                    size="sm"
-                    loading={accountSecurity.busyId === 'others'}
-                    disabled={Boolean(accountSecurity.busyId) || accountSecurity.sessions.length < 2}
-                  >
-                    Вийти на інших пристроях
-                  </Button>
-                  <Button
-                    onClick={endEverywhere}
-                    style="ghost"
-                    color="red"
-                    size="sm"
-                    loading={accountSecurity.busyId === 'all'}
-                    disabled={Boolean(accountSecurity.busyId)}
-                  >
-                    Вийти на всіх
-                  </Button>
-                </div>
-              </div>
-            )}
           </Card>
 
           {/* «Способи входу» lives here now rather than in a section of its

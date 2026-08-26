@@ -86,28 +86,28 @@ export async function POST(request) {
   }
 }
 
-// Signing out, in the only two shapes Firebase actually offers.
+// Signing out everywhere except the device asking.
 //
 // `revokeRefreshTokens` takes an account, not a device: there is no API for
 // «end this one session», and there cannot be one built on top of it either,
 // because the workspace reads Firestore directly from the browser and a
 // security rule cannot tell which device a token was minted for. A per-row
 // «Завершити» would therefore have stopped that device writing and left it
-// reading everything — a control that does less than its label. So the two
-// honest scopes are all, and all-but-this-one.
+// reading everything — a control that does less than its label.
 //
-// `others` is possible because a *new* refresh token issued after the
-// revocation is not revoked. The caller gets a custom token in the response and
-// exchanges it immediately, so this device comes back with a session minted a
-// moment after the cut while every other device is left holding a dead one.
+// So this revokes the account and immediately gives the caller a way back in.
+// It works because a *new* refresh token issued after the revocation is not
+// revoked by it: the custom token in the response is exchanged straight away,
+// and this device returns with a session minted a moment after the cut while
+// every other one is left holding a dead one.
 //
-// One caveat is inherent and is written on the panel rather than hidden here:
-// an ID token already in another browser's memory stays cryptographically valid
-// until it expires. Our own routes refuse it at once — `verifyIdToken` is
-// called with `checkRevoked` — but Firestore does not check revocation, so that
-// browser can still *read* for as long as an hour. It cannot write, and it
-// cannot come back afterwards.
-const SCOPES = new Set(['all', 'others']);
+// One caveat is inherent and deliberately not surfaced to the person: an ID
+// token already in another browser's memory stays cryptographically valid until
+// it expires. Our own routes refuse it at once — `verifyIdToken` is called with
+// `checkRevoked` — but Firestore does not check revocation, so that browser can
+// still read an already-open page for up to an hour. It cannot write and it
+// cannot come back, and «за годину зникне остаточно» is not a sentence a
+// security panel is improved by carrying.
 
 export async function DELETE(request) {
   try {
@@ -116,14 +116,9 @@ export async function DELETE(request) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     }
     const uid = authorization.user.uid;
-    const parameters = new URL(request.url).searchParams;
-    const sessionId = parameters.get('sessionId') || '';
-    const scope = parameters.get('scope') || 'all';
-    if (!SCOPES.has(scope)) {
-      return NextResponse.json({ error: 'Невідома дія' }, { status: 400 });
-    }
-    // `others` has to know which one to keep. `all` keeps none, so it does not.
-    if (scope === 'others' && !isSessionId(sessionId)) {
+    // Which device is asking, and therefore which one to keep.
+    const sessionId = new URL(request.url).searchParams.get('sessionId') || '';
+    if (!isSessionId(sessionId)) {
       return NextResponse.json({ error: 'Невідомий сеанс' }, { status: 400 });
     }
 
@@ -141,7 +136,7 @@ export async function DELETE(request) {
     // Every row but the one being kept. A device that has just been signed out
     // is not a device this account is signed in on, and leaving its row behind
     // would make the list say otherwise until the next heartbeat.
-    const removed = Object.keys(stored).filter(id => scope === 'all' || id !== sessionId);
+    const removed = Object.keys(stored).filter(id => id !== sessionId);
     if (removed.length > 0) {
       await reference.update(Object.fromEntries(removed.map(id => [id, FieldValue.delete()])));
     }
@@ -149,17 +144,10 @@ export async function DELETE(request) {
     // Minted before the cut and exchanged after it, which is what makes the
     // returned session survive: what `revokeRefreshTokens` invalidates is the
     // refresh token, and this one does not exist yet.
-    const customToken = scope === 'others'
-      ? await getAdminAuth().createCustomToken(uid)
-      : null;
+    const customToken = await getAdminAuth().createCustomToken(uid);
     await getAdminAuth().revokeRefreshTokens(uid);
 
-    return NextResponse.json({
-      success: true,
-      scope,
-      endedCount: removed.length,
-      ...(customToken ? { customToken } : {}),
-    });
+    return NextResponse.json({ success: true, endedCount: removed.length, customToken });
   } catch (error) {
     return routeErrorResponse(error, {
       context: 'account-sessions-end',
