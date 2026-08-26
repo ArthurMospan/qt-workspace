@@ -1,13 +1,27 @@
 // src/lib/utils/projectAccess.mjs
 // Who may act inside a project, decided in one place.
 //
-// `project.team` is the visibility gate of the whole workspace: an owner or an
-// admin reaches every project of the organization, everyone else reaches the
-// projects they were added to. The same sentence is written three times over —
-// in `firestore.rules` (`canAccessProject`), in the server routes that create,
+// There are two different questions about a person and a project, and this
+// module keeps them apart because the workspace once answered them with the
+// same sentence and got a wrong screen out of it.
+//
+//   Access — may they open it?  `project.team` OR an owner/admin role.
+//   Roster — are they on it?    `project.team`, and nothing else.
+//
+// Access is the visibility gate of the whole workspace: an owner or an admin
+// reaches every project of the organization, everyone else reaches the projects
+// they were added to. The same sentence is written three times over — in
+// `firestore.rules` (`canAccessProject`), in the server routes that create,
 // delete and bulk-edit issues, and in the page loader behind `/[projectId]`.
 // This module is the copy the server routes share, so that adding a route
 // cannot quietly invent a fourth interpretation.
+//
+// The roster is what the product *shows*: the faces on a project card, the
+// «Команда» tab, who a picker offers. Conflating it with access made an admin
+// assigned a task in a project invisible on that project's card — the grant
+// step skipped them (correctly: they already had access) and so nothing ever
+// recorded that they work there. Access is a permission; the roster is a fact
+// about who is on the project, and an admin is not automatically on every one.
 
 export function isPrivilegedRole(role) {
   return role === 'owner' || role === 'admin';
@@ -52,18 +66,41 @@ export function hasRecordedTeam(project) {
  * was a task its own assignee could not find, whose avatar the board then
  * dropped silently because the card resolves faces from the project's team.
  *
- * Who may then do something about it is a separate question, and the caller's:
- * adding somebody to a project is `manage:team`, so an owner or an admin
- * assigning work grants the access along with it, and anyone else is refused.
+ * This is the *access* question, so an owner or an admin never appears here.
+ * Whether they belong on the project's roster is `assigneesOffProjectTeam`.
  *
  * @param {object} project The project the task lives in.
  * @param {string[]} assigneeIds The people being assigned.
  * @param {(uid: string) => string|null} roleOf Their role in the organization.
- * @returns {string[]} The subset that needs to be added to `project.team`.
+ * @returns {string[]} The subset that cannot reach the project at all.
  */
 export function assigneesOutsideProject(project, assigneeIds, roleOf) {
   if (!hasRecordedTeam(project)) return [];
   return [...new Set(assigneeIds || [])].filter(
     uid => uid && !hasProjectAccess(project, roleOf(uid), uid),
   );
+}
+
+/** Is this person recorded on the project, whatever their role would let them reach? */
+export function isOnProjectTeam(project, uid) {
+  return Boolean(uid) && Array.isArray(project?.team) && project.team.includes(uid);
+}
+
+/**
+ * The assignees the project's roster does not name — the *roster* question.
+ *
+ * A superset of `assigneesOutsideProject`: it also names the owners and admins
+ * who reach the project by role without being on it. They are not locked out of
+ * anything, but nothing records that they work here either, so the card draws no
+ * face for them and the «Команда» tab does not list them. That is the shape of
+ * the bug this exists for — an admin with a task in a project that shows an
+ * empty seat where they should be.
+ *
+ * @param {object} project The project the task lives in.
+ * @param {string[]} assigneeIds The people being assigned.
+ * @returns {string[]} The subset missing from `project.team`.
+ */
+export function assigneesOffProjectTeam(project, assigneeIds) {
+  if (!hasRecordedTeam(project)) return [];
+  return [...new Set(assigneeIds || [])].filter(uid => uid && !isOnProjectTeam(project, uid));
 }

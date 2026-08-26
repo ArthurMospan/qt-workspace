@@ -284,6 +284,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
       dueDate: formData.dueDate,
       estimateMinutes: formData.estimateMinutes || 0,
       sprintId: formData.sprintId || null,
+      addAssigneesToProjectTeam: formData.addAssigneesToProjectTeam === true,
     }, actor);
     showToast('Задачу створено');
     return { ...created, projectId };

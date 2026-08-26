@@ -4,7 +4,7 @@ import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import { rolesFor } from '@/lib/utils/can';
-import { assigneesOutsideProject } from '@/lib/utils/projectAccess.mjs';
+import { assigneesOffProjectTeam, assigneesOutsideProject } from '@/lib/utils/projectAccess.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
   DEFAULT_LABEL_IDS,
@@ -160,6 +160,11 @@ export async function POST(request) {
     }
 
     const assigneeIds = Array.isArray(data.assigneeIds) ? [...new Set(data.assigneeIds)].slice(0, 20) : [];
+    // Adding somebody to a project is a thing the caller asks for, never a side
+    // effect of assigning them work. The first version of this rule did it
+    // silently, in the same write, on the strength of a 10px line in the
+    // composer — and the owner who triggered it did not know he had.
+    const addAssigneesToProjectTeam = data.addAssigneesToProjectTeam === true;
     // Being in the organization was the only thing ever asked of an assignee,
     // and it is not enough: `project.team` is what opens a project, so a task
     // could be handed to somebody who could not open the project it was in.
@@ -174,17 +179,35 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Виконавець не є учасником організації' }, { status: 400 });
       }
       const roleByUid = new Map(assigneeIds.map((uid, index) => [uid, memberships[index].data().role || null]));
-      assigneesToAddToTeam = assigneesOutsideProject(projectData, assigneeIds, uid => roleByUid.get(uid) || null);
+      // Two different questions, and the answers are two different sets. Who
+      // cannot open the project decides whether this request may proceed at
+      // all; who is missing from the roster decides what a granted request
+      // writes — an admin is in the second set and not the first, which is why
+      // assigning one used to leave no trace on the project.
+      const lockedOut = assigneesOutsideProject(projectData, assigneeIds, uid => roleByUid.get(uid) || null);
+      const offRoster = assigneesOffProjectTeam(projectData, assigneeIds);
       // Granting project access is `manage:team`, which a member does not hold.
       // For them the assignment is refused rather than performed half-way; the
       // composer does not offer these people to a member in the first place, so
       // this is the server saying the same thing the screen already said.
-      if (assigneesToAddToTeam.length && !isPrivileged) {
+      if (lockedOut.length && (!isPrivileged || !addAssigneesToProjectTeam)) {
         return NextResponse.json({
-          error: 'Виконавець не входить до команди проєкту. Попросіть власника або адміністратора додати його до проєкту.',
+          error: isPrivileged
+            ? 'Виконавець не входить до складу проєкту. Позначте «Додати до складу проєкту», щоб додати його разом зі створенням завдання.'
+            : 'Виконавець не входить до складу проєкту. Попросіть власника або адміністратора додати його до проєкту.',
           code: 'ASSIGNEE_OUTSIDE_PROJECT',
         }, { status: 403 });
       }
+      // An owner or an admin who is merely off the roster is not blocking
+      // anything — the task is created either way, and the roster is written
+      // only because the caller asked for it.
+      if (addAssigneesToProjectTeam && !isPrivileged) {
+        return NextResponse.json({
+          error: 'Додавати учасників до проєкту може лише власник або адміністратор',
+          code: 'PROJECT_TEAM_FORBIDDEN',
+        }, { status: 403 });
+      }
+      if (addAssigneesToProjectTeam) assigneesToAddToTeam = offRoster;
     }
 
     if (data.sprintId) {
@@ -380,12 +403,10 @@ export async function POST(request) {
       transaction.update(projectRef, {
         issueCounter: next,
         ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
-        // An owner or an admin handing work to somebody outside the project
-        // grants the access along with it, in the same write that creates the
-        // task — so the assignee can open what they were just given rather than
-        // finding out later that they cannot. The composer says this will
-        // happen before it happens; the silent version of it is what this
-        // replaced.
+        // Only ever populated when the request explicitly asked to add these
+        // people to the project — see `addAssigneesToProjectTeam` above. The
+        // audit entry below records who did it, because a change to a project's
+        // roster that leaves no trace is how the owner ends up not knowing.
         ...(assigneesToAddToTeam.length ? { team: FieldValue.arrayUnion(...assigneesToAddToTeam) } : {}),
         updatedAt: now,
         ...(parentIssueId
@@ -400,6 +421,20 @@ export async function POST(request) {
         to: issueKey,
         createdAt: now,
       });
+      // A project's roster changed, and the task that changed it is the only
+      // place the two facts meet. Without this line the whole record of "who
+      // put this person on the project" is the project document itself, which
+      // remembers the members but not the moment.
+      if (assigneesToAddToTeam.length) {
+        transaction.create(issueRef.collection('audit').doc(), {
+          userId: authorization.user.uid,
+          userName: authorization.user.name || authorization.user.email || '',
+          action: 'project-team-granted',
+          from: null,
+          to: assigneesToAddToTeam,
+          createdAt: now,
+        });
+      }
     });
 
     return NextResponse.json({ id: issueRef.id, issueKey }, { status: 201 });

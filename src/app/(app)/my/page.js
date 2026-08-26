@@ -450,6 +450,7 @@ export default function MyTasksPage() {
               estimateMinutes: formData.estimateMinutes || 0,
               sprintId: formData.sprintId || null,
               reporterId: uid,
+              addAssigneesToProjectTeam: formData.addAssigneesToProjectTeam === true,
             },
           });
           notifyIssueAssigned({

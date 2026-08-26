@@ -1249,6 +1249,7 @@ export default function GlobalSprintsPage() {
               estimateMinutes: formData.estimateMinutes || 0,
               sprintId: formData.sprintId || null,
               reporterId: currentUser?.uid || currentUser?.id,
+              addAssigneesToProjectTeam: formData.addAssigneesToProjectTeam === true,
             },
           });
 

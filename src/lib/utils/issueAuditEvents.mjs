@@ -242,6 +242,15 @@ export function describeAuditEvent(entry, context = {}) {
   if (action === 'parent-changed') {
     return entry?.to ? 'Основну задачу змінено' : 'Завдання відкріплено від основної задачі';
   }
+  // Assigning work may put somebody on the project, and that is a change to the
+  // project rather than to the task — but this task is where it was decided, so
+  // this is where it has to be readable.
+  if (action === 'project-team-granted') {
+    const ids = idsOf(entry?.to);
+    if (ids.length === 0) return 'Виконавців додано до складу проєкту';
+    const names = ids.map(id => nameOf(context?.members, id, 'учасник')).join(', ');
+    return `До складу проєкту додано: ${names}`;
+  }
   if (action.startsWith(BULK_ACTION_PREFIX)) {
     return describeBulkEvent(entry, action.slice(BULK_ACTION_PREFIX.length), context);
   }

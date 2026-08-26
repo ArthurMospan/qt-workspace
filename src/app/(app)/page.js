@@ -1001,6 +1001,7 @@ export default function WorkspacePage() {
               dueDate: formData.dueDate || null,
               estimateMinutes: formData.estimateMinutes || 0,
               sprintId: formData.sprintId || null,
+              addAssigneesToProjectTeam: formData.addAssigneesToProjectTeam === true,
             },
           });
           return { ...created, projectId: formData.projectId };

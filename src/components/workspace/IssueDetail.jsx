@@ -7,7 +7,7 @@ import { useAppContext }        from '@/lib/context/AppContext';
 import { useIssues }           from '@/lib/hooks/useIssues';
 import { useTimeLogs }         from '@/lib/hooks/useTimeLogs';
 import { useOrganization }     from '@/lib/hooks/useOrganization';
-import { hasProjectAccess, hasRecordedTeam } from '@/lib/utils/projectAccess.mjs';
+import { hasProjectAccess, hasRecordedTeam, isOnProjectTeam } from '@/lib/utils/projectAccess.mjs';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { useStagesForProject } from '@/lib/hooks/useStagesForProject';
 import { useSprints } from '@/lib/hooks/useSprints';
@@ -430,25 +430,34 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // task is worse still. Anyone already assigned stays on the list even if they
   // have since left the team; otherwise they could never be un-assigned.
   const assignableIds = new Set([...teamUids, ...(issue?.assigneeIds || [])]);
-  // Assignees this project's team does not reach. Owners and admins reach every
-  // project without being listed in one, so the role is part of the question.
-  const assigneesOutsideProjectTeam = !project || !hasRecordedTeam(project)
+  // Assignees the project's roster does not name.
+  //
+  // This asked the *access* question until it turned out to be the wrong one:
+  // an admin reaches every project of the organization, so an admin assigned a
+  // task here passed the check and the notice stayed silent — while the project
+  // card, which draws `project.team` and nothing else, showed an empty seat
+  // where they should have been. Being able to open a project and being on it
+  // are two facts, and this is the second.
+  const assigneesOffProjectRoster = !project || !hasRecordedTeam(project)
     ? []
     : (issue?.assigneeIds || [])
       .map(uid => members.find(member => (member.id || member.uid) === uid) || { id: uid, name: uid })
-      // The organization directory carries each colleague's role, and an owner
-      // or an admin reaches every project without being listed on one — so a
-      // missing role here is a member's, which is the case this is about.
-      .filter(member => !hasProjectAccess(project, member.role || null, member.id || member.uid));
+      .filter(member => !isOnProjectTeam(project, member.id || member.uid));
+  // The subset who cannot open the project either — for them this is a task
+  // they will never find, not merely a missing face. The organization directory
+  // carries each colleague's role, so a missing role here is a member's.
+  const assigneesLockedOutOfProject = assigneesOffProjectRoster.filter(
+    member => !hasProjectAccess(project, member.role || null, member.id || member.uid),
+  );
 
   const handleGrantProjectAccess = async () => {
-    const uids = assigneesOutsideProjectTeam.map(member => member.id || member.uid).filter(Boolean);
+    const uids = assigneesOffProjectRoster.map(member => member.id || member.uid).filter(Boolean);
     if (uids.length === 0) return;
     try {
       await updateDoc(doc(db, 'projects', projectId), { team: arrayUnion(...uids) });
-      showToast('Додано до команди проєкту');
+      showToast('Додано до складу проєкту');
     } catch (error) {
-      showToast(userFacingErrorMessage(error, 'Не вдалося додати до команди проєкту'), 'error');
+      showToast(userFacingErrorMessage(error, 'Не вдалося додати до складу проєкту'), 'error');
     }
   };
   // Deactivated colleagues stay in `members` so their name and face still
@@ -1534,21 +1543,32 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               </div>
             )}
 
-            {/* An assignment nobody can act on. `project.team` is what opens a
-                project, and until the create route started checking it a task
-                could be handed to somebody outside it — from «Команда» →
-                учасник → «Створити завдання», where the composer offered every
-                colleague and every project at once. The task then sat in their
-                «Мої завдання» with a project that 404s. Saying so on the task is
-                the only place the two facts meet. */}
-            {assigneesOutsideProjectTeam.length > 0 && (
+            {/* An assignee the project does not list. Two shapes of the same
+                fact, and the task is where both are visible at once:
+
+                  a member — cannot open the project at all, so the task sits in
+                  their «Мої завдання» pointing at a 404;
+                  an owner or an admin — opens it fine, but nothing records that
+                  they work here, so the project card draws no face for them.
+
+                The second used to be silent, because the check asked whether
+                they had access rather than whether the project named them. */}
+            {assigneesOffProjectRoster.length > 0 && (
               <div className="mt-3">
-                <Alert variant="warning" title="Виконавець не має доступу до проєкту">
+                <Alert
+                  variant={assigneesLockedOutOfProject.length > 0 ? 'warning' : 'info'}
+                  title={assigneesLockedOutOfProject.length > 0
+                    ? 'Виконавець не має доступу до проєкту'
+                    : 'Виконавець не у складі проєкту'}
+                >
                   <div className="flex flex-wrap items-center gap-3">
                     <span>
-                      {assigneesOutsideProjectTeam.map(member => member.name || member.email).join(', ')}
-                      {assigneesOutsideProjectTeam.length === 1 ? ' не входить' : ' не входять'} до команди проєкту
-                      {project?.name ? ` «${project.name}»` : ''}, тож не побачить це завдання у своєму проєкті.
+                      {assigneesOffProjectRoster.map(member => member.name || member.email).join(', ')}
+                      {assigneesOffProjectRoster.length === 1 ? ' не входить' : ' не входять'} до складу проєкту
+                      {project?.name ? ` «${project.name}»` : ''}
+                      {assigneesLockedOutOfProject.length > 0
+                        ? ', тож не побачить це завдання у своєму проєкті.'
+                        : ' — доступ є за роллю, але на картці проєкту його не видно.'}
                     </span>
                     {can(orgRole, 'manage:team') && (
                       <Button
@@ -1557,7 +1577,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                         icon={Users}
                         onClick={handleGrantProjectAccess}
                       >
-                        Додати до проєкту
+                        Додати до складу проєкту
                       </Button>
                     )}
                   </div>

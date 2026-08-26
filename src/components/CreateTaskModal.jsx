@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { uploadFile } from '@/lib/utils/uploadFile';
-import { hasProjectAccess, hasRecordedTeam, isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
+import { hasProjectAccess, hasRecordedTeam, isOnProjectTeam, isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
 import { Check, Play, Tag as TagIcon } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
@@ -26,6 +26,7 @@ import AudioTaskPanel from '@/components/AudioTaskPanel';
 import { taskTypeSelectOption } from '@/lib/design/taskTypeIcons';
 import { NO_PRIORITY_ID, prioritySelectOptions } from '@/lib/utils/priorities.mjs';
 import Alert from '@/components/ui/Feedback/Alert';
+import Checkbox from '@/components/ui/Forms/Checkbox';
 import ToggleSwitch from '@/components/ui/Forms/ToggleSwitch';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
@@ -65,6 +66,10 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   const [fieldErrors, setFieldErrors] = useState({});
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
+  // Putting somebody on a project is its own decision, taken here, once, and
+  // never carried over: a different project is a different question, so
+  // changing the project puts this back to «ні».
+  const [addToProjectTeam, setAddToProjectTeam] = useState(false);
   const titleInputRef = useRef(null);
 
   const selectedProject = projects?.find(p => p.id === form.projectId) || projectContext;
@@ -82,17 +87,24 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   // knows which project is selected, so the dialog is where this belongs.
   //
   // Adding somebody to a project is `manage:team`. An owner or an admin may
-  // hand work to a person outside it — the assignment adds them, and the line
-  // under the picker says so before it happens. Anybody else is only offered
-  // the people who are already there, because an assignment they are not
-  // allowed to complete is a dead end, not a permission prompt.
+  // hand work to a person outside it, but only by saying so: the tick box below
+  // is the whole of that decision, and it starts off. Anybody else is only
+  // offered the people who are already there, because an assignment they are
+  // not allowed to complete is a dead end, not a permission prompt.
   const mayGrantProjectAccess = isPrivilegedRole(orgRole);
-  // The organization directory carries each colleague's role, so an owner or an
-  // admin — who reaches every project without being listed on one — is never
-  // reported as missing from a team.
+  // Access: the organization directory carries each colleague's role, so an
+  // owner or an admin — who reaches every project without being listed on one —
+  // never counts as locked out.
   const memberReachesProject = useMemo(() => member => {
     if (!selectedProject || !hasRecordedTeam(selectedProject)) return true;
     return hasProjectAccess(selectedProject, member.role || null, member.uid || member.id);
+  }, [selectedProject]);
+  // Roster: whether the project actually names them. An admin reaches the
+  // project and is still absent from it, which is exactly the case that used to
+  // slip through — assigned the work, missing from the card.
+  const memberOnProjectRoster = useMemo(() => member => {
+    if (!selectedProject || !hasRecordedTeam(selectedProject)) return true;
+    return isOnProjectTeam(selectedProject, member.uid || member.id);
   }, [selectedProject]);
 
   // Anyone the composer was opened with stays on the list even when they are
@@ -105,10 +117,17 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     return memberReachesProject(member) || preselected.has(uid) || mayGrantProjectAccess;
   }), [teamMembers, memberReachesProject, preselected, mayGrantProjectAccess]);
 
+  // Selected people the project does not name. The tick box adds these.
   const assigneesJoiningProject = useMemo(() => (assignableMembers || []).filter(member => {
     const uid = member.uid || member.id;
-    return form.assignees.includes(uid) && !memberReachesProject(member);
-  }), [assignableMembers, form.assignees, memberReachesProject]);
+    return form.assignees.includes(uid) && !memberOnProjectRoster(member);
+  }), [assignableMembers, form.assignees, memberOnProjectRoster]);
+  // The subset of those who cannot open the project either. For them the tick
+  // box is not an option — without it the task would be a note about somebody
+  // rather than work assigned to them — so it holds up the submit.
+  const assigneesLockedOut = useMemo(() => assigneesJoiningProject.filter(
+    member => !memberReachesProject(member),
+  ), [assigneesJoiningProject, memberReachesProject]);
   const availableSprints = useMemo(
     () => (sprints || []).filter(sprint => sprint.status !== 'completed'),
     [sprints],
@@ -166,6 +185,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     setFieldErrors({});
     setDraftTouched(false);
     setCreateAnother(false);
+    setAddToProjectTeam(false);
   };
 
   const resetForAnother = () => {
@@ -184,6 +204,10 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     setError('');
     setFieldErrors({});
     setDraftTouched(false);
+    // «Створити ще одне» keeps the routing choices, and this is not one of them:
+    // the people it named have just been added, so the next task starts with
+    // nothing to consent to. If it names somebody new, it asks again.
+    setAddToProjectTeam(false);
     requestAnimationFrame(() => titleInputRef.current?.focus());
   };
 
@@ -251,6 +275,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
     setDraftTouched(true);
     // The message goes as soon as the reason for it does.
     setFieldErrors(current => (current[key] ? { ...current, [key]: '' } : current));
+    // Consent was given about one project, and this is now a different one.
+    if (key === 'projectId') setAddToProjectTeam(false);
   };
 
   const toggleAssignee = (uid) => {
@@ -312,6 +338,16 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       setFieldErrors(nextErrors);
       return;
     }
+    // A task whose assignee cannot open its project is not work handed to
+    // somebody, it is a note about them. The server refuses it too; saying so
+    // here means the answer arrives before the round trip.
+    if (assigneesLockedOut.length > 0 && !addToProjectTeam) {
+      setFieldErrors({});
+      setError(mayGrantProjectAccess
+        ? 'Позначте «Додати до складу проєкту» або приберіть виконавця, який не має доступу.'
+        : 'Приберіть виконавця, який не входить до складу проєкту.');
+      return;
+    }
     setFieldErrors({});
     setLoading(true);
     setError('');
@@ -324,6 +360,9 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
           : null,
         estimateMinutes: form.estimateHours ? Math.round(parseFloat(form.estimateHours) * 60) : 0,
         sprintId: form.sprintId || null,
+        // Only ever true because somebody ticked the box above. The server
+        // writes `project.team` on this flag and on nothing else.
+        addAssigneesToProjectTeam: addToProjectTeam && assigneesJoiningProject.length > 0,
       };
       const created = await onSubmit(submitted);
       if (createAnother) {
@@ -531,17 +570,21 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                 {assignableMembers.map(m => {
                   const uid = m.uid || m.id;
                   const selected = form.assignees.includes(uid);
-                  const joining = !memberReachesProject(m);
+                  // Two different reasons a chip is marked. Off the roster is
+                  // what the note below is about; locked out is what a member
+                  // may not do anything about, and only that disables a chip —
+                  // an admin who reaches the project without being on it is
+                  // still somebody a member can hand work to.
+                  const joining = !memberOnProjectRoster(m);
+                  const lockedOut = !memberReachesProject(m);
                   return (
                     <SelectableChip
                       key={uid}
                       shape="person"
                       selected={selected}
-                      disabled={joining && !mayGrantProjectAccess}
+                      disabled={lockedOut && !mayGrantProjectAccess}
                       title={joining
-                        ? (mayGrantProjectAccess
-                          ? `Не входить до команди проєкту — буде додано`
-                          : `Не входить до команди проєкту${selectedProject?.name ? ` «${selectedProject.name}»` : ''}`)
+                        ? `Не входить до складу проєкту${selectedProject?.name ? ` «${selectedProject.name}»` : ''}`
                         : undefined}
                       onClick={() => toggleAssignee(uid)}
                     >
@@ -552,15 +595,40 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                   );
                 })}
               </div>
+              {/* The composer used to say this in a 10px grey line and then do
+                  it anyway. Adding a person to a project is a change to the
+                  project, so it is asked for here, in a box that starts off —
+                  and «Створити» waits for an answer whenever the alternative is
+                  a task its own assignee cannot open. */}
               {assigneesJoiningProject.length > 0 && (
-                <p className="text-[10px] leading-[1.4] text-muted">
-                  {assigneesJoiningProject.map(m => m.name || m.email).join(', ')}
-                  {assigneesJoiningProject.length === 1 ? ' не входить' : ' не входять'} до команди проєкту
-                  {selectedProject?.name ? ` «${selectedProject.name}»` : ''}
-                  {mayGrantProjectAccess
-                    ? ' — буде додано разом зі створенням завдання.'
-                    : ' — призначити не вдасться, попросіть власника або адміністратора.'}
-                </p>
+                <Alert
+                  variant={assigneesLockedOut.length > 0 ? 'warning' : 'info'}
+                  title={assigneesLockedOut.length > 0
+                    ? 'Виконавець не має доступу до проєкту'
+                    : 'Виконавець не у складі проєкту'}
+                  className="mt-1"
+                >
+                  <div className="flex flex-col gap-2">
+                    <span>
+                      {assigneesJoiningProject.map(m => m.name || m.email).join(', ')}
+                      {assigneesJoiningProject.length === 1 ? ' не входить' : ' не входять'} до складу проєкту
+                      {selectedProject?.name ? ` «${selectedProject.name}»` : ''}
+                      {assigneesLockedOut.length > 0
+                        ? ' і не зможе відкрити це завдання.'
+                        : ' — доступ є за роллю, але на картці проєкту його не буде видно.'}
+                    </span>
+                    {mayGrantProjectAccess ? (
+                      <Checkbox
+                        size="sm"
+                        checked={addToProjectTeam}
+                        onChange={setAddToProjectTeam}
+                        label={`Додати до складу проєкту${selectedProject?.name ? ` «${selectedProject.name}»` : ''}`}
+                      />
+                    ) : (
+                      <span>Призначити не вдасться — попросіть власника або адміністратора додати до проєкту.</span>
+                    )}
+                  </div>
+                </Alert>
               )}
               <p className="text-[10px] leading-[1.4] text-muted">
                 У персональній аналітиці завдання врахується кожному вибраному виконавцю.
