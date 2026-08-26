@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:3712",
+      "location": "src/app/(app)/settings/page.js:3722",
       "attributes": [
         "title",
         "aria-label"
