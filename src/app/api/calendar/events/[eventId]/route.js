@@ -2,6 +2,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { assigneesOffProjectTeam, assigneesOutsideProject } from '@/lib/utils/projectAccess.mjs';
 import {
   canManageCalendarEvent,
   createCalendarNotifications,
@@ -83,6 +84,7 @@ async function validateReferencesInTransaction({
   organizationId,
   eventData,
   authorization,
+  addParticipantsToProjectTeam = false,
 }) {
   const membershipRefs = eventData.participantIds.map(
     uid => db.collection('orgMemberships').doc(`${organizationId}_${uid}`),
@@ -146,6 +148,42 @@ async function validateReferencesInTransaction({
         'Ви не належите до команди обраного проєкту',
       );
     }
+
+    // The same rule the create route and the task composer follow: a
+    // participant who cannot open the project would be invited to an event
+    // whose project 404s for them, and one who merely is not on the roster
+    // leaves no trace on the project. Neither is written unless asked for.
+    const roleByParticipant = new Map(eventData.participantIds.map(
+      (uid, index) => [uid, membershipSnapshots[index].data().role || null],
+    ));
+    const projectWithId = { ...project, id: projectSnapshot.id };
+    const lockedOut = assigneesOutsideProject(
+      projectWithId,
+      eventData.participantIds,
+      uid => roleByParticipant.get(uid) ?? null,
+    );
+    if (lockedOut.length && (!isPrivileged || !addParticipantsToProjectTeam)) {
+      throw eventMutationError(
+        'CALENDAR_PARTICIPANT_OUTSIDE_PROJECT',
+        403,
+        isPrivileged
+          // The event page edits participants inline and has no tick box, so
+          // the sentence names the remedy rather than a control on one screen.
+          ? 'Учасник не входить до складу проєкту. Додайте його до складу проєкту, щоб запросити на цю подію.'
+          : 'Учасник не входить до складу проєкту. Попросіть власника або адміністратора додати його до проєкту.',
+      );
+    }
+    if (addParticipantsToProjectTeam && !isPrivileged) {
+      throw eventMutationError(
+        'CALENDAR_PROJECT_TEAM_FORBIDDEN',
+        403,
+        'Додавати учасників до проєкту може лише власник або адміністратор',
+      );
+    }
+    const offRoster = assigneesOffProjectTeam(projectWithId, eventData.participantIds);
+    if (addParticipantsToProjectTeam && offRoster.length) {
+      transaction.update(projectRef, { team: FieldValue.arrayUnion(...offRoster) });
+    }
   }
   return { project, projectRef };
 }
@@ -185,6 +223,9 @@ export async function PATCH(request, context) {
         code: 'CALENDAR_EVENT_JSON_INVALID',
       }, { status: 400 });
     }
+    // Adding a participant to the event's project is asked for, once, by the
+    // dialog that names both — never inferred from an invitation.
+    const addParticipantsToProjectTeam = body.addParticipantsToProjectTeam === true;
     const loaded = await loadEvent(eventId);
     if (!loaded.event) {
       return NextResponse.json({ error: 'Подію не знайдено' }, { status: 404 });
@@ -329,6 +370,7 @@ export async function PATCH(request, context) {
           organizationId: current.organizationId,
           eventData,
           authorization,
+          addParticipantsToProjectTeam,
         });
         let previousProjectRef = null;
         if (current.projectId && current.projectId !== eventData.projectId) {
@@ -422,6 +464,7 @@ export async function PATCH(request, context) {
         organizationId: current.organizationId,
         eventData,
         authorization,
+        addParticipantsToProjectTeam,
       });
       let previousProjectRef = null;
       if (current.projectId && current.projectId !== eventData.projectId) {

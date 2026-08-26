@@ -4,6 +4,7 @@ import { isArchivedIssue } from '@/lib/utils/issueArchive.mjs';
 import { isCancelledIssue } from '@/lib/utils/issueCancel.mjs';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { assigneesOffProjectTeam, assigneesOutsideProject } from '@/lib/utils/projectAccess.mjs';
 import {
   createCalendarNotifications,
   normalizedCalendarEventInput,
@@ -181,6 +182,12 @@ export async function POST(request) {
     } else if (!eventData.participantIds.includes(authorization.user.uid)) {
       eventData.participantIds.unshift(authorization.user.uid);
     }
+    // The same consent the task composer asks for. A participant who cannot
+    // open the event's project gets an invitation pointing at a 404, and an
+    // admin who can open it is still missing from the project's roster — both
+    // were unchecked here, because this route only ever asked whether a
+    // participant was in the organization.
+    const addParticipantsToProjectTeam = body.addParticipantsToProjectTeam === true;
     const db = getAdminDb();
     const ref = db.collection('calendarEvents').doc();
     const now = FieldValue.serverTimestamp();
@@ -208,7 +215,12 @@ export async function POST(request) {
         );
       }
 
+      const roleByParticipant = new Map(eventData.participantIds.map(
+        (uid, index) => [uid, memberships[index].data().role || null],
+      ));
+
       let projectRef = null;
+      let participantsToAddToTeam = [];
       if (eventData.projectId) {
         projectRef = db.collection('projects').doc(eventData.projectId);
         const projectSnapshot = await transaction.get(projectRef);
@@ -247,6 +259,34 @@ export async function POST(request) {
             403,
           );
         }
+
+        const projectWithId = { ...project, id: projectSnapshot.id };
+        const lockedOut = assigneesOutsideProject(
+          projectWithId,
+          eventData.participantIds,
+          uid => roleByParticipant.get(uid) ?? null,
+        );
+        const offRoster = assigneesOffProjectTeam(projectWithId, eventData.participantIds);
+        if (lockedOut.length && (!isPrivileged || !addParticipantsToProjectTeam)) {
+          throw calendarCreateError(
+            'CALENDAR_PARTICIPANT_OUTSIDE_PROJECT',
+            isPrivileged
+              // Two screens reach this route — the dialog, which has the tick
+              // box, and the event page, which does not — so the sentence names
+              // the remedy rather than a control that may not be on screen.
+              ? 'Учасник не входить до складу проєкту. Додайте його до складу проєкту, щоб запросити на цю подію.'
+              : 'Учасник не входить до складу проєкту. Попросіть власника або адміністратора додати його до проєкту.',
+            403,
+          );
+        }
+        if (addParticipantsToProjectTeam && !isPrivileged) {
+          throw calendarCreateError(
+            'CALENDAR_PROJECT_TEAM_FORBIDDEN',
+            'Додавати учасників до проєкту може лише власник або адміністратор',
+            403,
+          );
+        }
+        if (addParticipantsToProjectTeam) participantsToAddToTeam = offRoster;
       }
 
       transaction.create(ref, {
@@ -260,6 +300,11 @@ export async function POST(request) {
       if (projectRef) {
         transaction.update(projectRef, {
           invoiceMutationVersion: FieldValue.increment(1),
+          // Written only because the request asked for it, exactly as the task
+          // create route does — never as a side effect of inviting somebody.
+          ...(participantsToAddToTeam.length
+            ? { team: FieldValue.arrayUnion(...participantsToAddToTeam) }
+            : {}),
         });
       }
     });

@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
 import {
+  Alert,
   Button,
+  Checkbox,
   DatePicker,
   Dialog,
   FormGroup,
@@ -56,6 +58,13 @@ import {
 import { MAX_CALENDAR_REMINDERS } from '@/lib/utils/calendarReminders.mjs';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
+import {
+  hasProjectAccess,
+  hasRecordedTeam,
+  isOnProjectTeam,
+  isPrivilegedRole,
+} from '@/lib/utils/projectAccess.mjs';
+import { useAppContext } from '@/lib/context/AppContext';
 
 // Only the presentation lives here — what each type *is* (and therefore which
 // fields it may carry) is decided once in calendarEventTypes.mjs, which the
@@ -425,8 +434,12 @@ export default function CalendarEventDialog({
   onCancelEdit,
 }) {
   const confirm = useConfirm();
+  const { orgRole } = useAppContext();
   const [form, setForm] = useState(() => calendarEventFormInitialValue(event, initialStart, currentUserId, initialParticipantIds));
   const [mode, setMode] = useState(initialMode || (event ? 'details' : 'edit'));
+  // Whether this save may also put the guests on the event's project. Off until
+  // somebody says otherwise, and reset the moment the project changes.
+  const [addToProjectTeam, setAddToProjectTeam] = useState(false);
   const [saving, setSaving] = useState(false);
   const [timeSaving, setTimeSaving] = useState(false);
   const [error, setError] = useState('');
@@ -464,7 +477,35 @@ export default function CalendarEventDialog({
   const response = event?.participantResponses?.[currentUserId] || 'pending';
   const isParticipant = event?.participantIds?.includes(currentUserId);
 
-  const update = (key, value) => setForm(previous => ({ ...previous, [key]: value }));
+  const update = (key, value) => {
+    setForm(previous => ({ ...previous, [key]: value }));
+    // Consent was about one project; this is now a different one.
+    if (key === 'projectId') setAddToProjectTeam(false);
+  };
+
+  // An event that names a project has the same two questions a task does: can
+  // each guest open that project, and does the project name them. Neither was
+  // asked here — this route only ever checked that a participant was in the
+  // organization — so a guest could be invited to an event whose project 404s
+  // for them, and an admin guest left no trace on the project at all.
+  const eventProject = useMemo(
+    () => (form.projectId ? projects.find(item => item.id === form.projectId) || null : null),
+    [projects, form.projectId],
+  );
+  const mayGrantProjectAccess = isPrivilegedRole(orgRole);
+  const participantsOffProjectRoster = useMemo(() => {
+    if (!eventProject || !hasRecordedTeam(eventProject)) return [];
+    if (form.visibility === 'private') return [];
+    return (form.participantIds || [])
+      .filter(uid => !isOnProjectTeam(eventProject, uid))
+      .map(uid => members.find(item => (item.id || item.uid) === uid) || { id: uid, name: uid });
+  }, [eventProject, form.participantIds, form.visibility, members]);
+  const participantsLockedOutOfProject = useMemo(
+    () => participantsOffProjectRoster.filter(
+      member => !hasProjectAccess(eventProject, member.role || null, member.id || member.uid),
+    ),
+    [participantsOffProjectRoster, eventProject],
+  );
   const changeType = value => setForm(previous =>
     calendarEventFormWithType(previous, value, currentUserId));
   const invitesOthers = calendarEventInvitesOthers(form.type);
@@ -486,11 +527,25 @@ export default function CalendarEventDialog({
       setError(validationError.message || 'Перевірте дату й час події');
       return;
     }
+    // A guest who cannot open the event's project is invited to a link that
+    // 404s for them. The server refuses this too; saying so here means the
+    // answer arrives without a round trip.
+    if (participantsLockedOutOfProject.length > 0 && !addToProjectTeam) {
+      setError(mayGrantProjectAccess
+        ? 'Позначте «Додати до складу проєкту» або приберіть учасника, який не має доступу.'
+        : 'Приберіть учасника, який не входить до складу проєкту.');
+      return;
+    }
     setTitleError('');
     setSaving(true);
     setError('');
     try {
-      await onSave(payload);
+      await onSave({
+        ...payload,
+        // True only because the box above was ticked. The server writes
+        // `project.team` on this and on nothing else.
+        addParticipantsToProjectTeam: addToProjectTeam && participantsOffProjectRoster.length > 0,
+      });
     } catch (saveError) {
       setError(saveError.message || 'Не вдалося зберегти подію');
     } finally {
@@ -809,6 +864,36 @@ export default function CalendarEventDialog({
               className="w-full"
               dropdownClassName="w-full"
             />
+          )}
+          {invitesOthers && participantsOffProjectRoster.length > 0 && (
+            <Alert
+              variant={participantsLockedOutOfProject.length > 0 ? 'warning' : 'info'}
+              title={participantsLockedOutOfProject.length > 0
+                ? 'Учасник не має доступу до проєкту'
+                : 'Учасник не у складі проєкту'}
+              className="mt-1"
+            >
+              <div className="flex flex-col gap-2">
+                <span>
+                  {participantsOffProjectRoster.map(member => memberLabel(member)).join(', ')}
+                  {participantsOffProjectRoster.length === 1 ? ' не входить' : ' не входять'} до складу проєкту
+                  {eventProject?.name ? ` «${eventProject.name}»` : ''}
+                  {participantsLockedOutOfProject.length > 0
+                    ? ' і не зможе відкрити його з цієї події.'
+                    : ' — доступ є за роллю, але на картці проєкту його не видно.'}
+                </span>
+                {mayGrantProjectAccess ? (
+                  <Checkbox
+                    size="sm"
+                    checked={addToProjectTeam}
+                    onChange={setAddToProjectTeam}
+                    label={`Додати до складу проєкту${eventProject?.name ? ` «${eventProject.name}»` : ''}`}
+                  />
+                ) : (
+                  <span>Зберегти не вдасться — попросіть власника або адміністратора додати до проєкту.</span>
+                )}
+              </div>
+            </Alert>
           )}
           {event && invitesOthers && form.visibility !== 'private' && form.participantIds.length > 0 && (
             <div className="flex flex-wrap gap-[6px] pt-[2px]">
