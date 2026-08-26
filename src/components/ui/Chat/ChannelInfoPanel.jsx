@@ -191,7 +191,7 @@ export default function ChannelInfoPanel({
                 ) : (
                   <div className="flex justify-between items-start gap-4">
                     <p className="text-[13px] text-ink leading-relaxed">
-                      {channel.description || <span className="italic text-[#b0b0b0]">Опис відсутній</span>}
+                      {channel.description || <span className="italic text-placeholder">Опис відсутній</span>}
                     </p>
                     {isAdminOrOwner && (
                       <TextAction tone="muted" onClick={() => setIsEditingDesc(true)}>Редагувати</TextAction>

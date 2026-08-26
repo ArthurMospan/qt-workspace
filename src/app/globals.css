@@ -22,6 +22,27 @@
   --color-muted:      #9a9a9a;  /* secondary text, placeholders */
   --color-faint:      #cfcfcf;  /* disabled / very light text */
 
+  /* ── Four more the kit was already painting ──────────────────────────
+     These are not new colours. They were in src/components/ui all along,
+     written as raw hex, invisible to `kit:colors` because it stopped its walk
+     at the kit boundary and never looked inside the directory that draws most
+     of the product. Naming them here is what that scan was supposed to force;
+     the values are exactly what was on screen, so nothing moved.
+
+     Each earns its name by being a state the three greys above cannot express:
+     a border has to darken under the pointer without becoming text, a selected
+     row has to sit a step below `canvas` so that hovering it still reads, and a
+     placeholder sits between `muted` and `faint` because at `muted` it competes
+     with the value it is standing in for. */
+  --color-line-strong:  #d4d4d4;  /* border under the pointer */
+  --color-selected:     #f1f1f1;  /* a row or control held selected */
+  --color-placeholder:  #b0b0b0;  /* placeholder text, disabled label */
+  --color-ink-soft:     #6b6b6b;  /* body copy inside a dialog */
+  /* The dark shell behind login and onboarding, reached from two kit controls
+     that serve those screens. Named rather than excused, because a value two
+     components share is a token whatever screen it is on. */
+  --color-surface-dark: #2a2a2a;
+
   /* ── Status tokens ───────────────────────────────────────────────────
      Success, warning, danger and info — the four things the product says about
      a state, in the three roles each of them is actually drawn in.
@@ -54,6 +75,16 @@
   --color-info:           #2f6fd0;
   --color-info-solid:     #3b82f6;
   --color-info-soft:      #eff6ff;
+
+  /* A fourth role, for the one surface the three above cannot serve: dark.
+     The ink clears AA on white and the solid is mixed to read on white, so on
+     the sidebar or a dark counter both go muddy — which is why the dark dots in
+     Counter carried their own lightened pair, and why Toast is excused from the
+     colour scan entirely with the note that light-on-dark status colours are a
+     set the kit does not have. This is that set, at the values already in use. */
+  --color-success-on-dark: #4ade80;
+  --color-danger-on-dark:  #f87171;
+  --color-muted-on-dark:   #a3a3a3;
 
   /* ── Chart tokens ────────────────────────────────────────────────────
      Analytics used to pick a colour per chart, and there were eleven of them:

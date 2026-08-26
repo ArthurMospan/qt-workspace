@@ -32,7 +32,7 @@ const LAYOUTS = {
 const TONES = {
   // Ordinary progress. Nothing is wrong, so nothing is coloured as though it is.
   neutral: { fill: 'var(--color-chart-1)', text: 'text-ink' },
-  warning: { fill: '#b45309', text: 'text-[#b45309]' },
+  warning: { fill: 'var(--color-warning)', text: 'text-warning' },
   danger: { fill: '#ef4444', text: 'text-danger' },
 };
 

@@ -21,14 +21,14 @@ import { plural } from '@/lib/utils/plural.mjs';
  */
 export default function ChatSearchBanner({ query, count = 0, onClear }) {
   return (
-    <div className="bg-[#fffbe6] border-b border-[#ffe58f] px-6 py-2 flex items-center justify-between shrink-0">
-      <p className="text-[13px] text-[#876800]">
+    <div className="bg-warning-soft border-b border-warning-solid/40 px-6 py-2 flex items-center justify-between shrink-0">
+      <p className="text-[13px] text-warning">
         Знайдено <strong>{count}</strong> {plural(count, ['повідомлення', 'повідомлення', 'повідомлень'])} за запитом <strong>«{query}»</strong>
       </p>
       <button
         type="button"
         onClick={onClear}
-        className="text-[#d4b106] hover:text-[#ad8b00] text-[13px] font-semibold underline"
+        className="text-warning hover:text-ink text-[13px] font-semibold underline"
       >
         Очистити
       </button>

@@ -18,7 +18,7 @@ import React from 'react';
 import { Check, CircleHelp, X } from 'lucide-react';
 
 const CHOICES = [
-  { value: 'accepted', label: 'Буду', icon: Check, activeClass: 'border-emerald-600 bg-emerald-600 text-white' },
+  { value: 'accepted', label: 'Буду', icon: Check, activeClass: 'border-success bg-success text-white' },
   { value: 'tentative', label: 'Можливо', icon: CircleHelp, activeClass: 'border-warning-solid bg-warning-solid text-white' },
   { value: 'declined', label: 'Не буду', icon: X, activeClass: 'border-danger bg-danger-solid text-white' },
 ];

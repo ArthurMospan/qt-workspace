@@ -25,7 +25,7 @@ export default function CalendarHourSlot({ label, style, onClick, className = ''
       aria-label={label}
       style={style}
       onClick={onClick}
-      className={`absolute left-0 right-0 border-t border-[#ededed] transition-colors hover:bg-black/[0.015] ${className}`}
+      className={`absolute left-0 right-0 border-t border-line transition-colors hover:bg-black/[0.015] ${className}`}
       {...props}
     />
   );

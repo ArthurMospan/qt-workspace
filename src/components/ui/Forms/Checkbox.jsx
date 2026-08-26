@@ -78,7 +78,7 @@ export default function Checkbox({
             peer-checked:bg-ink peer-checked:border-ink
             peer-indeterminate:bg-ink peer-indeterminate:border-ink
             peer-focus-visible:ring-2 peer-focus-visible:ring-ink/20 peer-focus-visible:ring-offset-0
-            hover:border-[#d1d5db]
+            hover:border-line-strong
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
             ${error ? 'border-danger' : ''}
           `}

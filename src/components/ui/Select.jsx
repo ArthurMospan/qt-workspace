@@ -615,7 +615,7 @@ export function MultiSelect({
                 }}
                 className="mb-1 flex h-[34px] w-full items-center gap-[10px] rounded-[8px] border-b border-line px-[8px] text-left transition-colors hover:bg-canvas"
               >
-                <div className={`flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-[4px] border transition-colors ${allSelected ? 'border-ink bg-ink' : 'border-[#d9d9d9] bg-white'}`}>
+                <div className={`flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-[4px] border transition-colors ${allSelected ? 'border-ink bg-ink' : 'border-line-strong bg-white'}`}>
                   {allSelected && <Check size={12} className="text-white" />}
                 </div>
                 <span className="truncate text-[13px] font-bold text-ink">{selectAllLabel}</span>
@@ -637,7 +637,7 @@ export function MultiSelect({
                     onClick={() => handleSelect(opt.value)}
                     className="w-full flex items-center gap-[10px] px-[8px] h-[32px] rounded-[8px] hover:bg-canvas transition-colors text-left disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
                   >
-                    <div className={`w-[16px] h-[16px] rounded-[4px] border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-ink border-ink' : 'border-[#d9d9d9] bg-white'}`}>
+                    <div className={`w-[16px] h-[16px] rounded-[4px] border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-ink border-ink' : 'border-line-strong bg-white'}`}>
                       {isSelected && <Check size={12} className="text-white" />}
                     </div>
                     <OptionMark color={opt.dotColor} />

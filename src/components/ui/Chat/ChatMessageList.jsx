@@ -177,7 +177,7 @@ export default function ChatMessageList({
           <button
             type="button"
             onClick={onJumpToLatest}
-            className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-full shadow-xl text-[12px] font-bold hover:bg-[#333] transition-all active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-full shadow-xl text-[12px] font-bold hover:bg-ink-hover transition-all active:scale-95"
           >
             <ChevronDown size={14} />
             {unreadCount} нових

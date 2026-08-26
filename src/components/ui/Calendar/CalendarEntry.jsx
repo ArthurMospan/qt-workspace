@@ -16,7 +16,7 @@ const TONES = {
   event: 'border-l-[3px] transition-[filter,transform] hover:brightness-[0.98] active:scale-[0.99]',
   // A white block with a border. It carries no type colour, so it needs an
   // outline to separate it from the cell.
-  deadline: 'bg-white border border-line transition-colors hover:border-[#d4d4d4]',
+  deadline: 'bg-white border border-line transition-colors hover:border-line-strong',
 };
 
 /**

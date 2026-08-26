@@ -842,12 +842,12 @@ export default function TaskTableView({
             <tbody>
               {drawnRows.map(issue => {
                 const selected = activeSelectedIds.has(issue.id);
-                const rowTone = selected ? 'bg-[#f1f1f1]' : 'bg-white group-hover:bg-canvas';
+                const rowTone = selected ? 'bg-selected' : 'bg-white group-hover:bg-canvas';
                 return (
                   <tr
                     key={issue.id}
-                    className={`group border-b border-[#f4f4f5] transition-colors ${
-                      selected ? 'bg-[#f1f1f1]' : 'hover:bg-canvas'
+                    className={`group border-b border-canvas transition-colors ${
+                      selected ? 'bg-selected' : 'hover:bg-canvas'
                     }`}
                   >
                     <td

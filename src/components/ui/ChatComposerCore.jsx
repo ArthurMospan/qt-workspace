@@ -17,7 +17,7 @@ const VARIANTS = {
     // full-width block and becomes the part of the row that stretches. It also
     // stops growing at 120px rather than 200: a composer half the height of the
     // screen is not a composer, it is a page with a conversation behind it.
-    textarea: 'w-full px-4 py-3.5 text-[14px] text-ink placeholder-[#b0b0b0] bg-transparent outline-none resize-none max-h-[200px] leading-relaxed max-md:w-auto max-md:min-w-0 max-md:flex-1 max-md:max-h-[120px] max-md:px-2 max-md:py-[7px] max-md:text-[15px]',
+    textarea: 'w-full px-4 py-3.5 text-[14px] text-ink placeholder-placeholder bg-transparent outline-none resize-none max-h-[200px] leading-relaxed max-md:w-auto max-md:min-w-0 max-md:flex-1 max-md:max-h-[120px] max-md:px-2 max-md:py-[7px] max-md:text-[15px]',
   },
   timeline: {
     shell: 'overflow-hidden rounded-[24px] bg-white ring-1 ring-black/[0.04] transition-all hover:ring-black/10 focus-within:ring-4 focus-within:ring-black/10 focus-within:shadow-[0_12px_40px_rgb(0,0,0,0.08)]',
@@ -29,7 +29,7 @@ const VARIANTS = {
   },
 };
 
-const ROUND_SEND_CLASS = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform hover:scale-105 disabled:bg-[#cfcfcf] disabled:hover:scale-100';
+const ROUND_SEND_CLASS = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform hover:scale-105 disabled:bg-faint disabled:hover:scale-100';
 
 // How tall the field may grow before it starts scrolling instead. It used to be
 // a table here, one number per variant; it is read off the field's own
@@ -201,8 +201,8 @@ export default function ChatComposerCore({
               aria-label={sendAriaLabel}
               className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-[13px] font-semibold transition-all max-md:h-[38px] max-md:w-[38px] max-md:shrink-0 max-md:justify-center max-md:gap-0 max-md:rounded-full max-md:px-0 max-md:py-0 ${
                 sendDisabled
-                  ? 'cursor-not-allowed bg-canvas text-[#b0b0b0]'
-                  : 'bg-ink text-white shadow-sm hover:bg-[#333] active:scale-95'
+                  ? 'cursor-not-allowed bg-canvas text-placeholder'
+                  : 'bg-ink text-white shadow-sm hover:bg-ink-hover active:scale-95'
               }`}
             >
               {sending ? <Spinner /> : <Send size={14} />}

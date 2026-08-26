@@ -130,7 +130,7 @@ export default function TaskAttributesPanel({
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="absolute left-0 right-0 bottom-[-16px] h-[28px] bg-[#e4e4e7] hover:bg-[#d4d4d8] rounded-b-[16px] flex items-center justify-center text-[#666666] hover:text-ink transition-all cursor-pointer z-0"
+          className="absolute left-0 right-0 bottom-[-16px] h-[28px] bg-line hover:bg-line-strong rounded-b-[16px] flex items-center justify-center text-ink-soft hover:text-ink transition-all cursor-pointer z-0"
         >
           {isExpanded ? <ChevronUp size={12} className="mt-[12px]" /> : <ChevronDown size={12} className="mt-[12px]" />}
         </button>

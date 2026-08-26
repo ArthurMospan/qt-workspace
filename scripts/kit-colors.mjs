@@ -10,6 +10,14 @@
 // So this reads the same product files those two do, and asks one question of
 // each className and inline style: is this colour a token?
 //
+// It used to read fewer files than it claimed. `collectWorkspaceUiFiles()`
+// stops its walk at `src/components/ui` unless asked otherwise — the right
+// default for `kit:scan`, which is counting how the product reaches for the
+// kit, and the wrong one here, because the kit is where most of the pixels are
+// painted. The report said zero while fifty-nine raw colours shipped inside it,
+// including three greens meaning "fine" and two ambers meaning "careful". The
+// walk now includes the kit, exactly as `kit:a11y` already did.
+//
 // What stays legal is what is not styling. A palette offered to somebody to
 // choose from is data. So is the colour a status, type or priority carries out
 // of the database, the fill a `<canvas>` is handed, the two colours a QR
@@ -58,11 +66,15 @@ const PALETTE = /\b(?:bg|text|border|ring|from|via|to|fill|stroke|divide|outline
 export function scanColors() {
   const findings = [];
   const dataColorFiles = new Set();
-  for (const file of collectWorkspaceUiFiles()) {
+  for (const file of collectWorkspaceUiFiles({ includeSharedUi: true })) {
     const rel = relative(ROOT, file).split(sep).join('/');
     if (OUT_OF_SCOPE.has(rel)) continue;
     const lines = readFileSync(file, 'utf8').split(/\r?\n/);
     lines.forEach((line, index) => {
+      // A colour named in prose is a colour nobody paints. Two comments explain
+      // what a control used to look like, and reporting those would have made
+      // the only fix "stop writing down what changed".
+      if (/^\s*(?:\/\/|\*|\/\*)/.test(line)) return;
       for (const match of [...line.matchAll(ARBITRARY), ...line.matchAll(PALETTE)]) {
         findings.push({ file: rel, line: index + 1, value: match[0], text: line.trim().slice(0, 120) });
       }

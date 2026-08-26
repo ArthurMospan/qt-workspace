@@ -34,7 +34,7 @@ const DENSITIES = {
   timeline: {
     list: 'rounded-[10px] border border-faint bg-white p-1 max-h-[160px] overflow-y-auto',
     row: 'flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-left text-[13px] font-medium',
-    idle: 'text-muted hover:bg-[#f7f7f7]',
+    idle: 'text-muted hover:bg-canvas',
     selected: 'bg-canvas text-ink',
     avatar: 'chat-inline',
     selectOnPress: false,

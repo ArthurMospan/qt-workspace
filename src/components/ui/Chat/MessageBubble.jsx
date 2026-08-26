@@ -299,7 +299,7 @@ export default function MessageBubble({
                 onClick={() => onThread(msg.id)}
                 className={`mt-1.5 flex items-center gap-1.5 rounded-full px-2 py-0.5 -ml-2 text-[12px] font-semibold transition-colors ${
                   unreadReplies > 0
-                    ? 'bg-ink text-white hover:bg-[#333]'
+                    ? 'bg-ink text-white hover:bg-ink-hover'
                     : 'text-ink hover:underline'
                 }`}
               >

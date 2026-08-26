@@ -163,7 +163,7 @@ export default function DataTable({
                 <tr
                   key={rowKey(row)}
                   onClick={href ? followRow(href) : undefined}
-                  className={`group border-b border-[#f4f4f5] transition-colors last:border-0 hover:bg-canvas ${
+                  className={`group border-b border-canvas transition-colors last:border-0 hover:bg-canvas ${
                     href ? 'cursor-pointer' : ''
                   }`}
                 >

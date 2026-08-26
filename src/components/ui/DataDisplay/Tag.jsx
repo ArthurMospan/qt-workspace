@@ -42,10 +42,10 @@ export default function Tag({
   const variants = {
     default: 'bg-ink/5 text-ink',
     success: 'bg-success-solid/8 text-success',
-    warning: 'bg-[#fbbf24]/8 text-[#b45309]',
+    warning: 'bg-warning-solid/8 text-warning',
     danger: 'bg-danger-solid/8 text-danger',
-    error: 'bg-[#f97316]/8 text-[#c2410c]',
-    info: 'bg-[#6366f1]/8 text-[#4338ca]',
+    error: 'bg-danger-solid/8 text-danger',
+    info: 'bg-info-solid/8 text-info',
   };
 
   const sizeMap = {

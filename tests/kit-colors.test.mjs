@@ -30,6 +30,63 @@ test('the committed colour report matches the code', async () => {
   assert.equal(committed.totals.hardcoded, findings.length);
 });
 
+// A zero is only worth what it was measured over.
+//
+// This scan reported zero for months while fifty-nine raw colours shipped
+// inside src/components/ui, because `collectWorkspaceUiFiles()` stops at the
+// kit boundary by default and nobody had asked it not to. That default is right
+// for `kit:scan`, which counts how the product reaches for the kit; it is wrong
+// here, because the kit is what paints most of the product. Narrowing the walk
+// again would restore the silence, not the compliance — so the walk is the
+// thing under test, not just its result.
+test('the colour scan covers the kit, which is where most of the product is painted', async () => {
+  const script = await read('../scripts/kit-colors.mjs');
+  assert.match(script, /collectWorkspaceUiFiles\(\{ includeSharedUi: true \}\)/);
+
+  const { collectWorkspaceUiFiles } = await import('../scripts/workspace-ui-files.mjs');
+  const walked = collectWorkspaceUiFiles({ includeSharedUi: true });
+  const kitFiles = walked.filter(file => file.split(/[\\/]/).join('/').includes('/src/components/ui/'));
+  assert.ok(
+    kitFiles.length > 100,
+    `the scan reaches ${kitFiles.length} kit files; it used to reach none`,
+  );
+  // Named rather than counted, so that losing one of the two files whose raw
+  // colours started this reads as a failure and not as a smaller number.
+  for (const name of ['DataDisplay/Counter.jsx', 'Layout/TopHeader.jsx']) {
+    assert.ok(
+      kitFiles.some(file => file.split(/[\\/]/).join('/').endsWith(`/src/components/ui/${name}`)),
+      name,
+    );
+  }
+});
+
+// Nothing moved on screen. Where a token already held the exact value the kit
+// was writing by hand, the utility replaced the hex; where it did not, the value
+// became a token rather than being snapped onto a near neighbour. These four are
+// the ones that were added, and they are the ones a future edit is most likely
+// to "tidy up" into the three greys above them — which would change pixels.
+test('the greys the kit was already painting keep their own names and values', async () => {
+  const css = await read('../src/app/globals.css');
+  for (const [token, value] of [
+    ['line-strong', '#d4d4d4'],
+    ['selected', '#f1f1f1'],
+    ['placeholder', '#b0b0b0'],
+    ['ink-soft', '#6b6b6b'],
+    ['surface-dark', '#2a2a2a'],
+    ['success-on-dark', '#4ade80'],
+    ['danger-on-dark', '#f87171'],
+    ['muted-on-dark', '#a3a3a3'],
+  ]) {
+    assert.match(css, new RegExp(String.raw`--color-${token}:\s*${value};`), token);
+  }
+
+  // A selected row and a hovered row must stay two different greys. Collapsing
+  // `selected` onto `canvas` — they are four levels apart — would make the
+  // table's selection invisible under the pointer.
+  const table = await read('../src/components/ui/TaskManagement/TaskTableView.jsx');
+  assert.match(table, /selected \? 'bg-selected' : 'hover:bg-canvas'/);
+});
+
 test('the status scale is declared once, in three roles, and clears AA on white', async () => {
   const css = await read('../src/app/globals.css');
   const lum = hex => {

@@ -59,9 +59,9 @@ export default function ImageUpload({
   // the least likely action in it. It is a quiet icon control now, and it only
   // takes a colour when the cursor is on it.
   const removeColor = isDark
-    ? 'text-white/40 hover:text-red-300 hover:bg-white/10'
+    ? 'text-white/40 hover:text-danger-on-dark hover:bg-white/10'
     : 'text-faint hover:text-danger hover:bg-canvas';
-  const bgClass = isDark ? 'bg-[#2a2a2a] border-white/10 hover:border-white/30' : 'bg-canvas border-line hover:border-faint';
+  const bgClass = isDark ? 'bg-surface-dark border-white/10 hover:border-white/30' : 'bg-canvas border-line hover:border-faint';
   const iconColor = isDark ? 'text-white/50' : 'text-muted';
 
   const handleFileChange = async (e) => {

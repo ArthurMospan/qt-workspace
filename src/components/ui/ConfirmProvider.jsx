@@ -97,7 +97,7 @@ export function ConfirmProvider({ children }) {
           className="flex flex-col gap-[16px]"
         >
           {message && (
-            <p className="text-[13px] text-[#6b6b6b] leading-relaxed whitespace-pre-line">{message}</p>
+            <p className="text-[13px] text-ink-soft leading-relaxed whitespace-pre-line">{message}</p>
           )}
           {input && (
             <Input

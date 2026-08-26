@@ -87,12 +87,12 @@ export default function TopHeader({
             aria-label={`Відкрити чат з ${u.name || u.email || 'учасником'}`}
           >
             <span className="overflow-hidden rounded-full ring-2 ring-white"><UserAvatar user={u} size="sm" /></span>
-            <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+            <span className="absolute -bottom-[1px] -right-[1px] w-2.5 h-2.5 bg-success-solid border-2 border-white rounded-full" />
           </button>
         </Tooltip>
       ))}
       {onlineUsers.length > 5 && (
-        <div className="w-8 h-8 rounded-full border-2 border-white bg-white flex items-center justify-center z-10 text-[10px] font-bold text-gray-600 shadow-sm">
+        <div className="w-8 h-8 rounded-full border-2 border-white bg-white flex items-center justify-center z-10 text-[10px] font-bold text-ink-soft shadow-sm">
           +{onlineUsers.length - 5}
         </div>
       )}
@@ -193,7 +193,7 @@ export default function TopHeader({
 
           {mode === 'chat' && (
             <div className="flex items-center gap-1.5 mr-2 bg-canvas px-2 py-1 rounded-full cursor-pointer hover:bg-line transition-colors">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <div className="w-2 h-2 rounded-full bg-success-solid"></div>
               <span className="text-[11px] font-bold text-ink">В мережі</span>
             </div>
           )}
@@ -208,8 +208,8 @@ export default function TopHeader({
             {currentUser ? (
               <UserAvatar user={currentUser} size="sm" />
             ) : (
-              <div className="w-[28px] h-[28px] rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-[12px] text-gray-500 font-bold">U</span>
+              <div className="w-[28px] h-[28px] rounded-full bg-line flex items-center justify-center">
+                <span className="text-[12px] text-ink-soft font-bold">U</span>
               </div>
             )}
           </button>

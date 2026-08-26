@@ -41,9 +41,9 @@ export default function Counter({
     // and `muted` do mean something, so they keep their hues.
     const dotColors = dark ? {
       info: 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.45)]',
-      danger: 'bg-[#f87171] shadow-[0_0_8px_rgba(248,113,113,0.5)]',
-      success: 'bg-[#4ade80] shadow-[0_0_8px_rgba(74,222,128,0.5)]',
-      muted: 'bg-[#a3a3a3]',
+      danger: 'bg-danger-on-dark shadow-[0_0_8px_rgba(248,113,113,0.5)]',
+      success: 'bg-success-on-dark shadow-[0_0_8px_rgba(74,222,128,0.5)]',
+      muted: 'bg-muted-on-dark',
     } : {
       info: 'bg-ink',
       danger: 'bg-danger-solid',
@@ -76,7 +76,7 @@ export default function Counter({
     : appearance === 'subtle'
       ? 'bg-white/60 text-muted'
       : appearance === 'inverse-outline'
-        ? 'border-[3px] border-[#171717] bg-white text-[#171717]'
+        ? 'border-[3px] border-ink bg-white text-ink'
         : dark
           ? 'bg-white text-ink'
           : 'bg-ink text-white';

@@ -391,7 +391,7 @@ test('the member profile actions are one declared size and one declared appearan
   assert.equal((profile.match(/size="xl" appearance="contrast"|appearance="contrast"/g) || []).length, 4);
   assert.match(button, /'icon-xl': 'w-\[56px\] p-0'/);
   assert.match(iconAction, /xl: 'icon-xl'/);
-  assert.match(iconAction, /contrast: '!bg-\[#f1f1f1\] !text-ink/);
+  assert.match(iconAction, /contrast: '!bg-selected !text-ink/);
   assert.match(globals, /data-ui-size='icon-56'\] \{[\s\S]{0,120}--ui-control-height: 56px;/);
 });
 

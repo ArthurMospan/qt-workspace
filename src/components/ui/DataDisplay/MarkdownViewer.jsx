@@ -26,7 +26,7 @@ function TaskCheckbox({ checked, ...props }) {
       // checked". The line it toggles is the name it should have had.
       aria-label={taskLine ? `Пункт: ${taskLine}` : 'Пункт списку'}
       onChange={event => onTaskToggle?.(taskLine, event.target.checked)}
-      className="mr-2 mt-1 h-4 w-4 cursor-pointer rounded-[4px] accent-[#1f1f1f] disabled:cursor-default disabled:opacity-70"
+      className="mr-2 mt-1 h-4 w-4 cursor-pointer rounded-[4px] accent-ink disabled:cursor-default disabled:opacity-70"
     />
   );
 }

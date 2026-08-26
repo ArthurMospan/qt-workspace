@@ -106,7 +106,7 @@ export const HeaderSearch = forwardRef(({
         // And it is not drawn at all on a phone. A keyboard shortcut printed
         // beside a field nobody can press it on is a piece of chrome that only
         // takes width away from what is being typed.
-        className="pointer-events-none absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-[#9a9a9a] opacity-0 transition-opacity group-hover/search:pointer-events-auto group-hover/search:opacity-100 group-focus-within/search:pointer-events-auto group-focus-within/search:opacity-100 max-md:hidden"
+        className="pointer-events-none absolute right-0 rounded-[6px] px-[4px] py-[2px] text-[10px] font-semibold leading-none text-muted opacity-0 transition-opacity group-hover/search:pointer-events-auto group-hover/search:opacity-100 group-focus-within/search:pointer-events-auto group-focus-within/search:opacity-100 max-md:hidden"
       >
         {paletteKeys}
       </button>
