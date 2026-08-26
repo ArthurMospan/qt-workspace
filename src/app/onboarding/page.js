@@ -8,7 +8,9 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { PlanCards } from '@/components/ui';
+import { DEFAULT_PLAN, storedPlanLimit } from '@/lib/utils/plans.mjs';
 import { normalizeTimeZone } from '@/lib/utils/timeZone.mjs';
 
 function OnboardingPageContent() {
@@ -21,7 +23,7 @@ function OnboardingPageContent() {
   const [saving, setSaving] = useState(false);
   const [orgName, setOrgName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState('free');
+  const [selectedPlan, setSelectedPlan] = useState(DEFAULT_PLAN);
 
   // Auto-fill org name
   useEffect(() => {
@@ -91,7 +93,14 @@ function OnboardingPageContent() {
         members: [{ uid, role: 'owner', email: currentUser?.email || '' }],
         plan: selectedPlan,
         timezone: activeOrg?.timezone || detectedTimeZone,
-        limits: selectedPlan === 'free' ? { maxProjects: 3, maxMembers: null } : { maxProjects: null, maxMembers: null },
+        // The ceilings come from the registry, not from a ternary. This line
+        // used to read `plan === 'free' ? 3 : null`, which handed Lite the
+        // unlimited copy of a ceiling the price list sets at ten — the same
+        // split that made Lite equal to Free everywhere else.
+        limits: {
+          maxProjects: storedPlanLimit(selectedPlan, 'projects'),
+          maxMembers: storedPlanLimit(selectedPlan, 'members'),
+        },
         onboarded: true,
         onboardedAt: serverTimestamp(),
         createdAt: serverTimestamp(),
@@ -204,113 +213,18 @@ function OnboardingPageContent() {
               </div>
             </div>
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {/* Free Plan */}
-              <button
-                onClick={() => setSelectedPlan('free')}
-                className={`flex flex-col text-left p-6 rounded-[24px] border-[2px] transition-all relative overflow-hidden ${
-                  selectedPlan === 'free'
-                    ? 'border-white bg-[#2a2a2a]'
-                    : 'border-[#3a3a3a] hover:border-white/50 bg-[#1f1f1f]'
-                }`}
-              >
-                <div className="mb-4">
-                  <span className={`text-[18px] font-bold ${selectedPlan === 'free' ? 'text-white' : 'text-white/50'}`}>Free</span>
-                  <div className="text-[28px] font-black text-white mt-1">$0<span className="text-white/50 text-[14px] font-normal">/міс</span></div>
-                </div>
-                <ul className="flex flex-col gap-3 flex-1 text-[14px]">
-                  <li className="flex items-start gap-3 text-white/80">
-                    <Check size={18} className="text-white/50 shrink-0 mt-[2px]" />
-                    <span>До 3 активних проєктів</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white/80">
-                    <Check size={18} className="text-white/50 shrink-0 mt-[2px]" />
-                    <span>Базовий трекінг завдань та багів</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white/80">
-                    <Check size={18} className="text-white/50 shrink-0 mt-[2px]" />
-                    <span>До 5 учасників команди</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white/80">
-                    <Check size={18} className="text-white/50 shrink-0 mt-[2px]" />
-                    <span>Базова аналітика</span>
-                  </li>
-                </ul>
-              </button>
-
-              {/* Lite Plan */}
-              <button
-                onClick={() => setSelectedPlan('lite')}
-                className={`flex flex-col text-left p-6 rounded-[24px] border-[2px] transition-all relative overflow-hidden ${
-                  selectedPlan === 'lite'
-                    ? 'border-[#0ea5e9] bg-[#0ea5e9]/10 shadow-[0_0_40px_rgba(14,165,233,0.15)]'
-                    : 'border-[#3a3a3a] hover:border-white/50 bg-[#1f1f1f]'
-                }`}
-              >
-                <div className="mb-4 relative z-10">
-                  <span className={`text-[18px] font-bold ${selectedPlan === 'lite' ? 'text-[#38bdf8]' : 'text-[#0ea5e9]'}`}>Lite</span>
-                  <div className="text-[28px] font-black text-white mt-1">$9<span className="text-white/50 text-[14px] font-normal">/міс</span></div>
-                </div>
-                <ul className="flex flex-col gap-3 flex-1 text-[14px] relative z-10">
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#38bdf8] shrink-0 mt-[2px]" />
-                    <span>До 10 активних проєктів</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#38bdf8] shrink-0 mt-[2px]" />
-                    <span>Трекінг завдань, багів та часу</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#38bdf8] shrink-0 mt-[2px]" />
-                    <span>До 15 учасників команди</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#38bdf8] shrink-0 mt-[2px]" />
-                    <span>Розширена аналітика</span>
-                  </li>
-                </ul>
-              </button>
-
-              {/* Pro Plan */}
-              <button
-                onClick={() => setSelectedPlan('pro')}
-                className={`flex flex-col text-left p-6 rounded-[24px] border-[2px] transition-all relative overflow-hidden ${
-                  selectedPlan === 'pro'
-                    ? 'border-[#6366f1] bg-[#6366f1]/10 shadow-[0_0_40px_rgba(99,102,241,0.15)]'
-                    : 'border-[#3a3a3a] hover:border-white/50 bg-[#1f1f1f]'
-                }`}
-              >
-                <div className="mb-4 relative z-10">
-                  <div className="flex justify-between items-center">
-                    <span className={`text-[18px] font-bold ${selectedPlan === 'pro' ? 'text-[#a5a6f6]' : 'text-[#6366f1]'}`}>Pro</span>
-                    <span className="bg-[#6366f1] text-white text-[11px] font-bold px-3 py-1 rounded-full">Рекомендовано</span>
-                  </div>
-                  <div className="text-[28px] font-black text-white mt-1">$19<span className="text-white/50 text-[14px] font-normal">/міс</span></div>
-                </div>
-                <ul className="flex flex-col gap-3 flex-1 text-[14px] relative z-10">
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#a5a6f6] shrink-0 mt-[2px]" />
-                    <span><strong className="font-semibold text-white">Безлімітні</strong> проєкти та дошки</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#a5a6f6] shrink-0 mt-[2px]" />
-                    <span>Усі функції трекінгу + кастомні поля</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#a5a6f6] shrink-0 mt-[2px]" />
-                    <span>Безлімітна кількість учасників</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#a5a6f6] shrink-0 mt-[2px]" />
-                    <span>Гостьовий доступ для клієнтів</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-white">
-                    <Check size={18} className="text-[#a5a6f6] shrink-0 mt-[2px]" />
-                    <span>Пріоритетна підтримка</span>
-                  </li>
-                </ul>
-              </button>
-            </div>
+            {/* The same price list the settings screen shows, and the same
+                registry behind it. This step used to hand-build three cards
+                with four invented bullet points each and an accent colour per
+                plan, at prices the product had already moved on from — a
+                person met that on the day they signed up and a different one
+                the first time they went looking for the bill. */}
+            <PlanCards
+              activePlanId={selectedPlan}
+              activeLabel="Обрано"
+              onChoose={setSelectedPlan}
+              className="mb-8"
+            />
 
             <div className="w-full flex justify-center">
               <button

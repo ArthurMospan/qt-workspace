@@ -31,13 +31,11 @@ import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { useAccountSessions } from '@/lib/hooks/useAccountSessions';
 import { describeSignInMethods } from '@/lib/utils/accountSessions.mjs';
 import {
-  PLANS,
+  DEFAULT_PLAN,
   capabilityAvailability,
   normalizePlan,
-  planAddedCapabilities,
   planAllows,
-  planInheritanceLabel,
-  planLimitRows,
+  planName,
 } from '@/lib/utils/plans.mjs';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
@@ -53,7 +51,7 @@ import {
   UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
+import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -1222,9 +1220,11 @@ export default function SettingsPage() {
   const [generatingKey, setGeneratingKey] = useState(false);
 
   // ── Billing ──
-  const [orgPlan,        setOrgPlan]        = useState('free');
+  const [orgPlan,        setOrgPlan]        = useState(DEFAULT_PLAN);
   const [projectsCount,  setProjectsCount]  = useState(0);
-  const [upgrading,      setUpgrading]      = useState(false);
+  // Which plan is being switched to, not merely that one is: with three plans a
+  // boolean put the spinner on both buttons that were not the current one.
+  const [upgradingTo,    setUpgradingTo]    = useState('');
 
   // ── Notifications ──
   // `channels` is the event × channel matrix; the flat per-event flags beside it
@@ -1457,7 +1457,7 @@ export default function SettingsPage() {
         if (!isCurrentWorkflowLoad()) return;
         if (orgSnap.exists()) {
           const orgData = orgSnap.data();
-          setOrgPlan(orgData.plan || 'free');
+          setOrgPlan(normalizePlan(orgData.plan));
         }
 
         if (isAdmin) {
@@ -2213,16 +2213,18 @@ export default function SettingsPage() {
   // workspace looks like, not who may use it.
   const handleUpgradePlan = async (newPlan) => {
     const next = normalizePlan(newPlan);
-    if (next === orgPlan || upgrading) return;
-    setUpgrading(true);
+    if (next === orgPlan || upgradingTo) return;
+    setUpgradingTo(next);
     try {
       await updateDoc(doc(db, 'organizations', activeOrgId), { plan: next });
       setOrgPlan(next);
-      showToast(next === 'pro' ? 'Тариф змінено на Професійний' : 'Тариф змінено на Безкоштовний');
+      // The plan's own name. The toast had two branches for three plans, so
+      // switching to Lite announced «Тариф змінено на Безкоштовний».
+      showToast(`Тариф змінено на ${planName(next)}`);
     } catch (error) {
       showToast(userFacingErrorMessage(error, 'Не вдалося змінити тариф'), 'error');
     } finally {
-      setUpgrading(false);
+      setUpgradingTo('');
     }
   };
 
@@ -3515,101 +3517,18 @@ export default function SettingsPage() {
           title="Тарифний план"
           desc="Що входить у кожен тариф і на якому ви зараз"
         >
-          {/* The order the questions arrive in, which is why every price list
-              is built this way: name, what it is for, what it costs, the
-              button — then the ceilings as a table of bare numbers, then only
-              what this plan adds over the one before it.
-
-              Not «До 10». A column of figures is compared down the row at a
-              glance, and the word in front of each one is read three times and
-              says the same thing every time. Not twelve shared lines on every
-              card either: repeating them buries the two that actually differ,
-              which is what «Все з Lite +» is for.
-
-              The row is `items-stretch` and the cards are `h-full` columns, so
-              all three end level however much any of them holds. */}
-          <div className="grid gap-5 lg:grid-cols-3">
-            {PLANS.map(plan => {
-              const isCurrent = plan.id === orgPlan;
-              const added = planAddedCapabilities(plan.id);
-              return (
-                <div key={plan.id} className="relative flex h-full flex-col pt-3">
-                  {plan.recommended && (
-                    <span className="absolute left-1/2 top-0 z-10 -translate-x-1/2">
-                      <Pill size="md" tone="info" uppercase>Найпопулярніший</Pill>
-                    </span>
-                  )}
-                  <Card
-                    preset="bordered"
-                    padding="none"
-                    className={`flex h-full flex-col overflow-hidden ${
-                      isCurrent ? 'border-ink' : plan.recommended ? 'border-info' : ''
-                    }`}
-                  >
-                    <div className="flex flex-col gap-6 px-7 py-7">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="ui-type-detail-title text-ink">{plan.name}</h3>
-                          <p className="mt-2 text-[13px] leading-relaxed text-muted">{plan.tagline}</p>
-                        </div>
-                        {isCurrent && <Pill size="md" className="shrink-0">Ваш тариф</Pill>}
-                      </div>
-
-                      <p className="flex items-baseline gap-2">
-                        <span className="text-[40px] font-black leading-none tracking-tight text-ink">
-                          {plan.priceLabel}
-                        </span>
-                        <span className="text-[13px] font-medium text-muted">{plan.currencyLabel}</span>
-                      </p>
-
-                      {/* The ceilings. Label left, figure right, so the three
-                          cards read as one table across the row. */}
-                      <ul className="flex flex-col gap-[10px]">
-                        {planLimitRows(plan.id).map(limit => (
-                          <li key={limit.id} className="flex items-baseline justify-between gap-4 text-[13px]">
-                            <span className={`min-w-0 ${limit.absent ? 'text-faint' : 'text-muted'}`}>
-                              {limit.label}
-                            </span>
-                            <span className={`shrink-0 font-bold tabular-nums ${limit.absent ? 'text-faint' : 'text-ink'}`}>
-                              {limit.value}{limit.unit && !limit.absent ? ` ${limit.unit}` : ''}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          onClick={() => handleUpgradePlan(plan.id)}
-                          style={isCurrent ? 'secondary' : plan.recommended ? 'primary' : 'secondary'}
-                          size="lg"
-                          disabled={isCurrent || upgrading}
-                          loading={upgrading && !isCurrent}
-                          className="w-full"
-                        >
-                          {isCurrent ? 'Це ваш тариф' : plan.ctaLabel}
-                        </Button>
-                        <p className="text-center text-[11px] leading-relaxed text-faint">{plan.ctaNote}</p>
-                      </div>
-                    </div>
-
-                    {/* Only what this plan adds. The heading says where the
-                        rest of it came from. */}
-                    <div className="flex flex-1 flex-col gap-3 border-t border-line px-7 py-6">
-                      <p className="ui-type-eyebrow">{planInheritanceLabel(plan.id)}</p>
-                      <ul className="flex flex-col gap-[10px]">
-                        {added.map(capability => (
-                          <li key={capability.id} className="flex gap-2.5">
-                            <Check size={15} className="mt-[2px] shrink-0 text-success" />
-                            <span className="min-w-0 text-[13px] leading-snug text-ink">{capability.label}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </Card>
-                </div>
-              );
-            })}
-          </div>
+          {/* The price list itself is `PlanCards`, and it is the same component
+              onboarding shows. Two hand-built copies of a price list disagreed
+              about what the product costs, which is what a copy always ends up
+              doing; the plans are data and the list that prints them is one
+              thing. Nothing about it is decided here — this screen only says
+              which plan is in force and what happens when another is picked. */}
+          <PlanCards
+            activePlanId={orgPlan}
+            activeLabel="Це ваш тариф"
+            onChoose={handleUpgradePlan}
+            busyPlanId={upgradingTo}
+          />
 
           <p className="text-[12px] leading-relaxed text-muted">
             Оплата ще не підключена — тариф можна перемкнути будь-коли й без карти.
@@ -4376,7 +4295,16 @@ export default function SettingsPage() {
 
 
   // ── Layout ───────────────────────────────────────────────────
-  const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin);
+  //
+  // «Тарифний план» carries the plan it would open. Which plan a workspace is
+  // on is the first thing anybody comes to that section to find out, and it
+  // took a click to learn it. The free one is red because it is the one with a
+  // ceiling somebody is going to meet.
+  const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin).map(item => (
+    item.id === 'billing'
+      ? { ...item, badge: planName(orgPlan), badgeAlert: orgPlan === DEFAULT_PLAN }
+      : item
+  ));
 
   const handleNavChange = async (id) => {
     const success = await handleSectionChange(id);

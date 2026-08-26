@@ -13,7 +13,7 @@
     "long-text"
   ],
   "totals": {
-    "components": 115,
+    "components": 116,
     "stateful": 104,
     "hover": 68,
     "focus": 68,
@@ -342,6 +342,7 @@
     "Pill": {
       "long-text": "children, label"
     },
+    "PlanCards": {},
     "PlanMark": {
       "long-text": "label"
     },
@@ -785,6 +786,9 @@
       "detail-layout",
       "variant-matrix",
       "states"
+    ],
+    "PlanCards": [
+      "surfaces"
     ],
     "PlanMark": [
       "badges"

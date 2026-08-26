@@ -1105,6 +1105,15 @@
     background: var(--color-danger-soft);
     color: var(--color-danger);
   }
+  /* The filled red beside `dark`'s filled black, for the one place a badge is a
+     pair: the plan a workspace is on, in the settings menu. A wash would not
+     read as the other half of that pair, and the fill is the ink rather than
+     the solid because this one carries a word — `danger-solid` is mixed to sit
+     under text, not behind it, and white on it is 3.7:1. */
+  .ui-pill[data-ui-pill-tone='danger-strong'] {
+    background: var(--color-danger);
+    color: var(--color-surface);
+  }
   .ui-pill[data-ui-pill-tone='info'] {
     background: var(--color-info-soft);
     color: var(--color-info);

@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 115,
-    "props": 859,
-    "documentedProps": 859,
+    "components": 116,
+    "props": 864,
+    "documentedProps": 864,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3046,7 +3046,7 @@
         {
           "name": "items",
           "default": "[]",
-          "type": "{id: string, label: string, icon?: React.ComponentType, count?: number}[]",
+          "type": "{id: string, label: string, icon?: React.ComponentType, badge?: string, badgeAlert?: boolean}[]",
           "values": [],
           "description": "The entries, in order."
         },
@@ -4435,6 +4435,7 @@
             "accent",
             "count",
             "danger",
+            "danger-strong",
             "dark",
             "info",
             "ink-subtle",
@@ -4463,6 +4464,47 @@
             "medium"
           ],
           "description": "Font weight."
+        }
+      ]
+    },
+    "PlanCards": {
+      "file": "src/components/ui/DataDisplay/PlanCards.jsx",
+      "summary": "The price list. One of them, and only one.",
+      "props": [
+        {
+          "name": "activeLabel",
+          "default": "'Це ваш тариф'",
+          "type": "string",
+          "values": [],
+          "description": "What its own button says — «Це ваш тариф», «Обрано»."
+        },
+        {
+          "name": "activePlanId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "The plan already in force, or already picked."
+        },
+        {
+          "name": "busyPlanId",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "The plan being switched to right now; its button spins."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "onChoose",
+          "default": "",
+          "type": "(planId: string) => void",
+          "values": [],
+          "description": "Fires with the plan whose button was pressed."
         }
       ]
     },

@@ -131,9 +131,14 @@ test('the variant matrix renders every component that can stand alone', () => {
 // Raised 112 → 113 by the table's row density, for the same reason: a row
 // carrying a face is `comfortable` and says so, a row of figures is `compact`
 // and says nothing, because that is what it gets by default.
+// Raised 113 → 114 because `Pill tone="info"` lost its last call site on
+// purpose. It was the blue badge over the most popular plan, and the price list
+// no longer marks that plan with a second colour — it carries a badge and
+// nothing else. The tone stays declared: blue is a status the product has, it
+// simply is not a thing to be in a price list.
 test('promoting a component to the kit does not orphan the variants it used', () => {
   assert.ok(
-    committed.totals.declaredUnused <= 113,
+    committed.totals.declaredUnused <= 114,
     `declaredUnused grew to ${committed.totals.declaredUnused}: a call site that evidenced a variant has gone out of the scan's view`,
   );
   for (const key of ['Input.composition.status-entry', 'Button.composition.status-submit', 'Dialog.size.status']) {

@@ -15,10 +15,23 @@
 //   1. The ceilings, as a table of numbers. Not «До 10» — a column of bare
 //      figures is compared down the row at a glance, and the word in front of
 //      each one is read three times and adds nothing. A plan that does not have
-//      something at all shows «–», and no ceiling shows «∞».
+//      something at all shows «–», and no ceiling says «Безліміт».
 //   2. What the plan adds, as «Все з Lite +» and then only the new lines.
 //      Repeating twelve shared features on every card makes the columns
 //      unreadable and buries the two lines that actually differ.
+//
+// ── What is allowed to be a ceiling ──────────────────────────────────────
+//
+// Only something this workspace can count on its own side. That rule removed
+// two rows written here as if a price list were free to invent them: «клієнти в
+// порталі», when the portal is a separate product with its own database and
+// this one has no client role at all, and «сховище файлів», when nothing here
+// measures a byte of what is uploaded. A ceiling nobody counts is not a plan,
+// it is a sentence on a page, and the first customer to test it finds that out
+// on our behalf.
+//
+// What is left is what the workspace itself holds and can therefore refuse:
+// projects, people, and the calls the AI is asked to read.
 //
 // ── The one rule that keeps this honest ──────────────────────────────────
 //
@@ -33,7 +46,7 @@
 
 export const DEFAULT_PLAN = 'free';
 
-/** Rendered by `planLimitRows`: `0` is «–», `Infinity` is «∞». */
+/** Rendered by `planLimitRows`: `0` is «–», `Infinity` is «Безліміт». */
 export const PLAN_LIMITS = [
   {
     id: 'projects',
@@ -42,9 +55,7 @@ export const PLAN_LIMITS = [
     enforcedAt: 'src/app/api/projects/route.js',
   },
   { id: 'members', label: 'Учасники команди', enforced: false },
-  { id: 'portalClients', label: 'Клієнти в порталі', enforced: false },
-  { id: 'aiCalls', label: 'Розбір дзвінків / місяць', enforced: false },
-  { id: 'storageGb', label: 'Сховище файлів', unit: 'ГБ', enforced: false },
+  { id: 'aiCalls', label: 'Розбір дзвінків / міс', enforced: false },
 ];
 
 // Deliberately not a limit: the number of tasks.
@@ -55,9 +66,8 @@ export const PLAN_LIMITS = [
 // does not upgrade, it stops writing tasks down, and then the tracker is wrong
 // about what the team is doing, which is worse for us than the free plan is.
 //
-// What is capped instead is what costs us money as it grows (files, AI calls)
-// or what marks the customer growing into a paying one (projects, people,
-// clients in the portal).
+// What is capped instead is what the workspace can count: the projects and the
+// people it holds, and the recordings it is asked to send off for analysis.
 
 /** What a plan adds over the one before it. Ids are stable; labels are not. */
 export const PLAN_CAPABILITIES = [
@@ -140,36 +150,41 @@ export const PLAN_CAPABILITIES = [
   },
 ];
 
+// Hryvnia, and prices shaped like prices. The three plans carried $0/$9/$19 —
+// a currency nobody here is billed in, at figures that read as a rounding of
+// something rather than as what the product costs. `currencyLabel` holds the
+// unit so the figure itself stays a bare number in the largest type on the
+// card, which is what makes the three of them comparable across the row.
 export const PLANS = [
   {
     id: 'free',
     name: 'Free',
     tagline: 'Для тесту й першої команди',
     priceLabel: '0',
-    currencyLabel: '$ / міс',
+    currencyLabel: 'грн / міс',
     ctaLabel: 'Почати',
     ctaNote: 'Без картки й без строку',
-    limits: { projects: 3, members: 5, portalClients: 0, aiCalls: 0, storageGb: 1 },
+    limits: { projects: 3, members: 5, aiCalls: 0 },
   },
   {
     id: 'lite',
     name: 'Lite',
     tagline: 'Коли робочий простір показують клієнтам',
-    priceLabel: '9',
-    currencyLabel: '$ / міс',
+    priceLabel: '499',
+    currencyLabel: 'грн / міс',
     ctaLabel: 'Спробувати',
     ctaNote: 'Оплата ще не підключена',
-    limits: { projects: 10, members: 15, portalClients: 10, aiCalls: 10, storageGb: 20 },
+    limits: { projects: 10, members: 15, aiCalls: 10 },
   },
   {
     id: 'pro',
     name: 'Pro',
     tagline: 'Для агенцій і команд, що ростуть',
-    priceLabel: '19',
-    currencyLabel: '$ / міс',
+    priceLabel: '999',
+    currencyLabel: 'грн / міс',
     ctaLabel: 'Спробувати',
     ctaNote: 'Оплата ще не підключена',
-    limits: { projects: Infinity, members: Infinity, portalClients: Infinity, aiCalls: 50, storageGb: 100 },
+    limits: { projects: Infinity, members: Infinity, aiCalls: 50 },
     recommended: true,
   },
 ];
@@ -183,21 +198,31 @@ export function planById(value) {
   return PLANS.find(plan => plan.id === id);
 }
 
+/** The plan's own name, for a badge that says which one a workspace is on. */
+export function planName(value) {
+  return planById(value).name;
+}
+
 export function planLimit(value, key) {
   const limit = planById(value).limits[key];
   return typeof limit === 'number' ? limit : Infinity;
 }
 
 /**
- * A number, «–» or «∞» — never «До 10».
+ * A number, «–» or «Безліміт» — never «До 10».
  *
  * A column of bare figures is compared down the row at a glance; a word in
  * front of every one of them is read three times and says the same thing each
  * time.
+ *
+ * No ceiling is a word rather than «∞». That glyph is not in Inter, so every
+ * screen fell back to whatever font on the machine had one: it came out thin,
+ * a different size from the digits beside it and sitting off their baseline —
+ * exactly the wobble a column of figures exists to avoid.
  */
 export function planLimitValue(value, key) {
   const limit = planLimit(value, key);
-  if (limit === Infinity) return '∞';
+  if (limit === Infinity) return 'Безліміт';
   if (limit === 0) return '–';
   return String(limit);
 }
@@ -207,7 +232,6 @@ export function planLimitRows(value) {
   return PLAN_LIMITS.map(limit => ({
     id: limit.id,
     label: limit.label,
-    unit: limit.unit || '',
     value: planLimitValue(value, limit.id),
     absent: planLimit(value, limit.id) === 0,
   }));
@@ -262,4 +286,16 @@ export function planAddedCapabilities(value) {
 export function planInheritanceLabel(value) {
   const earlier = previousPlan(value);
   return earlier ? `Все з ${earlier.name} +` : 'Що входить';
+}
+
+/**
+ * A ceiling as a number a Firestore document can hold. `Infinity` is not a
+ * value that may be written, so no ceiling is stored as `null` — which is what
+ * every reader of the organization's `limits` field already treats as
+ * unlimited. Onboarding used to decide this with `plan === 'free' ? 3 : null`,
+ * which handed Lite the unlimited copy of a ceiling the registry sets at ten.
+ */
+export function storedPlanLimit(value, key) {
+  const limit = planLimit(value, key);
+  return Number.isFinite(limit) ? limit : null;
 }

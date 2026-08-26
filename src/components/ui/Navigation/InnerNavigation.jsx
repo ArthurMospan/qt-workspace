@@ -1,13 +1,24 @@
 'use client';
 import React from 'react';
 import Button from '../Button';
+import Pill from '../DataDisplay/Pill';
 
 /**
  * The vertical menu inside a `SidebarLayout` rail — settings sections, team
  * views. Page-level navigation is the workspace sidebar; this is navigation
  * within one page.
  *
- * @param {{id: string, label: string, icon?: React.ComponentType, count?: number}[]} props.items The entries, in order.
+ * An entry may carry a `badge`: the one fact about that section worth knowing
+ * before opening it — which plan the workspace is on, above all. It is drawn
+ * beside the row rather than inside the button's label, because `Button` puts
+ * its children in a single span and a trailing mark has to reach the right edge
+ * on its own. `pointer-events-none` keeps the whole row one click target.
+ *
+ * `badgeAlert` says the badge is the one worth looking at — a plan with a
+ * ceiling somebody will meet — and the kit decides what that looks like. The
+ * caller used to pass the tone itself, which put a colour decision on a page.
+ *
+ * @param {{id: string, label: string, icon?: React.ComponentType, badge?: string, badgeAlert?: boolean}[]} props.items The entries, in order.
  * @param {string} props.activeId Id of the current entry.
  * @param {(id: string) => void} props.onChange Fires with the newly selected id.
  * @param {string} props.className Placement in the parent only.
@@ -40,23 +51,33 @@ export function InnerNavigation({
                 const Icon = item.icon;
                 const active = activeId === item.id;
                 return (
-                  <Button
-                    key={item.id}
-                    onClick={() => onChange?.(item.id)}
-                    style="ghost"
-                    color={item.danger ? 'red' : 'dark'}
-                    size="md"
-                    icon={Icon}
-                    className={`w-full justify-start transition-colors ${
-                      active
-                        ? '!bg-line !text-ink !font-bold !border-transparent'
-                        : item.danger
-                        ? 'font-medium text-danger hover:bg-danger-soft'
-                        : 'font-medium text-muted hover:bg-line/50 hover:text-ink'
-                    }`}
-                  >
-                    {item.label}
-                  </Button>
+                  <div key={item.id} className="relative">
+                    <Button
+                      onClick={() => onChange?.(item.id)}
+                      style="ghost"
+                      color={item.danger ? 'red' : 'dark'}
+                      size="md"
+                      icon={Icon}
+                      className={`w-full justify-start transition-colors ${
+                        active
+                          ? '!bg-line !text-ink !font-bold !border-transparent'
+                          : item.danger
+                          ? 'font-medium text-danger hover:bg-danger-soft'
+                          : 'font-medium text-muted hover:bg-line/50 hover:text-ink'
+                      }`}
+                    >
+                      {item.label}
+                    </Button>
+                    {item.badge && (
+                      <Pill
+                        size="sm"
+                        tone={item.badgeAlert ? 'danger-strong' : 'dark'}
+                        className="pointer-events-none absolute right-[10px] top-1/2 -translate-y-1/2"
+                      >
+                        {item.badge}
+                      </Pill>
+                    )}
+                  </div>
                 );
               })}
           </div>
