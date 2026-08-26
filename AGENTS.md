@@ -87,5 +87,6 @@ above — a new file is a place for the next reader not to look.
 - Масовими не робляться дії, що залежать від контексту однієї задачі: перенесення між проєктами, зміна ієрархії, створення звʼязків, списання часу, редагування опису чи коментарів. `ISSUE_BULK_ACTIONS` — єдиний реєстр того, що є масовим, і він живить UI, серверну валідацію й довідку одночасно.
 
 - Never commit `.env*`, service-account keys, build output, logs, or local agent scratch data.
+- A scratch worktree that links this checkout's `node_modules` (a Windows junction, to run the generators against a clean tree) must have that link removed before the worktree is — `cmd /c rmdir "<worktree>\node_modules"` deletes the link, `git worktree remove --force` follows it and deletes the real `node_modules` for everyone working in this directory.
 - Keep durable setup and architecture documentation under `docs/`. Do not add generated reports, session notes, or temporary plans to the repository root.
 - Preserve user changes and verify references before deleting source files.
