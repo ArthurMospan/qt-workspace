@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Check } from 'lucide-react';
+import { PlanCrownIcon } from '@/lib/design/icons';
 import Card from '@/components/ui/Layout/Card';
 import Button from '@/components/ui/Button';
 import Pill from '@/components/ui/DataDisplay/Pill';
@@ -44,6 +45,8 @@ import {
  * @param {string} props.activeLabel What its own button says — «Це ваш тариф», «Обрано».
  * @param {(planId: string) => void} props.onChoose Fires with the plan whose button was pressed.
  * @param {string} props.busyPlanId The plan being switched to right now; its button spins.
+ * @param {string[]} props.lockedPlanIds Plans this screen may not choose — the second free workspace on one account.
+ * @param {string} props.lockedLabel What a locked plan's button says instead of its own label.
  * @param {string} props.className Placement in the parent only.
  */
 export default function PlanCards({
@@ -51,16 +54,24 @@ export default function PlanCards({
   activeLabel = 'Це ваш тариф',
   onChoose,
   busyPlanId = '',
+  lockedPlanIds = [],
+  lockedLabel = 'Недоступно',
   className = '',
 }) {
   const busy = Boolean(busyPlanId);
 
   return (
     <div
-      className={`grid gap-x-5 gap-y-5 lg:grid-cols-3 lg:grid-rows-[auto_auto_auto_auto_auto] lg:gap-y-0 ${className}`}
+      // A tighter gutter than the rest of the product uses, on purpose: three
+      // cards in a 760px reading column had 184px of text inside each once the
+      // gutters and the padding were taken out, and «Активні проєкти … 10» does
+      // not fit that. The gutter and the padding are the only two places that
+      // width can come from without moving the column itself.
+      className={`grid gap-x-3 gap-y-4 lg:grid-cols-3 lg:grid-rows-[auto_auto_auto_auto_auto] lg:gap-y-0 ${className}`}
     >
       {PLANS.map(plan => {
         const isActive = plan.id === activePlanId;
+        const isLocked = lockedPlanIds.includes(plan.id);
         const added = planAddedCapabilities(plan.id);
         return (
           <Card
@@ -71,33 +82,42 @@ export default function PlanCards({
               isActive ? 'border-ink' : ''
             }`}
           >
-            {/* Name, and who the plan is for. The badge sits beside the name
-                rather than straddling the top edge, and it is the only mark the
-                most popular plan gets: a card in a second colour tells somebody
-                which one we would like them to buy, not which one fits. */}
-            <div className="flex items-start justify-between gap-3 px-7 pt-7 pb-6">
-              <div className="min-w-0">
+            {/* Name and badge on one line, the tagline on its own underneath.
+                They used to share a flex row with the badge, which meant the
+                badge stole width from the tagline for the tagline's whole
+                height — so the one card that carries a badge was also the one
+                whose sentence was squeezed into a column two words wide.
+
+                The badge is black. It is the only mark the most popular plan
+                gets: a card in a second colour tells somebody which one we
+                would like them to buy, not which one fits. */}
+            <div className="flex flex-col px-5 pt-6 pb-5">
+              <div className="flex items-center justify-between gap-2">
                 <h3 className="ui-type-detail-title text-ink">{plan.name}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-muted">{plan.tagline}</p>
+                {plan.recommended && <Pill size="md" tone="dark">Популярний</Pill>}
               </div>
-              {plan.recommended && (
-                <Pill size="md" tone="ink-subtle" className="mt-[3px]">Популярний</Pill>
-              )}
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">{plan.tagline}</p>
             </div>
 
-            <p className="flex items-baseline gap-2 px-7 pb-6">
-              <span className="text-[36px] font-black leading-none tracking-tight text-ink">
+            <p className="flex items-baseline gap-2 px-5 pb-5">
+              <span className="text-[34px] font-black leading-none tracking-tight text-ink">
                 {plan.priceLabel}
               </span>
               <span className="text-[13px] font-medium text-muted">{plan.currencyLabel}</span>
             </p>
 
             {/* The ceilings. Label left, figure right, so the three cards read
-                as one table across the row. */}
-            <ul className="flex flex-col gap-[10px] px-7 pb-6">
+                as one table across the row.
+
+                Both halves are ink. The labels used to be `text-muted` while
+                the list of features below was ink, which put the quietest type
+                on the card on the three lines somebody actually compares
+                across it and the loudest on the lines that are the same in
+                every column. */}
+            <ul className="flex flex-col gap-[10px] px-5 pb-5">
               {planLimitRows(plan.id).map(limit => (
-                <li key={limit.id} className="flex items-baseline justify-between gap-4 text-[13px]">
-                  <span className={`min-w-0 ${limit.absent ? 'text-faint' : 'text-muted'}`}>
+                <li key={limit.id} className="flex items-baseline justify-between gap-3 text-[13px]">
+                  <span className={`min-w-0 ${limit.absent ? 'text-faint' : 'text-ink'}`}>
                     {limit.label}
                   </span>
                   <span className={`shrink-0 font-bold tabular-nums ${limit.absent ? 'text-faint' : 'text-ink'}`}>
@@ -107,16 +127,21 @@ export default function PlanCards({
               ))}
             </ul>
 
-            <div className="flex flex-col gap-2 px-7 pb-7">
+            <div className="flex flex-col gap-2 px-5 pb-6">
+              {/* The plan already in force is an outline, not a dimmed fill.
+                  A secondary button at 50% opacity is the product's way of
+                  saying «this is broken or not yours»; what this says is «this
+                  is the one you are on», which is a state worth reading. */}
               <Button
                 onClick={() => onChoose?.(plan.id)}
-                style={isActive ? 'secondary' : plan.recommended ? 'primary' : 'secondary'}
+                style={isActive ? 'outline' : plan.recommended ? 'primary' : 'secondary'}
                 size="lg"
-                disabled={isActive || busy}
+                icon={isLocked ? PlanCrownIcon : undefined}
+                disabled={isActive || isLocked || busy}
                 loading={busyPlanId === plan.id}
                 className="w-full"
               >
-                {isActive ? activeLabel : plan.ctaLabel}
+                {isLocked ? lockedLabel : isActive ? activeLabel : plan.ctaLabel}
               </Button>
               <p className="text-center text-[11px] leading-relaxed text-faint">{plan.ctaNote}</p>
             </div>
@@ -125,13 +150,13 @@ export default function PlanCards({
                 came from. The tick is the product's own ink: a green one is a
                 colour the workspace uses to mean «done», spent here on «this
                 line is in this plan», which it is not. */}
-            <div className="flex flex-col gap-3 border-t border-line px-7 py-6">
+            <div className="flex flex-col gap-3 border-t border-line px-5 py-5">
               <p className="ui-type-eyebrow">{planInheritanceLabel(plan.id)}</p>
               <ul className="flex flex-col gap-[10px]">
                 {added.map(capability => (
-                  <li key={capability.id} className="flex gap-2.5">
-                    <Check size={15} className="mt-[2px] shrink-0 text-ink" />
-                    <span className="min-w-0 text-[13px] leading-snug text-ink">{capability.label}</span>
+                  <li key={capability.id} className="flex gap-2">
+                    <Check size={14} className="mt-[3px] shrink-0 text-ink-soft" />
+                    <span className="min-w-0 text-[13px] leading-snug text-ink-soft">{capability.label}</span>
                   </li>
                 ))}
               </ul>

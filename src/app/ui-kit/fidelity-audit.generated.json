@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 118,
-      "used": 118,
+      "components": 119,
+      "used": 119,
       "unused": 0,
-      "covered": 113,
+      "covered": 114,
       "uncovered": 0,
       "routes": 12,
-      "previews": 149,
+      "previews": 150,
       "internal": 5,
       "unlisted": 0
     },
@@ -71,7 +71,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/AuthLayout.jsx:131",
+      "location": "src/components/AuthLayout.jsx:140",
       "className": "",
       "text": "Підтримка",
       "childElements": [],
@@ -467,7 +467,7 @@
   "repeatedNativeFingerprints": [],
   "reviewedNativeControls": [
     {
-      "location": "src/components/AuthLayout.jsx:131",
+      "location": "src/components/AuthLayout.jsx:140",
       "tag": "button",
       "context": "auth-footer-support"
     },
@@ -513,7 +513,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:343",
+      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:350",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -543,22 +543,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:532",
+      "location": "src/app/(app)/settings/page.js:539",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:552",
+      "location": "src/app/(app)/settings/page.js:559",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:596",
+      "location": "src/app/(app)/settings/page.js:603",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:715",
+      "location": "src/app/(app)/settings/page.js:722",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },

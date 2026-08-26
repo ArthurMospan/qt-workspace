@@ -76,22 +76,23 @@
   --color-info-solid:     #3b82f6;
   --color-info-soft:      #eff6ff;
 
-  /* ── The plan gold ───────────────────────────────────────────────────
+  /* ── The plan violet ─────────────────────────────────────────────────
      One colour, for one meaning: «this is on another plan». It is not a status
      — nothing failed, nothing is late, nothing needs care — and it is not the
-     brand either, because a crown drawn in the product's own ink is just a
-     black glyph among black glyphs and says nothing. It is the only warm
-     colour the workspace has, which is what makes a crown findable on a screen
-     that is otherwise ink and grey.
+     brand either, because a crown drawn in the product's own ink is a black
+     glyph among black glyphs and says nothing.
 
-     Three roles, the same three the statuses take, and for the same reason. The
-     gold is the crown itself, which is a graphic and clears 3:1 on white at
-     3.25. `plan-ink` is anything that has to be read — the strip's heading, a
-     line of small print — and clears AA at 5.4 because the gold does not.
-     `plan-soft` is the wash the two of them sit on. */
-  --color-plan:       #b8860b;
-  --color-plan-ink:   #8a6508;
-  --color-plan-soft:  #fdf6e6;
+     It was a gold, `#b8860b`, and gold is the obvious choice for a crown and
+     the wrong one here: at fourteen pixels dark goldenrod reads brown, not
+     gold, and at 3.25:1 on white it clears the bar for a graphic and misses it
+     for text — so it needed a second, darker value for anything that had to be
+     read. Violet is one value for both. It clears AA at 5.7:1, so the crown,
+     the badge and the sentence beside them are the same colour, and it is the
+     only colour in the workspace that means nothing else.
+
+     Two roles, not three: the colour, and the wash it sits on. */
+  --color-plan:       #7c3aed;
+  --color-plan-soft:  #f5f3ff;
 
   /* A fourth role, for the one surface the three above cannot serve: dark.
      The ink clears AA on white and the solid is mixed to read on white, so on

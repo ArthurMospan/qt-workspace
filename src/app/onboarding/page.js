@@ -10,20 +10,23 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { PlanCards } from '@/components/ui';
-import { DEFAULT_PLAN, storedPlanLimit } from '@/lib/utils/plans.mjs';
+import { DEFAULT_PLAN, normalizePlan, storedPlanLimit } from '@/lib/utils/plans.mjs';
 import { normalizeTimeZone } from '@/lib/utils/timeZone.mjs';
 
 function OnboardingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isNewOrg = searchParams.get('new') === 'true';
-  const { currentUser, activeOrg, activeOrgId, setActiveOrgId, switchOrg, orgRole, authLoading, orgLoading } = useAppContext();
+  const { currentUser, activeOrg, activeOrgId, setActiveOrgId, switchOrg, orgRole, authLoading, orgLoading, allOrgs, orgRoles } = useAppContext();
 
   const [step, setStep] = useState(0); // 0: Name, 1: Plan
   const [saving, setSaving] = useState(false);
   const [orgName, setOrgName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState(DEFAULT_PLAN);
+  // Which plan is being created right now, if any. There is no «selected»
+  // state any more: the card's own button is the choice and the action at
+  // once, so nothing is held between them.
+  const [creatingPlan, setCreatingPlan] = useState('');
 
   // Auto-fill org name
   useEffect(() => {
@@ -68,13 +71,30 @@ function OnboardingPageContent() {
     );
   }
 
+  // One free workspace per account. The second one somebody creates is a second
+  // workspace, and a free plan is what the first is for.
+  //
+  // This is the screen saying so, not the product enforcing it: the organization
+  // document is still written straight from the browser, so the authoritative
+  // version of this rule needs organization creation to become a server route.
+  // Until it is, this is a locked button and nothing more, and the registry does
+  // not claim otherwise.
+  const ownsFreeWorkspace = (allOrgs || []).some(organization => (
+    orgRoles?.[organization.id] === 'owner'
+    && normalizePlan(organization.plan) === DEFAULT_PLAN
+    && organization.id !== activeOrgId
+  ));
+  const freeTaken = isNewOrg && ownsFreeWorkspace;
+
   const handleNext = () => {
     if (orgName.trim()) setStep(1);
   };
 
-  const handleFinish = async () => {
+  const handleFinish = async (planId) => {
+    const selectedPlan = normalizePlan(planId);
     if (!orgName.trim() || saving) return;
     setSaving(true);
+    setCreatingPlan(selectedPlan);
     const uid = currentUser?.id || currentUser?.uid;
     const isFreshOrganization = isNewOrg || !activeOrgId;
     const orgId = isFreshOrganization ? `org_${uid?.slice(0, 8)}_${Date.now()}` : activeOrgId;
@@ -144,6 +164,7 @@ function OnboardingPageContent() {
     } catch (err) {
       console.error('[Onboarding] saveOrg error:', err);
       setSaving(false);
+      setCreatingPlan('');
     }
   };
 
@@ -208,7 +229,9 @@ function OnboardingPageContent() {
               <div className="w-full text-center sm:px-24">
                 <h1 className="mb-[6px] text-[28px] font-black tracking-tight text-white sm:text-[32px]">Оберіть тариф</h1>
                 <p className="text-white/50 text-[15px] leading-relaxed">
-                  Почніть безкоштовно або розблокуйте весь потенціал {orgName}.
+                  {freeTaken
+                    ? 'Безкоштовний робочий простір на акаунті вже є — цей буде на платному тарифі.'
+                    : `Оберіть тариф — і ${orgName} відкриється одразу. Змінити його можна будь-коли.`}
                 </p>
               </div>
             </div>
@@ -220,31 +243,16 @@ function OnboardingPageContent() {
                 person met that on the day they signed up and a different one
                 the first time they went looking for the bill. */}
             <PlanCards
-              activePlanId={selectedPlan}
-              activeLabel="Обрано"
-              onChoose={setSelectedPlan}
-              className="mb-8"
+              activePlanId=""
+              onChoose={handleFinish}
+              busyPlanId={creatingPlan}
+              lockedPlanIds={freeTaken ? ['free'] : []}
+              lockedLabel="Уже використано"
+              className="mb-6"
             />
 
-            <div className="w-full flex justify-center">
-              <button
-                onClick={handleFinish}
-                disabled={saving}
-                className="w-full max-w-[320px] flex items-center justify-center gap-3 bg-white text-[#1f1f1f] py-[16px] px-6 rounded-[16px] text-[15px] font-bold hover:bg-[#e9e9e9] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all shadow-[0_4px_20px_rgba(255,255,255,0.1)]"
-              >
-                {saving ? (
-                  <div className="w-[20px] h-[20px] border-[2px] border-[#1f1f1f]/20 border-t-[#1f1f1f] rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Продовжити
-                  </>
-                )}
-              </button>
-            </div>
-            
-            {/* Disclaimer */}
-            <p className="mt-[32px] text-white/30 text-[12px] leading-relaxed text-center">
-              Ви зможете змінити тариф в будь-який момент в Налаштуваннях.
+            <p className="text-white/30 text-[12px] leading-relaxed text-center">
+              Оплата ще не підключена. Тариф можна змінити будь-коли в Налаштуваннях.
             </p>
           </div>
         )}

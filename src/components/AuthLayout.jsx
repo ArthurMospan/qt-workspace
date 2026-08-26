@@ -115,9 +115,18 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 w-full flex flex-col items-center justify-center px-4 overflow-y-auto custom-scrollbar relative z-10">
-          {children}
+        {/* Main Content
+            `my-auto` on the child, not `justify-center` on the scroller. A
+            centred flex column that overflows pushes its first child *above*
+            the scroll origin, and there is no scroll position that brings it
+            back — so the top of anything taller than this card was cut off and
+            unreachable. That is what the price list on «Оберіть тариф» ran
+            into. Auto margins centre what fits and collapse to zero for what
+            does not. */}
+        <div className="flex-1 w-full flex flex-col items-center px-4 overflow-y-auto custom-scrollbar relative z-10">
+          <div className="my-auto flex w-full flex-col items-center">
+            {children}
+          </div>
         </div>
 
         {/* Footer. Wraps rather than scrolls: on a phone this is five short

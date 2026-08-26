@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 118,
-    "props": 877,
-    "documentedProps": 877,
+    "components": 119,
+    "props": 882,
+    "documentedProps": 882,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -3047,7 +3047,7 @@
         {
           "name": "items",
           "default": "[]",
-          "type": "{id: string, label: string, icon?: React.ComponentType, badge?: string, badgeAlert?: boolean}[]",
+          "type": "{id: string, label: string, icon?: React.ComponentType, badge?: string, badgeAlert?: boolean, locked?: boolean}[]",
           "values": [],
           "description": "The entries, in order."
         },
@@ -4501,6 +4501,20 @@
           "description": "Placement in the parent only."
         },
         {
+          "name": "lockedLabel",
+          "default": "'Недоступно'",
+          "type": "string",
+          "values": [],
+          "description": "What a locked plan's button says instead of its own label."
+        },
+        {
+          "name": "lockedPlanIds",
+          "default": "[]",
+          "type": "string[]",
+          "values": [],
+          "description": "Plans this screen may not choose — the second free workspace on one account."
+        },
+        {
           "name": "onChoose",
           "default": "",
           "type": "(planId: string) => void",
@@ -4509,9 +4523,29 @@
         }
       ]
     },
+    "PlanGate": {
+      "file": "src/components/ui/Feedback/PlanGate.jsx",
+      "summary": "A whole screen the plan does not include, and what stands there instead. The crown is the mark for a control that will not move.",
+      "props": [
+        {
+          "name": "capabilityId",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "One of `PLAN_CAPABILITIES`."
+        },
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        }
+      ]
+    },
     "PlanLimitBanner": {
       "file": "src/components/ui/Feedback/PlanLimitBanner.jsx",
-      "summary": "The strip that says a ceiling has been met, across the top of the workspace. A crown beside a control answers «чому» to somebody already reaching for that control.",
+      "summary": "The strip that says a ceiling has run out, across the top of the workspace. A crown beside a control answers «чому» to somebody already reaching for that control.",
       "props": [
         {
           "name": "className",
@@ -4525,14 +4559,21 @@
           "default": "0",
           "type": "number",
           "values": [],
-          "description": "How many further ceilings are also met, named in one clause."
+          "description": "How many further ceilings are also full, named in one clause."
         },
         {
           "name": "notice",
           "default": "",
-          "type": "{title: string, hint: string}",
+          "type": "{title: string, reading?: string}",
           "values": [],
           "description": "What ran out; from `planLimitNotice`."
+        },
+        {
+          "name": "onDismiss",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Puts it away; absent means it cannot be dismissed."
         },
         {
           "name": "onOpen",

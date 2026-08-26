@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 118,
-    "stateful": 104,
+    "components": 119,
+    "stateful": 105,
     "hover": 68,
     "focus": 68,
     "disabled": 35,
     "loading": 7,
     "error": 6,
-    "long-text": 73
+    "long-text": 74
   },
   "components": {
     "Alert": {
@@ -343,6 +343,9 @@
       "long-text": "children, label"
     },
     "PlanCards": {},
+    "PlanGate": {
+      "long-text": "children"
+    },
     "PlanLimitBanner": {},
     "PlanMark": {
       "long-text": "label"
@@ -791,6 +794,9 @@
     ],
     "PlanCards": [
       "surfaces"
+    ],
+    "PlanGate": [
+      "feedback"
     ],
     "PlanLimitBanner": [
       "feedback"

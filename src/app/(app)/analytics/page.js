@@ -32,6 +32,10 @@ import { isDueDateOverdue } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { can } from '@/lib/utils/can';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
+import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
+import { PlanCrownIcon } from '@/lib/design/icons';
+import { planAllows } from '@/lib/utils/plans.mjs';
+import { PlanGate } from '@/components/ui';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { calendarEventOccurrenceKey } from '@/lib/utils/calendarEventNavigation.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
@@ -479,6 +483,12 @@ export default function WorkspaceAnalyticsPage() {
   // Through the matrix, not beside it: a hand-rolled role comparison is how the
   // documented permission and the shipped one drift apart.
   const canSeeBilling = can(orgRole, 'manage:finance');
+  // «Виставлення рахунків і ставки» has been on the price list as paid since it
+  // was written, and the tab was open on every plan. The role decides whether
+  // the tab exists at all; the plan decides whether it opens.
+  const { plan: orgPlan } = usePlanLimits();
+  const invoicesAllowed = planAllows(orgPlan, 'invoices');
+  const openPlanUpgrade = useWorkspaceStore(state => state.openPlanUpgrade);
   // Minutes are not money. Every record behind this table is already readable
   // by anyone on the project — the worklog is part of the task, exactly as in
   // Jira — so hiding the member selector never protected anything; it only made
@@ -612,6 +622,12 @@ export default function WorkspaceAnalyticsPage() {
   ]);
 
   const changeActiveTab = useCallback(nextTab => {
+    // The crown opens the price list rather than the tab: the tab would open on
+    // a wall, and the click that reached it already knew.
+    if (nextTab === 'billing' && !invoicesAllowed) {
+      openPlanUpgrade({ capabilityId: 'invoices' });
+      return;
+    }
     const safeTab = analyticsTabParam(nextTab, { billing: canSeeBilling });
     setActiveTab(safeTab);
     if (!urlReady || typeof window === 'undefined') return;
@@ -622,7 +638,7 @@ export default function WorkspaceAnalyticsPage() {
     if (`${window.location.pathname}${window.location.search}` !== href) {
       window.history.pushState(null, '', href);
     }
-  }, [canSeeBilling, pathname, urlReady]);
+  }, [canSeeBilling, invoicesAllowed, openPlanUpgrade, pathname, urlReady]);
 
   // Which stretch of time this screen is currently about — and therefore how
   // much of `timeLogs` it is allowed to read. «Табель» owns a week or a month
@@ -917,7 +933,11 @@ export default function WorkspaceAnalyticsPage() {
     { id: 'timesheet', label: 'Табель', icon: Clock },
     { id: 'velocity', label: 'Продуктивність', icon: Zap },
     { id: 'workload', label: 'Команда', icon: Users },
-    ...(canSeeBilling ? [{ id: 'billing', label: 'Рахунок', icon: Receipt }] : []),
+    ...(canSeeBilling ? [{
+      id: 'billing',
+      label: 'Рахунок',
+      icon: invoicesAllowed ? Receipt : PlanCrownIcon,
+    }] : []),
   ];
 
   // Рахунок — один конкретний проєкт
@@ -1178,6 +1198,7 @@ export default function WorkspaceAnalyticsPage() {
         )}
 
         {activeTab === 'billing' && canSeeBilling && (
+          <PlanGate capabilityId="invoices">
           <BillingTab
             issues={billingIssues}
             events={calendarEvents}
@@ -1185,6 +1206,7 @@ export default function WorkspaceAnalyticsPage() {
             project={billingProject}
             projectId={billingProject?.id}
           />
+          </PlanGate>
         )}
         </>
         )}

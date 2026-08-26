@@ -54,7 +54,7 @@ import {
   UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
+import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -157,6 +157,13 @@ const NAV = [
   { id: 'archives',      label: 'Архів',            icon: Archive,       group: 'Інше' },
   { id: 'danger',        label: 'Видалення даних',  icon: Shield,        group: 'Інше', danger: false, adminOnly: true },
 ];
+
+// Which sections belong to the plan rather than to the role. Both have been
+// sold as paid since the price list existed; neither was ever gated.
+const NAV_CAPABILITIES = {
+  integrations: 'integrations',
+  migration: 'data-import',
+};
 
 // ── Primitives ───────────────────────────────────────────────────────
 // Toggle removed - using ToggleSwitch from UI Kit
@@ -3208,6 +3215,7 @@ export default function SettingsPage() {
               : 'Перенесіть робочі проєкти та історію команди у QuickTeam'}
             backLabel={migrationProvider ? 'Усі джерела' : ''}
           >
+            <PlanGate capabilityId="data-import">
             <DataMigrationSettings
               organizationId={activeOrgId}
               currentUserId={currentUser?.id || currentUser?.uid || ''}
@@ -3218,6 +3226,7 @@ export default function SettingsPage() {
               selectedProviderId={migrationProvider}
               onSelectProvider={setMigrationProvider}
             />
+            </PlanGate>
           </Section>
         );
       }
@@ -3320,6 +3329,7 @@ export default function SettingsPage() {
             backLabel="Усі інтеграції"
             rightAction={saveButton}
           >
+            <PlanGate capabilityId="integrations">
 
             {integrationDetail === 'quickteam-plus' && <IntegrationCard
               title="QuickTeam+"
@@ -3511,6 +3521,7 @@ export default function SettingsPage() {
                 </IntegrationNote>
               )}
             </IntegrationCard>}
+            </PlanGate>
           </Section>
         );
       }
@@ -4312,13 +4323,31 @@ export default function SettingsPage() {
   // on is the first thing anybody comes to that section to find out, and it
   // took a click to learn it. The free one is red because it is the one with a
   // ceiling somebody is going to meet.
-  const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin).map(item => (
-    item.id === 'billing'
-      ? { ...item, badge: planName(orgPlan), badgeAlert: orgPlan === DEFAULT_PLAN }
-      : item
-  ));
+  //
+  // Two of these sections are the plan's, not the role's. «Інтеграції» and
+  // «Перенесення даних» have been on the price list as paid since before any of
+  // this, and they were open on Free with nothing marking them — the rail is
+  // where somebody decides which of eleven entries to open, so the crown has to
+  // be there rather than only inside the section.
+  const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin).map(item => {
+    if (item.id === 'billing') {
+      return { ...item, badge: planName(orgPlan), badgeAlert: orgPlan === DEFAULT_PLAN };
+    }
+    const capability = NAV_CAPABILITIES[item.id];
+    if (capability && !planAllows(orgPlan, capability)) return { ...item, locked: true };
+    return item;
+  });
 
   const handleNavChange = async (id) => {
+    // A locked section opens the price list instead of itself. Letting it open
+    // and putting the wall inside would be a click spent to be told no; the
+    // crown on the row said so already, and this is what the crown does
+    // everywhere else in the product.
+    const capability = NAV_CAPABILITIES[id];
+    if (capability && !planAllows(orgPlan, capability)) {
+      openPlanUpgrade({ capabilityId: capability });
+      return;
+    }
     const success = await handleSectionChange(id);
     if (success) setMobilePane('content');
   };

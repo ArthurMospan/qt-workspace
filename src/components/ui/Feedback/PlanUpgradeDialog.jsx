@@ -46,8 +46,8 @@ export default function PlanUpgradeDialog({
     >
       <div className="flex flex-col gap-5">
         {notice?.reading ? (
-          <p className="flex items-center gap-2 rounded-[12px] bg-plan-soft px-4 py-3 text-[13px] font-bold text-plan-ink">
-            <PlanCrownIcon size={15} className="shrink-0 text-plan" aria-hidden />
+          <p className="flex items-center gap-2 rounded-[12px] bg-plan-soft px-4 py-3 text-[13px] font-bold text-plan">
+            <PlanCrownIcon size={15} className="shrink-0" aria-hidden />
             Використано {notice.reading}
           </p>
         ) : null}
@@ -57,9 +57,20 @@ export default function PlanUpgradeDialog({
           onChoose={onChoose}
           busyPlanId={busyPlanId}
         />
-        <p className="text-[12px] leading-relaxed text-muted">
-          Оплата ще не підключена — тариф можна перемкнути будь-коли й без карти.
-        </p>
+        <div className="flex flex-col gap-1">
+          {/* The way out that costs nothing, said here rather than in the strip
+              across the workspace. It is real — archiving a project takes it
+              off every board, every picker and every report, and bringing it
+              back is checked against the same ceiling — so it belongs on the
+              screen. It just does not belong in the first sentence a workspace
+              says about its own limit. */}
+          {notice?.hint ? (
+            <p className="text-[12px] leading-relaxed text-ink-soft">{notice.hint}</p>
+          ) : null}
+          <p className="text-[12px] leading-relaxed text-muted">
+            Оплата ще не підключена — тариф можна перемкнути будь-коли й без карти.
+          </p>
+        </div>
       </div>
     </Dialog>
   );

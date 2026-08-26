@@ -10,8 +10,8 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 385,
-    "elements": 4408,
+    "files": 386,
+    "elements": 4420,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:3661",
+      "location": "src/app/(app)/settings/page.js:3672",
       "attributes": [
         "title",
         "aria-label"
@@ -35,7 +35,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:677",
+      "location": "src/app/(app)/settings/page.js:684",
       "attributes": [
         "aria-label",
         "title"

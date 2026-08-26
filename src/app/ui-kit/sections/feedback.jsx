@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { Alert, ConnectionBanner, LoadingSpinner, EmptyState, PlanLimitBanner, PlanMark, PlanUpgradeDialog } from '@/components/ui';
+import { Alert, ConnectionBanner, LoadingSpinner, EmptyState, PlanGate, PlanLimitBanner, PlanMark, PlanUpgradeDialog } from '@/components/ui';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { User, Folder, Plug } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
@@ -178,6 +178,18 @@ export default function FeedbackSection() {
             <PlanMark capabilityId="priority-support" label="тільки в Pro" />
           </span>
         </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="PlanGate — цілий екран, якого немає в тарифі"
+        component="PlanGate"
+        description="Корона — це позначка біля контрола. Це той самий випадок на розмір більший: не перемикач усередині екрана, а сам екран — «Інтеграції», «Перенесення даних», вкладка рахунку. Свідомо не реклама: назва, один рядок про те, що це, і одна кнопка. Замилений скріншот фічі за пейволом виглядає як знущання і до того ж бреше — розмиті пікселі там чужі. Формулювання беруться з реєстру, тому екран не може описати можливість інакше, ніж прайслист, який її продає."
+        filePath="src/components/ui/Feedback/PlanGate.jsx"
+        fullWidth
+      >
+        <PlanGate capabilityId="integrations">
+          <p className="text-[13px] text-muted">Тут був би екран інтеграцій.</p>
+        </PlanGate>
       </PreviewBlock>
 
       <PreviewBlock

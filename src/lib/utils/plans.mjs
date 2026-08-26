@@ -60,7 +60,7 @@ export const PLAN_LIMITS = [
     id: 'projects',
     label: 'Активні проєкти',
     title: 'Ліміт активних проєктів вичерпано',
-    hint: 'Заархівуйте непотрібний проєкт або перейдіть на тариф із більшою стелею.',
+    hint: 'Або заархівуйте проєкт, який уже завершено: архів звільняє місце, а повернути його можна, коли воно буде.',
     absentTitle: 'Проєкти недоступні на цьому тарифі',
     absentHint: 'Проєкти зʼявляються на платному тарифі.',
     enforced: true,
@@ -70,7 +70,7 @@ export const PLAN_LIMITS = [
     id: 'members',
     label: 'Учасники команди',
     title: 'Ліміт учасників команди вичерпано',
-    hint: 'Деактивуйте учасника, який більше не працює, або перейдіть на тариф із більшою стелею.',
+    hint: 'Або деактивуйте учасника, який більше не працює: його задачі, час і коментарі лишаються, місце звільняється.',
     absentTitle: 'Запрошення недоступні на цьому тарифі',
     absentHint: 'Запрошення зʼявляються на платному тарифі.',
     enforced: true,
@@ -80,7 +80,7 @@ export const PLAN_LIMITS = [
     id: 'aiCalls',
     label: 'Розбір дзвінків / міс',
     title: 'Розбори дзвінків на цей місяць вичерпано',
-    hint: 'Лічильник обнулиться першого числа. Або перейдіть на тариф із більшою стелею.',
+    hint: 'Лічильник обнулиться першого числа наступного місяця.',
     absentTitle: 'Розбір дзвінків недоступний на цьому тарифі',
     absentHint: 'Запис наради стає саммарі, рішеннями й чернетками задач — на платному тарифі.',
     enforced: true,
@@ -138,28 +138,32 @@ export const PLAN_CAPABILITIES = [
     label: 'Виставлення рахунків і ставки',
     detail: 'Погодинні ставки команди й рахунок із табеля',
     plans: ['lite', 'pro'],
-    enforced: false,
+    enforced: true,
+    enforcedAt: 'src/app/(app)/analytics/page.js',
   },
   {
     id: 'integrations',
     label: 'Інтеграції',
     detail: 'Telegram, YouTrack, API-ключі',
     plans: ['lite', 'pro'],
-    enforced: false,
+    enforced: true,
+    enforcedAt: 'src/app/(app)/settings/page.js',
   },
   {
     id: 'data-import',
     label: 'Перенесення даних',
     detail: 'Імпорт задач, часу і звʼязків з іншого трекера',
     plans: ['lite', 'pro'],
-    enforced: false,
+    enforced: true,
+    enforcedAt: 'src/app/(app)/settings/page.js',
   },
   {
     id: 'portal',
     label: 'Портал для клієнтів',
     detail: 'Замовник бачить свої проєкти, не заходячи в робочий простір',
     plans: ['lite', 'pro'],
-    enforced: false,
+    enforced: true,
+    enforcedAt: 'src/app/(app)/[projectId]/ProjectBoardClient.jsx',
   },
   {
     id: 'ai-calls',
@@ -198,8 +202,13 @@ export const PLANS = [
   },
   {
     id: 'lite',
+    // «Коли робочий простір показують клієнтам» was the old line, and it was
+    // describing a product that does not exist: there is no client role in this
+    // workspace at all, and the portal a customer would look at is a separate
+    // application with its own database. Lite is the plan a team actually works
+    // on — everything the product does, at the size of one team.
     name: 'Lite',
-    tagline: 'Коли робочий простір показують клієнтам',
+    tagline: 'Усе, що вміє продукт, для однієї команди',
     priceLabel: '499',
     currencyLabel: 'грн / міс',
     ctaLabel: 'Спробувати',
@@ -209,7 +218,10 @@ export const PLANS = [
   {
     id: 'pro',
     name: 'Pro',
-    tagline: 'Для агенцій і команд, що ростуть',
+    // Pro adds no feature Lite does not have. What it takes away is the
+    // ceilings, and the tagline says that rather than implying a fourth column
+    // of things nobody would find on the card.
+    tagline: 'Те саме, але без стель',
     priceLabel: '999',
     currencyLabel: 'грн / міс',
     ctaLabel: 'Спробувати',
@@ -344,6 +356,11 @@ export function storedPlanLimit(value, key) {
 
 export function planLimitById(key) {
   return PLAN_LIMITS.find(limit => limit.id === key) || null;
+}
+
+/** What a capability is called and what it does — the price list's own words. */
+export function capabilityById(capabilityId) {
+  return PLAN_CAPABILITIES.find(entry => entry.id === capabilityId) || null;
 }
 
 /**
@@ -485,15 +502,19 @@ export function planUsage(organization, { period = planUsagePeriod() } = {}) {
 }
 
 /**
- * Every ceiling that is currently in the way, worst first. What the strip
- * across the top of the workspace prints, and what decides whether it is there.
+ * Every ceiling that has actually run out. What the strip across the top of the
+ * workspace prints, and what decides whether it is there at all.
+ *
+ * Only `reached`, never `absent`, and the difference is the whole point. A
+ * ceiling that filled up is something that happened: yesterday it worked and
+ * today it does not, and nobody was told. A capability the plan never had is
+ * not an event — it is a line of the price list, which the reader has already
+ * seen, and pinning it to the top of every screen of a brand-new empty
+ * workspace says nothing except that we would like their money. That one is the
+ * crown's job, beside the control, at the moment somebody reaches for it.
  */
 export function planLimitNotices(planId, used = {}) {
   return PLAN_LIMITS
     .map(limit => planLimitNotice(planId, limit.id, used[limit.id]))
-    .filter(Boolean)
-    // Something that ran out is louder than something the plan never had: the
-    // first is a wall somebody just walked into, the second is a line on the
-    // price list they have already read.
-    .sort((a, b) => Number(b.reached) - Number(a.reached));
+    .filter(notice => notice?.reached);
 }

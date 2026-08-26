@@ -215,7 +215,11 @@ test('кожен enforced-прапорець вказує на код, який 
     // `enforced: true` й нічого не стерегти.
     const asks = new RegExp(
       `(planAllows|planLimit|planLimitRefusalResponse|reserveAiCall)\\b[\\s\\S]{0,120}?'${entry.id}'`
-      + `|'${entry.id}'[\\s\\S]{0,120}?(planAllows|planLimit)\\b`,
+      + `|'${entry.id}'[\\s\\S]{0,120}?(planAllows|planLimit)\\b`
+      // `PlanGate` is the third way of asking, and the only one that can put a
+      // whole screen behind the answer. It names the capability as a literal
+      // and calls `planAllows` itself, which is what the other two do inline.
+      + `|<PlanGate capabilityId="${entry.id}"`,
     );
     assert.match(
       source,
@@ -262,7 +266,7 @@ test('речення відмови збирається з реєстру, і �
   const refusal = planLimitRefusal('free', 'projects', 3);
   assert.match(refusal, /Ліміт активних проєктів вичерпано/);
   // Вихід, що не коштує грошей, названий першим.
-  assert.match(refusal, /Заархівуйте/);
+  assert.match(refusal, /заархівуйте/);
   // І названі обидва тарифи, що піднімають цю стелю, а не тільки найдорожчий.
   assert.match(refusal, /на Lite — 10/);
   assert.match(refusal, /на Pro — Безліміт/);
@@ -302,13 +306,19 @@ test('лічильник із минулого місяця — це не мен
   });
 });
 
-test('смуга нагорі веде тим, у що вперлись, а не тим, чого ніколи не було', () => {
+test('смуга нагорі каже лише про те, що вичерпалось', () => {
+  // Free не має розбору дзвінків узагалі, і смуга про це мовчить: це не подія,
+  // а рядок прайслиста, який людина вже читала. Вішати його вгорі кожного
+  // екрана порожнього нового простору — це не новина, а вимога грошей.
   const notices = planLimitNotices('free', { projects: 3, members: 2, aiCalls: 0 });
-  assert.deepEqual(notices.map(notice => notice.id), ['projects', 'aiCalls']);
+  assert.deepEqual(notices.map(notice => notice.id), ['projects']);
   assert.equal(notices[0].reached, true);
-  assert.equal(notices[1].absent, true);
+  // Дві вичерпані стелі — обидві в списку, щоб смуга могла сказати «ще одна».
+  const both = planLimitNotices('free', { projects: 3, members: 5, aiCalls: 0 });
+  assert.deepEqual(both.map(notice => notice.id), ['projects', 'members']);
   // Там, де все вільно, смуги немає.
   assert.deepEqual(planLimitNotices('pro', { projects: 100, members: 100, aiCalls: 10 }), []);
+  assert.deepEqual(planLimitNotices('free', { projects: 1, members: 1, aiCalls: 0 }), []);
 });
 
 // Без коментарів у обох файлах: те, що звідти прибрано, описане прозою поруч,
@@ -351,7 +361,13 @@ test('прайслист один на весь продукт', async () => {
 
   assert.doesNotMatch(settings, /isPro \? Infinity : 3/);
   assert.match(settings, /activePlanId=\{orgPlan\}/);
-  assert.match(onboarding, /activePlanId=\{selectedPlan\}/);
+  // Онбординг більше не тримає «обраний» тариф: кнопка картки — це і вибір, і
+  // дія одночасно, тож між ними нічого не лежить, і окремої «Продовжити» немає.
+  assert.match(onboarding, /activePlanId=""/);
+  assert.match(onboarding, /onChoose=\{handleFinish\}/);
+  assert.doesNotMatch(onboarding, /Продовжити/);
+  // Один безкоштовний простір на акаунт — принаймні цей екран так каже.
+  assert.match(onboarding, /lockedPlanIds=\{freeTaken \? \['free'\] : \[\]\}/);
   // Стеля в документі організації теж із реєстру, а не з тернарника.
   assert.match(onboarding, /storedPlanLimit\(selectedPlan, 'projects'\)/);
   assert.doesNotMatch(onboarding, /maxProjects: 3/);
@@ -394,7 +410,7 @@ test('картка тарифу вирівнює колонки сіткою, а
   // картці переноситься на другий рядок, зсуває вниз лише її ціну.
   assert.match(card, /lg:grid-rows-\[auto_auto_auto_auto_auto\]/);
   assert.match(card, /lg:grid-rows-subgrid lg:row-span-5/);
-  const bands = (card.match(/px-7/g) || []).length;
+  const bands = (card.match(/px-5/g) || []).length;
   assert.equal(bands, 5, 'смуг має бути рівно пʼять, і кожна зі своїм відступом');
 
   // Порядок: ціна -> стелі -> кнопка -> що додає. «Скільки це коштує» і «чи
@@ -412,7 +428,10 @@ test('картка тарифу вирівнює колонки сіткою, а
   assert.doesNotMatch(card, /tone="info"|border-info|text-success/);
   assert.match(card, /Популярний/);
   assert.doesNotMatch(card, /Найпопулярніший/);
-  assert.match(card, /<Check size=\{15\} className="mt-\[2px\] shrink-0 text-ink"/);
+  assert.match(card, /<Check size=\{14\} className="mt-\[3px\] shrink-0 text-ink-soft"/);
+  // Стелі гучніші за список фіч, а не тихіші: саме їх порівнюють поглядом по
+  // рядку, а список однаковий у кожній колонці.
+  assert.match(card, /\{limit\.absent \? 'text-faint' : 'text-ink'\}/);
 
   // Бейджа «Ваш тариф» немає: кнопка тієї самої картки вже це каже.
   assert.doesNotMatch(card, /Ваш тариф/);

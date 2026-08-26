@@ -25,6 +25,7 @@ import { Select } from '@/components/ui/Select';
 import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
 import { can, canWhileRoleLoads } from '@/lib/utils/can';
+import { planAllows } from '@/lib/utils/plans.mjs';
 import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
@@ -61,6 +62,7 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
     projects,
     projectsLoading,
     currentUser,
+    activeOrg,
     activeOrgId,
     orgRole,
     switchOrg,
@@ -168,7 +170,12 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
   const canManageQtPlus = can(orgRole, 'edit:project_settings');
   const { enabled: qtEnabled } = useQtPlusEnabled(canManageQtPlus ? project?.organizationId : null);
   const qtplusLinked = Boolean(project?.qtplusLink?.projectId);
-  const showQtPlusTab = QTPLUS_CONFIGURED && ((canManageQtPlus && qtEnabled) || qtplusLinked);
+  // «Портал для клієнтів» is a paid line on the price list, so a workspace on
+  // Free does not get the tab — not even on a project linked before the plan
+  // changed. The link itself is untouched; it comes back with the plan.
+  const portalAllowed = planAllows(activeOrg?.plan, 'portal');
+  const showQtPlusTab = QTPLUS_CONFIGURED && portalAllowed
+    && ((canManageQtPlus && qtEnabled) || qtplusLinked);
   const tabs = useMemo(() => {
     return showQtPlusTab
       ? [...PROJECT_TABS, { id: 'qtplus', label: 'QuickTeam+', icon: Plug }]

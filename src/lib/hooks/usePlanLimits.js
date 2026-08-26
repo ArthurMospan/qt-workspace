@@ -24,6 +24,7 @@ import { useMemo } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import {
   normalizePlan,
+  planAllows,
   planLimitNotice,
   planLimitNotices,
   planLimitState,
@@ -51,6 +52,12 @@ export function usePlanLimits() {
     return {
       plan,
       used,
+      /**
+       * Whether this plan includes a capability. The other half of the gate:
+       * `blocked` is about a number that ran out, this is about something the
+       * plan does not have at any number.
+       */
+      allows: capabilityId => planAllows(plan, capabilityId),
       /** Whether this ceiling is in the way right now. */
       blocked: key => planLimitState(plan, key, used[key]).blocked,
       /** The whole state of one ceiling: what it is, what is spent, «3 з 3». */

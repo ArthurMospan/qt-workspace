@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
+import { X } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { PlanCrownIcon } from '@/lib/design/icons';
+import IconAction from '@/components/ui/IconAction';
 
 /**
- * The strip that says a ceiling has been met, across the top of the workspace.
+ * The strip that says a ceiling has run out, across the top of the workspace.
  *
  * A crown beside a control answers «чому» to somebody already reaching for that
  * control. It cannot answer the other question — «чому нічого не створюється» —
@@ -14,39 +15,53 @@ import { PlanCrownIcon } from '@/lib/design/icons';
  * refuse them one at a time. That is the case this exists for: said once, at
  * the top, before anything is pressed.
  *
- * Deliberately not a toast and not a dialog. A toast leaves, and a full
- * workspace is a condition rather than an event; a dialog would have to be
- * dismissed on every screen. This sits in the layout and goes when the
- * condition does.
+ * ── Two things it deliberately is not ───────────────────────────────────
  *
- * It is gold, not red. Nothing has broken and nothing was lost — the workspace
- * is doing exactly what the plan says it does, which is a different thing from
- * a failure and should not be dressed as one.
+ * It is not violet, and it does not carry a crown. The violet means «this is on
+ * another plan» — a fact about the plan, which is what the crown marks. This is
+ * a fact about *now*: something that was working has filled up. Grey, a step
+ * darker than the canvas it sits on, is what a condition looks like; painting
+ * it in the upgrade colour would make the workspace's own state read as an
+ * advertisement.
  *
- * @param {{title: string, hint: string}} props.notice What ran out; from `planLimitNotice`.
- * @param {number} props.extra How many further ceilings are also met, named in one clause.
+ * It is also not shown for something the plan never had. A workspace on Free
+ * has no call analysis at all, and a strip announcing that on an empty new
+ * workspace is not news — it is a line of the price list, permanently pinned to
+ * the top of every screen. `planLimitNotices` filters those out; the crown on
+ * the control says it at the moment it matters.
+ *
+ * And it says what ran out, not how to get around it. The way that costs no
+ * money — archive a project, deactivate a seat — is real and is still offered,
+ * inside the dialog, after somebody has seen what the plans cost. Leading with
+ * it here would make the first thing the workspace says about its own ceiling a
+ * tip for not paying.
+ *
+ * @param {{title: string, reading?: string}} props.notice What ran out; from `planLimitNotice`.
+ * @param {number} props.extra How many further ceilings are also full, named in one clause.
  * @param {() => void} props.onOpen Opens the price list on that ceiling.
+ * @param {() => void} props.onDismiss Puts it away; absent means it cannot be dismissed.
  * @param {string} props.className Placement in the parent only.
  */
-export default function PlanLimitBanner({ notice, extra = 0, onOpen, className = '' }) {
+export default function PlanLimitBanner({ notice, extra = 0, onOpen, onDismiss, className = '' }) {
   if (!notice) return null;
   return (
     <div
       role="status"
       // Full-bleed on a phone, where the page itself is edge to edge, and a
       // floating strip on the desktop, where every panel around it floats.
-      className={`print:hidden flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-plan/25 bg-plan-soft px-4 py-[10px] sm:px-6 md:mb-[12px] md:rounded-[16px] md:border ${className}`}
+      className={`print:hidden flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-strong bg-line px-4 py-[10px] sm:px-6 md:mb-[12px] md:rounded-[16px] md:border ${className}`}
     >
-      <PlanCrownIcon size={15} className="shrink-0 text-plan" aria-hidden />
-      <p className="min-w-0 flex-1 text-[13px] leading-snug text-plan-ink">
+      <p className="min-w-0 flex-1 text-[13px] leading-snug text-ink">
         <span className="font-bold">{notice.title}</span>
         {notice.reading ? <span className="font-bold"> · {notice.reading}</span> : null}
-        <span className="hidden sm:inline"> {notice.hint}</span>
-        {extra > 0 ? <span> Ще {extra} обмеження на цьому тарифі.</span> : null}
+        {extra > 0 ? <span className="text-ink-soft"> Ще {extra} стеля цього тарифу вичерпана.</span> : null}
       </p>
       <Button onClick={onOpen} style="primary" size="md" className="shrink-0">
         Тарифні плани
       </Button>
+      {onDismiss ? (
+        <IconAction label="Приховати на тиждень" icon={X} size="sm" appearance="quiet" onClick={onDismiss} />
+      ) : null}
     </div>
   );
 }
