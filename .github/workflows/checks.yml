@@ -127,24 +127,11 @@ jobs:
 
       - run: npm ci
 
-      # Four steps rather than one, because this suite passes locally and did
-      # not here, and a single red mark could have meant the download, the CLI,
-      # the emulator, or the rules. This account cannot read Actions logs, so
-      # which step carries the mark is the diagnosis.
+      # Still two steps rather than one. The emulator is fetched from Google on
+      # first use, and folded into the run below a download problem and a rules
+      # failure would be the same red mark.
       - name: Fetch the Firestore emulator
         run: npx firebase setup:emulators:firestore
-
-      - name: Java and CLI versions
-        run: |
-          java -version
-          npx firebase --version
-
-      # The smallest thing that still needs the emulator to have started —
-      # no probe script of its own, so nothing here can fail on its own quoting.
-      # If this is red, the emulator does not run here and the rules are not the
-      # subject.
-      - name: Emulator starts
-        run: node scripts/ci-emulator-probe.mjs node --version
 
       - name: Rules against the emulator
         env:
