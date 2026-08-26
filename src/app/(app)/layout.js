@@ -98,7 +98,11 @@ function WorkspaceLoadFailure({ error, onRetry, onSignOut }) {
   const Glyph = quotaSpent ? DatabaseZap : accessFailure ? LockKeyhole : CloudOff;
   return (
     <div className="w-full h-full bg-white p-0 md:bg-canvas md:p-[12px]">
-      <div className="flex h-full flex-col items-center justify-center rounded-none bg-white px-6 py-10 text-center md:rounded-[24px]">
+      {/* The shell's own pane, class for class — the grey outside it and the
+          white inside it are the two surfaces this product has, and a failure
+          is not a third one. */}
+      <div className="flex flex-col flex-1 h-full bg-white rounded-none md:rounded-[24px] overflow-hidden">
+        <div className="flex h-full flex-col items-center justify-center px-6 py-10 text-center">
         <span className="mb-5 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-canvas text-muted">
           <Glyph size={24} aria-hidden />
         </span>
@@ -116,6 +120,7 @@ function WorkspaceLoadFailure({ error, onRetry, onSignOut }) {
             {quotaSpent ? QUOTA_FAILURE_COPY.action : 'Спробувати ще раз'}
           </Button>
         )}
+        </div>
       </div>
     </div>
   );
