@@ -3,6 +3,22 @@
 // Uses WCAG relative luminance to decide if the background is "dark" or "light",
 // then derives text, muted, hover, active, and border colors accordingly.
 
+// Bump whenever the ladder above changes.
+//
+// The rail is painted before React runs, by an inline script in app/layout.js
+// reading the last theme this browser stored — that is what stops a branded
+// workspace flashing dark on every load. It paints with `!important`, because
+// it has to beat the inline style React is about to write.
+//
+// Which means a stored theme is a copy of this file's output, living in
+// somebody's browser, that wins until React takes over. Change the numbers here
+// and every existing browser keeps painting the old ones first — and on any
+// load where the rail never mounts, keeps painting them for good. Stamping the
+// version into the cache makes a change to this file invalidate every copy of
+// it automatically, instead of relying on somebody thinking to clear their
+// storage.
+export const SIDEBAR_THEME_VERSION = 2;
+
 export const SIDEBAR_PRESETS = {
   dark:  '#1f1f1f',
   light: '#ffffff',
@@ -58,37 +74,55 @@ function blendColors(bg, fg, ratio) {
   };
 }
 
-// AA for body text. Everything that carries the rail's own words holds this.
-const READABLE_CONTRAST = 4.5;
-// The floor for the project list: its section header, its «+», the project rows
-// themselves, and the control that folds the rail away.
+// How quiet the rail is allowed to be, and why it is quieter than the page.
 //
-// 4.5:1 is the requirement for text you read. These are not that — they are a
-// list you scan for a name you already know, and the one thing asked of them is
-// that they sit *under* the navigation without disappearing. Held at 4.5 they
-// could not sit under anything: the floor is where the dark preset's quiet ink
-// already lands, so every tier below the navigation was clamped to the same
-// value and the hierarchy existed only in the source.
+// This started at one number — 4.5:1, WCAG AA for body text — applied to every
+// token the rail produces. That is the right floor for a page. It is the wrong
+// floor for the thing standing beside the page, and holding it here had two
+// consequences that took three attempts to see.
 //
-// 3.5:1 is above the 3:1 WCAG asks of a UI component and below the 4.5 it asks
-// of prose, which is what these are — named things you point at, set quietly on
-// purpose. The rail's navigation, its active item and its own text are not
-// given this exemption.
-const SCANNABLE_CONTRAST = 3.5;
+// The first: on the dark preset 4.5:1 lands at #858585, which is almost exactly
+// where the navigation already was. So «make the rail quieter» could move it by
+// nine points out of 255 and no further — a change that exists in a diff and
+// not on a screen.
+//
+// The second: every tier under the navigation was clamped to that same value,
+// so a three-level hierarchy rendered as one grey.
+//
+// A rail is not prose. Its labels are eight fixed words a person learns in a
+// day and afterwards finds by position and by icon; its project list is scanned
+// for a name already known. Both sit at 3:1 or better, which is what WCAG asks
+// of a user-interface component, and both are the *destination* of a click
+// rather than something read to extract meaning. The rail's own text — the
+// workspace name, the active item, a running timer's digits — is the loudest
+// thing here and stays well clear of every floor.
+//
+// This is a deliberate departure from AA for the navigation labels, taken with
+// the product owner, and it is written here rather than left to be rediscovered.
+const READABLE_CONTRAST = 3.5;
+// The project list, its header, its «+» and the collapse toggle: one step below
+// the navigation, at the floor WCAG sets for an interface component.
+const SCANNABLE_CONTRAST = 3.0;
 
 // The rail's loudest ink, and why it is not the corner of the colour space.
 //
 // `text` was pure white on a dark rail and near-black on a light one, which is
 // the brightest a screen can be — and it is on the active item, the workspace
 // name and the branded organization name, so the three things the eye lands on
-// first were all at maximum. A rail is not the page; it is the thing beside the
-// page, and it was glowing.
+// first were all at maximum. A rail is the thing beside the page, and it was
+// glowing.
 //
-// Backed off toward the background, held to AA like everything the rail reads.
-// A background with no room — a saturated brand colour where white itself
-// barely clears 4.5:1 — gets its white back, because `accessibleBlend` only
-// ever raises: the softening is a preference, the floor is not.
-const TEXT_BLEND = 0.86;
+// Backed well off toward the background. A background with no room — a
+// saturated brand colour where white itself barely clears the floor — gets its
+// white back, because `accessibleBlend` only ever raises: the softening is a
+// preference, the floor is not.
+const TEXT_BLEND = 0.74;
+// …and it keeps AA, which is the one floor in this file that did not move. It
+// carries the workspace name and the item you are standing on, it is the only
+// thing here that is read rather than scanned, and on the dark preset the blend
+// above clears it four times over — the floor only bites on a saturated brand
+// colour, which is exactly where it should.
+const TEXT_CONTRAST = 4.5;
 
 function accessibleBlend(bg, fg, preferredRatio, minimumContrast = READABLE_CONTRAST) {
   let ratio = preferredRatio;
@@ -153,10 +187,10 @@ export function computeSidebarTheme(bgHex) {
     // Dark background → light text
     return {
       bg: fallback,
-      text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND)),
-      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.46)),
-      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.40, SCANNABLE_CONTRAST)),
-      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.30, SCANNABLE_CONTRAST)),
+      text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND, TEXT_CONTRAST)),
+      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.40)),
+      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.32, SCANNABLE_CONTRAST)),
+      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.24, SCANNABLE_CONTRAST)),
       hover: 'rgba(255,255,255,0.04)',
       active: 'rgba(255,255,255,0.08)',
       border: 'rgba(255,255,255,0.06)',
@@ -167,10 +201,10 @@ export function computeSidebarTheme(bgHex) {
   // Light background → dark text
   return {
     bg: fallback,
-    text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND)),
-    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.46)),
-    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.40, SCANNABLE_CONTRAST)),
-    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.30, SCANNABLE_CONTRAST)),
+    text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND, TEXT_CONTRAST)),
+    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.40)),
+    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.32, SCANNABLE_CONTRAST)),
+    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.24, SCANNABLE_CONTRAST)),
     hover: 'rgba(0,0,0,0.04)',
     active: 'rgba(0,0,0,0.06)',
     border: 'rgba(31,31,31,0.08)',

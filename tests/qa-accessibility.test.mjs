@@ -11,33 +11,33 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 test('quiet text tokens and generated sidebar themes keep AA contrast', () => {
   assert.deepEqual(auditA11y().contrastFailures, []);
 
-  // Two floors, because the rail holds two kinds of thing. `text` and `muted`
-  // carry the navigation and hold AA for body text. The project list, its
-  // header, its «+» and the collapse toggle are scanned rather than read, and
-  // are deliberately quieter — held at 4.5 they could not be quieter than
-  // anything, because on most backgrounds that floor is already where they
-  // want to sit. See SCANNABLE_CONTRAST in sidebarTheme.js.
+  // Three floors, because the rail holds three kinds of thing, and only the
+  // first of them is read. `text` carries the workspace name and the item you
+  // are standing on and keeps AA. The navigation is eight fixed words found by
+  // position and icon; the project list is scanned for a name already known.
+  // Those two sit at or above the 3:1 WCAG asks of an interface component —
+  // held at 4.5 they could not be quieter than anything at all, because on the
+  // dark preset that floor is already where they were. See sidebarTheme.js.
+  const FLOORS = { text: 4.5, muted: 3.5, mutedProject: 3.0, mutedHeader: 3.0 };
   for (let channel = 0; channel <= 255; channel += 17) {
     const hex = `#${channel.toString(16).padStart(2, '0').repeat(3)}`;
     const theme = computeSidebarTheme(hex);
-    for (const token of ['text', 'muted']) {
+    for (const [token, floor] of Object.entries(FLOORS)) {
       assert.ok(
-        contrastRatio(theme[token], theme.bg) >= 4.5,
-        `${token} must pass AA on custom sidebar ${hex}`,
+        contrastRatio(theme[token], theme.bg) >= floor,
+        `${token} must hold ${floor}:1 on custom sidebar ${hex}`,
       );
     }
-    for (const token of ['mutedProject', 'mutedHeader']) {
-      assert.ok(
-        contrastRatio(theme[token], theme.bg) >= 3.5,
-        `${token} must stay legible on custom sidebar ${hex}`,
-      );
-      // And quieter than the navigation is the whole point of the tier, so a
-      // change that erases the step fails here rather than on screen.
-      assert.ok(
-        contrastRatio(theme[token], theme.bg) <= contrastRatio(theme.muted, theme.bg),
-        `${token} must not be louder than the navigation on ${hex}`,
-      );
-    }
+    // The order is the whole point of having three, so a change that erases a
+    // step fails here rather than on somebody's screen.
+    assert.ok(
+      contrastRatio(theme.muted, theme.bg) <= contrastRatio(theme.text, theme.bg),
+      `the navigation must not be louder than the rail's own text on ${hex}`,
+    );
+    assert.ok(
+      contrastRatio(theme.mutedProject, theme.bg) <= contrastRatio(theme.muted, theme.bg),
+      `the project list must not be louder than the navigation on ${hex}`,
+    );
   }
 });
 
@@ -55,16 +55,12 @@ test('the glass tab bar keeps AA against the colour it is actually seen as', () 
         assert.equal(glass.isDark, computeSidebarTheme(hex).isDark, `tone must hold on ${hex}`);
         assert.ok(glass.opacity >= 0.88 && glass.opacity <= 1, `opacity budget on ${hex}`);
         assert.equal(glass.bg, computeSidebarTheme(hex).bg, `the painted colour stays the brand on ${hex}`);
-        for (const token of ['text', 'muted']) {
+        for (const [token, floor] of Object.entries({
+          text: 4.5, muted: 3.5, mutedProject: 3.0, mutedHeader: 3.0,
+        })) {
           assert.ok(
-            contrastRatio(glass[token], glass.perceived) >= 4.5,
-            `${token} must pass AA on the glass bar over ${hex}`,
-          );
-        }
-        for (const token of ['mutedProject', 'mutedHeader']) {
-          assert.ok(
-            contrastRatio(glass[token], glass.perceived) >= 3.5,
-            `${token} must stay legible on the glass bar over ${hex}`,
+            contrastRatio(glass[token], glass.perceived) >= floor,
+            `${token} must hold ${floor}:1 on the glass bar over ${hex}`,
           );
         }
       }

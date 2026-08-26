@@ -48,11 +48,16 @@ const GLOBAL_STYLES = join(ROOT, 'src', 'app', 'globals.css');
 // scanned rather than read and is deliberately quieter — see
 // SCANNABLE_CONTRAST in sidebarTheme.js.
 const MIN_BRAND_QUIET_CONTRAST = { muted: 2.5, faint: 1.4 };
+// A rail is not a page. Its own text — the workspace name, the active item —
+// keeps AA; its navigation labels are eight fixed words found by position and
+// icon, and its project list is scanned for a name already known. Both sit at
+// or above the 3:1 WCAG asks of a user-interface component. See sidebarTheme.js
+// for the whole argument and whose decision it was.
 const MIN_SIDEBAR_CONTRAST = {
   text: 4.5,
-  muted: 4.5,
-  mutedProject: 3.5,
-  mutedHeader: 3.5,
+  muted: 3.5,
+  mutedProject: 3.0,
+  mutedHeader: 3.0,
 };
 
 // Controls whose whole content can be a single icon. A `<button>` is one by

@@ -4,6 +4,7 @@ import { AppProvider } from '@/lib/context/AppContext';
 import AutoFix from '@/components/AutoFix';
 import Script from 'next/script';
 import { Inter, Roboto_Condensed } from 'next/font/google';
+import { SIDEBAR_THEME_VERSION } from '@/lib/utils/sidebarTheme';
 
 // Keep both product typefaces on our own origin. The old CSS @import made the
 // first paint wait on two browser-side Google requests and occasionally left
@@ -118,6 +119,13 @@ const IOS_FOCUS_ZOOM_SCRIPT = `(function(){try{var ua=navigator.userAgent;var iO
 // через <style> з !important задає [data-app-sb] змінні
 // теми. Коли приїжджають живі дані організації — стиль прибирається.
 //
+// Кеш версіонований: `t.v` мусить збігтися з SIDEBAR_THEME_VERSION. Тема, яку
+// цей браузер зберіг за старим алгоритмом, — це копія виводу sidebarTheme.js,
+// що малюється з !important до React і виграє в нього. Без перевірки версії
+// зміна кольорів рейки не з'являлась би в жодному браузері, який уже мав кеш,
+// доки React не забере стиль — а на завантаженні, де рейка не змонтувалась,
+// не з'явилась би взагалі ніколи.
+//
 // Скрипт свідомо НЕ чіпає background-color. Він писав його разом зі змінними, і
 // це працювало, доки обидві поверхні з data-app-sb були непрозорі. Мобільний
 // таббар — скло: його фон рахується з --sb-bg через color-mix, і
@@ -125,7 +133,7 @@ const IOS_FOCUS_ZOOM_SCRIPT = `(function(){try{var ua=navigator.userAgent;var iO
 // Тепер boot задає лише змінні, а фарбують себе поверхні: обидві малюють
 // background з var(--sb-bg), тож !important на змінній так само перебиває
 // інлайновий стиль React і анти-мигання лишається тим самим.
-const SIDEBAR_BOOT_SCRIPT = `(function(){try{var o=sessionStorage.getItem('qt_active_org_id');if(!o)return;var t=JSON.parse(localStorage.getItem('qt_sidebar_theme:'+o)||'null');if(!t)return;var ok=function(v){return typeof v==='string'&&/^(#[0-9a-fA-F]{3,8}|rgba?\\([0-9.,%\\s]+\\))$/.test(v)};if(!ok(t.bg))return;var map={text:'--sb-text',muted:'--sb-muted',hover:'--sb-hover',active:'--sb-active',border:'--sb-border',mutedProject:'--sb-muted-project',mutedHeader:'--sb-muted-header'};var css='--sb-bg:'+t.bg+' !important;';for(var k in map){if(ok(t[k]))css+=map[k]+':'+t[k]+' !important;'}var s=document.createElement('style');s.id='sb-boot-theme';s.textContent='[data-app-sb]{'+css+'}';document.head.appendChild(s)}catch(e){}})();`;
+const SIDEBAR_BOOT_SCRIPT = `(function(){try{var o=sessionStorage.getItem('qt_active_org_id');if(!o)return;var t=JSON.parse(localStorage.getItem('qt_sidebar_theme:'+o)||'null');if(!t)return;if(t.v!==${SIDEBAR_THEME_VERSION})return;var ok=function(v){return typeof v==='string'&&/^(#[0-9a-fA-F]{3,8}|rgba?\\([0-9.,%\\s]+\\))$/.test(v)};if(!ok(t.bg))return;var map={text:'--sb-text',muted:'--sb-muted',hover:'--sb-hover',active:'--sb-active',border:'--sb-border',mutedProject:'--sb-muted-project',mutedHeader:'--sb-muted-header'};var css='--sb-bg:'+t.bg+' !important;';for(var k in map){if(ok(t[k]))css+=map[k]+':'+t[k]+' !important;'}var s=document.createElement('style');s.id='sb-boot-theme';s.textContent='[data-app-sb]{'+css+'}';document.head.appendChild(s)}catch(e){}})();`;
 
 export default function RootLayout({ children }) {
   return (
