@@ -278,3 +278,40 @@ test('a collapsed sprint opens on the first click', async () => {
     { a: true, b: true },
   );
 });
+
+// Дві знахідки з одного повідомлення: у редакторі опису при створенні завдання
+// не було «прикріпити файл», хоч у самому завданні воно є, і жодна іконка
+// тулбара не показувала підказки.
+test('an icon button says what it is, and the description toolbar says it in the kit’s own bubble', async () => {
+  const iconAction = await read('src/components/ui/IconAction.jsx');
+  const editor = await read('src/components/ui/Forms/MarkdownEditor.jsx');
+
+  // Документація IconAction завжди обіцяла «Accessible name and tooltip», і
+  // правдивою була тільки перша половина: aria-label називає кнопку для
+  // читалки і не показує зрячій людині нічого.
+  assert.match(iconAction, /title=\{tooltip \? undefined : label\}/);
+  assert.match(iconAction, /aria-label=\{label\}/);
+  // Бульбашка кіта — за згодою, бо Tooltip додає обгортку навколо тригера, а
+  // обгортка не безкоштовна у flex-рядку чи в абсолютному куті.
+  assert.match(iconAction, /if \(!tooltip\) return control;/);
+  assert.match(iconAction, /<Tooltip/);
+
+  // Тулбар опису — шістнадцять іконок поспіль без жодного тексту, саме там це
+  // й помітили.
+  assert.match(editor, /tooltip="bottom"/);
+});
+
+test('the task composer can attach a file, like the task screen already could', async () => {
+  const composer = await read('src/components/CreateTaskModal.jsx');
+  const editor = await read('src/components/ui/Forms/MarkdownEditor.jsx');
+
+  // MarkdownEditor малює скріпку лише коли йому передали onUploadFiles — цей
+  // виклик не передавав, і кнопка просто не існувала.
+  assert.match(editor, /\{onUploadFiles && \(/);
+  assert.match(composer, /onUploadFiles=\{handleUploadFiles\}/);
+  assert.match(composer, /uploading=\{uploadingFiles\}/);
+
+  // Тека — та сама, що й у завдання, і вона scoped на організацію: підпис
+  // /api/upload/sign відмовляє в чужій.
+  assert.match(composer, /`organizations\/\$\{organizationId\}\/attachments`/);
+});

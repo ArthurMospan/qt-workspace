@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 114,
-    "props": 856,
-    "documentedProps": 856,
+    "props": 857,
+    "documentedProps": 857,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2925,6 +2925,13 @@
             "xs"
           ],
           "description": "Box size, mapped onto Button's icon sizes."
+        },
+        {
+          "name": "tooltip",
+          "default": "false",
+          "type": "boolean|'top'|'bottom'|'left'|'right'",
+          "values": [],
+          "description": "Show the kit's hover"
         }
       ]
     },

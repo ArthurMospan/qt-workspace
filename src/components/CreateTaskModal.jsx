@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
+import { uploadFile } from '@/lib/utils/uploadFile';
 import { hasProjectAccess, hasRecordedTeam, isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
 import { Check, Play, Tag as TagIcon } from 'lucide-react';
 import { TaskIcon } from '@/lib/design/icons';
@@ -62,6 +63,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   // same way the project dialog does it. The submit button used to be disabled
   // instead, which says "you cannot do this" without ever saying why.
   const [fieldErrors, setFieldErrors] = useState({});
+  const [uploadingFiles, setUploadingFiles] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
   const titleInputRef = useRef(null);
 
@@ -267,6 +269,36 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
       : [...form.labelIds, labelId]);
   };
 
+  // «Прикріпити файл» in the composer's editor.
+  //
+  // The button was missing here and present on the task's own screen, which
+  // reads as a gap rather than a decision — MarkdownEditor draws it only when
+  // it is handed an `onUploadFiles`, and this call site never handed it one.
+  //
+  // What it does is the editor's half of that contract and not the task
+  // screen's: the file is uploaded and its link is written into the
+  // description. It does not join the «Вкладення» section, because there is no
+  // task yet to attach it to and the create route accepts a named list of
+  // fields that does not include one — putting client-supplied URLs into that
+  // list is a server change with its own review, not a side effect of adding a
+  // button. In the description the file is a link like any other, which is what
+  // the paperclip in a markdown editor means everywhere else.
+  const handleUploadFiles = async (fileList) => {
+    const files = Array.from(fileList || []);
+    const organizationId = activeOrg?.id || '';
+    if (files.length === 0 || !organizationId) return [];
+    setUploadingFiles(true);
+    try {
+      return await Promise.all(files.map(file =>
+        uploadFile(file, `organizations/${organizationId}/attachments`)));
+    } catch (uploadError) {
+      setError(uploadError.message || 'Не вдалося завантажити файл');
+      return [];
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = {};
@@ -408,6 +440,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             <MarkdownEditor 
               value={form.description}
               onChange={(val) => set('description', val)}
+              onUploadFiles={handleUploadFiles}
+              uploading={uploadingFiles}
               placeholder="Додайте деталі, чеклісти, посилання..."
               minHeight="120px"
             />

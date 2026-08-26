@@ -47,6 +47,9 @@ function ToolbarButton({ icon: Icon, label, onClick, disabled = false, active = 
     <IconAction
       label={label}
       icon={Icon}
+      // Sixteen icons in a row and no text anywhere: this is the toolbar the
+      // missing tooltips were reported on.
+      tooltip="bottom"
       size="md"
       // `editor`/`editor-active` were merged away as byte-identical duplicates
       // and this call site was never updated, so every toolbar button — pressed

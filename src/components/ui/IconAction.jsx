@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Button from './Button';
+import { Tooltip } from './Navigation/Tooltip';
 
 export const APPEARANCES = {
   quiet: '!bg-transparent !text-muted hover:!bg-canvas hover:!text-ink',
@@ -40,6 +41,8 @@ export const BUTTON_SIZES = {
  * button has no other way to carry.
  *
  * @param {string} props.label Accessible name and tooltip. Required — an icon alone names nothing.
+ * @param {boolean|'top'|'bottom'|'left'|'right'} props.tooltip Show the kit's hover
+ *   tooltip instead of the browser's. `true` means «top».
  * @param {React.ComponentType} props.icon lucide icon; its pixel size comes from `size`, never from the call site.
  * @param {'micro'|'xs'|'sm'|'compact'|'md'|'lg'|'xl'} props.size Box size, mapped onto Button's icon sizes.
  * @param {string} props.appearance Fill and hover treatment; the dark ones exist for overlays and dark surfaces.
@@ -53,14 +56,27 @@ export default function IconAction({
   size = 'md',
   appearance = 'quiet',
   shape = 'default',
+  tooltip = false,
   buttonRef,
   className = '',
   ...props
 }) {
-  return (
+  // The doc line above has always said «Accessible name and tooltip», and only
+  // the first half was true: `aria-label` names the button for a screen reader
+  // and shows a sighted person nothing at all. On a row of one or two icons
+  // that is survivable. On the description editor's toolbar it is sixteen
+  // unlabelled glyphs, which is where it was noticed.
+  //
+  // `title` is the default because it costs no markup: it wraps nothing, moves
+  // nothing, and works on every icon button in the product at once. `tooltip`
+  // opts into the kit's own dark bubble where the extra element is safe —
+  // `Tooltip` renders a wrapper around the trigger, and a wrapper is not free
+  // inside a flex row or an absolutely positioned corner.
+  const control = (
     <Button
       {...props}
       aria-label={label}
+      title={tooltip ? undefined : label}
       buttonRef={buttonRef}
       icon={icon}
       size={BUTTON_SIZES[size] ?? BUTTON_SIZES.md}
@@ -68,5 +84,15 @@ export default function IconAction({
       style="ghost"
       className={`${APPEARANCES[appearance] ?? APPEARANCES.quiet} ${className}`}
     />
+  );
+  if (!tooltip) return control;
+  return (
+    <Tooltip
+      content={label}
+      position={tooltip === true ? 'top' : tooltip}
+      className="relative inline-flex shrink-0"
+    >
+      {control}
+    </Tooltip>
   );
 }

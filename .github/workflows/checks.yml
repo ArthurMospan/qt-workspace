@@ -79,7 +79,11 @@ jobs:
 
       - run: npm ci
 
-      # In this order on purpose: the later two read the earlier output.
+      # Every script that writes one of the seven committed reports, in the
+      # order AGENTS.md gives: drift and audit read what scan produced. The
+      # first version of this list had five of the seven, and the two it left
+      # out — props and states — were found the usual way, by a red mark on a
+      # change that touched a component's props.
       - name: Regenerate
         run: |
           npm run kit:scan
@@ -87,6 +91,8 @@ jobs:
           npm run kit:audit
           npm run kit:colors
           npm run kit:a11y
+          npm run kit:props
+          npm run kit:states
 
       # A report is committed alongside the change that moved it. A difference
       # here means somebody changed the UI and did not re-run the scans, so the

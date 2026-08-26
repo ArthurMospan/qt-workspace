@@ -2517,6 +2517,7 @@
       "count": 3,
       "showcased": true,
       "usedByKit": [
+        "IconAction",
         "TopHeader",
         "UserAvatar"
       ],
@@ -2887,8 +2888,8 @@
             "src/app/(app)/sprints/page.js:83",
             "src/app/(app)/sprints/page.js:84",
             "src/components/AudioTaskPanel.jsx:264",
-            "src/components/CreateTaskModal.jsx:336",
-            "src/components/CreateTaskModal.jsx:339",
+            "src/components/CreateTaskModal.jsx:368",
+            "src/components/CreateTaskModal.jsx:371",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
@@ -3031,7 +3032,7 @@
             "src/app/(app)/sprints/page.js:83",
             "src/app/(app)/sprints/page.js:850",
             "src/app/(app)/team/page.js:143",
-            "src/components/CreateTaskModal.jsx:336",
+            "src/components/CreateTaskModal.jsx:368",
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/integrations/YouTrackImportCard.jsx:484",
             "src/components/integrations/YouTrackImportCard.jsx:509",
@@ -3109,7 +3110,7 @@
             "src/app/(app)/sprints/page.js:84",
             "src/components/AudioTaskPanel.jsx:235",
             "src/components/AudioTaskPanel.jsx:264",
-            "src/components/CreateTaskModal.jsx:339",
+            "src/components/CreateTaskModal.jsx:371",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
             "src/components/workspace/AgileBoard.jsx:67",
@@ -3339,8 +3340,8 @@
             "src/app/(app)/team/page.js:143",
             "src/components/AudioTaskPanel.jsx:235",
             "src/components/AudioTaskPanel.jsx:264",
-            "src/components/CreateTaskModal.jsx:336",
-            "src/components/CreateTaskModal.jsx:339",
+            "src/components/CreateTaskModal.jsx:368",
+            "src/components/CreateTaskModal.jsx:371",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
             "src/components/MobileNav.jsx:394",
@@ -3569,8 +3570,8 @@
             "src/app/(app)/team/page.js:143",
             "src/components/AudioTaskPanel.jsx:235",
             "src/components/AudioTaskPanel.jsx:264",
-            "src/components/CreateTaskModal.jsx:336",
-            "src/components/CreateTaskModal.jsx:339",
+            "src/components/CreateTaskModal.jsx:368",
+            "src/components/CreateTaskModal.jsx:371",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
             "src/components/MobileNav.jsx:394",
@@ -3778,8 +3779,8 @@
             "src/app/(app)/team/page.js:143",
             "src/components/AudioTaskPanel.jsx:235",
             "src/components/AudioTaskPanel.jsx:264",
-            "src/components/CreateTaskModal.jsx:336",
-            "src/components/CreateTaskModal.jsx:339",
+            "src/components/CreateTaskModal.jsx:368",
+            "src/components/CreateTaskModal.jsx:371",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
             "src/components/MobileNav.jsx:394",
@@ -4032,8 +4033,8 @@
             "src/app/(app)/team/page.js:143",
             "src/components/AudioTaskPanel.jsx:235",
             "src/components/AudioTaskPanel.jsx:264",
-            "src/components/CreateTaskModal.jsx:336",
-            "src/components/CreateTaskModal.jsx:339",
+            "src/components/CreateTaskModal.jsx:368",
+            "src/components/CreateTaskModal.jsx:371",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
             "src/components/TeamMemberSettingsDialog.jsx:126",
@@ -4634,8 +4635,8 @@
             "src/app/(app)/sprints/page.js:293",
             "src/app/(app)/sprints/page.js:90",
             "src/components/AudioTaskPanel.jsx:288",
-            "src/components/CreateTaskModal.jsx:383",
-            "src/components/CreateTaskModal.jsx:471",
+            "src/components/CreateTaskModal.jsx:415",
+            "src/components/CreateTaskModal.jsx:505",
             "src/components/UserStatusDialog.jsx:105",
             "src/components/integrations/YouTrackImportCard.jsx:460",
             "src/components/integrations/YouTrackImportCard.jsx:468",
@@ -4741,8 +4742,8 @@
             "src/app/(app)/sprints/page.js:293",
             "src/app/(app)/sprints/page.js:90",
             "src/components/AudioTaskPanel.jsx:288",
-            "src/components/CreateTaskModal.jsx:383",
-            "src/components/CreateTaskModal.jsx:471",
+            "src/components/CreateTaskModal.jsx:415",
+            "src/components/CreateTaskModal.jsx:505",
             "src/components/InviteMemberDialog.jsx:137",
             "src/components/WorkspaceInfoCenter.jsx:127",
             "src/components/integrations/YouTrackImportCard.jsx:460",
@@ -4862,8 +4863,8 @@
             "src/app/(app)/sprints/page.js:293",
             "src/app/(app)/sprints/page.js:90",
             "src/components/AudioTaskPanel.jsx:288",
-            "src/components/CreateTaskModal.jsx:383",
-            "src/components/CreateTaskModal.jsx:471",
+            "src/components/CreateTaskModal.jsx:415",
+            "src/components/CreateTaskModal.jsx:505",
             "src/components/InviteMemberDialog.jsx:137",
             "src/components/UserStatusDialog.jsx:105",
             "src/components/WorkspaceInfoCenter.jsx:127",
@@ -5063,11 +5064,11 @@
             "src/components/AudioTaskPanel.jsx:190",
             "src/components/AudioTaskPanel.jsx:300",
             "src/components/AudioTaskPanel.jsx:301",
-            "src/components/CreateTaskModal.jsx:396",
-            "src/components/CreateTaskModal.jsx:421",
-            "src/components/CreateTaskModal.jsx:430",
-            "src/components/CreateTaskModal.jsx:438",
-            "src/components/CreateTaskModal.jsx:451",
+            "src/components/CreateTaskModal.jsx:428",
+            "src/components/CreateTaskModal.jsx:455",
+            "src/components/CreateTaskModal.jsx:464",
+            "src/components/CreateTaskModal.jsx:472",
+            "src/components/CreateTaskModal.jsx:485",
             "src/components/integrations/YouTrackImportCard.jsx:560",
             "src/components/integrations/YouTrackImportCard.jsx:600",
             "src/components/integrations/YouTrackImportCard.jsx:644",
@@ -5169,11 +5170,11 @@
             "src/components/AudioTaskPanel.jsx:190",
             "src/components/AudioTaskPanel.jsx:300",
             "src/components/AudioTaskPanel.jsx:301",
-            "src/components/CreateTaskModal.jsx:396",
-            "src/components/CreateTaskModal.jsx:421",
-            "src/components/CreateTaskModal.jsx:430",
-            "src/components/CreateTaskModal.jsx:438",
-            "src/components/CreateTaskModal.jsx:451",
+            "src/components/CreateTaskModal.jsx:428",
+            "src/components/CreateTaskModal.jsx:455",
+            "src/components/CreateTaskModal.jsx:464",
+            "src/components/CreateTaskModal.jsx:472",
+            "src/components/CreateTaskModal.jsx:485",
             "src/components/integrations/YouTrackImportCard.jsx:560",
             "src/components/integrations/YouTrackImportCard.jsx:600",
             "src/components/integrations/YouTrackImportCard.jsx:644",
@@ -5323,11 +5324,11 @@
             "src/components/AudioTaskPanel.jsx:190",
             "src/components/AudioTaskPanel.jsx:300",
             "src/components/AudioTaskPanel.jsx:301",
-            "src/components/CreateTaskModal.jsx:396",
-            "src/components/CreateTaskModal.jsx:421",
-            "src/components/CreateTaskModal.jsx:430",
-            "src/components/CreateTaskModal.jsx:438",
-            "src/components/CreateTaskModal.jsx:451",
+            "src/components/CreateTaskModal.jsx:428",
+            "src/components/CreateTaskModal.jsx:455",
+            "src/components/CreateTaskModal.jsx:464",
+            "src/components/CreateTaskModal.jsx:472",
+            "src/components/CreateTaskModal.jsx:485",
             "src/components/integrations/YouTrackImportCard.jsx:560",
             "src/components/integrations/YouTrackImportCard.jsx:600",
             "src/components/integrations/YouTrackImportCard.jsx:644",
@@ -6389,7 +6390,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:424",
-            "src/components/CreateTaskModal.jsx:514",
+            "src/components/CreateTaskModal.jsx:548",
             "src/components/workspace/BillingTab.jsx:259",
             "src/components/workspace/HoverCard.jsx:169",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1414"
@@ -6595,7 +6596,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/CreateTaskModal.jsx:502"
+            "src/components/CreateTaskModal.jsx:536"
           ]
         },
         "label": {
@@ -6607,7 +6608,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/CreateTaskModal.jsx:545"
+            "src/components/CreateTaskModal.jsx:579"
           ]
         }
       }
@@ -6861,7 +6862,7 @@
           ],
           "files": [
             "src/app/(app)/sprints/page.js:254",
-            "src/components/CreateTaskModal.jsx:319",
+            "src/components/CreateTaskModal.jsx:351",
             "src/components/InviteMemberDialog.jsx:95",
             "src/components/WorkspaceInfoCenter.jsx:245",
             "src/components/profile/ProfileModal.jsx:28",
@@ -6937,7 +6938,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/CreateTaskModal.jsx:319",
+            "src/components/CreateTaskModal.jsx:351",
             "src/components/WorkspaceHeader.jsx:511",
             "src/components/profile/ProfileModal.jsx:28"
           ]
@@ -6989,7 +6990,7 @@
             "src/app/(app)/sprints/page.js:185",
             "src/app/(app)/sprints/page.js:254",
             "src/app/(app)/sprints/page.js:76",
-            "src/components/CreateTaskModal.jsx:319",
+            "src/components/CreateTaskModal.jsx:351",
             "src/components/InviteMemberDialog.jsx:95",
             "src/components/SupportDialog.jsx:48",
             "src/components/TeamMemberSettingsDialog.jsx:48",
@@ -7050,7 +7051,7 @@
             "src/app/(app)/sprints/page.js:136",
             "src/app/(app)/sprints/page.js:254",
             "src/app/(app)/sprints/page.js:76",
-            "src/components/CreateTaskModal.jsx:319",
+            "src/components/CreateTaskModal.jsx:351",
             "src/components/InviteMemberDialog.jsx:95",
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/WorkspaceHeader.jsx:511",
@@ -7106,7 +7107,7 @@
             "src/app/(app)/page.js:889",
             "src/app/(app)/sprints/page.js:845",
             "src/app/(app)/team/page.js:138",
-            "src/components/CreateTaskModal.jsx:373",
+            "src/components/CreateTaskModal.jsx:405",
             "src/components/workspace/VelocityTab.jsx:229"
           ]
         },
@@ -7468,7 +7469,7 @@
             "src/app/(app)/settings/page.js:2731",
             "src/app/(app)/settings/page.js:2758",
             "src/app/(app)/settings/page.js:2761",
-            "src/components/CreateTaskModal.jsx:329",
+            "src/components/CreateTaskModal.jsx:361",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:729",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1085"
           ]
@@ -7931,9 +7932,9 @@
             "src/app/(app)/sprints/page.js:202",
             "src/app/(app)/sprints/page.js:89",
             "src/app/(app)/sprints/page.js:97",
-            "src/components/CreateTaskModal.jsx:382",
-            "src/components/CreateTaskModal.jsx:395",
-            "src/components/CreateTaskModal.jsx:470",
+            "src/components/CreateTaskModal.jsx:414",
+            "src/components/CreateTaskModal.jsx:427",
+            "src/components/CreateTaskModal.jsx:504",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:648"
           ]
         },
@@ -7977,7 +7978,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:472",
             "src/app/(app)/my/page.js:336",
-            "src/components/CreateTaskModal.jsx:353",
+            "src/components/CreateTaskModal.jsx:385",
             "src/components/InviteMemberDialog.jsx:119",
             "src/components/workspace/BillingTab.jsx:1106",
             "src/components/workspace/IssueDetail.jsx:1424",
@@ -8038,7 +8039,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/CreateTaskModal.jsx:353",
+            "src/components/CreateTaskModal.jsx:385",
             "src/components/workspace/IssueDetail.jsx:1424"
           ]
         }
@@ -8063,14 +8064,14 @@
           "files": [
             "src/app/(app)/chat/page.js:1264",
             "src/app/(app)/chat/page.js:1276",
-            "src/components/CreateTaskModal.jsx:407",
-            "src/components/CreateTaskModal.jsx:420",
-            "src/components/CreateTaskModal.jsx:429",
-            "src/components/CreateTaskModal.jsx:437",
-            "src/components/CreateTaskModal.jsx:450",
+            "src/components/CreateTaskModal.jsx:439",
+            "src/components/CreateTaskModal.jsx:454",
             "src/components/CreateTaskModal.jsx:463",
-            "src/components/CreateTaskModal.jsx:493",
-            "src/components/CreateTaskModal.jsx:540",
+            "src/components/CreateTaskModal.jsx:471",
+            "src/components/CreateTaskModal.jsx:484",
+            "src/components/CreateTaskModal.jsx:497",
+            "src/components/CreateTaskModal.jsx:527",
+            "src/components/CreateTaskModal.jsx:574",
             "src/components/InviteMemberDialog.jsx:131",
             "src/components/workspace/BillingTab.jsx:109",
             "src/components/workspace/BillingTab.jsx:130",
