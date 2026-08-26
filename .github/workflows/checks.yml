@@ -6,14 +6,13 @@ name: Checks
 # fails while a component in src/components/ui is unreachable, while a variant
 # has no preview, while a colour is not a token, while a documented `npm run …`
 # does not exist. Every one of those was true — and none of them was ever asked
-# unless somebody remembered to ask. 1065 assertions and four generated reports
-# were an honour system, on a repository whose own memory says verified work
-# goes straight to main.
+# unless somebody remembered to ask. 1090 assertions and five generated reports
+# were an honour system, on a repository whose own working practice is to ship
+# verified work straight to main.
 #
 # Nothing here touches the product: no deploy, no database, no writes. It runs
-# the same four commands a person would run and reports what they said. Actions
-# minutes are free and unmetered on a public repository, so this costs nothing
-# but the wait.
+# the same commands a person would run and reports what they said. Actions
+# minutes are free and unmetered on a public repository.
 
 on:
   pull_request:
@@ -53,10 +52,10 @@ jobs:
       # instance from an empty apiKey — so /help, /errors and /_not-found fail
       # to export with no configuration at all. Nothing here reaches a network:
       # the build is checking that the code compiles and every page renders, and
-      # the real values are supplied by Vercel at deploy time. Keeping them
-      # inline rather than in repository secrets is deliberate — a NEXT_PUBLIC_*
-      # value is shipped to every browser anyway, and a secret nobody can read
-      # would make this workflow one more thing to set up.
+      # the real values are supplied by Vercel at deploy time. Inline rather than
+      # in repository secrets on purpose — a NEXT_PUBLIC_* value is shipped to
+      # every browser anyway, so hiding one would only make this workflow
+      # something to set up before it works.
       - name: Build
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: build-only-placeholder
@@ -120,10 +119,10 @@ jobs:
 
       - run: npm ci
 
-      # Split from the run below on purpose. The emulator is fetched from
-      # Google on first use, and when that is folded into the same step a
-      # download problem and a rules failure are the same red mark. Separated,
-      # the job list says which of the two happened without opening a log.
+      # Four steps rather than one, because this suite passes locally and did
+      # not here, and a single red mark could have meant the download, the CLI,
+      # the emulator, or the rules. This account cannot read Actions logs, so
+      # which step carries the mark is the diagnosis.
       - name: Fetch the Firestore emulator
         run: npx firebase setup:emulators:firestore
 
@@ -132,38 +131,13 @@ jobs:
           java -version
           npx firebase --version
 
-      # Does emulators:exec work here at all? A demo-* project needs no login,
-      # but that is the assumption most likely to be wrong on a runner with no
-      # Firebase credentials — and if it is, the suite below can only fail in a
-      # way that looks like the rules being wrong. The probe is a file rather
-      # than an inline -e so that nothing here depends on nested shell quoting.
-      - name: Emulator starts and answers
-        run: |
-          cat > emulator-probe.mjs <<'PROBE'
-          const host = process.env.FIRESTORE_EMULATOR_HOST;
-          if (!host) throw new Error('FIRESTORE_EMULATOR_HOST is unset inside emulators:exec');
-          const response = await fetch(`http://${host}/`);
-          console.log('emulator at', host, '->', response.status);
-          PROBE
-          set +e
-          output=$(npx firebase --project demo-quickteam emulators:exec --only firestore 'node emulator-probe.mjs' --debug 2>&1)
-          code=$?
-          echo "$output"
-          # Repeated as an annotation, not for the person reading this page —
-          # they have the log above — but because the Actions log API needs a
-          # token and the annotations API does not, and whoever is debugging
-          # this from a terminal has the second and not the first.
-          if [ "$code" -ne 0 ]; then
-            echo "::error::emulators:exec failed ($code): $(echo "$output" | tail -c 1200 | tr '
-' ' ' | tr -d '')"
-            exit "$code"
-          fi
+      # The smallest thing that still needs the emulator to have started —
+      # no probe script of its own, so nothing here can fail on its own quoting.
+      # If this is red, the emulator does not run here and the rules are not the
+      # subject.
+      - name: Emulator starts
+        run: npx firebase --project demo-quickteam emulators:exec --only firestore "node --version"
 
-      # Named explicitly as IPv4. The suite discovers the emulator through the
-      # hub or falls back to `localhost:8080`, and on a Linux runner `localhost`
-      # resolves to ::1 first while the emulator binds 127.0.0.1 — which is a
-      # connection refused that looks like a rules failure. Harmless if the hub
-      # was answering all along.
       - name: Rules against the emulator
         env:
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
