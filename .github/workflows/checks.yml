@@ -136,7 +136,7 @@ jobs:
       # If this is red, the emulator does not run here and the rules are not the
       # subject.
       - name: Emulator starts
-        run: npx firebase --project demo-quickteam emulators:exec --only firestore "node --version"
+        run: node scripts/ci-emulator-probe.mjs node --version
 
       - name: Rules against the emulator
         env:
