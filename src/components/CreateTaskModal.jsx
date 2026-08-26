@@ -50,7 +50,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
   const timeZone = organizationTimeZone(activeOrg);
   const { labels: availableLabels = [], statuses = [], types = [], priorities = [] } = useWorkflowConfig();
   const [mode, setMode] = useState('task');
-  // «Розбір дзвінків / міс» is a ceiling the price list has always carried, and
+  // «AI Аудіо-завдання / міс» is a ceiling the price list has always carried, and
   // until now nothing counted it. The tab reads it before anything is uploaded.
   const planLimits = usePlanLimits();
   const aiCallsBlocked = planLimits.blocked('aiCalls');
@@ -491,6 +491,45 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             </FormGroup>
           )}
 
+          {/* Somebody being added to the project is a decision about the
+              project, so it is asked here, beside the project — not at the
+              bottom of the form under the assignee chips, where the form is
+              already scrolled past by the time it appears.
+
+              One colour and one sentence, whatever the person's role. The two
+              branches this used to have explained our access model to somebody
+              who had asked to give a colleague a task: one of them said the
+              assignee «has access by role but will not be visible on the
+              project card», which is a sentence about our data model, not about
+              their work. */}
+          {assigneesJoiningProject.length > 0 && (
+            <div className="lg:col-span-2">
+              <Alert
+                variant="warning"
+                title={assigneesJoiningProject.length === 1
+                  ? 'Цього учасника немає в проєкті'
+                  : 'Цих учасників немає в проєкті'}
+              >
+                <div className="flex flex-col gap-2">
+                  <span>
+                    {assigneesJoiningProject.map(m => m.name || m.email).join(', ')} — не у складі проєкту
+                    {selectedProject?.name ? ` «${selectedProject.name}»` : ''}.
+                  </span>
+                  {mayGrantProjectAccess ? (
+                    <Checkbox
+                      size="sm"
+                      checked={addToProjectTeam}
+                      onChange={setAddToProjectTeam}
+                      label={`Додати до проєкту${selectedProject?.name ? ` «${selectedProject.name}»` : ''}`}
+                    />
+                  ) : (
+                    <span>Призначити не вдасться — попросіть власника або адміністратора додати до проєкту.</span>
+                  )}
+                </div>
+              </Alert>
+            </div>
+          )}
+
           {/* Description */}
           <div className="flex flex-col gap-[6px] lg:col-span-2">
             <Label>Опис</Label>
@@ -613,41 +652,6 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
                   );
                 })}
               </div>
-              {/* The composer used to say this in a 10px grey line and then do
-                  it anyway. Adding a person to a project is a change to the
-                  project, so it is asked for here, in a box that starts off —
-                  and «Створити» waits for an answer whenever the alternative is
-                  a task its own assignee cannot open. */}
-              {assigneesJoiningProject.length > 0 && (
-                <Alert
-                  variant={assigneesLockedOut.length > 0 ? 'warning' : 'info'}
-                  title={assigneesLockedOut.length > 0
-                    ? 'Виконавець не має доступу до проєкту'
-                    : 'Виконавець не у складі проєкту'}
-                  className="mt-1"
-                >
-                  <div className="flex flex-col gap-2">
-                    <span>
-                      {assigneesJoiningProject.map(m => m.name || m.email).join(', ')}
-                      {assigneesJoiningProject.length === 1 ? ' не входить' : ' не входять'} до складу проєкту
-                      {selectedProject?.name ? ` «${selectedProject.name}»` : ''}
-                      {assigneesLockedOut.length > 0
-                        ? ' і не зможе відкрити це завдання.'
-                        : ' — доступ є за роллю, але на картці проєкту його не буде видно.'}
-                    </span>
-                    {mayGrantProjectAccess ? (
-                      <Checkbox
-                        size="sm"
-                        checked={addToProjectTeam}
-                        onChange={setAddToProjectTeam}
-                        label={`Додати до складу проєкту${selectedProject?.name ? ` «${selectedProject.name}»` : ''}`}
-                      />
-                    ) : (
-                      <span>Призначити не вдасться — попросіть власника або адміністратора додати до проєкту.</span>
-                    )}
-                  </div>
-                </Alert>
-              )}
               <p className="text-[10px] leading-[1.4] text-muted">
                 У персональній аналітиці завдання врахується кожному вибраному виконавцю.
               </p>

@@ -432,11 +432,27 @@ test('high-risk composed previews keep the product markup signatures', () => {
   // stretch and got shoved up by it at the end of every scroll. So the rail's
   // height subtracts the same `--ui-detail-bottom` everything else measures
   // from, and it may not be written as a length at a call site again.
+  //
+  // The scrollport itself is measured rather than derived from the window. It
+  // was `100dvh` less a written-down allowance for the fixed header and the
+  // shell's inset, which holds only while nothing is ever put above the content
+  // panel — and a strip announcing a spent plan ceiling was, pushing the panel
+  // down by its own height. The rail then stood taller than its column: its
+  // composer hung below the bottom edge and the reading column's floor floated
+  // up into the middle of the page.
   const detailCss = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8');
-  assert.match(
-    detailCss,
-    /\.ui-detail-aside\s*\{[^}]*height:\s*calc\(100dvh - var\(--ui-detail-viewport-inset\) - var\(--ui-detail-bottom\)\)/,
+  const aside = detailCss.slice(detailCss.lastIndexOf('.ui-detail-aside {'));
+  assert.ok(
+    aside.includes('var(--ui-detail-scrollport, calc(100dvh - var(--ui-detail-viewport-inset)))'),
+    'the rail measures the scrollport instead of deriving it from the window',
+  );
+  assert.ok(
+    aside.includes('- var(--ui-detail-bottom)'),
     'the rail is the scrollport minus the room it is not allowed into',
+  );
+  assert.ok(
+    detailLayout.includes("setProperty('--ui-detail-scrollport'"),
+    'nothing publishes what the scrollport actually measures',
   );
   assert.doesNotMatch(detailLayout, /pb-\[\d+px\]/, 'the room under the page is a variable, not a class');
   // And that room belongs to the document, not to the scrollport. As the

@@ -18,6 +18,7 @@ import {
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { useWorkspaceHelp } from '@/components/WorkspaceHelpMenu';
+import WorkspacePlanLimitRail from '@/components/WorkspacePlanLimitRail';
 import { computeSidebarTheme, computeTranslucentSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
@@ -312,6 +313,12 @@ export default function MobileNav({ keyboardOpen = false }) {
 
             {/* Active timer capsule (subscribes to the 1s tick internally) */}
             <SheetTimerCapsule onNavigate={handleTimerNavigate} onStop={handleStopTimer} />
+
+            {/* The rail's ceiling notice, in the drawer that stands in for the
+                rail on a phone. The sheet already carries every `--sb-*` the
+                row mixes its colours from, so it is the same component with
+                nothing said twice. */}
+            <WorkspacePlanLimitRail />
 
             {/* Secondary nav */}
             <div className="flex flex-col gap-[2px] px-[8px]">

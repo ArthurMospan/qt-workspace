@@ -6,7 +6,7 @@
 // Access model (per-project membership):
 //   - owner/admin  → see every project in the organization
 //   - member       → see only projects whose `team` array contains their uid
-//     (the same `project.team` managed by ProjectTeamTab and seeded with the
+//     (the same `project.team` edited in BoardConfigModal and seeded with the
 //      creator at /api/projects). This mirrors the authoritative Firestore
 //      rule, which is why the member query MUST carry `array-contains` — rules
 //      are not filters, so a broad org-wide query would be permission-denied.

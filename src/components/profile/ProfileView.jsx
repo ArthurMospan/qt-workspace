@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
-import { CakeSlice, Clock3, FolderKanban, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
+import { CakeSlice, Clock3, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
-import { Surface, Card, Badge, StatusBadge, Button, IconAction, PresenceDot, Tabs, ContextMenu, EmptyState, LoadingSpinner, Tooltip } from '@/components/ui';
+import { Surface, Card, Badge, StatusBadge, Button, IconAction, Pill, PresenceDot, Tabs, ContextMenu, EmptyState, LoadingSpinner, Tooltip } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
@@ -16,7 +16,6 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 import { isOnProjectTeam, isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
-import { plural } from '@/lib/utils/plural.mjs';
 
 const EVENT_TYPE_LABELS = {
   meeting: 'Мітинг',
@@ -443,28 +442,27 @@ export default function ProfileView({ user, onClose }) {
                     : 'Спільних проєктів немає.'}
                 </p>
               ) : (
-                <div className="flex flex-col gap-2">
+                // A wrapped row of capsules, not a stack of full-width panels.
+                // Each one was a bordered row carrying a glyph, the name and a
+                // member count, so eight projects were eight boxes down a narrow
+                // column and the only thing anybody reads on any of them — the
+                // name — was the smallest part. The capsule is the kit's Pill,
+                // so its geometry is written once; the button around it adds the
+                // one thing a Pill has no business knowing, that this one opens
+                // something.
+                <div className="flex flex-wrap gap-2">
                   {memberProjects.map(project => (
                     <button
                       key={project.id}
                       type="button"
                       onClick={() => leaveFor(`/${project.id}`)}
-                      // A whole row that navigates, the way the contact values
-                      // above are whole values that copy. No kit component is a
-                      // row-shaped link, and a Button per project would put a
-                      // control where a list belongs.
-                      data-ui-control="profile-project-row"
-                      data-ui-surface="compact-bordered-panel"
-                      data-ui-padding="row"
-                      className="ui-surface flex items-center gap-3 text-left transition-colors hover:bg-canvas"
+                      title={project.name}
+                      className="ui-native-control"
+                      data-ui-control="profile-project-chip"
                     >
-                      <FolderKanban size={14} className="shrink-0 text-muted" />
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
+                      <Pill appearance="outline" tone="surface-ink" size="lg" weight="medium">
                         {project.name}
-                      </span>
-                      <span className="shrink-0 text-[11px] text-muted">
-                        {(project.team || []).length} {plural((project.team || []).length, ['учасник', 'учасники', 'учасників'])}
-                      </span>
+                      </Pill>
                     </button>
                   ))}
                 </div>

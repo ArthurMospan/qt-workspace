@@ -79,6 +79,7 @@ export default function DetailLayout({
   // white it is drawn on, so a section sliding out of view simply stopped
   // existing. The same edge the board draws on its two walls answers it here,
   // and like the board's it is lit only while something is genuinely hidden.
+  const shellRef = useRef(null);
   const scrollerRef = useRef(null);
   const [moreBelow, setMoreBelow] = useState(false);
 
@@ -90,6 +91,26 @@ export default function DetailLayout({
     // at the far end, which would keep the edge lit for ever.
     const next = maxScroll > 1 && node.scrollTop < maxScroll - 1;
     setMoreBelow(current => (current === next ? current : next));
+
+    // How tall the scrollport actually is, published for the rail beside the
+    // column to size itself from.
+    //
+    // `.ui-detail-aside` used to work this out from the window: `100dvh` less a
+    // written-down allowance for the fixed header and the shell's inset. That is
+    // right only while nothing is ever placed above the content panel, and
+    // something was — a strip announcing a spent plan ceiling, which moved the
+    // whole panel down by its height. The rail was then taller than the column
+    // it lives in, so its composer hung below the bottom edge and the reading
+    // column's floor floated up into the middle of the page. A measurement
+    // cannot be wrong about this the way an allowance can.
+    const shell = shellRef.current;
+    if (!shell) return;
+    const measured = `${Math.round(node.clientHeight)}px`;
+    // Written only when it moves: this runs inside a ResizeObserver, and a
+    // write on every callback is a layout invalidation on every callback.
+    if (shell.style.getPropertyValue('--ui-detail-scrollport') !== measured) {
+      shell.style.setProperty('--ui-detail-scrollport', measured);
+    }
   }, []);
 
   // Opening a section, switching the description to the editor or loading an
@@ -113,6 +134,7 @@ export default function DetailLayout({
 
   return (
     <div
+      ref={shellRef}
       className={`ui-detail-shell bg-transparent ${className}`}
       data-ui-context={context}
       data-ui-density={standalone ? 'standalone' : 'embedded'}

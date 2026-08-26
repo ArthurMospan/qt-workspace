@@ -107,7 +107,7 @@ export { default as Skeleton } from './Feedback/Skeleton'
 export { default as EmptyState } from './Feedback/EmptyState'
 export { default as SignalList } from './Feedback/SignalList'
 export { default as PlanGate } from './Feedback/PlanGate'
-export { default as PlanLimitBanner } from './Feedback/PlanLimitBanner'
+export { default as PlanLimitRail } from './Feedback/PlanLimitRail'
 export { default as PlanUpgradeDialog } from './Feedback/PlanUpgradeDialog'
 
 // ===== LAYOUT COMPONENTS =====

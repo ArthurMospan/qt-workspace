@@ -279,7 +279,7 @@ export async function POST(request) {
     // life of the process, so this costs no read of its own.
     const timeZone = await organizationRollupTimeZone(getAdminDb(), organizationId);
 
-    // «Розбір дзвінків / міс» is a ceiling on the price list, and until now it
+    // «AI Аудіо-завдання / міс» is a ceiling on the price list, and until now it
     // was only that. A workspace on Free has none at all, one on Lite has ten a
     // month — asked before the model is called, so a workspace at its ceiling
     // never spends one of our Gemini quota either.

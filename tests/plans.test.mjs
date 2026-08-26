@@ -31,6 +31,7 @@ import {
   planLimitRefusal,
   planLimitRows,
   planLimitState,
+  planLimitText,
   planLimitValue,
   planName,
   planUpgradeLine,
@@ -39,6 +40,7 @@ import {
   plansRaisingLimit,
   previousPlan,
   storedPlanLimit,
+  UNLIMITED,
 } from '../src/lib/utils/plans.mjs';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -64,8 +66,15 @@ test('невідомий тариф читається як безкоштовн
 });
 
 test('стелі ростуть від тарифу до тарифу і закінчуються безлімітом', () => {
-  assert.deepEqual(PLANS.map(plan => planLimit(plan.id, 'projects')), [3, 10, Infinity]);
-  assert.deepEqual(PLANS.map(plan => planLimit(plan.id, 'members')), [5, 15, Infinity]);
+  assert.deepEqual(PLANS.map(plan => planLimit(plan.id, 'projects')), [3, 20, Infinity]);
+  assert.deepEqual(PLANS.map(plan => planLimit(plan.id, 'members')), [5, 20, Infinity]);
+  // Модель — платимо за простір, а не за людину, тому жодна стеля не росте
+  // від кількості людей у команді, і обидві зникають на верхньому тарифі.
+  for (const plan of PLANS) {
+    const projects = planLimit(plan.id, 'projects');
+    const members = planLimit(plan.id, 'members');
+    assert.ok(members >= projects, `${plan.id}: місць менше, ніж проєктів`);
+  }
   // `Infinity` порівнюється тими самими операторами, тому виклик не мусить
   // розрізняти «безліміт» окремою гілкою — і саме цим Lite перестав бути Free.
   assert.ok(3 >= planLimit('free', 'projects'));
@@ -74,16 +83,35 @@ test('стелі ростуть від тарифу до тарифу і зак�
   assert.equal(planLimit('free', 'придумане'), Infinity);
 });
 
-test('стеля друкується числом, рискою або словом', () => {
+test('стеля друкується числом, рискою або маркером', () => {
   // Стовпчик голих чисел порівнюється поглядом по рядку; слово «до» перед
   // кожним читається тричі й щоразу означає те саме.
   assert.equal(planLimitValue('free', 'projects'), '3');
-  assert.equal(planLimitValue('lite', 'members'), '15');
-  // Не «∞»: цього гліфа немає в Inter, тож кожен екран підставляв власний
-  // шрифт — тонший, іншого кегля і повз базову лінію цифр поруч.
-  assert.equal(planLimitValue('pro', 'projects'), 'Безліміт');
+  assert.equal(planLimitValue('lite', 'members'), '20');
+  // Безліміт у колонці цифр — це маркер, а не слово: «Безліміт» — вісім
+  // символів там, де в кожній іншій картці одна-дві цифри, тобто найширше на
+  // картці й саме в тому рядку, який порівнюють поглядом. Картка малює замість
+  // нього іконку. І це не гліф «∞»: його немає в Inter, тож кожен екран
+  // підставляв власний шрифт — тонший, іншого кегля і повз базову лінію цифр.
+  assert.equal(planLimitValue('pro', 'projects'), UNLIMITED);
+  // А в реченні іконці нема де стати, тому там і далі слово.
+  assert.equal(planLimitText('pro', 'projects'), 'Безліміт');
+  assert.equal(planLimitText('free', 'projects'), '3');
   // Чого в тарифі немає зовсім — риска, а не нуль.
   assert.equal(planLimitValue('free', 'aiCalls'), '–');
+});
+
+test('реєстр називає фічу так само, як її підписано в продукті', () => {
+  // «Розбір дзвінків» не було видно в інтерфейсі ніде: вкладка в композері
+  // підписана «AI Аудіо-завдання», і прайслист — останнє місце, якому вільно
+  // вигадувати власне слово для того, що продукт уже назвав.
+  const limit = PLAN_LIMITS.find(entry => entry.id === 'aiCalls');
+  const capability = PLAN_CAPABILITIES.find(entry => entry.id === 'ai-calls');
+  assert.equal(capability.label, 'AI Аудіо-завдання');
+  assert.ok(limit.label.startsWith('AI Аудіо-завдання'));
+  for (const text of [limit.label, limit.title, limit.absentTitle, capability.label]) {
+    assert.doesNotMatch(text, /дзвінк/i, `«${text}» — назва, якої в інтерфейсі немає`);
+  }
 });
 
 test('стелею стає лише те, що робочий простір може порахувати', () => {
@@ -177,8 +205,12 @@ test('картка друкує лише те, що тариф додає до �
 test('рядки стель приходять готовими до друку', () => {
   const rows = planLimitRows('lite');
   assert.deepEqual(rows.map(row => row.id), PLAN_LIMITS.map(limit => limit.id));
-  assert.deepEqual(rows.map(row => row.value), ['10', '15', '10']);
-  assert.deepEqual(planLimitRows('pro').map(row => row.value), ['Безліміт', 'Безліміт', '50']);
+  assert.deepEqual(rows.map(row => row.value), ['20', '20', '20']);
+  assert.deepEqual(planLimitRows('pro').map(row => row.value), [UNLIMITED, UNLIMITED, '100']);
+  // Прапорець сказаний окремо, щоб картка малювала гліф, не знаючи, яким саме
+  // рядком записаний маркер.
+  assert.deepEqual(planLimitRows('pro').map(row => row.unlimited), [true, true, false]);
+  assert.deepEqual(planLimitRows('free').map(row => row.unlimited), [false, false, false]);
   assert.ok(planLimitRows('free').find(row => row.id === 'aiCalls').absent);
 });
 
@@ -186,7 +218,7 @@ test('у документ організації безліміт пишетьс
   // Онбординг вирішував це тернарником `plan === 'free' ? 3 : null` — і Lite
   // отримував безлімітну копію стелі, яку прайслист ставить на десяти.
   assert.equal(storedPlanLimit('free', 'projects'), 3);
-  assert.equal(storedPlanLimit('lite', 'projects'), 10);
+  assert.equal(storedPlanLimit('lite', 'projects'), 20);
   assert.equal(storedPlanLimit('pro', 'projects'), null);
   assert.equal(storedPlanLimit('pro', 'members'), null);
 });
@@ -268,11 +300,13 @@ test('речення відмови збирається з реєстру, і �
   // Вихід, що не коштує грошей, названий першим.
   assert.match(refusal, /заархівуйте/);
   // І названі обидва тарифи, що піднімають цю стелю, а не тільки найдорожчий.
-  assert.match(refusal, /на Lite — 10/);
+  assert.match(refusal, /на Lite — 20/);
+  // Серверне речення не має куди подіти іконку, тому безліміт у ньому — слово.
   assert.match(refusal, /на Pro — Безліміт/);
+  assert.doesNotMatch(refusal, /unlimited/);
 
   // Того, чого в тарифі немає, не «вичерпано».
-  assert.match(planLimitRefusal('free', 'aiCalls', 0), /Розбір дзвінків недоступний/);
+  assert.match(planLimitRefusal('free', 'aiCalls', 0), /AI Аудіо-завдання недоступні/);
   // А там, де все гаразд, речення немає взагалі.
   assert.equal(planLimitRefusal('free', 'projects', 2), '');
   assert.equal(planLimitRefusal('pro', 'projects', 9999), '');
@@ -433,6 +467,13 @@ test('картка тарифу вирівнює колонки сіткою, а
   // рядку, а список однаковий у кожній колонці.
   assert.match(card, /\{limit\.absent \? 'text-faint' : 'text-ink'\}/);
 
+  // Безліміт у колонці цифр — іконка, а не слово. Імпортована під іншим
+  // іменем: `Infinity` — глобал, і імпорт під власним іменем його затінює.
+  assert.match(card, /Infinity as InfinityIcon/);
+  assert.match(card, /{limit.unlimited/);
+  assert.match(card, /<InfinityIcon size=/);
+  assert.doesNotMatch(card, /Безліміт<|>Безліміт/);
+
   // Бейджа «Ваш тариф» немає: кнопка тієї самої картки вже це каже.
   assert.doesNotMatch(card, /Ваш тариф/);
 });
@@ -473,10 +514,31 @@ test('корона — це корона, і вона клікається', asy
   assert.match(icons, /fill="currentColor"/);
 });
 
-test('смуга і діалог висять у каркасі, а не на кожному екрані окремо', async () => {
+test('стеля живе в рейці, а діалог — у каркасі, а не на кожному екрані окремо', async () => {
   const layout = await read('src/app/(app)/layout.js');
-  assert.match(layout, /<WorkspacePlanLimitBanner \/>/);
   assert.match(layout, /<WorkspacePlanUpgradeHost \/>/);
+  // Нічого між оболонкою і білою панеллю. Смуга, що там висіла, робила кожен
+  // екран під нею на свою висоту нижчим — а два екрани, які міряють себе від
+  // вікна, а не від власної колонки, ставали вищими за місце, яке мають.
+  assert.doesNotMatch(layout, /WorkspacePlanLimitBanner/);
+  const sidebar = await read('src/components/WorkspaceSidebar.jsx');
+  assert.ok(sidebar.includes('<WorkspacePlanLimitRail collapsed={collapsed} />'));
+  // І рейка каже це там само, де вже говорить про організацію, проєкти й
+  // таймер, — над «?», не над сторінкою.
+  const railAt = sidebar.indexOf('<WorkspacePlanLimitRail');
+  const helpAt = sidebar.indexOf('<WorkspaceHelpMenu collapsed');
+  assert.ok(railAt > 0 && helpAt > railAt, 'смужка стелі має стояти над кнопкою «?»');
+  // Кольори намішані з власного тексту рейки, тому вони переживають будь-який
+  // брендинг: усередині рейки бренд-токенів не буває.
+  const notice = await read('src/components/ui/Feedback/PlanLimitRail.jsx');
+  assert.doesNotMatch(notice, /text-ink|bg-line|bg-canvas|text-muted/);
+  const css = await read('src/app/globals.css');
+  assert.ok(css.includes('.ui-rail-notice {'));
+  assert.ok(css.includes('color-mix(in srgb, var(--sb-text'));
+  // І висота рейки завдання більше не виводиться з вікна: її міряють.
+  assert.ok(css.includes('var(--ui-detail-scrollport'));
+  const detail = await read('src/components/ui/Layout/DetailLayout.jsx');
+  assert.ok(detail.includes("setProperty('--ui-detail-scrollport'"));
 
   const store = await read('src/store/useWorkspaceStore.js');
   assert.match(store, /openPlanUpgrade: \(context = \{\}\) =>/);

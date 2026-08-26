@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { Alert, ConnectionBanner, LoadingSpinner, EmptyState, PlanGate, PlanLimitBanner, PlanMark, PlanUpgradeDialog } from '@/components/ui';
+import { Alert, ConnectionBanner, LoadingSpinner, EmptyState, PlanGate, PlanLimitRail, PlanMark, PlanUpgradeDialog } from '@/components/ui';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { User, Folder, Plug } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
@@ -149,16 +149,27 @@ export default function FeedbackSection() {
         <ConnectionBanner offline={offline} />
       </PreviewBlock>
 
-      <PreviewBlock
-        title="PlanLimitBanner — стеля тарифу, сказана один раз нагорі"
-        component="PlanLimitBanner"
-        description="Корона біля контрола відповідає тому, хто вже тягнеться саме до цього контрола. На питання «чому нічого не створюється» вона відповісти не може: людина, яка його ставить, не дивиться на жоден конкретний контрол. Смуга висить у каркасі й зникає разом з умовою. Золота, а не червона: нічого не зламалось і нічого не втрачено — робочий простір робить рівно те, що написано в тарифі."
-        filePath="src/components/ui/Feedback/PlanLimitBanner.jsx"
+<PreviewBlock
+        title="PlanLimitRail — стеля тарифу, сказана внизу рейки"
+        component="PlanLimitRail"
+        description="Корона біля контрола відповідає тому, хто вже тягнеться саме до цього контрола. На питання «чому нічого не створюється» вона відповісти не може: людина, яка його ставить, не дивиться на жоден конкретний контрол. Раніше це була смуга над панеллю контенту — і кожен екран під нею був на її висоту нижчим, а два екрани, що міряють себе від вікна, ставали вищими за місце, яке мають. Тепер це рядок у підвалі сайдбару: він нічого не посуває і зникає разом з умовою. Усі кольори намішані з --sb-text, тому рядок читається на чорній рейці, на білій і на будь-якій брендованій; жовтий — тільки гліф, бо сенс несуть слова поруч."
+        filePath="src/components/ui/Feedback/PlanLimitRail.jsx"
         fullWidth
       >
-        <div className="flex flex-col gap-3">
-          <PlanLimitBanner notice={planLimitNotice('free', 'projects', 3)} onOpen={() => {}} />
-          <PlanLimitBanner notice={planLimitNotice('free', 'aiCalls', 0)} extra={2} onOpen={() => {}} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* The two rails the product actually ships, so the mix against
+              `--sb-text` is judged on both rather than on the one the
+              catalogue happens to be drawn on. */}
+          <div className="flex flex-col gap-3 rounded-[16px] bg-ink p-[16px] [--sb-muted:#a3a3a3] [--sb-text:#ffffff]">
+            <PlanLimitRail notice={planLimitNotice('free', 'projects', 3)} onOpen={() => {}} />
+            <PlanLimitRail notice={planLimitNotice('free', 'members', 5)} extra={2} onOpen={() => {}} />
+            <PlanLimitRail notice={planLimitNotice('free', 'projects', 3)} collapsed onOpen={() => {}} />
+          </div>
+          <div className="flex flex-col gap-3 rounded-[16px] bg-canvas p-[16px] [--sb-muted:#6b6b6b] [--sb-text:#1f1f1f]">
+            <PlanLimitRail notice={planLimitNotice('free', 'projects', 3)} onOpen={() => {}} />
+            <PlanLimitRail notice={planLimitNotice('free', 'members', 5)} extra={2} onOpen={() => {}} />
+            <PlanLimitRail notice={planLimitNotice('free', 'projects', 3)} collapsed onOpen={() => {}} />
+          </div>
         </div>
       </PreviewBlock>
 

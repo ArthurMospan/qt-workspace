@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, Infinity as InfinityIcon } from 'lucide-react';
 import { PlanCrownIcon } from '@/lib/design/icons';
 import Card from '@/components/ui/Layout/Card';
 import Button from '@/components/ui/Button';
@@ -116,12 +116,21 @@ export default function PlanCards({
                 every column. */}
             <ul className="flex flex-col gap-[10px] px-5 pb-5">
               {planLimitRows(plan.id).map(limit => (
-                <li key={limit.id} className="flex items-baseline justify-between gap-3 text-[13px]">
+                // Centred, not baselined. Both halves are one line of the same
+                // size, so for a figure the two are the same row; for the plan
+                // with no ceiling the right-hand side is a glyph, which has no
+                // baseline to sit on.
+                <li key={limit.id} className="flex items-center justify-between gap-3 text-[13px]">
                   <span className={`min-w-0 ${limit.absent ? 'text-faint' : 'text-ink'}`}>
                     {limit.label}
                   </span>
-                  <span className={`shrink-0 font-bold tabular-nums ${limit.absent ? 'text-faint' : 'text-ink'}`}>
-                    {limit.value}
+                  <span className={`flex shrink-0 items-center font-bold tabular-nums ${limit.absent ? 'text-faint' : 'text-ink'}`}>
+                    {/* «Безліміт» is eight characters standing where every
+                        other card has one or two digits — the widest thing on
+                        the card, on the row somebody compares across it. */}
+                    {limit.unlimited
+                      ? <InfinityIcon size={18} strokeWidth={2.75} aria-label="Безліміт" />
+                      : limit.value}
                   </span>
                 </li>
               ))}

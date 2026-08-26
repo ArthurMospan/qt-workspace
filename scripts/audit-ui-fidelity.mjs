@@ -176,7 +176,7 @@ const STRUCTURES = [
   { id: 'qtplus', label: 'QuickTeam+', file: /qtplus/i },
   { id: 'ai-call', label: 'AI-дзвінок', file: /(?:ai-call|AudioTask)/i },
   { id: 'tasks', label: 'Задачі', file: /(?:IssueDetail|IssueCard|CreateTaskModal|TaskRow|TaskListView|AttachmentViewer|Markdown)/ },
-  { id: 'board', label: 'Дошка й проєкт', file: /(?:AgileBoard|BoardConfig|ProjectTeamTab|QtPlusProjectTab|\(app\)\/\[projectId\]|\(app\)\/page\.js)/ },
+  { id: 'board', label: 'Дошка й проєкт', file: /(?:AgileBoard|BoardConfig|QtPlusProjectTab|\(app\)\/\[projectId\]|\(app\)\/page\.js)/ },
   { id: 'sprints', label: 'Спринти', file: /sprints/i },
   { id: 'settings', label: 'Налаштування', file: /(?:settings|TeamMemberSettings|InviteLink|InviteMemberDialog|OrgSwitcher|YouTrackImport)/i },
   { id: 'shell', label: 'Оболонка', file: /(?:WorkspaceHeader|WorkspaceSidebar|MobileNav|AuthLayout|SearchModal|UserStatusSetter|TopHeader|NotificationCenter|profile\/)/ },

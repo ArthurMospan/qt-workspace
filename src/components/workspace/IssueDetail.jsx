@@ -1506,7 +1506,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     <span>Воно прибране з дошки, списків і підрахунку відкритої роботи. У звітах, таймшиті та рахунках лишається — записаний час нікуди не дівся. Строку немає.</span>
                     {canWhileRoleLoads(orgRole, 'edit:issue') && (
                       <Button
-                        style="secondary"
+                        style="primary"
                         size="sm"
                         icon={ArchiveRestore}
                         onClick={() => handleArchive(false)}
@@ -1530,7 +1530,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                     <span>Цієї роботи не буде. Завдання не рахується ніде: ні в прогресі, ні у звітах, ні в навантаженні, ні в рахунках. Дані збережені — строку немає.</span>
                     {canWhileRoleLoads(orgRole, 'edit:issue') && (
                       <Button
-                        style="secondary"
+                        style="primary"
                         size="sm"
                         icon={Undo2}
                         onClick={() => handleCancel(false)}
@@ -1556,28 +1556,24 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             {assigneesOffProjectRoster.length > 0 && (
               <div className="mt-3">
                 <Alert
-                  variant={assigneesLockedOutOfProject.length > 0 ? 'warning' : 'info'}
-                  title={assigneesLockedOutOfProject.length > 0
-                    ? 'Виконавець не має доступу до проєкту'
-                    : 'Виконавець не у складі проєкту'}
+                  variant="warning"
+                  title={assigneesOffProjectRoster.length === 1
+                    ? 'Цього учасника немає в проєкті'
+                    : 'Цих учасників немає в проєкті'}
                 >
                   <div className="flex flex-wrap items-center gap-3">
                     <span>
-                      {assigneesOffProjectRoster.map(member => member.name || member.email).join(', ')}
-                      {assigneesOffProjectRoster.length === 1 ? ' не входить' : ' не входять'} до складу проєкту
-                      {project?.name ? ` «${project.name}»` : ''}
-                      {assigneesLockedOutOfProject.length > 0
-                        ? ', тож не побачить це завдання у своєму проєкті.'
-                        : ' — доступ є за роллю, але на картці проєкту його не видно.'}
+                      {assigneesOffProjectRoster.map(member => member.name || member.email).join(', ')} — не у складі проєкту
+                      {project?.name ? ` «${project.name}»` : ''}.
                     </span>
                     {can(orgRole, 'manage:team') && (
                       <Button
-                        style="secondary"
+                        style="primary"
                         size="sm"
                         icon={Users}
                         onClick={handleGrantProjectAccess}
                       >
-                        Додати до складу проєкту
+                        Додати до проєкту
                       </Button>
                     )}
                   </div>

@@ -124,7 +124,15 @@ test('the composer scopes assignees to the project selected inside it', async ()
   assert.match(modal, /assigneesJoiningProject/);
   assert.doesNotMatch(modal, /буде додано разом зі створенням завдання/);
   assert.match(modal, /const \[addToProjectTeam, setAddToProjectTeam\] = useState\(false\);/);
-  assert.match(modal, /Додати до складу проєкту/);
+  assert.match(modal, /Додати до проєкту/);
+  // Beside the project, not at the bottom of the form: the block used to sit
+  // under the assignee chips, which is past the fold of a form somebody is
+  // still filling in.
+  const projectField = modal.indexOf('label="Проєкт"');
+  const consent = modal.indexOf('assigneesJoiningProject.length > 0 && (');
+  const description = modal.indexOf('<MarkdownEditor');
+  assert.ok(projectField > 0 && consent > projectField && consent < description,
+    'блок згоди має стояти між селектором проєкту й описом');
   assert.match(modal, /addAssigneesToProjectTeam: addToProjectTeam && assigneesJoiningProject\.length > 0/);
   // Consent is about one project, so choosing another one asks again.
   assert.match(modal, /if \(key === 'projectId'\) setAddToProjectTeam\(false\);/);
@@ -210,8 +218,15 @@ test('a board card no longer loses the face of someone outside the project team'
   // admin and the old access check therefore said nothing at all.
   assert.match(detail, /assigneesOffProjectRoster\.length > 0 && \(/);
   assert.match(detail, /isOnProjectTeam\(project, member\.id \|\| member\.uid\)/);
-  assert.match(detail, /Виконавець не має доступу до проєкту/);
-  assert.match(detail, /Виконавець не у складі проєкту/);
+  // One colour and one sentence, whatever the person's role. The branch that
+  // said «доступ є за роллю, але на картці проєкту його не видно» explained our
+  // data model to somebody who had asked to give a colleague a task.
+  assert.match(detail, /Цього учасника немає в проєкті/);
+  assert.doesNotMatch(detail, /доступ є за роллю/);
+  assert.doesNotMatch(detail, /Виконавець не у складі проєкту/);
+  // And the control on the coloured wash is ink, not the near-white secondary
+  // fill, which stopped reading as a button at all on the four washes.
+  assert.ok(detail.includes('style="primary"'), 'кнопка в алерті має бути чорнильною');
   // The grant the task screen has always performed stopped being silent, in
   // both directions: it used to succeed without a word and fail into a `catch {}`.
   assert.doesNotMatch(detail, /catch \{ \/\* member assigner lacks team-write permission — non-fatal \*\/ \}/);

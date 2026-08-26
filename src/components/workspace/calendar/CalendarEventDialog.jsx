@@ -866,28 +866,28 @@ export default function CalendarEventDialog({
             />
           )}
           {invitesOthers && participantsOffProjectRoster.length > 0 && (
+            // One colour and one sentence, the same as the task composer and
+            // the task page now say. The branch that explained the access model
+            // («доступ є за роллю, але на картці проєкту його не видно») was
+            // answering a question nobody in this dialog had asked.
             <Alert
-              variant={participantsLockedOutOfProject.length > 0 ? 'warning' : 'info'}
-              title={participantsLockedOutOfProject.length > 0
-                ? 'Учасник не має доступу до проєкту'
-                : 'Учасник не у складі проєкту'}
+              variant="warning"
+              title={participantsOffProjectRoster.length === 1
+                ? 'Цього учасника немає в проєкті'
+                : 'Цих учасників немає в проєкті'}
               className="mt-1"
             >
               <div className="flex flex-col gap-2">
                 <span>
-                  {participantsOffProjectRoster.map(member => memberLabel(member)).join(', ')}
-                  {participantsOffProjectRoster.length === 1 ? ' не входить' : ' не входять'} до складу проєкту
-                  {eventProject?.name ? ` «${eventProject.name}»` : ''}
-                  {participantsLockedOutOfProject.length > 0
-                    ? ' і не зможе відкрити його з цієї події.'
-                    : ' — доступ є за роллю, але на картці проєкту його не видно.'}
+                  {participantsOffProjectRoster.map(member => memberLabel(member)).join(', ')} — не у складі проєкту
+                  {eventProject?.name ? ` «${eventProject.name}»` : ''}.
                 </span>
                 {mayGrantProjectAccess ? (
                   <Checkbox
                     size="sm"
                     checked={addToProjectTeam}
                     onChange={setAddToProjectTeam}
-                    label={`Додати до складу проєкту${eventProject?.name ? ` «${eventProject.name}»` : ''}`}
+                    label={`Додати до проєкту${eventProject?.name ? ` «${eventProject.name}»` : ''}`}
                   />
                 ) : (
                   <span>Зберегти не вдасться — попросіть власника або адміністратора додати до проєкту.</span>

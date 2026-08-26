@@ -392,13 +392,12 @@ test('nothing decides completion or «в роботі» by a status’s position
 });
 
 test('what measures output reads delivered; what asks "is there work left" reads closed', async () => {
-  const [dashboard, analytics, analyticsTab, velocity, workload, team, billing] = await Promise.all([
+  const [dashboard, analytics, analyticsTab, velocity, workload, billing] = await Promise.all([
     read('../src/app/(app)/page.js'),
     read('../src/app/(app)/analytics/page.js'),
     read('../src/components/workspace/AnalyticsTab.jsx'),
     read('../src/components/workspace/VelocityTab.jsx'),
     read('../src/components/workspace/WorkloadTab.jsx'),
-    read('../src/components/workspace/ProjectTeamTab.jsx'),
     read('../src/components/workspace/BillingTab.jsx'),
   ]);
 
@@ -417,7 +416,6 @@ test('what measures output reads delivered; what asks "is there work left" reads
   // in review has produced none yet.
   assert.match(velocity, /function useWeeklyVelocity\([^)]*deliveredSet/);
   assert.match(workload, /done: issues\.filter\(issue => \(\s*\n\s*deliveredSet\.has/);
-  assert.match(team, /const done = memberIssues\.filter\(issue => deliveredSet\.has/);
   assert.match(billing, /deliveredStatusIds\.includes\(issue\.columnId \|\| issue\.status\)/);
 
   // And the ones that must stay closed: an unfinished task is overdue when its

@@ -21,6 +21,7 @@ import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 import WorkspaceHelpMenu from '@/components/WorkspaceHelpMenu';
+import WorkspacePlanLimitRail from '@/components/WorkspacePlanLimitRail';
 
 import { can } from '@/lib/utils/can';
 
@@ -419,6 +420,8 @@ export default function WorkspaceSidebar() {
             })}
         </div>
       </div>
+
+      <WorkspacePlanLimitRail collapsed={collapsed} />
 
       <WorkspaceHelpMenu collapsed={collapsed} />
 

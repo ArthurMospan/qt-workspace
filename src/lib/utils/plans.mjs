@@ -15,7 +15,8 @@
 //   1. The ceilings, as a table of numbers. Not «До 10» — a column of bare
 //      figures is compared down the row at a glance, and the word in front of
 //      each one is read three times and adds nothing. A plan that does not have
-//      something at all shows «–», and no ceiling says «Безліміт».
+//      something at all shows «–», and a plan with no ceiling shows lucide's
+//      `Infinity` — the word for it is the widest thing on the card.
 //   2. What the plan adds, as «Все з Lite +» and then only the new lines.
 //      Repeating twelve shared features on every card makes the columns
 //      unreadable and buries the two lines that actually differ.
@@ -78,10 +79,14 @@ export const PLAN_LIMITS = [
   },
   {
     id: 'aiCalls',
-    label: 'Розбір дзвінків / міс',
-    title: 'Розбори дзвінків на цей місяць вичерпано',
+    // The tab in the composer says «AI Аудіо-завдання», so the price list says
+    // it too. «Розбір дзвінків» was a name for this feature that appeared
+    // nowhere a person could see it — a price list is the last place that may
+    // invent its own vocabulary for something the product already named.
+    label: 'AI Аудіо-завдання / міс',
+    title: 'AI Аудіо-завдання на цей місяць вичерпано',
     hint: 'Лічильник обнулиться першого числа наступного місяця.',
-    absentTitle: 'Розбір дзвінків недоступний на цьому тарифі',
+    absentTitle: 'AI Аудіо-завдання недоступні на цьому тарифі',
     absentHint: 'Запис наради стає саммарі, рішеннями й чернетками задач — на платному тарифі.',
     enforced: true,
     enforcedAt: 'src/app/api/ai/call-to-tasks/route.js',
@@ -167,7 +172,7 @@ export const PLAN_CAPABILITIES = [
   },
   {
     id: 'ai-calls',
-    label: 'Розбір дзвінків',
+    label: 'AI Аудіо-завдання',
     detail: 'Запис наради стає саммарі, рішеннями й чернетками задач',
     plans: ['lite', 'pro'],
     enforced: false,
@@ -193,7 +198,7 @@ export const PLANS = [
   {
     id: 'free',
     name: 'Free',
-    tagline: 'Для тесту й першої команди',
+    tagline: 'Перша команда, до п’ятьох',
     priceLabel: '0',
     currencyLabel: 'грн / міс',
     ctaLabel: 'Почати',
@@ -208,12 +213,12 @@ export const PLANS = [
     // application with its own database. Lite is the plan a team actually works
     // on — everything the product does, at the size of one team.
     name: 'Lite',
-    tagline: 'Усе, що вміє продукт, для однієї команди',
+    tagline: 'Команда, яка вже працює щодня',
     priceLabel: '499',
     currencyLabel: 'грн / міс',
     ctaLabel: 'Спробувати',
     ctaNote: 'Оплата ще не підключена',
-    limits: { projects: 10, members: 15, aiCalls: 10 },
+    limits: { projects: 20, members: 20, aiCalls: 20 },
   },
   {
     id: 'pro',
@@ -221,12 +226,12 @@ export const PLANS = [
     // Pro adds no feature Lite does not have. What it takes away is the
     // ceilings, and the tagline says that rather than implying a fourth column
     // of things nobody would find on the card.
-    tagline: 'Те саме, але без стель',
+    tagline: 'Коли команда переросла ліміти',
     priceLabel: '999',
     currencyLabel: 'грн / міс',
     ctaLabel: 'Спробувати',
     ctaNote: 'Оплата ще не підключена',
-    limits: { projects: Infinity, members: Infinity, aiCalls: 50 },
+    limits: { projects: Infinity, members: Infinity, aiCalls: 100 },
     recommended: true,
   },
 ];
@@ -250,23 +255,43 @@ export function planLimit(value, key) {
   return typeof limit === 'number' ? limit : Infinity;
 }
 
+/** What `planLimitValue` returns where a plan has no ceiling at all. */
+export const UNLIMITED = 'unlimited';
+
 /**
- * A number, «–» or «Безліміт» — never «До 10».
+ * A number, «–» or the `UNLIMITED` marker — never «До 10».
  *
  * A column of bare figures is compared down the row at a glance; a word in
  * front of every one of them is read three times and says the same thing each
  * time.
  *
- * No ceiling is a word rather than «∞». That glyph is not in Inter, so every
- * screen fell back to whatever font on the machine had one: it came out thin,
- * a different size from the digits beside it and sitting off their baseline —
- * exactly the wobble a column of figures exists to avoid.
+ * No ceiling is a marker rather than a word, because the two places that print
+ * it want two different things. In the column of figures «Безліміт» is eight
+ * characters of prose sitting where every other card has one or two digits, and
+ * it is the widest thing on the card — so the card draws lucide's `Infinity`
+ * there instead. It is not the «∞» glyph: that one is missing from Inter, and
+ * every screen fell back to whatever font on the machine had it — thin, a
+ * different size from the digits beside it and off their baseline. An icon is
+ * drawn, not typeset, so it does neither.
+ *
+ * A sentence has no room for an icon, so it asks `planLimitText`.
  */
 export function planLimitValue(value, key) {
   const limit = planLimit(value, key);
-  if (limit === Infinity) return 'Безліміт';
+  if (limit === Infinity) return UNLIMITED;
   if (limit === 0) return '–';
   return String(limit);
+}
+
+/**
+ * The same ceiling as something a sentence can contain.
+ *
+ * This is what the 403 body, the upgrade line and every other place with no
+ * components print. `planLimitRefusal` reaches this and not the marker.
+ */
+export function planLimitText(value, key) {
+  const raw = planLimitValue(value, key);
+  return raw === UNLIMITED ? 'Безліміт' : raw;
 }
 
 /** The ceiling rows for one plan's card, ready to print. */
@@ -275,6 +300,9 @@ export function planLimitRows(value) {
     id: limit.id,
     label: limit.label,
     value: planLimitValue(value, limit.id),
+    // Said as a flag as well as in the value, so the card can decide to draw a
+    // glyph without knowing what the marker string happens to be.
+    unlimited: planLimit(value, limit.id) === Infinity,
     absent: planLimit(value, limit.id) === 0,
   }));
 }
@@ -428,7 +456,7 @@ export function plansRaisingLimit(planId, key) {
       name: plan.name,
       priceLabel: plan.priceLabel,
       currencyLabel: plan.currencyLabel,
-      value: planLimitValue(plan.id, key),
+      value: planLimitText(plan.id, key),
     }));
 }
 

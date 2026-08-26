@@ -82,7 +82,6 @@ test('an organization role is written in one place, in Ukrainian', async () => {
     'src/components/OrgSwitcherScreen.jsx',
     'src/app/(app)/settings/page.js',
     'src/components/workspace/HoverCard.jsx',
-    'src/components/workspace/ProjectTeamTab.jsx',
   ]) {
     const source = await readFile(new URL(`../${path}`, import.meta.url), 'utf8');
     assert.match(source, /orgMembership\.mjs/, `${path} must take the label from the shared map`);

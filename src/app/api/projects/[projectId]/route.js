@@ -47,26 +47,17 @@ export async function PATCH(request, context) {
     const loaded = await loadAuthorizedProject(request, projectId);
     if (loaded.error) return NextResponse.json({ error: loaded.error }, { status: loaded.status });
     const body = await readJsonBody(request);
-    const { action, team } = body;
-    if (!['archive', 'restore', 'update-team', 'update-settings'].includes(action)) {
+    const { action } = body;
+    if (!['archive', 'restore', 'update-settings'].includes(action)) {
       return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
     }
 
     const { db, ref, project } = loaded;
-    if (action === 'update-team') {
-      const requestedTeam = Array.isArray(team) ? [...new Set(team.filter(Boolean))].slice(0, 100) : [];
-      const nextTeam = project.createdBy && !requestedTeam.includes(project.createdBy)
-        ? [project.createdBy, ...requestedTeam]
-        : requestedTeam;
-      if (nextTeam.length > 0) {
-        const memberships = await db.getAll(...nextTeam.map(userId => db.collection('orgMemberships').doc(`${project.organizationId}_${userId}`)));
-        if (memberships.some((membership, index) => !membership.exists || membership.data().userId !== nextTeam[index])) {
-          return NextResponse.json({ error: 'У команді може бути лише учасник організації' }, { status: 400 });
-        }
-      }
-      await ref.update({ team: nextTeam, updatedAt: FieldValue.serverTimestamp() });
-      return NextResponse.json({ success: true, team: nextTeam });
-    }
+    // There is no whole-array roster write any more. `update-team` replaced
+    // `project.team` with whatever list the caller was holding, which silently
+    // undid anything added while their dialog was open — the exact failure
+    // `teamBaseline` below exists to prevent. Its one caller was a «Команда»
+    // tab that nothing had rendered for some time.
     if (action === 'update-settings') {
       const name = typeof body.name === 'string' ? body.name.trim() : '';
       const description = typeof body.description === 'string' ? body.description.trim() : '';

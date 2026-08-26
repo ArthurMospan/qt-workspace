@@ -14,7 +14,6 @@ import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import ProfileModal from '@/components/profile/ProfileModal';
 import WorkspaceQuickViewHost from '@/components/WorkspaceQuickViewHost';
 import WorkspacePlanUpgradeHost from '@/components/WorkspacePlanUpgradeHost';
-import WorkspacePlanLimitBanner from '@/components/WorkspacePlanLimitBanner';
 import { useState } from 'react';
 import WorkspaceNotificationBridge from '@/components/WorkspaceNotificationBridge';
 import IssueReadStateBridge from '@/components/IssueReadStateBridge';
@@ -318,10 +317,12 @@ export default function WorkspaceLayout({ children }) {
           screen's own scroller (`.qt-nav-scroll`), which is the only element
           that knows where its content actually ends. */}
       <div className="flex flex-col flex-1 overflow-hidden w-full p-0 md:p-[12px] md:pl-[6px] md:pb-[12px]">
-        {/* Above the content panel rather than inside it: the strip is about the
-            workspace, not about the screen, and a screen that scrolls must not
-            be able to scroll it away. */}
-        <WorkspacePlanLimitBanner />
+        {/* Nothing between the shell and the content panel. A strip used to
+            hang here saying which ceiling of the plan had filled up, and every
+            screen under it was that much shorter for as long as it was there —
+            including the two that size themselves from the window rather than
+            from their own column. That notice lives at the foot of the sidebar
+            now, where the workspace already talks about itself. */}
         <div className="flex flex-col flex-1 bg-white rounded-none md:rounded-[24px] overflow-hidden relative">
           {!hideHeader && (
             <div className="print:hidden absolute top-0 left-0 right-0 z-30">
