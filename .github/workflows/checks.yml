@@ -135,9 +135,17 @@ jobs:
       # Does emulators:exec work here at all? A demo-* project needs no login,
       # but that is the assumption most likely to be wrong on a runner with no
       # Firebase credentials — and if it is, the suite below can only fail in a
-      # way that looks like the rules being wrong.
+      # way that looks like the rules being wrong. The probe is a file rather
+      # than an inline -e so that nothing here depends on nested shell quoting.
       - name: Emulator starts and answers
-        run: npx firebase --project demo-quickteam emulators:exec --only firestore "node -e \"const h=process.env.FIRESTORE_EMULATOR_HOST; if(!h) throw new Error('FIRESTORE_EMULATOR_HOST unset'); console.log('emulator at', h);\""
+        run: |
+          cat > emulator-probe.mjs <<'PROBE'
+          const host = process.env.FIRESTORE_EMULATOR_HOST;
+          if (!host) throw new Error('FIRESTORE_EMULATOR_HOST is unset inside emulators:exec');
+          const response = await fetch(`http://${host}/`);
+          console.log('emulator at', host, '->', response.status);
+          PROBE
+          npx firebase --project demo-quickteam emulators:exec --only firestore 'node emulator-probe.mjs'
 
       # Named explicitly as IPv4. The suite discovers the emulator through the
       # hub or falls back to `localhost:8080`, and on a Linux runner `localhost`
