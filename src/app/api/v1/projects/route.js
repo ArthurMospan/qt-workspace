@@ -28,7 +28,7 @@ export async function GET(req) {
     }
 
     const orgData = orgSnap.data();
-    const apiKeys = await getOrganizationApiKeys(organizationId, orgData);
+    const apiKeys = await getOrganizationApiKeys(organizationId);
     
     // Check if the provided apiKey exists in the organization's valid apiKeys
     const validApiKey = isValidApiKey(apiKeys, apiKey);

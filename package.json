@@ -37,6 +37,8 @@
     "migrate:image-assets": "node scripts/migrate-image-assets.mjs",
     "migrate:chat-attachments": "node scripts/migrate-chat-attachments.mjs",
     "migrate:issue-keys": "node scripts/migrate-issue-keys.mjs",
+    "migrate:api-keys": "node scripts/migrate-api-keys.mjs",
+    "cleanup:rate-limits": "node scripts/cleanup-rate-limits.mjs",
     "reconcile:issue-time": "node scripts/reconcile-issue-spent-minutes.mjs",
     "backfill:analytics-rollups": "node scripts/backfill-analytics-rollups.mjs"
   },
