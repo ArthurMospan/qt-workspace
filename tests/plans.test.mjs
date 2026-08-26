@@ -426,7 +426,7 @@ test('прайслист один на весь продукт', async () => {
   assert.match(createRoute, /storedPlanLimit\(plan, 'projects'\)/);
   const planRoute = await read('src/app/api/organizations/[organizationId]/route.js');
   assert.match(planRoute, /storedPlanLimit\(plan, 'projects'\)/);
-  assert.match(planRoute, /projectsOverPlanLimit\(/);
+  assert.match(planRoute, /resyncProjectsOverPlanLimit\(/);
 
   // Перемикання щось робить, а не показує тост про майбутнє. І пише його одне
   // місце: два екрани, що пишуть одне поле, писали б його двома способами.
@@ -702,10 +702,20 @@ test('проєкт понад стелю стає тільки для читан
     ['new'],
   );
 
-  // Позначку ставить перемикання тарифу, і тільки воно; писати її з браузера
-  // не можна — інакше можна було б зняти позначку й писати далі.
-  const route = await read('src/app/api/organizations/[organizationId]/route.js');
-  assert.match(route, /overPlanLimit: next/);
+  // Позначка перераховується скрізь, де змінюється сам набір активних
+  // проєктів, а не лише коли міняється тариф: заархівував один — звільнилось
+  // місце для того, що став тільки для читання, і про це не дізнався б ніхто.
+  const helper = await read('src/lib/server/planLimits.js');
+  assert.match(helper, /export async function resyncProjectsOverPlanLimit/);
+  assert.match(helper, /overPlanLimit: overLimit.has\(document.id\)/);
+  for (const path of [
+    'src/app/api/organizations/[organizationId]/route.js',
+    'src/app/api/projects/[projectId]/route.js',
+  ]) {
+    assert.match(await read(path), /resyncProjectsOverPlanLimit\(/, path);
+  }
+  // Писати її з браузера не можна — інакше можна було б зняти позначку й
+  // писати далі.
   const rules = await read('firestore.rules');
   assert.match(rules, /'overPlanLimit'/);
 

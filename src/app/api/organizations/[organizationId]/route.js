@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, FieldValue, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
-import { firestoreDocumentData } from '@/lib/utils/firestoreDocument.mjs';
-import {
-  normalizePlan,
-  projectsOverPlanLimit,
-  storedPlanLimit,
-} from '@/lib/utils/plans.mjs';
+import { resyncProjectsOverPlanLimit } from '@/lib/server/planLimits';
+import { normalizePlan, storedPlanLimit } from '@/lib/utils/plans.mjs';
 
 export async function PATCH(request, context) {
   try {
@@ -32,19 +28,7 @@ export async function PATCH(request, context) {
     if (action === 'set-plan') {
       const plan = normalizePlan(body.plan);
       const db = getAdminDb();
-      const projectsSnapshot = await db.collection('projects')
-        .where('organizationId', '==', organizationId)
-        .where('status', '==', 'active')
-        .get();
-      // The path's id, not whatever `id` the document happens to carry: a
-      // stale denormalized copy would mark the wrong project read-only.
-      const overLimit = new Set(projectsOverPlanLimit(
-        plan,
-        projectsSnapshot.docs.map(firestoreDocumentData),
-      ));
-
-      const batch = db.batch();
-      batch.update(db.collection('organizations').doc(organizationId), {
+      await db.collection('organizations').doc(organizationId).update({
         plan,
         // The ceilings the organization document carries are the registry's,
         // never a ternary — the same rule onboarding follows.
@@ -54,19 +38,12 @@ export async function PATCH(request, context) {
         },
         updatedAt: FieldValue.serverTimestamp(),
       });
-      for (const document of projectsSnapshot.docs) {
-        const next = overLimit.has(document.id);
-        // Written only where it moves: a plan switch on a workspace with fifty
-        // projects is otherwise fifty writes to say nothing changed.
-        if (Boolean(document.data().overPlanLimit) === next) continue;
-        batch.update(document.ref, {
-          overPlanLimit: next,
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-      }
-      await batch.commit();
+      // Which projects the new ceiling has no room for is the same question
+      // archiving one asks, so it is the same helper — the plan is not the only
+      // side of that comparison that moves.
+      const readOnlyProjectIds = await resyncProjectsOverPlanLimit(db, organizationId, plan);
 
-      return NextResponse.json({ plan, readOnlyProjectIds: [...overLimit] });
+      return NextResponse.json({ plan, readOnlyProjectIds });
     }
 
     if (action !== 'transfer-ownership' || typeof targetUserId !== 'string' || !targetUserId) {

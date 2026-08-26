@@ -3,7 +3,11 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { deleteProjectAnalyticsRollups } from '@/lib/server/analyticsRollups';
-import { recordPlanUsage } from '@/lib/server/planLimits';
+import {
+  organizationPlan,
+  recordPlanUsage,
+  resyncProjectsOverPlanLimit,
+} from '@/lib/server/planLimits';
 import { normalizePlan, planLimit, planLimitRefusal } from '@/lib/utils/plans.mjs';
 import { introducedIssueExecutionViolations } from '@/lib/utils/issueStatusTransition.mjs';
 import {
@@ -345,6 +349,11 @@ export async function PATCH(request, context) {
     if (action === 'restore' && restoredCount) {
       await recordPlanUsage(db, project.organizationId, { projects: restoredCount + 1 });
     }
+    // The set of projects the ceiling has room for just changed. Archiving one
+    // on a workspace that is over its plan makes room for one of the ones that
+    // went read-only, and nothing else would have noticed: the mark was written
+    // by the plan switch, and the plan has not changed.
+    await resyncProjectsOverPlanLimit(db, project.organizationId, organizationPlan(await orgRef.get()));
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error?.projectApi) {
@@ -513,6 +522,14 @@ export async function DELETE(request, context) {
       projectMutationVersion: FieldValue.increment(1),
     });
     await db.recursiveDelete(ref);
+    // One fewer active project is one more place under the ceiling, and on a
+    // workspace that is over it that place belongs to whichever project went
+    // read-only last.
+    await resyncProjectsOverPlanLimit(
+      db,
+      project.organizationId,
+      organizationPlan(await db.collection('organizations').doc(project.organizationId).get()),
+    );
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error?.projectApi) {

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { NextResponse } from 'next/server';
+import { firestoreDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 import {
   DEFAULT_PLAN,
   capabilityAvailability,
@@ -11,6 +12,7 @@ import {
   planName,
   planLimitRefusal,
   planUsagePeriod,
+  projectsOverPlanLimit,
 } from '@/lib/utils/plans.mjs';
 
 // Where a ceiling becomes a refusal.
@@ -131,6 +133,43 @@ export function planCapabilityRefusalResponse(plan, capabilityId) {
 export async function refuseWithoutCapability(db, organizationId, capabilityId) {
   const snapshot = await db.collection('organizations').doc(organizationId).get();
   return planCapabilityRefusalResponse(organizationPlan(snapshot), capabilityId);
+}
+
+/**
+ * Re-decides which projects the plan's ceiling has no room for, and marks them.
+ *
+ * Not only when the plan changes. The ceiling is a comparison between a number
+ * and a list, and both sides move: switching to Free with twelve projects marks
+ * nine of them read-only, and then archiving one of the three that stayed makes
+ * room — for one of the nine, which nothing would have noticed. A project left
+ * read-only after its place was freed is the product enforcing a ceiling that is
+ * no longer there.
+ *
+ * So it runs wherever the active set changes: the plan switch, an archive, a
+ * restore, a deletion. Only the documents whose answer moved are written, so the
+ * usual case — nothing over the ceiling, nothing to change — costs one query and
+ * no writes at all.
+ *
+ * @returns {string[]} The ids that are read-only afterwards.
+ */
+export async function resyncProjectsOverPlanLimit(db, organizationId, plan) {
+  const snapshot = await db.collection('projects')
+    .where('organizationId', '==', organizationId)
+    .where('status', '==', 'active')
+    .get();
+  const overLimit = new Set(projectsOverPlanLimit(plan, snapshot.docs.map(firestoreDocumentData)));
+
+  const changed = snapshot.docs.filter(
+    document => Boolean(document.data().overPlanLimit) !== overLimit.has(document.id),
+  );
+  if (changed.length) {
+    const batch = db.batch();
+    for (const document of changed) {
+      batch.update(document.ref, { overPlanLimit: overLimit.has(document.id) });
+    }
+    await batch.commit();
+  }
+  return [...overLimit];
 }
 
 /**
