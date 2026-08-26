@@ -31,6 +31,7 @@ import {
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { countRead } from '@/lib/utils/readMeter.mjs';
 
 function issueLabel(issue) {
   return issue?.issueKey || issue?.title || issue?.id || 'без назви';
@@ -147,6 +148,7 @@ export function useAllMyTasks(userId) {
           where('assigneeIds', 'array-contains', userId),
         ),
         snap => {
+          countRead('useAllMyTasks', snap);
           publishStreamError(issuesKey);
           issueBuckets.set(issuesKey, snap.docs.map(d => ({ ...d.data(), id: d.id })));
           publishIssues();

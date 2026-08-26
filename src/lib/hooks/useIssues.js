@@ -26,6 +26,7 @@ import {
 } from '@/lib/utils/issueAuditEvents.mjs';
 import { compareIssues, pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+import { countRead } from '@/lib/utils/readMeter.mjs';
 
 // ---------------------------------------------------------------------------
 // Helper — write an audit log entry to issues/{issueId}/audit subcollection
@@ -129,6 +130,7 @@ export function useIssues(projectId, { includeLinks = true, includeSetAside = fa
       // server confirms it really is empty (a metadata-only transition).
       includeMetadataChanges: true,
     }, snap => {
+      countRead('useIssues', snap);
       // An empty cache is not proof that a task was deleted. While Firestore is
       // offline or quota-blocked, wait for a server result (or the error callback)
       // instead of flashing the destructive "task not found" state.
@@ -180,6 +182,7 @@ export function useIssues(projectId, { includeLinks = true, includeSetAside = fa
         where('projectId', '==', projectId),
       );
       unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
+        countRead('useIssues:links', snap);
         setIssueLinks(snap.docs.map(d => ({ ...d.data(), id: d.id })));
         setLinksReady(true);
         setLinksError(null);

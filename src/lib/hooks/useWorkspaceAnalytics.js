@@ -26,6 +26,7 @@ import {
   chunkProjectIds,
   flattenDocumentBuckets,
 } from '@/lib/utils/projectScopedQueries.mjs';
+import { countRead } from '@/lib/utils/readMeter.mjs';
 
 /**
  * One subscription, three readings of it.
@@ -399,7 +400,10 @@ function readBucket({
     return onSnapshot(
       sourceQuery,
       { serverTimestamps: 'estimate' },
-      snapshot => deliver(snapshot.docs),
+      snapshot => {
+        countRead('useWorkspaceAnalytics', snapshot);
+        deliver(snapshot.docs);
+      },
       fail,
     );
   }
@@ -407,6 +411,7 @@ function readBucket({
   let cancelled = false;
   getDocs(sourceQuery).then(
     snapshot => {
+      countRead('useWorkspaceAnalytics', snapshot);
       if (!cancelled) deliver(snapshot.docs);
     },
     error => {

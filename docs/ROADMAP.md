@@ -194,9 +194,20 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the two paths and their guarantees.
 - **Production runs on Firestore's free read quota.** The queries are bounded
   now, and the day it is spent anyway the product says so instead of spinning —
   see `lib/utils/quotaState.mjs` and the test that holds the three surfaces to
-  one sentence. What is still missing is the half before that: nothing counts
-  documents read, so «which screen spent it» can only be answered by reading
-  code. Until something meters it, scope and window every new read path.
+  one sentence. The half before that now exists too: `lib/utils/readMeter.mjs`
+  counts what each wide query is billed for and answers in the browser console
+  as `qtReads()`. It counts deliveries from the server only, and only the
+  documents that changed, because a listener after its first attach is charged
+  for what moved rather than for what it emits — a meter reporting `docs.length`
+  would read several times the bill and would be worse than none. Five hooks
+  report: `useOrganizationIssues`, `useIssues`, `useAllMyTasks`, `useSprints`,
+  `useWorkspaceAnalytics`. Rule stands regardless: scope and window every new
+  read path.
+
+  What it still cannot see is the rules engine. `canAccessProject` calls `get()`
+  on the project and on the membership, and those are billed reads no client can
+  observe — so the real figure is above whatever `qtReads()` says, by roughly
+  two per query.
 - **The dashboard is the widest read in the product and the screen people
   return to most.** Its subscription therefore lives in
   `lib/hooks/useOrganizationIssues.js`, refcounted and keyed by what it reads,
