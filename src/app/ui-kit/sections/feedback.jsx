@@ -3,11 +3,11 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import Surface from '@/components/ui/Surface';
-import { Alert, ConnectionBanner, LoadingSpinner, EmptyState, PlanGate, PlanLimitRail, PlanMark, PlanUpgradeDialog } from '@/components/ui';
+import { Alert, ConnectionBanner, LoadingSpinner, EmptyState, PlanDowngradeDialog, PlanGate, PlanLimitRail, PlanMark, PlanUpgradeDialog } from '@/components/ui';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { User, Folder, Plug } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
-import { planLimitNotice } from '@/lib/utils/plans.mjs';
+import { planDowngradeNotice, planLimitNotice } from '@/lib/utils/plans.mjs';
 import { PreviewBlock } from '../preview';
 
 export default function FeedbackSection() {
@@ -15,6 +15,7 @@ export default function FeedbackSection() {
   const [toast, setToast] = useState(null);
   const [offline, setOffline] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const [downgradeOpen, setDowngradeOpen] = useState(false);
   return (
     <div className="flex flex-col gap-[32px]">
       <PreviewBlock title="Alerts" component="Alert" description="Компонент сповіщень. Має скруглення L3 (8px) відповідно до токенів." fullWidth>
@@ -171,6 +172,22 @@ export default function FeedbackSection() {
             <PlanLimitRail notice={planLimitNotice('free', 'projects', 3)} collapsed onOpen={() => {}} />
           </div>
         </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="PlanDowngradeDialog — питання перед тим, як щось вимкнеться"
+        component="PlanDowngradeDialog"
+        description="Це був confirm із суцільним текстом і двома однаковими кнопками — тобто форма для «видалити спринт?», одного факту й одного рішення. Тут фактів шестеро, двох різних видів, і жоден не руйнівний: перемикач, який перестане працювати, малюється замком, а число, яке вже за новою стелею, — цифрою праворуч і рядком про те, що буде з надлишком. Кнопки не рівні навмисно: людина за один клік від того, щоб вимкнути пʼять речей, і пара однакових кнопок не ставить питання, а ділить його навпіл. Лишитись — заповнена кнопка й фокус; понизити — тиха кнопка, яка каже, що робить. Це не темний патерн: пониження за один клік у будь-якому разі, воно ніде не сховане й оборотне — про що й каже останній рядок."
+        filePath="src/components/ui/Feedback/PlanDowngradeDialog.jsx"
+        fullWidth
+      >
+        <Button style="secondary" onClick={() => setDowngradeOpen(true)}>Показати діалог</Button>
+        <PlanDowngradeDialog
+          isOpen={downgradeOpen}
+          notice={planDowngradeNotice('pro', 'free', { projects: 12, members: 20, aiCalls: 30 })}
+          onStay={() => setDowngradeOpen(false)}
+          onConfirm={() => setDowngradeOpen(false)}
+        />
       </PreviewBlock>
 
       <PreviewBlock

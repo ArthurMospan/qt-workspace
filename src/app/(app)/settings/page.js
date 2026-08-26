@@ -55,7 +55,7 @@ import {
   UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
+import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -1261,6 +1261,10 @@ export default function SettingsPage() {
   // Which plan is being switched to, not merely that one is: with three plans a
   // boolean put the spinner on both buttons that were not the current one.
   const [upgradingTo,    setUpgradingTo]    = useState('');
+  // What a downgrade would take away, held between «I picked Free» and «yes,
+  // really». The same dialog the crown's price list opens, from the same
+  // registry — one of the two must not be a quieter way to lose a feature.
+  const [downgrade, setDowngrade] = useState(null);
 
   // ── Notifications ──
   // `channels` is the event × channel matrix; the flat per-event flags beside it
@@ -2252,22 +2256,12 @@ export default function SettingsPage() {
   // that do it now — this one and the dialog the crown opens — and one field
   // written from two places is one field that will be written two ways. What
   // stays here is what belongs to this screen: the local state and the toast.
-  const handleUpgradePlan = async (newPlan) => {
-    const next = normalizePlan(newPlan);
-    if (next === orgPlan || upgradingTo) return;
-    // Asked before the switch, never explained after it. Everything on the list
-    // is reversible and says so; the one thing somebody could be surprised by is
-    // which projects go read-only, so that line names how many.
-    const downgrade = planDowngradeNotice(orgPlan, next, planLimits.used);
-    if (downgrade && !(await confirmDialog({
-      title: downgrade.title,
-      message: downgrade.message,
-      confirmText: downgrade.confirmLabel,
-    }))) return;
+  const applyPlan = async (next) => {
     setUpgradingTo(next);
     try {
       await switchOrganizationPlan(activeOrgId, next);
       setPlanOverride(next);
+      setDowngrade(null);
       // The plan's own name. The toast had two branches for three plans, so
       // switching to Lite announced «Тариф змінено на Безкоштовний».
       showToast(`Тариф змінено на ${planName(next)}`);
@@ -2276,6 +2270,20 @@ export default function SettingsPage() {
     } finally {
       setUpgradingTo('');
     }
+  };
+
+  const handleUpgradePlan = (newPlan) => {
+    const next = normalizePlan(newPlan);
+    if (next === orgPlan || upgradingTo) return;
+    // Asked before the switch, never explained after it. Everything on the list
+    // is reversible and says so; the one thing somebody could be surprised by is
+    // which projects go read-only, so that line names how many.
+    const notice = planDowngradeNotice(orgPlan, next, planLimits.used);
+    if (notice) {
+      setDowngrade({ ...notice, planId: next });
+      return;
+    }
+    applyPlan(next);
   };
 
   const unarchiveProject = async (id) => {
@@ -3245,8 +3253,13 @@ export default function SettingsPage() {
               : 'Перенесіть робочі проєкти та історію команди у QuickTeam'}
             backLabel={migrationProvider ? 'Усі джерела' : ''}
           >
-            <PlanGate capabilityId="data-import">
+            {/* No wall over the list. Which sources exist, and which of them
+                are ready, is worth seeing before deciding whether to pay for
+                the import — and the crown says the rest, per row, the way the
+                integrations list does. The wall stays one screen in, where
+                somebody is about to start one. */}
             <DataMigrationSettings
+              lockedCapabilityId={allowsOnPlan('data-import') ? '' : 'data-import'}
               organizationId={activeOrgId}
               currentUserId={currentUser?.id || currentUser?.uid || ''}
               isOrganizationOwner={myRole === 'owner'}
@@ -3256,7 +3269,6 @@ export default function SettingsPage() {
               selectedProviderId={migrationProvider}
               onSelectProvider={setMigrationProvider}
             />
-            </PlanGate>
           </Section>
         );
       }

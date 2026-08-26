@@ -107,6 +107,7 @@ export { default as Skeleton } from './Feedback/Skeleton'
 export { default as EmptyState } from './Feedback/EmptyState'
 export { default as SignalList } from './Feedback/SignalList'
 export { default as PlanGate } from './Feedback/PlanGate'
+export { default as PlanDowngradeDialog } from './Feedback/PlanDowngradeDialog'
 export { default as PlanLimitRail } from './Feedback/PlanLimitRail'
 export { default as PlanUpgradeDialog } from './Feedback/PlanUpgradeDialog'
 

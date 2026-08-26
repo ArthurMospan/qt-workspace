@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { PlanUpgradeDialog, useConfirm } from '@/components/ui';
+import { PlanDowngradeDialog, PlanUpgradeDialog } from '@/components/ui';
 import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
 import { switchOrganizationPlan } from '@/lib/services/organizationPlan';
 import { capabilityAvailability, planDowngradeNotice, planName } from '@/lib/utils/plans.mjs';
@@ -20,7 +20,9 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 export default function WorkspacePlanUpgradeHost() {
   const { activeOrgId } = useAppContext();
   const { plan, notice, used } = usePlanLimits();
-  const confirmDialog = useConfirm();
+  // What a downgrade would take away, held between «I picked Free» and «yes,
+  // really». `null` while nothing is being asked.
+  const [downgrade, setDowngrade] = useState(null);
   const planUpgrade = useWorkspaceStore(state => state.planUpgrade);
   const closePlanUpgrade = useWorkspaceStore(state => state.closePlanUpgrade);
   const showToast = useWorkspaceStore(state => state.showToast);
@@ -43,20 +45,12 @@ export default function WorkspacePlanUpgradeHost() {
       }
     : null;
 
-  const choosePlan = async (nextPlan) => {
-    if (nextPlan === plan || switchingTo || !activeOrgId) return;
-    // The same question the settings screen asks, from the same registry: a
-    // dialog reached from a crown must not be a quieter way to lose a feature.
-    const downgrade = planDowngradeNotice(plan, nextPlan, used);
-    if (downgrade && !(await confirmDialog({
-      title: downgrade.title,
-      message: downgrade.message,
-      confirmText: downgrade.confirmLabel,
-    }))) return;
+  const applyPlan = async (nextPlan) => {
     setSwitchingTo(nextPlan);
     try {
       await switchOrganizationPlan(activeOrgId, nextPlan);
       showToast(`Тариф змінено на ${planName(nextPlan)}`);
+      setDowngrade(null);
       closePlanUpgrade();
     } catch (error) {
       showToast(userFacingErrorMessage(error, 'Не вдалося змінити тариф'), 'error');
@@ -65,14 +59,35 @@ export default function WorkspacePlanUpgradeHost() {
     }
   };
 
+  const choosePlan = (nextPlan) => {
+    if (nextPlan === plan || switchingTo || !activeOrgId) return;
+    // The same question the settings screen asks, from the same registry: a
+    // dialog reached from a crown must not be a quieter way to lose a feature.
+    const notice = planDowngradeNotice(plan, nextPlan, used);
+    if (notice) {
+      setDowngrade({ ...notice, planId: nextPlan });
+      return;
+    }
+    applyPlan(nextPlan);
+  };
+
   return (
-    <PlanUpgradeDialog
-      isOpen
-      onClose={closePlanUpgrade}
-      notice={limitNotice || capabilityNotice}
-      currentPlanId={plan}
-      onChoose={choosePlan}
-      busyPlanId={switchingTo}
-    />
+    <>
+      <PlanUpgradeDialog
+        isOpen
+        onClose={closePlanUpgrade}
+        notice={limitNotice || capabilityNotice}
+        currentPlanId={plan}
+        onChoose={choosePlan}
+        busyPlanId={switchingTo}
+      />
+      <PlanDowngradeDialog
+        isOpen={Boolean(downgrade)}
+        notice={downgrade}
+        onStay={() => setDowngrade(null)}
+        onConfirm={() => applyPlan(downgrade.planId)}
+        busy={Boolean(switchingTo)}
+      />
+    </>
   );
 }

@@ -10,7 +10,8 @@ import {
   ShieldCheck,
   UsersRound,
 } from 'lucide-react';
-import { Card, Pill } from '@/components/ui';
+import { Card, Pill, PlanGate, PlanMark } from '@/components/ui';
+import { capabilityAvailability } from '@/lib/utils/plans.mjs';
 import YouTrackImportCard from '@/components/integrations/YouTrackImportCard';
 
 const UPCOMING_PROVIDERS = [
@@ -145,6 +146,9 @@ export default function DataMigrationSettings({
   showToast,
   selectedProviderId = '',
   onSelectProvider,
+  // The capability this screen needs, when the plan does not include it.
+  // Empty when it does — the list draws each source's own status instead.
+  lockedCapabilityId = '',
 }) {
   const selectedProvider = UPCOMING_PROVIDERS.find(provider => provider.id === selectedProviderId);
 
@@ -182,9 +186,20 @@ export default function DataMigrationSettings({
                 <span className="block text-[13px] font-bold text-ink">{provider.name}</span>
                 <span className="mt-[2px] block truncate text-[11px] text-muted">{provider.description}</span>
               </span>
-              <Pill color={provider.ready ? '#10b981' : '#9a9a9a'} appearance="soft-outline" size="md">
-                {provider.status}
-              </Pill>
+              {/* Which source is ready is worth seeing whatever the plan is —
+                  it is how somebody decides whether the import is worth paying
+                  for. The crown replaces the status only where the plan is the
+                  thing in the way. */}
+              {lockedCapabilityId ? (
+                <PlanMark
+                  capabilityId={lockedCapabilityId}
+                  label={capabilityAvailability(lockedCapabilityId)}
+                />
+              ) : (
+                <Pill color={provider.ready ? '#10b981' : '#9a9a9a'} appearance="soft-outline" size="md">
+                  {provider.status}
+                </Pill>
+              )}
               <ChevronRight size={16} className="shrink-0 text-faint" />
             </div>
           </Card>
@@ -194,10 +209,15 @@ export default function DataMigrationSettings({
   }
 
   if (selectedProvider) {
-    return <UpcomingProviderCard provider={selectedProvider} />;
+    return (
+      <PlanGate capabilityId="data-import">
+        <UpcomingProviderCard provider={selectedProvider} />
+      </PlanGate>
+    );
   }
 
   return (
+    <PlanGate capabilityId="data-import">
     <div className="space-y-8">
       <Card preset="borderless" padding="lg" className="overflow-hidden">
         <div className="flex items-start gap-4">
@@ -257,5 +277,6 @@ export default function DataMigrationSettings({
         </p>
       </div>
     </div>
+    </PlanGate>
   );
 }

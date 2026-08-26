@@ -25,6 +25,7 @@ import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 import { useRecordAccountSession } from '@/lib/hooks/useAccountSessions';
 import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
 import Button from '@/components/ui/Button';
+import { CloudOff, DatabaseZap, LockKeyhole } from 'lucide-react';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 import { isQuotaExceededError } from '@/lib/utils/errors';
 import { exposeReadMeter } from '@/lib/utils/readMeter.mjs';
@@ -87,11 +88,22 @@ function WorkspaceLoadFailure({ error, onRetry, onSignOut }) {
         ? 'Організацію видалено або посилання застаріло.'
         : 'Не вдалося прочитати дані організації. Ваші дані не видалені.';
 
+  // The workspace's own shape, not a card floating on grey. Every other screen
+  // in the product is a white pane inset from a grey shell, and this one dropped
+  // both — so the day the free tier's read budget ran out, the product answered
+  // with a sentence on a background nothing else in it uses, and the answer read
+  // like a crash rather than like a condition. Same pane, same corners, same
+  // gutter; the message stands in the middle of it, which is where an empty
+  // state stands everywhere else.
+  const Glyph = quotaSpent ? DatabaseZap : accessFailure ? LockKeyhole : CloudOff;
   return (
-    <div className="w-full h-full flex items-center justify-center bg-canvas p-6">
-      <div data-ui-surface="local" className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
+    <div className="w-full h-full bg-white p-0 md:bg-canvas md:p-[12px]">
+      <div className="flex h-full flex-col items-center justify-center rounded-none bg-white px-6 py-10 text-center md:rounded-[24px]">
+        <span className="mb-5 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-canvas text-muted">
+          <Glyph size={24} aria-hidden />
+        </span>
         <h1 className="ui-type-section-title text-ink mb-2">{title}</h1>
-        <p className="text-[13px] text-muted mb-5">{description}</p>
+        <p className="max-w-[420px] text-[13px] leading-relaxed text-muted mb-6">{description}</p>
         {/* Nobody is left on a dead end. The access card used to carry no
             action at all, so a person who had simply signed in with the wrong
             button had a sentence, a white box and no way out of it. */}

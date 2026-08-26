@@ -326,7 +326,14 @@ export function planDowngradeEffects(fromPlan, toPlan, used = {}) {
     if (!Number.isFinite(ceiling)) continue;
     const spent = typeof used[limit.id] === 'number' && used[limit.id] >= 0 ? used[limit.id] : null;
     if (spent === null || spent <= ceiling) continue;
-    overCeiling.push(`${limit.label}: ${spent} із ${ceiling}${limit.overageHint ? ` — ${limit.overageHint}` : ''}`);
+    overCeiling.push({
+      id: limit.id,
+      label: limit.label,
+      used: spent,
+      ceiling,
+      reading: `${spent} із ${ceiling}`,
+      hint: limit.overageHint || '',
+    });
   }
 
   return { turnedOff, overCeiling };
@@ -343,21 +350,21 @@ export function planDowngradeNotice(fromPlan, toPlan, used = {}) {
   if (!turnedOff.length && !overCeiling.length) return null;
 
   const name = planName(toPlan);
-  const parts = [
-    `Нічого не видаляється. Проєкти, задачі, час, файли й налаштування лишаються на місці — і повертаються такими, як були, щойно тариф повернеться.`,
-  ];
-  if (turnedOff.length) {
-    parts.push('', 'Перестане працювати:', ...turnedOff.map(line => `• ${line}`));
-  }
-  if (overCeiling.length) {
-    parts.push('', `Уже більше, ніж дозволяє ${name}:`, ...overCeiling.map(line => `• ${line}`));
-  }
-  parts.push('', `Повернути тариф можна будь-коли — вмикати наново нічого не доведеться.`);
-
+  const current = planName(fromPlan);
   return {
     title: `Перейти на ${name}?`,
-    message: parts.join('\n'),
-    confirmLabel: `Перейти на ${name}`,
+    // Said first, because it is the part nobody believes.
+    reassurance: 'Нічого не видаляється. Проєкти, задачі, час, файли й налаштування лишаються на місці — і повертаються такими, як були, щойно тариф повернеться.',
+    turnedOffTitle: 'Перестане працювати',
+    turnedOff,
+    overCeilingTitle: `Уже більше, ніж дозволяє ${name}`,
+    overCeiling,
+    // The button that stays is the one that reads like the answer: this dialog
+    // exists because somebody is one click from turning five things off, and a
+    // pair of equally weighted buttons is not a question, it is a coin toss.
+    stayLabel: `Залишитись на ${current}`,
+    confirmLabel: `Все одно перейти на ${name}`,
+    footnote: 'Повернути тариф можна будь-коли — вмикати наново нічого не доведеться.',
   };
 }
 

@@ -732,17 +732,21 @@ test('пониження тарифу описане до того, як ста�
   // вірять. Далі тільки те, що справді зміниться, зібране з реєстру.
   const notice = planDowngradeNotice('pro', 'free', { projects: 12, members: 20, aiCalls: 30 });
   assert.match(notice.title, /Free/);
-  assert.match(notice.message, /Нічого не видаляється/);
+  assert.match(notice.reassurance, /Нічого не видаляється/);
   // Дві різні речі — і два різні списки: перемикач, який перестане працювати,
   // і число, яке перестане рости. Одним плоским переліком це читалось як лог
-  // помилок.
-  assert.match(notice.message, /Перестане працювати:/);
-  assert.match(notice.message, /Уже більше, ніж дозволяє Free:/);
-  assert.match(notice.message, /Власний брендинг/);
-  assert.match(notice.message, /Проєкти: 12 із 3/);
-  assert.match(notice.message, /Учасники команди: 20 із 5/);
+  // помилок, і саме тому діалог тепер малює їх по-різному.
+  assert.ok(notice.turnedOff.includes('Власний брендинг'));
+  const projects = notice.overCeiling.find(limit => limit.id === 'projects');
+  assert.equal(projects.label, 'Проєкти');
+  assert.equal(projects.reading, '12 із 3');
+  assert.match(projects.hint, /тільки для читання/);
+  assert.ok(notice.overCeiling.some(limit => limit.reading === '20 із 5'));
+  // Кнопки не рівні: та, що лишає все як є, названа тарифом, на якому ви вже є.
+  assert.match(notice.stayLabel, /Залишитись на Pro/);
+  assert.match(notice.confirmLabel, /Все одно перейти на Free/);
   // І в кінці — що це оборотно, бо саме в це не вірять.
-  assert.match(notice.message, /Повернути тариф можна будь-коли/);
+  assert.match(notice.footnote, /Повернути тариф можна будь-коли/);
   // Угору по тарифах нічого не втрачається, тож і питати нема про що.
   assert.equal(planDowngradeNotice('free', 'pro', { projects: 1, members: 1 }), null);
   // І вниз теж, поки простір не переріс нову стелю й нічого платного не вмикав.
