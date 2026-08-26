@@ -1,4 +1,6 @@
 'use client';
+
+import dynamic from 'next/dynamic';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
 import { Children, createContext, isValidElement, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
@@ -77,7 +79,9 @@ import {
   resolveNotificationMatrix,
 } from '@/lib/utils/notificationChannels.mjs';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
-import { Colorful } from '@uiw/react-color';
+// The colour wheel is reached by opening one section of one screen, so it
+// loads then rather than with the settings page.
+const Colorful = dynamic(() => import('@uiw/react-color').then(module => module.Colorful), { ssr: false });
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import TeamMemberSettingsDialog from '@/components/TeamMemberSettingsDialog';
 import IntegrationCard, { IntegrationCode, IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';

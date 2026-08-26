@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import { Check, Copy, Download, Link2, Loader2, QrCode } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
@@ -31,6 +30,9 @@ export default function InviteLinkSection({ role = 'member' }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Не вдалося створити посилання');
       setLink(result);
+      // Imported here rather than at the top: a QR code is drawn once, after a
+      // link has been created, and this function was already async.
+      const { default: QRCode } = await import('qrcode');
       setQrDataUrl(await QRCode.toDataURL(result.url, {
         width: 560,
         margin: 2,

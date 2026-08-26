@@ -32,7 +32,7 @@ import {
   collection, query, where, onSnapshot, updateDoc, doc, setDoc
 } from 'firebase/firestore';
 import { uploadFile } from '@/lib/utils/uploadFile';
-import EmojiPicker from 'emoji-picker-react';
+import dynamic from 'next/dynamic';
 import { activeTypingUserIds, channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
 import { notificationConversationId } from '@/lib/utils/notificationNavigation.mjs';
@@ -48,6 +48,15 @@ import {
   ATTACHMENT_UPLOAD_ACCEPT,
   uploadFilePolicy,
 } from '@/lib/utils/uploadPolicy.mjs';
+
+// Loaded when somebody opens it, not when the page does.
+//
+// emoji-picker-react carries its own emoji data and is the largest dependency
+// in the bundle; imported at the top it shipped to everyone who opened a chat,
+// and through MessageBubble to everyone who opened a task. It appears behind a
+// click on a face, which is exactly what a dynamic import is for — the pattern
+// pdfjs-dist and write-excel-file already use here.
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 // ─── Message Input ───────────────────────────────────────────────────────────
 function MessageInput({

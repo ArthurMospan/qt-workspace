@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Edit2, Pin, Smile, Trash2 } from 'lucide-react';
 import { ChatIcon } from '@/lib/design/icons';
-import EmojiPicker from 'emoji-picker-react';
+import dynamic from 'next/dynamic';
 import Button from '@/components/ui/Button';
 import IconAction from '@/components/ui/IconAction';
 import Pill from '@/components/ui/DataDisplay/Pill';
@@ -21,6 +21,15 @@ import MessageContent from '@/components/workspace/MessageContent';
 import { ChatAttachmentList } from './ChatAttachmentList';
 import { useFloatingOverlay } from '@/lib/hooks/useFloatingOverlay';
 import { plural } from '@/lib/utils/plural.mjs';
+
+// Loaded when somebody opens it, not when the page does.
+//
+// emoji-picker-react carries its own emoji data and is the largest dependency
+// in the bundle; imported at the top it shipped to everyone who opened a chat,
+// and through MessageBubble to everyone who opened a task. It appears behind a
+// click on a face, which is exactly what a dynamic import is for — the pattern
+// pdfjs-dist and write-excel-file already use here.
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 // ─── Message Bubble ─────────────────────────────────────────────────────────
 /**
