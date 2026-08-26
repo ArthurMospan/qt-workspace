@@ -71,18 +71,37 @@ export async function PATCH(request, context) {
       if (body.team !== undefined && !Array.isArray(body.team)) {
         return NextResponse.json({ error: 'Некоректний склад команди проєкту' }, { status: 400 });
       }
-      const requestedSettingsTeam = Array.isArray(body.team)
+      if (body.teamBaseline !== undefined && !Array.isArray(body.teamBaseline)) {
+        return NextResponse.json({ error: 'Некоректний склад команди проєкту' }, { status: 400 });
+      }
+      const editsTeam = Array.isArray(body.team);
+      const requestedSettingsTeam = editsTeam
         ? [...new Set(body.team.filter(Boolean))].slice(0, 100)
         : (Array.isArray(project.team) ? project.team : []);
-      const nextSettingsTeam = project.createdBy && !requestedSettingsTeam.includes(project.createdBy)
-        ? [project.createdBy, ...requestedSettingsTeam]
-        : requestedSettingsTeam;
-      if (nextSettingsTeam.length > 0) {
-        const memberships = await db.getAll(...nextSettingsTeam.map(
+      // The list the caller edited was read when their dialog opened. Applying
+      // it as-is overwrites everything that happened since — including a person
+      // a task added to the project two minutes ago, whom this save never meant
+      // to mention. With the baseline the caller edited against, the change can
+      // be applied as what it is: these were added, these were removed, and the
+      // rest of the roster is none of this save's business.
+      const teamBaseline = Array.isArray(body.teamBaseline)
+        ? [...new Set(body.teamBaseline.filter(Boolean))]
+        : null;
+      const teamAdded = teamBaseline
+        ? requestedSettingsTeam.filter(userId => !teamBaseline.includes(userId))
+        : [];
+      const teamRemoved = teamBaseline
+        ? teamBaseline.filter(userId => !requestedSettingsTeam.includes(userId))
+        : [];
+      // Only the people this save is putting on the project have to be checked;
+      // everybody already on it was checked when they were put there.
+      const introducedMembers = teamBaseline ? teamAdded : requestedSettingsTeam;
+      if (introducedMembers.length > 0) {
+        const memberships = await db.getAll(...introducedMembers.map(
           userId => db.collection('orgMemberships').doc(`${project.organizationId}_${userId}`),
         ));
         if (memberships.some(
-          (membership, index) => !membership.exists || membership.data().userId !== nextSettingsTeam[index],
+          (membership, index) => !membership.exists || membership.data().userId !== introducedMembers[index],
         )) {
           return NextResponse.json(
             { error: 'У команді може бути лише учасник організації' },
@@ -119,6 +138,20 @@ export async function PATCH(request, context) {
           );
         }
         const currentProject = freshProject.data();
+        // Resolved against the document as it is now, not as the dialog last
+        // saw it. Without a baseline there is no change to apply, only a list —
+        // an older client, and the old behaviour it expects.
+        const freshTeam = Array.isArray(currentProject.team) ? currentProject.team : [];
+        const resolvedTeamBase = !editsTeam
+          ? freshTeam
+          : (teamBaseline
+            ? [...new Set([...freshTeam, ...teamAdded])].filter(userId => !teamRemoved.includes(userId))
+            : requestedSettingsTeam);
+        // The person who made the project can always reach it, whatever a save
+        // says: dropping them is how a project ends up with no way in.
+        const resolvedTeam = project.createdBy && !resolvedTeamBase.includes(project.createdBy)
+          ? [project.createdBy, ...resolvedTeamBase]
+          : resolvedTeamBase;
         const hasPersistedIssuePrefix = isValidIssuePrefix(currentProject.issuePrefix);
         let resolvedIssuePrefix = projectIssuePrefix(currentProject);
         if (!hasPersistedIssuePrefix) {
@@ -263,7 +296,7 @@ export async function PATCH(request, context) {
           description,
           issuePrefix: resolvedIssuePrefix,
           hiddenColumns: requestedHidden,
-          team: nextSettingsTeam,
+          team: resolvedTeam,
           issueStatusVersion: FieldValue.increment(1),
           updatedAt: now,
         });
@@ -271,12 +304,13 @@ export async function PATCH(request, context) {
           hiddenColumns: requestedHidden,
           movedIssues: issueIdsToMove.size,
           issuePrefix: resolvedIssuePrefix,
+          team: resolvedTeam,
         };
       });
       return NextResponse.json({
         success: true,
         hiddenColumns: settingsResult.hiddenColumns,
-        team: nextSettingsTeam,
+        team: settingsResult.team,
         movedIssues: settingsResult.movedIssues,
         issuePrefix: settingsResult.issuePrefix,
       });

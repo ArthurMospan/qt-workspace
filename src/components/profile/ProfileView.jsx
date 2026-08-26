@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
-import { CakeSlice, Clock3, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
+import { CakeSlice, Clock3, FolderKanban, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import { Surface, Card, Badge, StatusBadge, Button, IconAction, PresenceDot, Tabs, ContextMenu, EmptyState, LoadingSpinner, Tooltip } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -15,6 +15,8 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
+import { isOnProjectTeam, isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
+import { plural } from '@/lib/utils/plural.mjs';
 
 const EVENT_TYPE_LABELS = {
   meeting: 'Мітинг',
@@ -137,6 +139,25 @@ export default function ProfileView({ user, onClose }) {
     const project = projects.find(item => item.id === task.projectId);
     return project?.status !== 'archived' && !closedStatusIds.includes(task.columnId || task.status);
   });
+  // Which projects name this person.
+  //
+  // The profile could answer what somebody is working on and never where they
+  // are, so «в яких він проєктах» had no answer anywhere in the product — you
+  // opened each project's «Команда» tab and looked. `project.team` is the
+  // roster, the same list the project card draws its faces from, so a person
+  // appears here exactly when they appear there.
+  const memberProjects = projects
+    .filter(project => project.status !== 'archived' && isOnProjectTeam(project, uid))
+    .sort((left, right) => String(left.name || '').localeCompare(String(right.name || ''), 'uk'));
+  // Whose list this is depends on who is reading it: an owner or an admin holds
+  // every project of the organization, so their copy is the whole answer, while
+  // a member holds only the projects they are on — making the list they see the
+  // intersection of the two, and «спільні» the only honest word for it.
+  const projectListIsComplete = isAdminOrOwner || isMe;
+  // And an owner or an admin *being looked at* reaches every project without
+  // being on it, so a short list under their name is not the whole story.
+  const viewedReachesEveryProject = isPrivilegedRole(memberRecord?.role || user.role || null);
+
   const nowTime = now;
   const agendaEvents = calendarEvents
     .filter(event => {
@@ -408,6 +429,59 @@ export default function ProfileView({ user, onClose }) {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Проєкти */}
+            <div className="flex flex-col gap-3">
+              <h3 className="ui-type-column-title text-muted uppercase tracking-wider">
+                {projectListIsComplete ? 'Проєкти' : 'Спільні проєкти'}
+              </h3>
+              {memberProjects.length === 0 ? (
+                <p className="text-[14px] text-faint italic">
+                  {projectListIsComplete
+                    ? 'Не входить до жодного проєкту.'
+                    : 'Спільних проєктів немає.'}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {memberProjects.map(project => (
+                    <button
+                      key={project.id}
+                      type="button"
+                      onClick={() => leaveFor(`/${project.id}`)}
+                      // A whole row that navigates, the way the contact values
+                      // above are whole values that copy. No kit component is a
+                      // row-shaped link, and a Button per project would put a
+                      // control where a list belongs.
+                      data-ui-control="profile-project-row"
+                      data-ui-surface="compact-bordered-panel"
+                      data-ui-padding="row"
+                      className="ui-surface flex items-center gap-3 text-left transition-colors hover:bg-canvas"
+                    >
+                      <FolderKanban size={14} className="shrink-0 text-muted" />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
+                        {project.name}
+                      </span>
+                      <span className="shrink-0 text-[11px] text-muted">
+                        {(project.team || []).length} {plural((project.team || []).length, ['учасник', 'учасники', 'учасників'])}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Said whether or not the list is empty: for an owner or an admin
+                  «не входить до жодного проєкту» would otherwise read as «has no
+                  access to anything», which is the opposite of the truth. */}
+              {viewedReachesEveryProject && (
+                <p className="text-[11px] leading-[1.4] text-muted">
+                  Має доступ до всіх проєктів організації за роллю — тут лише ті, до складу яких входить.
+                </p>
+              )}
+              {!projectListIsComplete && (
+                <p className="text-[11px] leading-[1.4] text-muted">
+                  Показані лише проєкти, до яких маєте доступ ви.
+                </p>
+              )}
             </div>
 
             {/* Rates section removed as user requested to only configure rates via settings positions */}

@@ -47,6 +47,13 @@ export default function BoardConfigModal({
   const [teamMemberIds, setTeamMemberIds] = useState(
     Array.isArray(project?.team) ? project.team : [],
   );
+  // What the roster was when this dialog opened, kept so the save can be sent
+  // as the change it is rather than as the whole list. Both are read once, at
+  // mount: a dialog that re-seeded itself from a live project would move the
+  // ticks under the reader's hand.
+  const [teamBaseline] = useState(
+    () => (Array.isArray(project?.team) ? project.team : []),
+  );
   const [saving, setSaving] = useState(false);
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteEmailsError, setInviteEmailsError] = useState('');
@@ -103,7 +110,12 @@ export default function BoardConfigModal({
         name: name.trim(),
         description: description.trim(),
         hiddenColumns: statusesToHide,
-        ...(canManageTeam ? { team: teamMemberIds } : {}),
+        // Sent with the baseline it was edited against. Saving the array on its
+        // own overwrote the roster with a snapshot taken when the dialog
+        // opened, so anybody added to the project in the meantime — from a task
+        // that just granted them access, or by somebody else in another tab —
+        // was silently dropped by a save that never meant to touch them.
+        ...(canManageTeam ? { team: teamMemberIds, teamBaseline } : {}),
       });
 
       // Settings are already saved, so a refused address is reported in place

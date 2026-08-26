@@ -160,6 +160,27 @@ test('an event with a project asks the same two questions a task does', async ()
   assert.match(dialog, /if \(key === 'projectId'\) setAddToProjectTeam\(false\);/);
 });
 
+// Saving project settings used to write the roster it read when the dialog
+// opened. Anybody added to the project in between — by a task that had just
+// granted them access, or by somebody else in another tab — was dropped by a
+// save that had nothing to say about them.
+test('saving project settings applies the change to the team, not the snapshot', async () => {
+  const route = await read('../src/app/api/projects/[projectId]/route.js');
+  assert.match(route, /const teamBaseline = Array\.isArray\(body\.teamBaseline\)/);
+  assert.match(route, /const teamAdded = teamBaseline/);
+  assert.match(route, /const teamRemoved = teamBaseline/);
+  // Resolved inside the transaction, against the document as it is now.
+  assert.match(route, /const freshTeam = Array\.isArray\(currentProject\.team\) \? currentProject\.team : \[\];/);
+  assert.match(route, /\[\.\.\.new Set\(\[\.\.\.freshTeam, \.\.\.teamAdded\]\)\]\.filter\(userId => !teamRemoved\.includes\(userId\)\)/);
+  assert.match(route, /team: resolvedTeam,/);
+  // The response reports what was written, not what was asked for.
+  assert.match(route, /team: settingsResult\.team,/);
+
+  const modal = await read('../src/components/workspace/BoardConfigModal.jsx');
+  assert.match(modal, /const \[teamBaseline\] = useState\(/);
+  assert.match(modal, /\{ team: teamMemberIds, teamBaseline \}/);
+});
+
 test('every composer forwards the consent to the API, or the box does nothing', async () => {
   for (const path of [
     '../src/app/(app)/page.js',
@@ -196,6 +217,22 @@ test('a board card no longer loses the face of someone outside the project team'
   assert.doesNotMatch(detail, /catch \{ \/\* member assigner lacks team-write permission — non-fatal \*\/ \}/);
   assert.match(detail, /Додано до складу проєкту/);
   assert.match(detail, /Не вдалося додати до складу проєкту/);
+});
+
+// «В яких він проєктах» had no answer anywhere in the product: you opened each
+// project's «Команда» tab and looked. The profile is where somebody is looked
+// up, so it is where the answer belongs.
+test('a profile says which projects name the person', async () => {
+  const profile = await read('../src/components/profile/ProfileView.jsx');
+  assert.match(profile, /isOnProjectTeam\(project, uid\)/);
+  // A member holds only their own projects, so the list they see is the
+  // intersection — and says so, rather than reading as the whole answer.
+  assert.match(profile, /const projectListIsComplete = isAdminOrOwner \|\| isMe;/);
+  assert.match(profile, /Спільні проєкти/);
+  assert.match(profile, /Показані лише проєкти, до яких маєте доступ ви\./);
+  // And an owner or an admin being looked at reaches every project without
+  // being on it, so a short list under their name is not the whole story.
+  assert.match(profile, /const viewedReachesEveryProject = isPrivilegedRole\(/);
 });
 
 // The other half of the same afternoon: a task screen with nowhere to type.
