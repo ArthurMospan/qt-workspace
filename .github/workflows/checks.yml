@@ -115,13 +115,15 @@ jobs:
           node-version: 22
           cache: npm
 
-      # The Firestore emulator is a Java program. The runner ships a JDK, but
-      # naming it here means a change to the image surfaces as "no Java" rather
-      # than as a rules suite that mysteriously stopped running.
+      # The Firestore emulator is a Java program, and firebase-tools 15 refuses
+      # to start it on anything below JDK 21 — «no longer supports Java version
+      # before 21», which is what the runner said while this was pinned to 17.
+      # Naming the version here is also what makes that a sentence rather than a
+      # rules suite that mysteriously stopped passing.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - run: npm ci
 
