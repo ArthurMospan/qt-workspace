@@ -4543,9 +4543,9 @@
         }
       ]
     },
-    "PlanLimitBanner": {
-      "file": "src/components/ui/Feedback/PlanLimitBanner.jsx",
-      "summary": "The strip that says a ceiling has run out, across the top of the workspace. A crown beside a control answers «чому» to somebody already reaching for that control.",
+    "PlanLimitRail": {
+      "file": "src/components/ui/Feedback/PlanLimitRail.jsx",
+      "summary": "A ceiling that has run out, said once, at the foot of the sidebar.",
       "props": [
         {
           "name": "className",
@@ -4555,25 +4555,25 @@
           "description": "Placement in the parent only."
         },
         {
+          "name": "collapsed",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The rail is a 64px strip of icons."
+        },
+        {
           "name": "extra",
           "default": "0",
           "type": "number",
           "values": [],
-          "description": "How many further ceilings are also full, named in one clause."
+          "description": "How many further ceilings are also full."
         },
         {
           "name": "notice",
           "default": "",
-          "type": "{title: string, reading?: string}",
+          "type": "object",
           "values": [],
           "description": "What ran out; from `planLimitNotice`."
-        },
-        {
-          "name": "onDismiss",
-          "default": "",
-          "type": "() => void",
-          "values": [],
-          "description": "Puts it away; absent means it cannot be dismissed."
         },
         {
           "name": "onOpen",

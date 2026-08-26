@@ -11,13 +11,13 @@
   },
   "totals": {
     "files": 386,
-    "elements": 4420,
+    "elements": 4423,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
     "fakeButtons": 0,
     "contrastFailures": 0,
-    "runtimeNameVerification": 44
+    "runtimeNameVerification": 46
   },
   "namelessControls": [],
   "imagesWithoutAlt": [],
@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:3672",
+      "location": "src/app/(app)/settings/page.js:3682",
       "attributes": [
         "title",
         "aria-label"
@@ -35,7 +35,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:684",
+      "location": "src/app/(app)/settings/page.js:685",
       "attributes": [
         "aria-label",
         "title"
@@ -65,7 +65,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/profile/ProfileView.jsx:61",
+      "location": "src/components/profile/ProfileView.jsx:455",
+      "attributes": [
+        "title"
+      ]
+    },
+    {
+      "element": "button",
+      "location": "src/components/profile/ProfileView.jsx:60",
       "attributes": [
         "title"
       ]
@@ -166,6 +173,14 @@
       "location": "src/components/ui/ExportMenu.jsx:85",
       "attributes": [
         "title"
+      ]
+    },
+    {
+      "element": "button",
+      "location": "src/components/ui/Feedback/PlanLimitRail.jsx:62",
+      "attributes": [
+        "title",
+        "aria-label"
       ]
     },
     {

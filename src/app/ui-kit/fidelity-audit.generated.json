@@ -112,7 +112,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:240",
+      "location": "src/components/MobileNav.jsx:241",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -128,7 +128,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:300",
+      "location": "src/components/MobileNav.jsx:301",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -144,7 +144,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:372",
+      "location": "src/components/MobileNav.jsx:379",
       "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
       "text": "",
       "childElements": [
@@ -160,7 +160,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/OrgSwitcherScreen.jsx:31",
+      "location": "src/components/OrgSwitcherScreen.jsx:44",
       "className": "flex flex-col items-center gap-4 transition-all duration-300 group/item w-[160px] group-hover/list:opacity-30 hover:!opacity-100",
       "text": "",
       "childElements": [
@@ -175,16 +175,15 @@
     },
     {
       "tag": "button",
-      "location": "src/components/profile/ProfileView.jsx:448",
-      "className": "ui-surface flex items-center gap-3 text-left transition-colors hover:bg-canvas",
+      "location": "src/components/profile/ProfileView.jsx:455",
+      "className": "ui-native-control",
       "text": "",
       "childElements": [
-        "FolderKanban",
-        "span"
+        "Pill"
       ],
       "ariaLabel": "",
       "styled": false,
-      "reviewed": "profile-project-row",
+      "reviewed": "profile-project-chip",
       "resembles": "IconAction",
       "structure": "shell",
       "routes": [
@@ -193,7 +192,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/profile/ProfileView.jsx:61",
+      "location": "src/components/profile/ProfileView.jsx:60",
       "className": "cursor-pointer truncate rounded-[4px] text-left text-[13px] font-medium leading-none text-ink outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ink",
       "text": "",
       "childElements": [],
@@ -358,7 +357,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:297",
+      "location": "src/components/WorkspaceSidebar.jsx:298",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -373,7 +372,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:320",
+      "location": "src/components/WorkspaceSidebar.jsx:321",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -388,7 +387,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:380",
+      "location": "src/components/WorkspaceSidebar.jsx:381",
       "className": "transition-colors",
       "text": "",
       "childElements": [
@@ -472,17 +471,17 @@
       "context": "auth-footer-support"
     },
     {
-      "location": "src/components/MobileNav.jsx:372",
+      "location": "src/components/MobileNav.jsx:379",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:448",
+      "location": "src/components/profile/ProfileView.jsx:455",
       "tag": "button",
-      "context": "profile-project-row"
+      "context": "profile-project-chip"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:61",
+      "location": "src/components/profile/ProfileView.jsx:60",
       "tag": "button",
       "context": "profile-contact-value"
     },
@@ -492,17 +491,17 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:297",
+      "location": "src/components/WorkspaceSidebar.jsx:298",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:320",
+      "location": "src/components/WorkspaceSidebar.jsx:321",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:380",
+      "location": "src/components/WorkspaceSidebar.jsx:381",
       "tag": "button",
       "context": "branding-action"
     }
@@ -513,7 +512,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:350",
+      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:351",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -528,37 +527,37 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:93",
+      "location": "src/app/(app)/layout.js:92",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:178",
+      "location": "src/app/(app)/page.js:179",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:190",
+      "location": "src/app/(app)/page.js:191",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:539",
+      "location": "src/app/(app)/settings/page.js:540",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:559",
+      "location": "src/app/(app)/settings/page.js:560",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:603",
+      "location": "src/app/(app)/settings/page.js:604",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:722",
+      "location": "src/app/(app)/settings/page.js:723",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },

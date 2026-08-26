@@ -14,9 +14,9 @@
   ],
   "totals": {
     "components": 119,
-    "stateful": 105,
-    "hover": 68,
-    "focus": 68,
+    "stateful": 106,
+    "hover": 70,
+    "focus": 69,
     "disabled": 35,
     "loading": 7,
     "error": 6,
@@ -340,13 +340,17 @@
       "focus": "global"
     },
     "Pill": {
+      "hover": "css",
       "long-text": "children, label"
     },
     "PlanCards": {},
     "PlanGate": {
       "long-text": "children"
     },
-    "PlanLimitBanner": {},
+    "PlanLimitRail": {
+      "hover": "css",
+      "focus": "global"
+    },
     "PlanMark": {
       "long-text": "label"
     },
@@ -798,7 +802,7 @@
     "PlanGate": [
       "feedback"
     ],
-    "PlanLimitBanner": [
+    "PlanLimitRail": [
       "feedback"
     ],
     "PlanMark": [
