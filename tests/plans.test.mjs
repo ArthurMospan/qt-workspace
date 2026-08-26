@@ -34,6 +34,8 @@ import {
   planLimitText,
   planLimitValue,
   planName,
+  planDowngradeNotice,
+  projectsOverPlanLimit,
   planUpgradeLine,
   planUsage,
   planUsagePeriod,
@@ -607,6 +609,114 @@ test('усі три стелі мають роут, який справді ра
   const commit = ai.indexOf('await commitAiCall(');
   assert.ok(reserve > 0 && refuse > reserve && analyze > refuse && commit > analyze,
     'reserve -> refuse -> analyze -> commit');
+});
+
+// ── Екран ховає кнопку; двері відповідають, коли кнопки немає ────────────
+//
+// Саме на дверях і трималися всі дірки, знайдені при пониженні тарифу: гейт
+// стояв там, де щось малюється, і ніде більше. Оплатив місяць, увімкнув
+// логотип, повернувся на Free — логотип лишався назавжди, бо перемикач у
+// налаштуваннях знав про тариф, а сайдбар, який його малює, ні. Ключ, виданий
+// на Lite, далі пускав. Телеграм-група далі створювала задачі.
+//
+// Тому кожна платна можливість тут названа разом із файлами, які справді
+// відмовляють. Список — не документація: якщо у файлі не залишиться виклику,
+// тест упаде.
+test('кожна платна можливість має двері, а не лише екран', async () => {
+  const doors = {
+    branding: [
+      'src/lib/hooks/useCachedOrgBranding.js',
+      'src/components/OrgSwitcherScreen.jsx',
+    ],
+    invoices: ['src/app/api/invoices/route.js'],
+    integrations: [
+      'src/app/api/v1/projects/route.js',
+      'src/app/api/v1/tasks/route.js',
+      'src/app/api/integrations/api-keys/route.js',
+      'src/app/api/integrations/telegram/route.js',
+      'src/app/api/integrations/telegram/group/route.js',
+      'src/app/api/integrations/telegram/webhook/route.js',
+    ],
+    'data-import': [
+      'src/app/api/integrations/youtrack/route.js',
+      'src/app/api/integrations/youtrack/import/route.js',
+    ],
+    // Портал живе в іншому застосунку з власною базою: тут можна зачинити
+    // вкладку й перемикач, а показує проєкт замовнику QuickTeam+. Двері для
+    // нього — у контракті між репозиторіями, не в цьому файлі.
+    portal: [],
+  };
+
+  for (const capability of PLAN_CAPABILITIES.filter(entry => entry.enforced)) {
+    assert.ok(capability.id in doors, `у «${capability.id}» немає списку дверей`);
+    for (const path of doors[capability.id]) {
+      const source = withoutComments(await read(path));
+      assert.match(
+        source,
+        /planAllows\(|refuseWithoutCapability\(|planCapabilityRefusalResponse\(/,
+        `${path}: малює або пускає, не спитавши реєстр`,
+      );
+      assert.ok(
+        source.includes(`'${capability.id}'`),
+        `${path}: не називає можливість, за яку відповідає`,
+      );
+    }
+  }
+
+  // І відмова збирається з реєстру, а не пишеться в роуті.
+  const helper = await read('src/lib/server/planLimits.js');
+  assert.match(helper, /capabilityById\(capabilityId\)/);
+  assert.match(helper, /capabilityAvailability\(capabilityId\)/);
+  assert.match(helper, /Дані збережені/);
+});
+
+test('проєкт понад стелю стає тільки для читання, а не зникає', async () => {
+  // Найновіші, бо це єдиний порядок, який людина може передбачити сама.
+  const projects = [
+    { id: 'old', status: 'active', createdAt: '2024-01-01' },
+    { id: 'mid', status: 'active', createdAt: '2024-02-01' },
+    { id: 'new', status: 'active', createdAt: '2024-03-01' },
+    { id: 'newest', status: 'active', createdAt: '2024-04-01' },
+    { id: 'archived', status: 'archived', createdAt: '2024-05-01' },
+  ];
+  assert.deepEqual(projectsOverPlanLimit('free', projects), ['newest']);
+  // Безліміт нічого не закриває, і архів не рахується.
+  assert.deepEqual(projectsOverPlanLimit('pro', projects), []);
+  assert.deepEqual(projectsOverPlanLimit('lite', projects), []);
+  // Проєкт без createdAt — старий, а не новий: поле зʼявилось пізніше за нього.
+  assert.deepEqual(
+    projectsOverPlanLimit('free', [{ id: 'legacy', status: 'active' }, ...projects.slice(0, 3)]),
+    ['new'],
+  );
+
+  // Позначку ставить перемикання тарифу, і тільки воно; писати її з браузера
+  // не можна — інакше можна було б зняти позначку й писати далі.
+  const route = await read('src/app/api/organizations/[organizationId]/route.js');
+  assert.match(route, /overPlanLimit: next/);
+  const rules = await read('firestore.rules');
+  assert.match(rules, /'overPlanLimit'/);
+
+  // Читається все, пишеться нічого: спільна відповідь для роутів, що правлять
+  // і видаляють задачу, і власна перевірка там, де задачу створюють.
+  const access = withoutComments(await read('src/lib/utils/projectAccess.mjs'));
+  assert.match(access, /project.overPlanLimit === true/);
+  const create = withoutComments(await read('src/app/api/issues/route.js'));
+  assert.match(create, /PROJECT_OVER_PLAN_LIMIT/);
+});
+
+test('пониження тарифу описане до того, як сталося', () => {
+  // Нічого не видаляється — і це перше, що там написано, бо саме в це не
+  // вірять. Далі тільки те, що справді зміниться, зібране з реєстру.
+  const notice = planDowngradeNotice('pro', 'free', { projects: 12, members: 20, aiCalls: 30 });
+  assert.match(notice.title, /Free/);
+  assert.match(notice.message, /Нічого не видаляється/);
+  assert.match(notice.message, /Власний брендинг/);
+  assert.match(notice.message, /Активні проєкти: 12 із 3/);
+  assert.match(notice.message, /Учасники команди: 20 із 5/);
+  // Угору по тарифах нічого не втрачається, тож і питати нема про що.
+  assert.equal(planDowngradeNotice('free', 'pro', { projects: 1, members: 1 }), null);
+  // І вниз теж, поки простір не переріс нову стелю й нічого платного не вмикав.
+  assert.equal(planDowngradeNotice('free', 'free', { projects: 1 }), null);
 });
 
 test('брендинг зачинений тарифом, але не вимикається заднім числом', async () => {
