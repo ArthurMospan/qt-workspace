@@ -156,7 +156,7 @@ function TeamOverview({ stats, summary, period, positions, now }) {
           icon={CheckCircle2}
           value={summary.done}
           label={`Завершено за ${period} ${plural(period, ['день', 'дні', 'днів'])}`}
-          sub="сума по учасниках"
+          sub="унікальні задачі"
         />
         <KpiCard
           icon={ListChecks}

@@ -32,6 +32,7 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 import { countRead } from '@/lib/utils/readMeter.mjs';
+import { myTaskChildScopes, mergeMyTaskChildren } from '@/lib/utils/myTaskChildren.mjs';
 
 function issueLabel(issue) {
   return issue?.issueKey || issue?.title || issue?.id || 'без назви';
@@ -48,6 +49,7 @@ export function useAllMyTasks(userId) {
   const { closedStatusIds, statuses } = useWorkflowConfig();
   const [snapshotTasks, setSnapshotTasks] = useState([]);
   const [snapshotAllIssues, setSnapshotAllIssues] = useState([]);
+  const [childSnapshot, setChildSnapshot] = useState(null);
   const [issueLinks, setIssueLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,7 +60,6 @@ export function useAllMyTasks(userId) {
   // column while the write is in flight. Sorted by due date here, not by
   // `order`, so the merged list needs no re-sort.
   const [tasks, applyPatch, revertPatch] = useOptimisticPatch(snapshotTasks);
-  const [allIssues, applyAllPatch, revertAllPatch] = useOptimisticPatch(snapshotAllIssues);
   const compareTaskCards = useMemo(
     () => compareMyTaskIssues(myTaskOrders),
     [myTaskOrders],
@@ -77,6 +78,68 @@ export function useAllMyTasks(userId) {
     [projects],
   );
   const queryTarget = `${activeOrgId || ''}/${userId || ''}/${projectScope}`;
+  const childScopes = useMemo(() => myTaskChildScopes(snapshotAllIssues, {
+    organizationId: activeOrgId,
+    userId,
+    projectIds: projectScope ? projectScope.split(',') : [],
+  }), [snapshotAllIssues, activeOrgId, userId, projectScope]);
+  const childTarget = JSON.stringify({ queryTarget, scopes: childScopes });
+  const childrenCurrent = childSnapshot?.target === childTarget;
+  const contextIssues = useMemo(() => mergeMyTaskChildren(
+    snapshotAllIssues,
+    childrenCurrent ? childSnapshot.issues : [],
+    childScopes,
+  ), [snapshotAllIssues, childrenCurrent, childSnapshot, childScopes]);
+  const [allIssues, applyAllPatch, revertAllPatch] = useOptimisticPatch(contextIssues);
+  const childrenLoading = childScopes.length > 0 && (!childrenCurrent || !childSnapshot.ready);
+  const childrenError = childrenCurrent ? childSnapshot.error : null;
+
+  useEffect(() => {
+    const { scopes } = JSON.parse(childTarget);
+    if (!scopes.length) return;
+    let active = true;
+    const buckets = new Map();
+    const ready = new Set();
+    const errors = new Map();
+    const publish = () => {
+      if (!active) return;
+      setChildSnapshot({
+        target: childTarget,
+        issues: flattenDocumentBuckets(buckets),
+        ready: ready.size === scopes.length,
+        error: errors.values().next().value || null,
+      });
+    };
+    const unsubs = scopes.map((scope, index) => onSnapshot(
+      query(
+        collection(db, 'issues'),
+        where('organizationId', '==', scope.organizationId),
+        where('projectId', '==', scope.projectId),
+        where(scope.field, 'in', scope.parentIds),
+      ),
+      { includeMetadataChanges: true },
+      snap => {
+        if (!active || (snap.empty && snap.metadata.fromCache)) return;
+        countRead('useAllMyTasks:children', snap);
+        buckets.set(index, snap.docs.map(document => ({ ...document.data(), id: document.id })));
+        ready.add(index);
+        errors.delete(index);
+        publish();
+      },
+      error => {
+        if (!active) return;
+        reportLoadError('[useAllMyTasks] children', error);
+        ready.add(index);
+        errors.set(index, error);
+        publish();
+      },
+    ));
+    return () => {
+      active = false;
+      unsubs.forEach(unsubscribe => unsubscribe());
+    };
+  }, [childTarget]);
+
   useEffect(() => {
     const projectIds = projectScope ? projectScope.split(',') : [];
     if (!activeOrgId || !userId || projectIds.length === 0) {
@@ -445,8 +508,8 @@ export function useAllMyTasks(userId) {
     tasks,
     allIssues,
     issueLinks,
-    loading: loading || myTaskOrderLoading,
-    error,
+    loading: loading || myTaskOrderLoading || childrenLoading,
+    error: error || childrenError,
     moveTask,
     moveTaskToCategory,
     compareTaskCards,
