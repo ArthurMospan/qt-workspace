@@ -1,3 +1,5 @@
+import { noteQuotaRefusal } from './quotaState.mjs';
+
 export function isQuotaExceededError(error) {
   const code = String(error?.code || '').toLowerCase();
   const message = String(error?.message || '').toLowerCase();
@@ -8,8 +10,13 @@ export function isQuotaExceededError(error) {
     || message.includes('quota exceeded');
 }
 
+// Every load failure in the workspace already comes through here, which makes
+// it the one place that can notice the daily free quota being spent — and the
+// read that gets refused is usually not the one whose failure reaches a screen,
+// so noticing has to happen where the failure is, not where it surfaces.
 export function reportLoadError(scope, error) {
   if (isQuotaExceededError(error) || error?.status === 503) {
+    noteQuotaRefusal();
     console.warn(`${scope} temporarily unavailable:`, error);
     return;
   }

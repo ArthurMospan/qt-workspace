@@ -192,8 +192,17 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the two paths and their guarantees.
   readable by anyone. If that is deliberate it stays written down here; if it is
   not, it is one setting.
 - **Production runs on Firestore's free read quota.** The queries are bounded
-  now, but nothing measures the daily total or warns before it is spent. Scope
-  and window every new read path.
+  now, and the day it is spent anyway the product says so instead of spinning —
+  see `lib/utils/quotaState.mjs` and the test that holds the three surfaces to
+  one sentence. What is still missing is the half before that: nothing counts
+  documents read, so «which screen spent it» can only be answered by reading
+  code. Until something meters it, scope and window every new read path.
+- **The dashboard is the widest read in the product and the screen people
+  return to most.** Its subscription therefore lives in
+  `lib/hooks/useOrganizationIssues.js`, refcounted and keyed by what it reads,
+  not inside the screen: a listener rebuilt on the way back in is a fresh query
+  against that daily cap. A new screen that wants the same set asks this hook
+  rather than opening a second copy of it.
 
 ## Unprioritized product backlog
 

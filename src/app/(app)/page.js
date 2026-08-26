@@ -1,18 +1,11 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { reportLoadError, userFacingErrorMessage } from '@/lib/utils/errors';
+import { auth } from '@/lib/firebase';
+import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
-
-import {
-  chunkProjectIds,
-  flattenDocumentBuckets,
-} from '@/lib/utils/projectScopedQueries.mjs';
-import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
-import { withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
+import { useOrganizationIssues } from '@/lib/hooks/useOrganizationIssues';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, CalendarClock, Settings2 } from 'lucide-react';
@@ -313,11 +306,16 @@ const ISSUE_ACTIVITY_EVENTS = {
  * a project stuck in its backlog and a project jammed on review are different
  * shapes, and neither is «84 завдань».
  *
- * The band is deliberately not the full width of the card. It is a reading, not
- * a rule under the text, and a bar that runs edge to edge reads as furniture.
- * The large card gets a slightly heavier one and names the segments on hover;
- * the small card is a glance and carries no labels at all — the numbers are one
- * click away on the project itself.
+ * It runs the full width of the card, and it is the last line on it. A short
+ * bar floating in a wide card reads as a fragment of something; a full-width
+ * one reads as the card's own measure, and every segment gets enough room to be
+ * a target rather than a sliver.
+ *
+ * Each segment names itself on hover, and only itself. A legend under the bar
+ * meant reading five labels to learn about the one colour you were looking at,
+ * and it had to be hidden until hover to fit — so it was both more work and
+ * less discoverable than the browser's own tooltip on the zone under the
+ * pointer.
  *
  * Segment colours are the categories' own, from `STATUS_CATEGORIES` — the same
  * colours the cross-project board columns and the list's section dots use, so
@@ -325,46 +323,25 @@ const ISSUE_ACTIVITY_EVENTS = {
  */
 function ProjectStatusBand({ segments, total, isLarge }) {
   if (!total) return null;
-  const label = segments.map(segment => `${segment.label}: ${segment.count}`).join(', ');
 
   return (
-    <div className={`group/band relative min-w-[64px] flex-1 ${isLarge ? 'max-w-[240px]' : 'max-w-[148px]'}`}>
-      <div
-        role="img"
-        aria-label={`Розподіл завдань за статусом — ${label}`}
-        title={isLarge ? undefined : label}
-        className={`flex w-full gap-[2px] overflow-hidden rounded-full bg-chart-track ${
-          isLarge ? 'h-[7px]' : 'h-[5px]'
-        }`}
-      >
-        {segments.map(segment => (
-          <span
-            key={segment.id}
-            aria-hidden
-            className="block h-full"
-            style={{ width: `${(segment.count / total) * 100}%`, background: segment.color }}
-          />
-        ))}
-      </div>
-      {/* Absolutely placed, so naming the segments costs the card no height and
-          moves nothing when it appears. There is room for it in both
-          directions: the large card carries 40px of bottom padding under this
-          row, and `w-max` lets one line of names run past the band's own width
-          into the card rather than wrapping into that padding. */}
-      {isLarge && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-0 top-full mt-[7px] flex w-max gap-[10px] whitespace-nowrap text-[10px] font-medium text-muted opacity-0 transition-opacity duration-200 group-hover/band:opacity-100"
-        >
-          {segments.map(segment => (
-            <span key={segment.id} className="flex items-center gap-[4px]">
-              <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: segment.color }} />
-              <strong className="font-bold text-ink">{segment.count}</strong>
-              {segment.label.toLowerCase()}
-            </span>
-          ))}
-        </div>
-      )}
+    <div
+      role="img"
+      aria-label={`Розподіл завдань за статусом — ${segments.map(segment => `${segment.label}: ${segment.count}`).join(', ')}`}
+      className={`flex w-full gap-[2px] overflow-hidden rounded-full bg-chart-track ${
+        isLarge ? 'h-[8px]' : 'h-[6px]'
+      }`}
+    >
+      {segments.map(segment => (
+        <span
+          key={segment.id}
+          // The whole point of the zone: the pointer is already on the colour
+          // being asked about, so the answer is one fact rather than five.
+          title={`${segment.label}: ${segment.count}`}
+          className="block h-full transition-opacity hover:opacity-80"
+          style={{ width: `${(segment.count / total) * 100}%`, background: segment.color }}
+        />
+      ))}
     </div>
   );
 }
@@ -545,37 +522,42 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
         </Link>
       )}
       
-      {/* No rule above this row. The card is one object and the band is the
+      {/* No rule above the band. The card is one object and the band is the
           last line of it, not a second panel.
 
-          Two marks used to live here that the band does not carry, and they are
-          kept because neither is a status: a deadline that has passed is a fact
+          Two marks live on the line above it, and they are kept because neither
+          is a status the band could carry: a deadline that has passed is a fact
           about time, and being named is the one fact on the card addressed to
           you. Both are drawn only when they are true, so a project with nothing
-          wrong ends in the band alone. Everything else the row used to count —
-          the total, the open count, unread chat — the band already shows or the
-          project itself answers in one click. */}
-      <div className="flex w-full items-center gap-[12px] text-[11px]">
-        <ProjectStatusBand segments={stats.segments} total={stats.banded} isLarge={isLarge} />
-        {/* Coloured now, where the same figure among four neutral counts was
-            deliberately not. It used to be one of four things set identically,
-            and colouring one of four is shouting; it is now the only thing
-            beside a neutral band, and it is an exception rather than a
-            measurement — the colour is what says which of the two it is. It
-            appears only when something is actually late, so a project with
-            nothing wrong ends in the band alone. */}
-        {stats.overdue > 0 && (
-          <span
-            className="flex shrink-0 items-center gap-[5px] text-danger"
-            title="Завдання, у яких минув дедлайн"
-          >
-            <CalendarClock size={13} strokeWidth={2} aria-hidden />
-            <strong className="font-bold">{stats.overdue}</strong>
-            <span>прострочено</span>
-          </span>
-        )}
-        <TaskCounters mentions={mentionCount} className="ml-auto" />
-      </div>
+          wrong is the band alone with no line above it — which is also why they
+          sit above rather than beside it. Room for them beside the band would
+          be room taken from the band on every card, including the ones that
+          never need it.
+
+          Everything else the old row counted — the total, the open count,
+          unread chat — the band already shows, or the sidebar's project dot
+          says, or the project itself answers in one click. */}
+      {(stats.overdue > 0 || mentionCount > 0) && (
+        <div className="flex w-full items-center gap-[12px] text-[11px]">
+          {/* Coloured now, where the same figure among four neutral counts was
+              deliberately not. It used to be one of four things set
+              identically, and colouring one of four is shouting; it is now an
+              exception rather than a measurement, and the colour is what says
+              which of the two it is. */}
+          {stats.overdue > 0 && (
+            <span
+              className="flex shrink-0 items-center gap-[5px] text-danger"
+              title="Завдання, у яких минув дедлайн"
+            >
+              <CalendarClock size={13} strokeWidth={2} aria-hidden />
+              <strong className="font-bold">{stats.overdue}</strong>
+              <span>прострочено</span>
+            </span>
+          )}
+          <TaskCounters mentions={mentionCount} className="ml-auto" />
+        </div>
+      )}
+      <ProjectStatusBand segments={stats.segments} total={stats.banded} isLarge={isLarge} />
     </div>
   );
 }
@@ -751,8 +733,6 @@ export default function WorkspacePage() {
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
   // Real-time issues state
-  const [allIssues, setAllIssues] = useState([]);
-  const [issuesError, setIssuesError] = useState(null);
 
   // Filter states
   const searchQuery = useWorkspaceStore(s => s.workspaceSearch);
@@ -773,62 +753,49 @@ export default function WorkspacePage() {
     }
   }, [searchParams, router]);
 
-  // Real-time listener for the issues of every project this user can open.
-  // Querying the whole organization is rejected as soon as one project is out
-  // of reach, because Firestore applies the read rule to every candidate row.
-  const projectScope = useMemo(
-    () => [...new Set((projects || []).map(project => project.id).filter(Boolean))]
-      .sort()
-      .join(','),
+  // Every task of every project this account can open — read through the
+  // shared subscription in `useOrganizationIssues`, not a listener of this
+  // screen's own. This is the widest read in the product and this is the screen
+  // people come back to most, and a listener rebuilt on the way back in is a
+  // fresh query against a daily quota. See that module for the whole argument.
+  const projectIds = useMemo(
+    () => (projects || []).map(project => project.id).filter(Boolean),
     [projects],
   );
-  useEffect(() => {
-    const projectIds = projectScope ? projectScope.split(',') : [];
-    if (!activeOrgId || projectIds.length === 0) {
-      queueMicrotask(() => setAllIssues([]));
-      return undefined;
-    }
-    const buckets = new Map();
-    const unsubs = chunkProjectIds(projectIds).map((chunk, chunkIndex) => onSnapshot(
-      query(
-        collection(db, 'issues'),
-        where('organizationId', '==', activeOrgId),
-        where('projectId', 'in', chunk),
-      ),
-      { includeMetadataChanges: true },
-      (snapshot) => {
-        buckets.set(chunkIndex, snapshot.docs.map(doc => ({
-          ...doc.data({ serverTimestamps: 'estimate' }),
-          id: doc.id,
-        })));
-        // This screen has its own subscription rather than going through
-        // `useWorkspaceAnalytics`, so the rule has to be applied by hand here
-        // too: an archived task is out of the working set, and counting it
-        // would hold a project's progress down with work nobody is doing.
-        setAllIssues(withoutCancelledIssues(
-          withoutArchivedIssues(flattenDocumentBuckets(buckets)),
-        ));
-        setIssuesError(null);
-      },
-      (err) => {
-        reportLoadError('[WorkspacePage] issues', err);
-        setIssuesError(err);
-      },
-    ));
-    return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [activeOrgId, projectScope]);
+  const { issues: subscribedIssues, error: issuesError } = useOrganizationIssues(
+    activeOrgId,
+    projectIds,
+  );
 
+  // A task edited on another screen announces itself before Firestore has
+  // delivered the change here, so the card does not sit on a stale last-action
+  // line for a round trip. The patch is an overlay rather than a write into the
+  // set, because the set is now shared: one screen must not be able to edit
+  // what another screen is reading. It lasts exactly until the snapshot that
+  // makes it unnecessary.
+  const [activityPatches, setActivityPatches] = useState({});
   useEffect(() => {
     const handleIssueActivity = event => {
       const detail = event.detail;
       if (!detail?.issueId) return;
-      setAllIssues(previous => previous.map(issue =>
-        issue.id === detail.issueId ? { ...issue, ...detail } : issue
-      ));
+      setActivityPatches(previous => ({ ...previous, [detail.issueId]: detail }));
     };
     window.addEventListener('quickteam:issue-activity', handleIssueActivity);
     return () => window.removeEventListener('quickteam:issue-activity', handleIssueActivity);
   }, []);
+  useEffect(() => {
+    queueMicrotask(() => setActivityPatches(
+      current => (Object.keys(current).length ? {} : current),
+    ));
+  }, [subscribedIssues]);
+
+  const allIssues = useMemo(() => {
+    const patched = Object.keys(activityPatches);
+    if (patched.length === 0) return subscribedIssues;
+    return subscribedIssues.map(issue => (
+      activityPatches[issue.id] ? { ...issue, ...activityPatches[issue.id] } : issue
+    ));
+  }, [activityPatches, subscribedIssues]);
 
   // Real progress per project: % of issues actually delivered (the stored
   // `progress` field is never updated). Cancelled tasks are not in `allIssues`

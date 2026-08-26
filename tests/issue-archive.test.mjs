@@ -58,13 +58,14 @@ test('archived tasks leave the working lists but keep their own link', async () 
     read('../src/lib/hooks/useWorkspaceAnalytics.js'),
     read('../src/lib/hooks/useAllMyTasks.js'),
     read('../src/components/workspace/IssueDetail.jsx'),
-    read('../src/app/(app)/page.js'),
+    read('../src/lib/hooks/useOrganizationIssues.js'),
   ]);
   assert.match(issues, /withoutCancelledIssues\(withoutArchivedIssues\(docs\)\)/);
   assert.match(myTasks, /withoutArchivedIssues\(flattenDocumentBuckets\(issueBuckets\)\)/);
-  // The home screen rolls its own subscription, so it needs the rule by hand or
-  // a project's progress bar counts work nobody is doing.
-  assert.match(home, /setAllIssues\(withoutCancelledIssues\(/);
+  // The home screen's subscription is shared rather than its own now, but it is
+  // still a subscription outside `useIssues`, so it still needs the rule by
+  // hand or a project's progress bar counts work nobody is doing.
+  assert.match(home, /withoutCancelledIssues\(withoutArchivedIssues\(flattenDocumentBuckets\(buckets\)\)\)/);
   // The detail is the one reader that asks for them, so «Архів» can open a
   // task and put it back instead of showing "not found".
   assert.match(detail, /useIssues\(projectId, \{ includeLinks: false, includeSetAside: true \}\)/);

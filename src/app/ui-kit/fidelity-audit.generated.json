@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 260,
-    "parsedFiles": 260,
+    "productFiles": 262,
+    "parsedFiles": 262,
     "parseErrors": 0,
     "nativeControls": 20,
     "structures": {
@@ -500,22 +500,22 @@
       "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },
     {
-      "location": "src/app/(app)/error.js:16",
+      "location": "src/app/(app)/error.js:37",
       "tag": "div",
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:139",
+      "location": "src/app/(app)/layout.js:90",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/page.js:190",
+      "location": "src/app/(app)/page.js:183",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/page.js:202",
+      "location": "src/app/(app)/page.js:195",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },

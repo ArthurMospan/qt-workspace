@@ -86,8 +86,12 @@ test('a denied read is retried before it is called a loss of access', async () =
   // The retry goes back out with a token that belongs to the account that is
   // signed in now, not the one that was rejected.
   assert.match(context, /auth\.currentUser\?\.getIdToken\(true\)/);
-  // And the card that survives all of that still offers a way off itself.
-  assert.match(layout, /accessFailure \? \([\s\S]*Увійти іншим акаунтом/);
+  // And the card that survives all of that still offers a way off itself. It is
+  // one component for all three failures now — a stalled load, a refused read
+  // and a denied organization used to be three cards that could disagree about
+  // what had happened.
+  assert.match(layout, /function WorkspaceLoadFailure\(/);
+  assert.match(layout, /accessFailure && !quotaSpent \? \([\s\S]*Увійти іншим акаунтом/);
   assert.match(issueDetail, /!issueAccessFailure && \([\s\S]*Спробувати ще раз/);
 });
 

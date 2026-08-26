@@ -96,7 +96,7 @@ test('a cancelled task leaves every set the numbers are built from', async () =>
     read('../src/lib/hooks/useIssues.js'),
     read('../src/lib/hooks/useWorkspaceAnalytics.js'),
     read('../src/lib/hooks/useAllMyTasks.js'),
-    read('../src/app/(app)/page.js'),
+    read('../src/lib/hooks/useOrganizationIssues.js'),
     read('../src/lib/utils/reminderCandidates.mjs'),
     read('../src/app/api/search/route.js'),
   ]);

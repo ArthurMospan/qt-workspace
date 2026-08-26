@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -86,7 +87,10 @@ const BOUNDED_WITHOUT_LIMIT = new Map([
   ['lib/hooks/useIssues.js', 'tasks and links of one project — the board itself'],
   ['lib/hooks/useAllMyTasks.js', 'tasks assigned to one person'],
   ['lib/hooks/useWorkspaceAnalytics.js', 'tasks of the authorized projects; the time logs ARE windowed by loggedAt'],
-  ['app/(app)/page.js', 'tasks of the projects this user can open — the dashboard'],
+  // The dashboard's read, moved out of the screen so leaving it does not throw
+  // the subscription away and coming back does not buy it again. Same query,
+  // same ceiling; what changed is how many times a day it is paid for.
+  ['lib/hooks/useOrganizationIssues.js', 'tasks of the projects this user can open — the dashboard'],
   ['lib/hooks/useTimeLogs.js', 'time logged against one task'],
   ['lib/hooks/useProjectTimeLogs.js', 'time logged against one project'],
   ['lib/hooks/useProjectAllTimeLogs.js', 'time logged against one project'],
@@ -270,4 +274,42 @@ test('the windowed time-log queries have the composite indexes they need', () =>
     paths.includes('organizationId,projectId,sourceType,eventVisibility,loggedAt'),
     'team calendar logs in a window need their own index ending in loggedAt',
   );
+});
+
+// What the product says when the cap is actually reached.
+//
+// The cost rules above are about not reaching it. This is about the day they
+// fail, which has now happened more than once. Three surfaces can be the first
+// to know, and until now all three were wrong in a different way: the render
+// boundary blamed the rendering, the organization card called a known refusal
+// «тимчасово недоступний», and a read that never came back showed a spinner
+// with no end — the worst of the three, because a spinner asks the reader to
+// keep waiting and never tells them to stop.
+test('a refused read is named, and never shown as a spinner that never ends', async () => {
+  const [quota, errors, layout, boundary] = await Promise.all([
+    readFile(new URL('../src/lib/utils/quotaState.mjs', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/utils/errors.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/(app)/layout.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/(app)/error.js', import.meta.url), 'utf8'),
+  ]);
+
+  // The refusal is recorded where every load failure already passes, because
+  // the read that gets refused is rarely the one whose failure reaches a screen.
+  assert.match(errors, /noteQuotaRefusal\(\)/);
+  assert.match(quota, /export function isQuotaRefused/);
+  // One sentence, in one place, so the three surfaces cannot describe the same
+  // event three ways again.
+  assert.match(quota, /QUOTA_FAILURE_COPY/);
+  assert.match(quota, /50 000 читань на добу/);
+
+  // The spinner has an end, and what is behind it is the card.
+  assert.match(layout, /const LOAD_STALL_MS/);
+  assert.match(layout, /if \(loadStalled\) \{/);
+  assert.match(layout, /<WorkspaceLoadFailure error=\{orgError\}/);
+  assert.match(layout, /QUOTA_FAILURE_COPY\.title/);
+
+  // And the render boundary stops blaming the rendering for a database that
+  // answered «no».
+  assert.match(boundary, /isQuotaExceededError\(error\) \|\| isQuotaExceededError\(error\?\.cause\) \|\| isQuotaRefused\(\)/);
+  assert.match(boundary, /quotaSpent \? QUOTA_FAILURE_COPY\.title : 'QuickTeam не завантажився'/);
 });

@@ -25,6 +25,87 @@ import { useRecordAccountSession } from '@/lib/hooks/useAccountSessions';
 import WorkspaceOrganizationRouteGuard from '@/components/WorkspaceOrganizationRouteGuard';
 import Button from '@/components/ui/Button';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
+import { isQuotaExceededError } from '@/lib/utils/errors';
+import { isQuotaRefused, QUOTA_FAILURE_COPY } from '@/lib/utils/quotaState.mjs';
+
+// A spinner is a promise that something is coming. When nothing is, it is the
+// worst screen the product has: it asks the reader to keep waiting and never
+// tells them to stop. The workspace showed one for as long as `orgLoading` was
+// true, and `orgLoading` stays true through every path that waits for a read it
+// is not going to get — most often a Firestore refusal on the free plan's daily
+// quota, which is a condition with a known cause and a known end.
+//
+// Twelve seconds is well past a slow phone on a slow network and well short of
+// giving up on one. After that the screen says what it knows instead of
+// spinning: the reader can retry, and if the quota is what refused the read,
+// they are told so rather than left guessing.
+const LOAD_STALL_MS = 12_000;
+
+function useLoadStalled(loading) {
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      // The same deferral the org-selection effect below uses: a synchronous
+      // setState in an effect body cascades a second render before paint.
+      queueMicrotask(() => setStalled(false));
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setStalled(true), LOAD_STALL_MS);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
+  return stalled;
+}
+
+/**
+ * One card for every way the workspace can fail to open, so the three of them
+ * cannot drift apart in what they claim. `error` decides which sentence it is.
+ */
+function WorkspaceLoadFailure({ error, onRetry, onSignOut }) {
+  const kind = organizationLoadErrorKind(error);
+  const accessFailure = kind === 'permission-denied' || kind === 'not-found';
+  const quotaSpent = isQuotaExceededError(error) || (!accessFailure && isQuotaRefused());
+
+  const title = quotaSpent
+    ? QUOTA_FAILURE_COPY.title
+    : kind === 'permission-denied'
+      ? 'Немає доступу до організації'
+      : kind === 'not-found'
+        ? 'Організацію не знайдено'
+        : 'QuickTeam тимчасово недоступний';
+
+  // Google, GitHub and OneB are three separate accounts unless they have been
+  // linked in settings, so «no access» is far more often «signed in as somebody
+  // else» than «removed from the team». The sentence says so, because the
+  // reader is the only one who knows which button they pressed.
+  const description = quotaSpent
+    ? QUOTA_FAILURE_COPY.description
+    : kind === 'permission-denied'
+      ? 'Ваш обліковий запис не має доступу до цієї організації. Якщо ви входили іншим способом — Google, GitHub чи OneB — це інший акаунт, і дані організації на місці.'
+      : kind === 'not-found'
+        ? 'Організацію видалено або посилання застаріло.'
+        : 'Не вдалося прочитати дані організації. Ваші дані не видалені.';
+
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-canvas p-6">
+      <div data-ui-surface="local" className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
+        <h1 className="ui-type-section-title text-ink mb-2">{title}</h1>
+        <p className="text-[13px] text-muted mb-5">{description}</p>
+        {/* Nobody is left on a dead end. The access card used to carry no
+            action at all, so a person who had simply signed in with the wrong
+            button had a sentence, a white box and no way out of it. */}
+        {accessFailure && !quotaSpent ? (
+          <Button onClick={onSignOut} size="lg" composition="workspace-guard">
+            Увійти іншим акаунтом
+          </Button>
+        ) : (
+          <Button onClick={onRetry} size="lg" composition="workspace-guard">
+            {quotaSpent ? QUOTA_FAILURE_COPY.action : 'Спробувати ще раз'}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function WorkspaceLayout({ children }) {
   const router = useRouter();
@@ -46,6 +127,9 @@ export default function WorkspaceLayout({ children }) {
   // doing the recording — a device nobody opened settings from is exactly the
   // one worth seeing there.
   useRecordAccountSession(currentUser?.id || currentUser?.uid || null);
+  const loadStalled = useLoadStalled(authLoading || orgLoading);
+  const retryLoad = () => window.location.reload();
+  const signOutAndReturn = async () => { await signOut(); router.replace('/login'); };
 
   const pathname = usePathname();
   const isChat = pathname?.startsWith('/chat');
@@ -119,8 +203,12 @@ export default function WorkspaceLayout({ children }) {
     }
   }, [authLoading, orgLoading, currentUser, noOrg, allOrgs]);
 
-  // 1. Auth loading
+  // 1. Auth loading — but not for ever. A read that is never going to arrive
+  //    used to hold this spinner until the reader gave up on the product.
   if (authLoading || orgLoading) {
+    if (loadStalled) {
+      return <WorkspaceLoadFailure error={orgError} onRetry={retryLoad} onSignOut={signOutAndReturn} />;
+    }
     return (
       <div className="w-full h-full flex items-center justify-center bg-canvas">
         <div className="w-8 h-8 border-[3px] border-line border-t-ink rounded-full animate-spin" />
@@ -132,47 +220,7 @@ export default function WorkspaceLayout({ children }) {
   if (!currentUser) return null;
 
   if (orgError) {
-    const errorKind = organizationLoadErrorKind(orgError);
-    const accessFailure = errorKind === 'permission-denied' || errorKind === 'not-found';
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-canvas p-6">
-        <div data-ui-surface="local" className="w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm">
-          <h1 className="ui-type-section-title text-ink mb-2">
-            {errorKind === 'permission-denied'
-              ? 'Немає доступу до організації'
-              : errorKind === 'not-found'
-                ? 'Організацію не знайдено'
-                : 'QuickTeam тимчасово недоступний'}
-          </h1>
-          {/* Google, GitHub and OneB are three separate accounts unless they
-              have been linked in settings, so «no access» is far more often
-              «signed in as somebody else» than «removed from the team». The
-              sentence says so, because the reader is the only one who knows
-              which button they pressed. */}
-          <p className="text-[13px] text-muted mb-5">
-            {errorKind === 'permission-denied'
-              ? 'Ваш обліковий запис не має доступу до цієї організації. Якщо ви входили іншим способом — Google, GitHub чи OneB — це інший акаунт, і дані організації на місці.'
-              : errorKind === 'not-found'
-                ? 'Організацію видалено або посилання застаріло.'
-                : 'Не вдалося прочитати дані організації. Ваші дані не видалені.'}
-          </p>
-          {/* Nobody is left on a dead end. The access card used to carry no
-              action at all, so a person who had simply signed in with the
-              wrong button had a sentence, a white box and no way out of it. */}
-          {accessFailure ? (
-            <Button
-              onClick={async () => { await signOut(); router.replace('/login'); }}
-              size="lg"
-              composition="workspace-guard"
-            >
-              Увійти іншим акаунтом
-            </Button>
-          ) : (
-            <Button onClick={() => window.location.reload()} size="lg" composition="workspace-guard">Спробувати ще раз</Button>
-          )}
-        </div>
-      </div>
-    );
+    return <WorkspaceLoadFailure error={orgError} onRetry={retryLoad} onSignOut={signOutAndReturn} />;
   }
 
   // 3. Authenticated but not in any org → redirect immediately to onboarding
