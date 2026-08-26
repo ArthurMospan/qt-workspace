@@ -402,9 +402,16 @@ test('прайслист один на весь продукт', async () => {
   assert.doesNotMatch(onboarding, /Продовжити/);
   // Один безкоштовний простір на акаунт — принаймні цей екран так каже.
   assert.match(onboarding, /lockedPlanIds=\{freeTaken \? \['free'\] : \[\]\}/);
-  // Стеля в документі організації теж із реєстру, а не з тернарника.
-  assert.match(onboarding, /storedPlanLimit\(selectedPlan, 'projects'\)/);
+  // Стеля в документі організації теж із реєстру, а не з тернарника — і пише
+  // її тепер сервер, бо plan і limits браузеру заборонені: зміна тарифу ще й
+  // вирішує, для яких проєктів нової стелі вже не вистачає.
   assert.doesNotMatch(onboarding, /maxProjects: 3/);
+  assert.doesNotMatch(onboarding, /limits: {/);
+  const createRoute = await read('src/app/api/organizations/route.js');
+  assert.match(createRoute, /storedPlanLimit\(plan, 'projects'\)/);
+  const planRoute = await read('src/app/api/organizations/[organizationId]/route.js');
+  assert.match(planRoute, /storedPlanLimit\(plan, 'projects'\)/);
+  assert.match(planRoute, /projectsOverPlanLimit\(/);
 
   // Перемикання щось робить, а не показує тост про майбутнє. І пише його одне
   // місце: два екрани, що пишуть одне поле, писали б його двома способами.
@@ -412,7 +419,13 @@ test('прайслист один на весь продукт', async () => {
   assert.match(settings, /switchOrganizationPlan\(activeOrgId, next\)/);
   assert.doesNotMatch(settings, /updateDoc\(doc\(db, 'organizations', activeOrgId\), \{ plan/);
   const service = await read('src/lib/services/organizationPlan.js');
-  assert.match(service, /updateDoc\(doc\(db, 'organizations', organizationId\), \{ plan: next \}\)/);
+  assert.match(service, /action: 'set-plan', plan: next/);
+  assert.doesNotMatch(service, /updateDoc\(/);
+  // Пониження питають перед тим, як зробити, і питають обидва екрани — з
+  // одного реєстру, щоб діалог із корони не був тихішим способом втратити фічу.
+  const upgradeHost = await read('src/components/WorkspacePlanUpgradeHost.jsx');
+  assert.match(settings, /planDowngradeNotice\(/);
+  assert.match(upgradeHost, /planDowngradeNotice\(/);
   assert.match(settings, /Оплата ще не підключена/);
   // Тост називає тариф його іменем: на трьох тарифах дві гілки казали «Тариф
   // змінено на Безкоштовний» тому, хто щойно взяв Lite.

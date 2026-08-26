@@ -26,6 +26,7 @@ import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
 import { can, canWhileRoleLoads } from '@/lib/utils/can';
 import { planAllows } from '@/lib/utils/plans.mjs';
+import { PROJECT_OVER_PLAN_LIMIT } from '@/lib/utils/projectAccess.mjs';
 import { useQtPlusEnabled } from '@/lib/hooks/useQtPlusEnabled';
 import QtPlusProjectTab from '@/components/workspace/QtPlusProjectTab';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/services/projects';
@@ -382,6 +383,16 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
           <div className="flex min-w-0 items-center gap-2">
             <span className="min-w-0 truncate">{project?.name}</span>
             {isArchived && <Pill tone="neutral" size="lg" shape="badge" uppercase>В архіві</Pill>}
+            {/* The plan's ceiling no longer has room for this project. Said
+                beside its name, where «В архіві» is said, because it is the same
+                kind of fact: the project is here, it opens, and nothing new goes
+                into it. The routes refuse the writes; this is so nobody finds
+                that out by being refused. */}
+            {project?.overPlanLimit === true && (
+              <Pill tone="warning" size="lg" shape="badge" uppercase title={PROJECT_OVER_PLAN_LIMIT}>
+                Тільки читання
+              </Pill>
+            )}
           </div>
         }
         tabs={tabs}

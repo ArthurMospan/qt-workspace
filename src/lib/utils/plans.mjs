@@ -64,6 +64,7 @@ export const PLAN_LIMITS = [
     hint: 'Або заархівуйте проєкт, який уже завершено: архів звільняє місце, а повернути його можна, коли воно буде.',
     absentTitle: 'Проєкти недоступні на цьому тарифі',
     absentHint: 'Проєкти зʼявляються на платному тарифі.',
+    overageHint: 'створені останніми стануть тільки для читання. Нічого не видаляється, і все повертається разом із тарифом.',
     enforced: true,
     enforcedAt: 'src/app/api/projects/route.js',
   },
@@ -74,6 +75,7 @@ export const PLAN_LIMITS = [
     hint: 'Або деактивуйте учасника, який більше не працює: його задачі, час і коментарі лишаються, місце звільняється.',
     absentTitle: 'Запрошення недоступні на цьому тарифі',
     absentHint: 'Запрошення зʼявляються на платному тарифі.',
+    overageHint: 'усі лишаються на місці й працюють. Нових не запросити, поки не звільниться місце.',
     enforced: true,
     enforcedAt: 'src/app/api/invitations/route.js',
   },
@@ -88,6 +90,7 @@ export const PLAN_LIMITS = [
     hint: 'Лічильник обнулиться першого числа наступного місяця.',
     absentTitle: 'AI Аудіо-завдання недоступні на цьому тарифі',
     absentHint: 'Запис наради стає саммарі, рішеннями й чернетками задач — на платному тарифі.',
+    overageHint: 'цього місяця витрачено більше, ніж дозволяє новий тариф. Лічильник обнулиться першого числа.',
     enforced: true,
     enforcedAt: 'src/app/api/ai/call-to-tasks/route.js',
   },
@@ -253,6 +256,83 @@ export const FREE_WORKSPACE = {
   hint: 'Безкоштовний робочий простір на акаунті вже є — цей буде на платному тарифі.',
   refusal: 'Безкоштовний робочий простір на акаунті вже є. Другий створюється на платному тарифі — наявний нікуди не дінеться.',
 };
+
+/**
+ * The projects a plan no longer has room for.
+ *
+ * The newest ones, because that is the only ordering somebody can predict: a
+ * workspace that drops to a ceiling of three keeps the three it has had
+ * longest, and the ones it opened last week are the ones that go quiet. They go
+ * read-only, not away — this returns ids to mark, and nothing deletes anything.
+ *
+ * A project with no `createdAt` predates the field and is therefore old, so it
+ * sorts first and is kept.
+ */
+export function projectsOverPlanLimit(planId, projects) {
+  const ceiling = planLimit(planId, 'projects');
+  if (!Number.isFinite(ceiling)) return [];
+  const millis = value => {
+    if (!value) return 0;
+    if (typeof value.toMillis === 'function') return value.toMillis();
+    if (typeof value.seconds === 'number') return value.seconds * 1000;
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  return (Array.isArray(projects) ? projects : [])
+    .filter(project => project?.id && project.status !== 'archived')
+    .map((project, index) => ({ id: project.id, index, at: millis(project.createdAt) }))
+    .sort((a, b) => (a.at - b.at) || (a.index - b.index))
+    .slice(ceiling)
+    .map(entry => entry.id);
+}
+
+/**
+ * What changes when a workspace moves down a plan, or `null` when nothing does.
+ *
+ * Asked before the switch, not explained after it. Everything in it is
+ * reversible and says so: a capability that turns off keeps its settings, a
+ * ceiling that is already past keeps everything already made. The one thing
+ * somebody could be surprised by is which projects go quiet, and that is the
+ * line that names how many.
+ *
+ * Built from the registry rather than written out, so a plan that gains or
+ * loses a capability changes this dialog by changing the table above.
+ */
+export function planDowngradeEffects(fromPlan, toPlan, used = {}) {
+  const from = normalizePlan(fromPlan);
+  const to = normalizePlan(toPlan);
+  const lines = [];
+  for (const capability of PLAN_CAPABILITIES) {
+    if (!capability.enforced) continue;
+    if (planAllows(from, capability.id) && !planAllows(to, capability.id)) {
+      lines.push(`${capability.label} — вимкнеться. Налаштування збережуться.`);
+    }
+  }
+  for (const limit of PLAN_LIMITS) {
+    const ceiling = planLimit(to, limit.id);
+    if (!Number.isFinite(ceiling)) continue;
+    const spent = typeof used[limit.id] === 'number' && used[limit.id] >= 0 ? used[limit.id] : null;
+    if (spent === null || spent <= ceiling) continue;
+    lines.push(`${limit.label}: ${spent} із ${ceiling} — ${limit.overageHint || ''}`.trim());
+  }
+  return lines;
+}
+
+/**
+ * The same thing as a dialog: a title and a body a confirm box can print.
+ *
+ * `null` when the move takes nothing away — going up a plan, or going down one
+ * a workspace was not using.
+ */
+export function planDowngradeNotice(fromPlan, toPlan, used = {}) {
+  const lines = planDowngradeEffects(fromPlan, toPlan, used);
+  if (!lines.length) return null;
+  return {
+    title: `Перейти на ${planName(toPlan)}?`,
+    message: ['Нічого не видаляється. Ось що зміниться:', '', ...lines.map(line => `• ${line}`)].join('\n'),
+    confirmLabel: `Перейти на ${planName(toPlan)}`,
+  };
+}
 
 export function normalizePlan(value) {
   return PLANS.some(plan => plan.id === value) ? value : DEFAULT_PLAN;

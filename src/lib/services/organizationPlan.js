@@ -1,24 +1,30 @@
 'use client';
 
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { normalizePlan } from '@/lib/utils/plans.mjs';
 
 /**
- * Switching plans, with nothing to pay.
+ * Switching plans, with nothing to pay yet — and everything a switch implies.
  *
- * Two screens do it now — the settings section and the dialog the crown opens —
- * so the write lives here rather than in whichever of them was written first.
- * It is one field on the organization document, written straight from the
- * client, because until money is involved that is the honest version of what
- * happens: an owner picks a plan and the workspace changes.
+ * Two screens do it — the settings section and the dialog the crown opens — so
+ * it lives here rather than in whichever of them was written first.
  *
- * When billing is real this becomes a server route and `plan` joins `apiKeys`
- * among the fields firestore.rules refuses from a client. Nothing else has to
- * move when it does, which is the other reason it is here.
+ * It used to be one field written straight from the browser. It cannot be:
+ * moving down a plan has to decide which projects the new ceiling no longer has
+ * room for and mark them read-only in the same write, and `plan` has joined
+ * `apiKeys` among the fields firestore.rules refuses from a client. What comes
+ * back is the plan and the projects that went quiet.
  */
 export async function switchOrganizationPlan(organizationId, plan) {
   const next = normalizePlan(plan);
-  await updateDoc(doc(db, 'organizations', organizationId), { plan: next });
-  return next;
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('Authentication required');
+  const response = await fetch(`/api/organizations/${encodeURIComponent(organizationId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ action: 'set-plan', plan: next }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'Не вдалося змінити тариф');
+  return result.plan || next;
 }

@@ -10,9 +10,10 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { PlanCards } from '@/components/ui';
-import { DEFAULT_PLAN, FREE_WORKSPACE, normalizePlan, storedPlanLimit } from '@/lib/utils/plans.mjs';
+import { DEFAULT_PLAN, FREE_WORKSPACE, normalizePlan } from '@/lib/utils/plans.mjs';
 import { normalizeTimeZone } from '@/lib/utils/timeZone.mjs';
 import { createOrganization } from '@/lib/services/organizations';
+import { switchOrganizationPlan } from '@/lib/services/organizationPlan';
 
 function OnboardingPageContent() {
   const router = useRouter();
@@ -120,24 +121,23 @@ function OnboardingPageContent() {
         })
         : orgId;
 
-      if (!isFreshOrganization) await setDoc(doc(db, 'organizations', orgId), {
-        id: orgId,
-        name: orgName.trim(),
-        logo: logoUrl,
-        plan: selectedPlan,
-        timezone: activeOrg?.timezone || detectedTimeZone,
-        // The ceilings come from the registry, not from a ternary. This line
-        // used to read `plan === 'free' ? 3 : null`, which handed Lite the
-        // unlimited copy of a ceiling the price list sets at twenty — the same
-        // split that made Lite equal to Free everywhere else.
-        limits: {
-          maxProjects: storedPlanLimit(selectedPlan, 'projects'),
-          maxMembers: storedPlanLimit(selectedPlan, 'members'),
-        },
-        onboarded: true,
-        onboardedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
+      // Finishing the onboarding of an organization that already exists: its
+      // name and its timezone are an update by its owner, which the rules can
+      // check on their own. Its plan is not — `plan` and `limits` are refused
+      // from a browser now, because a plan change also decides which projects
+      // the new ceiling no longer has room for.
+      if (!isFreshOrganization) {
+        await setDoc(doc(db, 'organizations', orgId), {
+          id: orgId,
+          name: orgName.trim(),
+          logo: logoUrl,
+          timezone: activeOrg?.timezone || detectedTimeZone,
+          onboarded: true,
+          onboardedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        await switchOrganizationPlan(orgId, selectedPlan);
+      }
 
       // Force local state update immediately, bypassing switchOrg's allOrgs check
       if (setActiveOrgId) {

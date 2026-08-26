@@ -10,16 +10,17 @@
 
 import { useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
-import { PlanUpgradeDialog } from '@/components/ui';
+import { PlanUpgradeDialog, useConfirm } from '@/components/ui';
 import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
 import { switchOrganizationPlan } from '@/lib/services/organizationPlan';
-import { capabilityAvailability, planName } from '@/lib/utils/plans.mjs';
+import { capabilityAvailability, planDowngradeNotice, planName } from '@/lib/utils/plans.mjs';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 export default function WorkspacePlanUpgradeHost() {
   const { activeOrgId } = useAppContext();
-  const { plan, notice } = usePlanLimits();
+  const { plan, notice, used } = usePlanLimits();
+  const confirmDialog = useConfirm();
   const planUpgrade = useWorkspaceStore(state => state.planUpgrade);
   const closePlanUpgrade = useWorkspaceStore(state => state.closePlanUpgrade);
   const showToast = useWorkspaceStore(state => state.showToast);
@@ -44,6 +45,14 @@ export default function WorkspacePlanUpgradeHost() {
 
   const choosePlan = async (nextPlan) => {
     if (nextPlan === plan || switchingTo || !activeOrgId) return;
+    // The same question the settings screen asks, from the same registry: a
+    // dialog reached from a crown must not be a quieter way to lose a feature.
+    const downgrade = planDowngradeNotice(plan, nextPlan, used);
+    if (downgrade && !(await confirmDialog({
+      title: downgrade.title,
+      message: downgrade.message,
+      confirmText: downgrade.confirmLabel,
+    }))) return;
     setSwitchingTo(nextPlan);
     try {
       await switchOrganizationPlan(activeOrgId, nextPlan);

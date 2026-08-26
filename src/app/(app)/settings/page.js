@@ -35,6 +35,7 @@ import {
   capabilityAvailability,
   normalizePlan,
   planAllows,
+  planDowngradeNotice,
   planName,
 } from '@/lib/utils/plans.mjs';
 import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
@@ -2227,6 +2228,15 @@ export default function SettingsPage() {
   const handleUpgradePlan = async (newPlan) => {
     const next = normalizePlan(newPlan);
     if (next === orgPlan || upgradingTo) return;
+    // Asked before the switch, never explained after it. Everything on the list
+    // is reversible and says so; the one thing somebody could be surprised by is
+    // which projects go read-only, so that line names how many.
+    const downgrade = planDowngradeNotice(orgPlan, next, planLimits.used);
+    if (downgrade && !(await confirmDialog({
+      title: downgrade.title,
+      message: downgrade.message,
+      confirmText: downgrade.confirmLabel,
+    }))) return;
     setUpgradingTo(next);
     try {
       await switchOrganizationPlan(activeOrgId, next);

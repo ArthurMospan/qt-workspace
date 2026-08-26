@@ -51,6 +51,7 @@ import {
   undeliveredEmailsMessage,
 } from '@/lib/utils/inviteEmails';
 import { planLimitNotice } from '@/lib/utils/plans.mjs';
+import { PROJECT_OVER_PLAN_LIMIT } from '@/lib/utils/projectAccess.mjs';
 import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
 import { PlanCrownIcon } from '@/lib/design/icons';
 
@@ -234,6 +235,17 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
             >
               {project.name}
             </h2>
+            {/* A project the plan's ceiling no longer has room for. Marked
+                rather than hidden, and read-only rather than gone: everything
+                in it opens and reports exactly as before, and the mark goes
+                away the moment the plan goes back up. The ones marked are the
+                ones created most recently — the only ordering somebody can
+                predict for themselves. */}
+            {project.overPlanLimit === true && (
+              <Pill tone="warning" size="md" title={PROJECT_OVER_PLAN_LIMIT}>
+                Тільки читання
+              </Pill>
+            )}
           </div>
           {project.description && (
             <p className={`text-muted font-medium leading-[1.5] line-clamp-2 ${

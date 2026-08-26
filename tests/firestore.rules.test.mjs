@@ -134,6 +134,23 @@ test('a browser cannot create an organization or seat itself in one', async () =
   }));
 });
 
+test('the plan and what it closes are server-written', async () => {
+  // A plan change stopped being one field the day it also had to decide which
+  // projects the new ceiling no longer has room for. Both halves are
+  // /api/organizations/{id} with action 'set-plan' now, so an owner cannot
+  // write either from a browser — and nobody can clear the read-only mark on a
+  // project the plan has closed and then write into it.
+  const ownerDb = environment.authenticatedContext('owner-a').firestore();
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  await assertFails(updateDoc(doc(ownerDb, 'organizations', 'org-a'), { plan: 'pro' }));
+  await assertFails(updateDoc(doc(ownerDb, 'organizations', 'org-a'), {
+    limits: { maxProjects: null, maxMembers: null },
+  }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { overPlanLimit: false }));
+  // What an owner may still edit about the organization is untouched.
+  await assertSucceeds(updateDoc(doc(ownerDb, 'organizations', 'org-a'), { name: 'Org A renamed' }));
+});
+
 test('an authenticated outsider cannot self-join an organization', async () => {
   const db = environment.authenticatedContext('outsider').firestore();
   await assertFails(setDoc(doc(db, 'orgMemberships', 'org-a_outsider'), {

@@ -401,7 +401,14 @@ test('a new organization and its owner seat are written by the server', async ()
   // Finishing the onboarding of an organization that already exists is an
   // update by its owner, which the rules can check on their own — so it stays
   // a client write, and only that branch takes it.
-  assert.match(onboarding, /if \(!isFreshOrganization\) await setDoc\(doc\(db, 'organizations'/);
+  assert.ok(onboarding.includes("if (!isFreshOrganization) {"));
+  assert.ok(onboarding.includes("await setDoc(doc(db, 'organizations', orgId)"));
+  // Its plan is not part of that update: plan and limits are refused from a
+  // browser, because a plan change also decides which projects the new ceiling
+  // no longer has room for.
+  assert.ok(onboarding.includes('switchOrganizationPlan(orgId, selectedPlan)'));
+  const clientWrite = onboarding.slice(onboarding.indexOf("setDoc(doc(db, 'organizations', orgId)"));
+  assert.ok(!clientWrite.slice(0, 500).includes('plan:'), 'браузер не пише plan у документ організації');
   assert.doesNotMatch(onboarding, /getDoc\(/);
 
   const route = await read('../src/app/api/organizations/route.js');

@@ -148,9 +148,14 @@ service cloud.firestore {
       // you as its owner» — is true of every second, third and tenth free
       // workspace as well, so it was never the rule the product meant.
       allow create: if false;
+      // `plan` and `limits` joined `apiKeys` here the day a plan change stopped
+      // being one field: moving down a plan also decides which projects the new
+      // ceiling no longer has room for, and marks them, in the same write.
+      // /api/organizations/{id} with action 'set-plan' is that write.
       allow update: if isOrgAdminOrOwner(orgId) &&
         request.resource.data.ownerId == resource.data.ownerId &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['apiKeys']);
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['apiKeys', 'plan', 'limits']);
       allow delete: if false; // Requires a future server-side cascading delete.
 
       match /presence/{uid} {
@@ -245,7 +250,11 @@ service cloud.firestore {
             'issueStatusVersion',
             'invoiceMutationVersion',
             'timeLogImportVersion',
-            'deletionPending'
+            'deletionPending',
+            // Which projects the plan's ceiling no longer has room for. Written
+            // by the plan switch and by nothing else — a browser that could
+            // clear it could write into a project the plan has closed.
+            'overPlanLimit'
           ])
         ) ||
         (isOrgMember(resource.data.organizationId) &&
