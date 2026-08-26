@@ -11,17 +11,17 @@
     "productFiles": 265,
     "parsedFiles": 265,
     "parseErrors": 0,
-    "nativeControls": 20,
+    "nativeControls": 21,
     "structures": {
       "chat": 2,
       "analytics": 1,
       "qtplus": 1,
       "settings": 1,
-      "shell": 12,
+      "shell": 13,
       "other": 3
     },
     "styledNativeControls": 12,
-    "reviewedNativeControls": 7,
+    "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 20,
+    "button": 21,
     "input": 0,
     "textarea": 0,
     "select": 0
@@ -175,7 +175,25 @@
     },
     {
       "tag": "button",
-      "location": "src/components/profile/ProfileView.jsx:59",
+      "location": "src/components/profile/ProfileView.jsx:448",
+      "className": "ui-surface flex items-center gap-3 text-left transition-colors hover:bg-canvas",
+      "text": "",
+      "childElements": [
+        "FolderKanban",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": false,
+      "reviewed": "profile-project-row",
+      "resembles": "IconAction",
+      "structure": "shell",
+      "routes": [
+        "/team"
+      ]
+    },
+    {
+      "tag": "button",
+      "location": "src/components/profile/ProfileView.jsx:61",
       "className": "cursor-pointer truncate rounded-[4px] text-left text-[13px] font-medium leading-none text-ink outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ink",
       "text": "",
       "childElements": [],
@@ -410,15 +428,15 @@
       "count": 3
     },
     {
+      "file": "src/components/profile/ProfileView.jsx",
+      "count": 2
+    },
+    {
       "file": "src/components/UserStatusDialog.jsx",
       "count": 2
     },
     {
       "file": "src/components/OrgSwitcherScreen.jsx",
-      "count": 1
-    },
-    {
-      "file": "src/components/profile/ProfileView.jsx",
       "count": 1
     },
     {
@@ -459,7 +477,12 @@
       "context": "navigation-sheet-row"
     },
     {
-      "location": "src/components/profile/ProfileView.jsx:59",
+      "location": "src/components/profile/ProfileView.jsx:448",
+      "tag": "button",
+      "context": "profile-project-row"
+    },
+    {
+      "location": "src/components/profile/ProfileView.jsx:61",
       "tag": "button",
       "context": "profile-contact-value"
     },
@@ -490,7 +513,7 @@
   "manualSurfaces": [],
   "localSurfaceExceptions": [
     {
-      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:342",
+      "location": "src/app/(app)/[projectId]/ProjectBoardClient.jsx:343",
       "tag": "div",
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
@@ -630,27 +653,27 @@
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:274",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:283",
       "tag": "div",
       "className": "overflow-hidden rounded-[18px] border border-black/[0.05] bg-white"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:285",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:294",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:290",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:299",
       "tag": "div",
       "className": "flex items-start gap-2 rounded-[12px] bg-white p-3 ring-1 ring-black/[0.04]"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:325",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:334",
       "tag": "div",
       "className": "flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:723",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:778",
       "tag": "div",
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },
