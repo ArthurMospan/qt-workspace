@@ -1,5 +1,5 @@
 'use client';
-import { Pill, PriorityBadge, PriorityIcon, TypeBadge, Tag, Counter, UserAvatar, StatusPill, PlanMark } from '@/components/ui';
+import { Pill, PriorityBadge, PriorityIcon, TypeBadge, Tag, Counter, UserAvatar, StatusPill } from '@/components/ui';
 import { DEFAULT_PRIORITIES, DEFAULT_TYPES } from '@/lib/hooks/useWorkflowConfig';
 import { NO_PRIORITY } from '@/lib/utils/priorities.mjs';
 import { Lock } from 'lucide-react';
@@ -168,22 +168,11 @@ export default function BadgesSection() {
         </div>
       </PreviewBlock>
 
-      <PreviewBlock
-        title="PlanMark — те, чого немає в поточному тарифі"
-        description="Стоїть біля контрола, а не в прайслисті: прайс уже сказав, що входить у тариф, а корисне місце для позначки — момент, коли людина тягнеться до перемикача і він не рухається. Свідомо тихий: це факт про тариф, а не реклама."
-        filePath="src/components/ui/DataDisplay/PlanMark.jsx"
-      >
-        <div className="flex flex-col gap-[10px]">
-          <span className="flex items-center gap-2 text-[13px] text-ink">
-            Власний брендинг
-            <PlanMark label="тільки в Lite і Pro" />
-          </span>
-          <span className="flex items-center gap-2 text-[13px] text-ink">
-            Пріоритетна підтримка
-            <PlanMark label="тільки в Pro" />
-          </span>
-        </div>
-      </PreviewBlock>
+      {/* `PlanMark` used to be previewed here, while it was a small dark star
+          among the other small dark marks. It is a gold crown that opens the
+          price list now, and it belongs beside the two things that open the
+          same dialog — the strip and the dialog itself — rather than beside
+          the priorities and the tags. It lives in «Feedback & States». */}
 
       <PreviewBlock
         title="StatusPill — sprint states"

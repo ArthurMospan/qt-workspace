@@ -8,7 +8,7 @@
     "covered": 113,
     "uncovered": 0,
     "routes": 12,
-    "previews": 150,
+    "previews": 149,
     "internal": 5,
     "unlisted": 0
   },
@@ -8592,7 +8592,6 @@
     "PriorityBadge — Billing task rows": "<div className=\"flex items-center gap-[8px]\">\n  <PriorityBadge priority=\"none\" priorities={DEFAULT_PRIORITIES} />\n  <PriorityBadge priority=\"low\" priorities={DEFAULT_PRIORITIES} />\n  <PriorityBadge priority=\"medium\" priorities={DEFAULT_PRIORITIES} />\n  <PriorityBadge priority=\"high\" priorities={DEFAULT_PRIORITIES} />\n  <PriorityBadge priority=\"blocker\" priorities={DEFAULT_PRIORITIES} />\n</div>",
     "Tag — issue labels": "<div className=\"flex items-center gap-[12px]\">\n  <Tag label=\"Фронтенд\" color=\"#3b82f6\" size=\"small\" className=\"shrink-0\" />\n  <Tag label=\"Дизайн\" color=\"#db2777\" />\n</div>",
     "Counter — chat and branded navigation": "<div className=\"grid gap-[16px] md:grid-cols-3\">\n  <div>\n    <h4 className=\"mb-[10px] text-[11px] font-bold uppercase tracking-wider text-muted\">Board column · subtle</h4>\n    <Counter value={337} size=\"sm\" appearance=\"subtle\" />\n  </div>\n  <div>\n    <h4 className=\"mb-[10px] text-[11px] font-bold uppercase tracking-wider text-muted\">Chat list · light surface</h4>\n    <Counter value={12} size=\"sm\" status=\"muted\" className=\"shrink-0\" />\n  </div>\n  <div className=\"rounded-[12px] bg-ink p-[16px]\">\n    <h4 className=\"mb-[10px] text-[11px] font-bold uppercase tracking-wider text-white/50\">Sidebar · branded dark surface</h4>\n    <div className=\"flex items-center gap-[12px]\">\n      <Counter value={7} size=\"sm\" status=\"muted\" dark />\n      <Counter value={3} size=\"sm\" status=\"info\" dark />\n      <Counter variant=\"dot\" size=\"sm\" status=\"info\" dark />\n    </div>\n  </div>\n</div>",
-    "PlanMark — те, чого немає в поточному тарифі": "<div className=\"flex flex-col gap-[10px]\">\n  <span className=\"flex items-center gap-2 text-[13px] text-ink\">\n    Власний брендинг\n    <PlanMark label=\"тільки в Lite і Pro\" />\n  </span>\n  <span className=\"flex items-center gap-2 text-[13px] text-ink\">\n    Пріоритетна підтримка\n    <PlanMark label=\"тільки в Pro\" />\n  </span>\n</div>",
     "StatusPill — sprint states": "<div className=\"flex flex-wrap items-center gap-[8px]\">\n  <StatusPill label=\"Активний\" color=\"#10b981\" />\n  <StatusPill label=\"Запланований\" color=\"#9a9a9a\" />\n  <StatusPill label=\"Завершено\" color=\"#1f1f1f\" />\n</div>",
     "UserAvatar sizes": "<div className=\"flex flex-wrap items-end gap-[16px]\">\n  {sizes.map(([token, px]) => (\n    <div key={token} className=\"flex flex-col items-center gap-[6px]\">\n      <UserAvatar user={demoUser} size={token} tooltip />\n      <span className=\"text-[9px] font-mono text-[#1f1f1f]\">{token}</span>\n      <span className=\"text-[9px] font-mono text-[#cfcfcf]\">{px}px</span>\n    </div>\n  ))}\n</div>",
     "UserAvatar states": "<UserAvatar user={{ name: 'Олена Коваль', avatarColor: '#059669' }} size=\"lg\" tooltip />\n<UserAvatar user={null} size=\"lg\" />",
