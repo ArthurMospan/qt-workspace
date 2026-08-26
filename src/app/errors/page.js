@@ -14,14 +14,18 @@
 // the person who fixes anything, and the person who does would have had to walk
 // every workspace to find their own bug list.
 //
-// So the door is a password, checked on the server (`ERROR_REPORTS_PASSWORD`)
-// and never shipped here. Nothing on this page is readable before it is
-// answered, because the reports are never fetched until it is.
+// So the door is a named account, checked on the server against a short list of
+// ids — see src/app/api/error-reports/inbox/route.js for why that is a safer
+// thing to write down than a password. The page asks for no password of its
+// own: whoever is already signed in to QuickTeam either is on the list or is
+// not, and nothing is fetched until the server says which.
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { AlertCircle, KeyRound, RefreshCw } from 'lucide-react';
+import { auth } from '@/lib/firebase';
 import { fetchErrorReports } from '@/lib/services/errorReports';
-import { Button, EmptyState, Input, Pill, Surface } from '@/components/ui';
+import { Button, EmptyState, Pill, Surface } from '@/components/ui';
 
 function whenLabel(iso) {
   if (!iso) return '';
@@ -31,25 +35,31 @@ function whenLabel(iso) {
 }
 
 export default function ErrorReportsPage() {
-  const [password, setPassword] = useState('');
   // One piece of state, because «loading» and «error» and «reports» are three
   // facets of one answer and three separate updates could disagree about it.
-  const [answer, setAnswer] = useState({ status: 'locked', reports: [], error: '' });
+  const [answer, setAnswer] = useState({ status: 'loading', reports: [], error: '' });
   const { status, reports, error } = answer;
 
-  const load = async (candidate) => {
-    if (!candidate) return;
+  const load = useCallback(async () => {
     setAnswer(current => ({ ...current, status: 'loading', error: '' }));
     try {
-      setAnswer({ status: 'ready', reports: await fetchErrorReports(candidate), error: '' });
+      setAnswer({ status: 'ready', reports: await fetchErrorReports(), error: '' });
     } catch (loadError) {
       setAnswer({ status: 'locked', reports: [], error: loadError.message || 'Не вдалося прочитати звіти' });
     }
-  };
+  }, []);
 
-  // The password is never written anywhere — not a cookie, not storage. It
-  // lives in this component for as long as the tab is open on this page, which
-  // is the whole visit, and a refresh asks again.
+  // The session is the credential, and it arrives asynchronously — asking for
+  // the reports before Firebase has restored it would refuse a reader who is in
+  // fact signed in. So the first read waits for the first auth answer, whatever
+  // it turns out to be.
+  useEffect(() => onAuthStateChanged(auth, firebaseUser => {
+    if (firebaseUser) {
+      void load();
+      return;
+    }
+    setAnswer({ status: 'locked', reports: [], error: 'Спершу увійдіть у QuickTeam' });
+  }), [load]);
 
   if (status !== 'ready') {
     return (
@@ -60,32 +70,19 @@ export default function ErrorReportsPage() {
             <h1 className="ui-type-section-title text-ink">Звіти про помилки</h1>
           </div>
           <p className="mb-4 text-[12px] text-muted">
-            Службова сторінка. Введіть пароль, щоб побачити, що надсилали з тостів.
+            Службова сторінка. Її бачать лише кілька названих акаунтів — окремого
+            пароля немає, читається той вхід, який уже є.
           </p>
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={event => { event.preventDefault(); void load(password); }}
+          {error && <p className="mb-3 text-[12px] text-danger">{error}</p>}
+          <Button
+            style="primary"
+            size="md"
+            onClick={() => void load()}
+            loading={status === 'loading'}
+            disabled={status === 'loading'}
           >
-            <Input
-              type="password"
-              value={password}
-              onChange={event => setPassword(event.target.value)}
-              placeholder="Пароль"
-              aria-label="Пароль"
-              autoFocus
-              error={Boolean(error)}
-            />
-            {error && <p className="text-[12px] text-red-600">{error}</p>}
-            <Button
-              style="primary"
-              size="md"
-              type="submit"
-              loading={status === 'loading'}
-              disabled={!password.trim() || status === 'loading'}
-            >
-              Відкрити
-            </Button>
-          </form>
+            {status === 'loading' ? 'Перевіряємо' : 'Спробувати ще раз'}
+          </Button>
         </Surface>
       </main>
     );
@@ -95,7 +92,7 @@ export default function ErrorReportsPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-[880px] flex-col gap-4 p-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="ui-type-section-title text-ink">Звіти про помилки</h1>
-        <Button style="ghost" size="md" icon={RefreshCw} onClick={() => void load(password)}>
+        <Button style="ghost" size="md" icon={RefreshCw} onClick={() => void load()}>
           Оновити
         </Button>
       </div>

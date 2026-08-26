@@ -70,18 +70,24 @@ test('a failure can be reported, and the report has somewhere to land', () => {
   // an organization may decide this again.
   assert.doesNotMatch(route, /membership\?\.role/);
   assert.doesNotMatch(inbox, /membership/);
-  // One constant, and no environment variable: this is one person's door to a
-  // page nobody else has a reason to open, and a deploy-time setting bought
-  // nothing but a setup step.
-  assert.match(inbox, /const PASSWORD = '/);
-  assert.doesNotMatch(inbox, /process\.env/);
-  // Compared as fixed-length digests, and guessing is bounded.
-  assert.match(inbox, /timingSafeEqual/);
-  assert.match(inbox, /enforceRateLimit\('errorReportsInbox'/);
+  // And it is not a shared secret either. This repository is public, so the one
+  // place a password could be written down is also the one place anybody could
+  // read it — a value nobody has to guess is not protected by bounding guesses.
+  // The reader is a named account instead: an id identifies without granting,
+  // because reaching the inbox still means holding a session for it.
+  assert.doesNotMatch(inbox, /const PASSWORD/);
+  assert.doesNotMatch(inbox, /timingSafeEqual/);
+  assert.match(inbox, /authenticateRequest/);
+  assert.match(inbox, /BUILT_IN_READERS/);
+  assert.match(inbox, /readers\(\)\.has\(authorization\.user\.uid\)/);
+  // Held down rather than guessed at, so the limit is now per account.
+  assert.match(inbox, /enforceRateLimit\('errorReportsInbox', authorization\.user\.uid/);
 
   assert.match(page, /Звіти про помилки/);
-  // The password is never written down on the client.
+  // The session is the whole credential, so the page has nothing of its own to
+  // keep — and never had.
   assert.doesNotMatch(page, /localStorage|sessionStorage|document\.cookie/);
+  assert.doesNotMatch(page, /type="password"/);
 });
 
 // The table draws a page at a time, so a header box that claimed «всі» would

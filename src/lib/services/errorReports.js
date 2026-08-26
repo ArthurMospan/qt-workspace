@@ -40,18 +40,16 @@ export async function reportError({
 /**
  * The newest hundred reports, from every workspace.
  *
- * Behind a password rather than a role, and the password travels in the body of
- * a POST rather than in the address: a query string is written down by every
- * proxy and every browser history along the way. There is no session here on
- * purpose — /errors is not a workspace screen and does not ask anyone to log in.
- *
- * @param {string} password Read from the field on /errors.
+ * Behind a named account rather than a role or a shared password. The session
+ * the reader already has is the credential, so nothing secret travels here and
+ * nothing has to be remembered — see the inbox route for why an account id is
+ * the safer thing to write down in a public repository.
  */
-export async function fetchErrorReports(password) {
+export async function fetchErrorReports() {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('Спершу увійдіть у QuickTeam');
   const response = await fetch('/api/error-reports/inbox', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
+    headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
   const result = await response.json().catch(() => ({}));

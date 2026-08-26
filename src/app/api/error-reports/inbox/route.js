@@ -7,49 +7,60 @@
 // would read their team's failures, and the developer would have to walk every
 // organization to find their own bug list.
 //
-// So the reader is not a role here. It is a password, and it is the line right
-// below — change it there and nowhere else. Deliberately not an environment
-// variable: this is one person's door to a page nobody else has a reason to
-// open, and making it a deploy-time setting bought nothing but a setup step.
+// So the reader is not a role. It is a named person — and that is the whole
+// difference from the shared password this replaced.
+//
+// A password had to be secret to work, and this repository is public: the one
+// place the password was written down was also the one place anybody could read
+// it. Rate limiting a guess is no defence against a value nobody has to guess.
+// An account id is the opposite kind of value. It identifies without granting:
+// knowing this id buys nothing, because reaching the inbox still means holding
+// a valid Firebase session for it. So the list below is safe to read, safe to
+// commit, and safe to leave here when the repository stays public.
+//
+// It also survives the move off Firebase. The seam is `authenticateRequest`,
+// not this file: whatever issues tokens later, this stays a list of ids and the
+// only edit is which ids are in it.
 import { NextResponse } from 'next/server';
-import { createHash, timingSafeEqual } from 'node:crypto';
-import { enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
-import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { authenticateRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { routeErrorResponse } from '@/lib/server/apiErrors';
 
-// The password. This is the whole of the configuration.
-const PASSWORD = 'AIW';
+// Who may read the inbox. Add an id here to hand somebody the page; remove one
+// to take it back. Unlike a password, taking it back from one person does not
+// change it for everybody else.
+const BUILT_IN_READERS = [
+  '5wlnkYGpcxfVzNrzRy9TXHksDXh2', // arthur.mospan@gmail.com — product developer
+];
+
+// And an escape hatch that needs no deploy: ERROR_REPORT_READERS may name extra
+// ids, comma-separated, for temporary access that ends when the variable does.
+function readers() {
+  const extra = (process.env.ERROR_REPORT_READERS || '')
+    .split(',')
+    .map(id => id.trim())
+    .filter(Boolean);
+  return new Set([...BUILT_IN_READERS, ...extra]);
+}
 
 const REPORT_LIMIT = 100;
 
-// Compared as fixed-length digests, so the comparison cannot be timed to learn
-// the password one character at a time — and so a long paste costs the same as
-// an empty field.
-const digestOf = value => createHash('sha256').update(String(value ?? '')).digest();
-
-function passwordAccepted(candidate) {
-  return timingSafeEqual(digestOf(candidate), digestOf(PASSWORD));
-}
-
-// Whoever is knocking. Behind a proxy the socket address is the proxy's, so the
-// forwarded chain is the only thing that identifies a caller — its first entry
-// is the client, the rest were added on the way here.
-function callerAddress(request) {
-  const forwarded = request.headers.get('x-forwarded-for') || '';
-  return forwarded.split(',')[0].trim() || request.headers.get('x-real-ip') || 'unknown';
-}
-
-export async function POST(request) {
+export async function GET(request) {
   try {
-    // Ten tries in five minutes per address. A password is only as private as
-    // the number of guesses it survives, and this page has no session to fall
-    // back on.
-    if (!(await enforceRateLimit('errorReportsInbox', callerAddress(request), 10, 300))) {
-      return NextResponse.json({ error: 'Забагато спроб. Спробуйте за кілька хвилин' }, { status: 429 });
+    const authorization = await authenticateRequest(request);
+    if (authorization.error) {
+      return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     }
 
-    const body = await readJsonBody(request, { message: 'Некоректний запит' });
-    if (!passwordAccepted(body?.password)) {
-      return NextResponse.json({ error: 'Невірний пароль' }, { status: 401 });
+    // Signed in is not the same as invited. Everybody with a workspace account
+    // reaches this far; the list is what separates them.
+    if (!readers().has(authorization.user.uid)) {
+      return NextResponse.json({ error: 'Ця сторінка не для цього акаунта' }, { status: 403 });
+    }
+
+    // Still rate limited, now per account rather than per address — not against
+    // guessing, which is no longer possible, but against a refresh held down.
+    if (!(await enforceRateLimit('errorReportsInbox', authorization.user.uid, 60, 300))) {
+      return NextResponse.json({ error: 'Забагато запитів. Спробуйте за кілька хвилин' }, { status: 429 });
     }
 
     const snapshot = await getAdminDb().collection('errorReports')
