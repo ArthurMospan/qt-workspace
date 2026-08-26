@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
 import { auth } from '@/lib/firebase';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
@@ -8,7 +8,7 @@ import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchR
 import { useOrganizationIssues } from '@/lib/hooks/useOrganizationIssues';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, CalendarClock, Settings2 } from 'lucide-react';
+import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, Lock, MoreVertical, Trash2, User, Settings2 } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -37,12 +37,6 @@ import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import {
-  entryStatusId,
-  STATUS_CATEGORIES,
-  STATUS_CATEGORY_IDS,
-} from '@/lib/utils/statusCategories.mjs';
-import { isDueDateOverdue } from '@/lib/utils/date';
 import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
 import { useSprints } from '@/lib/hooks/useSprints';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
@@ -91,9 +85,8 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
   // subscribed once at the layout and shared by the sidebar's project dot. The
   // card reads the same stream: no listener, no document, and a number that is
   // about something that actually happens. Unread project chat is counted there
-  // too, and the sidebar's dot is where it is said — the card's last row is the
-  // status band now, and a second number beside it was the row this change
-  // exists to stop.
+  // too, and the sidebar's dot is where it is said: one number on a card, and
+  // it is the one addressed to you.
   const mentionCount = useMemo(() => notifications.filter(item => (
     !item.read
     && item.type === 'mentioned'
@@ -297,182 +290,91 @@ const ISSUE_ACTIVITY_EVENTS = {
   updated: 'Оновлено завдання',
 };
 
+// How many recent actions the featured card carries.
+//
+// One was a caption: it said the project was alive without saying what anybody
+// had been doing in it. Three is a shape — the same person three times reads
+// differently from three people once — and it is what the card has room for
+// without becoming a feed. The small cards carry none: at that size an activity
+// line is a truncated sentence nobody finishes reading, and the project is one
+// click away.
+const RECENT_ACTIONS = 3;
+
 /**
- * Where a project's work is sitting, as one band.
+ * The last few things that happened in a project, on the featured card only.
  *
- * The card used to end in five numbers set identically — total, active,
- * overdue, unread, mentions — so nothing on it was the point and the row had to
- * be read left to right or not at all. A distribution says more in less space:
- * a project stuck in its backlog and a project jammed on review are different
- * shapes, and neither is «84 завдань».
- *
- * It runs the full width of the card, and it is the last line on it. A short
- * bar floating in a wide card reads as a fragment of something; a full-width
- * one reads as the card's own measure, and every segment gets enough room to be
- * a target rather than a sliver.
- *
- * Each segment names itself on hover, and only itself. A legend under the bar
- * meant reading five labels to learn about the one colour you were looking at,
- * and it had to be hidden until hover to fit — so it was both more work and
- * less discoverable than the browser's own tooltip on the zone under the
- * pointer.
- *
- * Segment colours are the categories' own, from `STATUS_CATEGORIES` — the same
- * colours the cross-project board columns and the list's section dots use, so
- * one colour means one thing everywhere.
+ * @param {boolean} props.isLarge Whether this is the 2×2 card. A small one draws nothing at all.
  */
-function ProjectStatusBand({ segments, total, isLarge }) {
-  if (!total) return null;
-
-  return (
-    <div
-      role="img"
-      aria-label={`Розподіл завдань за статусом — ${segments.map(segment => `${segment.label}: ${segment.count}`).join(', ')}`}
-      className={`flex w-full gap-[2px] overflow-hidden rounded-full bg-chart-track ${
-        isLarge ? 'h-[8px]' : 'h-[6px]'
-      }`}
-    >
-      {segments.map(segment => (
-        <span
-          key={segment.id}
-          // The whole point of the zone: the pointer is already on the colour
-          // being asked about, so the answer is one fact rather than five.
-          title={`${segment.label}: ${segment.count}`}
-          className="block h-full transition-opacity hover:opacity-80"
-          style={{ width: `${(segment.count / total) * 100}%`, background: segment.color }}
-        />
-      ))}
-    </div>
-  );
-}
-
 function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, mentionCount = 0 }) {
-  const { closedStatusIds, statusCategoryById, statuses } = useWorkflowConfig();
   const { activeOrg } = useAppContext();
   const timeZone = organizationTimeZone(activeOrg);
 
-  const stats = useMemo(() => {
-    let activeCount = 0;
-    let overdueCount = 0;
-    let newestIssue = null;
-    let newestActivity = null;
-    // Canonical order, so the band reads the same way on every card and in
-    // every organization — a workflow orders the names inside a category, never
-    // the categories themselves.
-    const byCategory = new Map(STATUS_CATEGORY_IDS.map(categoryId => [categoryId, 0]));
-    const entryStatus = entryStatusId(statuses);
-
-    for (const issue of issues) {
-      const statusId = issue.columnId || issue.status;
-      // The one place that decides what a status means, asked the same way the
-      // list view asks it. A status the workflow no longer has answers with
-      // nothing and is left out of the band rather than guessed into a segment.
-      const categoryId = statusCategoryById.get(statusId || entryStatus);
-      if (categoryId && byCategory.has(categoryId)) {
-        byCategory.set(categoryId, byCategory.get(categoryId) + 1);
-      }
-      // «в роботі» read as the status «В роботі» and counted only that
-      // category, so the card and the board disagreed about the same project:
-      // everything in «До виконання» was work the project still owed and the
-      // number did not mention it. What is open is what is left to do.
-      if (!closedStatusIds.includes(statusId)) {
-        activeCount++;
-      }
-      // «N моїх» said nothing a person could act on — the number they care
-      // about is what is late and what is waiting for them, which is the same
-      // pair of facts a task card carries.
-      if (!closedStatusIds.includes(statusId) && isDueDateOverdue(issue.dueDate, { timeZone })) {
-        overdueCount++;
-      }
-
-      // Only what the activity record says, never `updatedAt` — see
-      // `issueActivity`. A card whose position was renumbered because somebody
-      // dropped another card into its column had its document written and
-      // nothing else, and it used to take this whole line with it.
-      const activity = issueActivity(issue);
-      if (activity.millis > (newestActivity?.millis || 0)) {
-        newestActivity = activity;
-        newestIssue = issue;
-      }
+  // Who *acted*, which is only ever what the activity record says. This used to
+  // fall through to `reporterId` and then `reporterName`, so a task with no
+  // recorded activity was attributed to whoever originally filed it. On
+  // anything imported from YouTrack that reporter is an external person with a
+  // synthetic id who has no QuickTeam account at all, and the card announced
+  // that they had «оновив завдання» — an action by someone who does not exist,
+  // on a task nobody had touched.
+  //
+  // The reporter is not the actor. With no actor recorded there is nothing
+  // truthful to say about who did it, so the line says what happened without
+  // naming anyone.
+  const describeAction = useCallback((issue, activity) => {
+    const actorId = issue.lastActivityActorId || issue.updatedBy || '';
+    const isExternalActor = isExternalActorId(actorId);
+    let actorUser = null;
+    if (actorId && !isExternalActor) {
+      actorUser = members.find(m => (m.id || m.uid) === actorId) || null;
+      if (!actorUser && (actorId === currentUser?.id || actorId === currentUser?.uid)) actorUser = currentUser;
     }
 
-    let lastActionStr = null;
-    if (newestIssue) {
-      // Who *acted* — which is only ever what the activity record says. This
-      // used to fall through to `reporterId` and then `reporterName`, so a task
-      // with no recorded activity was attributed to whoever originally filed
-      // it. On anything imported from YouTrack that reporter is an external
-      // person with a synthetic id who has no QuickTeam account at all, and the
-      // card announced that they had "оновив завдання" — an action by someone
-      // who does not exist, on a task nobody had touched.
-      //
-      // The reporter is not the actor. With no actor recorded there is nothing
-      // truthful to say about who did it, so the line says what happened
-      // without naming anyone.
-      const actorId = newestIssue.lastActivityActorId || newestIssue.updatedBy || '';
-      const isExternalActor = isExternalActorId(actorId);
-      let actorUser = null;
-      if (actorId && !isExternalActor) {
-        actorUser = members.find(m => (m.id || m.uid) === actorId) || null;
-        if (!actorUser && (actorId === currentUser?.id || actorId === currentUser?.uid)) actorUser = currentUser;
-      }
+    // A member list still loading is not a member who cannot be found.
+    if (actorId && !actorUser && !isExternalActor && orgLoading) return null;
 
-      // A member list still loading is not a member who cannot be found.
-      if (actorId && !actorUser && !isExternalActor && orgLoading) {
-        lastActionStr = null;
-      } else {
-        let actorName = '';
-        let actorAvatar = null;
-        if (actorUser) {
-          actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0] || '';
-          actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl || null;
-        } else if (actorId && newestIssue.lastActivityActorName) {
-          // Recorded by whoever performed the action, so it names the person
-          // who did it even if they have since left the organization.
-          actorName = newestIssue.lastActivityActorName;
-          actorAvatar = newestIssue.lastActivityActorAvatar || null;
-        } else if (newestIssue.source === 'buggybag' || newestIssue.integration === 'buggybag') {
-          actorName = 'BuggyBag';
-        }
-
-        lastActionStr = {
-          issueKey: newestIssue.issueKey || 'Задачу',
-          title: newestIssue.title,
-          actor: actorName,
-          actorAvatar,
-          actorUser: actorUser || (actorName ? { id: actorId || undefined, name: actorName, avatar: actorAvatar } : null),
-          // Every type that was not a comment used to read "оновив завдання",
-          // so a task that had just been created announced itself as updated.
-          action: (actorName ? ISSUE_ACTIVITY_VERBS : ISSUE_ACTIVITY_EVENTS)[newestActivity.type]
-            || (actorName ? 'оновив завдання' : 'Оновлено завдання'),
-          time: newestActivity.at,
-          projectId: newestIssue.projectId,
-          id: newestIssue.id
-        };
-      }
+    let actorName = '';
+    let actorAvatar = null;
+    if (actorUser) {
+      actorName = actorUser.name || actorUser.displayName || actorUser.email?.split('@')[0] || '';
+      actorAvatar = actorUser.avatar || actorUser.photoURL || actorUser.photoUrl || null;
+    } else if (actorId && issue.lastActivityActorName) {
+      // Recorded by whoever performed the action, so it names the person who
+      // did it even if they have since left the organization.
+      actorName = issue.lastActivityActorName;
+      actorAvatar = issue.lastActivityActorAvatar || null;
+    } else if (issue.source === 'buggybag' || issue.integration === 'buggybag') {
+      actorName = 'BuggyBag';
     }
-
-    const segments = STATUS_CATEGORY_IDS
-      .filter(categoryId => byCategory.get(categoryId) > 0)
-      .map(categoryId => ({
-        id: categoryId,
-        label: STATUS_CATEGORIES[categoryId].label,
-        color: STATUS_CATEGORIES[categoryId].color,
-        count: byCategory.get(categoryId),
-      }));
 
     return {
-      total: issues.length,
-      active: activeCount,
-      overdue: overdueCount,
-      lastAction: lastActionStr,
-      segments,
-      // Widths come from what the band actually draws, so the segments always
-      // fill it: a task whose status the workflow has dropped is not in any
-      // category and must not leave a gap standing for it.
-      banded: segments.reduce((sum, segment) => sum + segment.count, 0),
+      issueKey: issue.issueKey || 'Задачу',
+      title: issue.title,
+      actor: actorName,
+      actorUser: actorUser || (actorName ? { id: actorId || undefined, name: actorName, avatar: actorAvatar } : null),
+      // Every type that was not a comment used to read «оновив завдання», so a
+      // task that had just been created announced itself as updated.
+      action: (actorName ? ISSUE_ACTIVITY_VERBS : ISSUE_ACTIVITY_EVENTS)[activity.type]
+        || (actorName ? 'оновив завдання' : 'Оновлено завдання'),
+      time: activity.at,
+      projectId: issue.projectId,
+      id: issue.id,
     };
-  }, [closedStatusIds, currentUser, issues, members, orgLoading, statusCategoryById, statuses, timeZone]);
+  }, [currentUser, members, orgLoading]);
+
+  const recentActions = useMemo(() => {
+    if (!isLarge) return [];
+    // Only what the activity record says, never `updatedAt` — see
+    // `issueActivity`. A card whose position was renumbered because somebody
+    // dropped another card into its column had its document written and
+    // nothing else, and it used to take this whole line with it.
+    return issues
+      .map(issue => ({ issue, activity: issueActivity(issue) }))
+      .filter(entry => entry.activity.millis > 0)
+      .sort((a, b) => b.activity.millis - a.activity.millis)
+      .slice(0, RECENT_ACTIONS)
+      .map(entry => describeAction(entry.issue, entry.activity))
+      .filter(Boolean);
+  }, [describeAction, isLarge, issues]);
 
   const timeAgoString = (ts) => {
     if (!ts) return '';
@@ -484,80 +386,57 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
   };
 
+  // The small cards carry nothing here at all. Everything that used to sit on
+  // one — a row of counts, then a status band — was a number in a place too
+  // small to say what it was a number of, on the screen you go through rather
+  // than the one you read. A project's own board answers all of it in a click.
+  if (!isLarge) return null;
+  if (recentActions.length === 0) return null;
+
   return (
-    <div className="z-10 mt-auto flex flex-col gap-[14px] w-full">
-      {isLarge && stats.lastAction && (
-        // The whole block is the link, not the task title inside it. Only the
-        // title was clickable and nothing said so, so the block behaved like a
-        // caption you could accidentally hit. Hovering it now darkens the fill
-        // — the same "this is a target" language as a list row.
+    <div className="z-10 mt-auto flex w-full flex-col gap-[6px]">
+      {mentionCount > 0 && (
+        // Being named is the one fact on this card addressed to you, so it sits
+        // above the activity rather than inside it: those are things other
+        // people did, this is a thing you have to do something about.
+        <TaskCounters mentions={mentionCount} className="self-end" />
+      )}
+      {recentActions.map(action => (
+        // The whole row is the link, not the task title inside it. Only the
+        // title used to be clickable and nothing said so, so the block behaved
+        // like a caption you could accidentally hit.
+        //
+        // The hover fill is `line`, not a lighter `canvas`. A row already
+        // sitting on `canvas` that hovers to `canvas` is a hover you cannot
+        // see: the two ends of the transition were four points apart on a
+        // 255-point scale. One step darker is a step you can point at.
         <Link
-          href={issuePath(stats.lastAction)}
+          key={action.id}
+          href={issuePath(action)}
           onClick={(e) => e.stopPropagation()}
           title="Відкрити завдання"
-          className="group/activity no-nav bg-canvas/80 hover:bg-canvas rounded-[12px] p-3 text-[12px] text-ink flex items-start gap-2.5 transition-colors"
+          className="group/activity no-nav flex items-center gap-[8px] rounded-[10px] bg-canvas px-[10px] py-[7px] text-[12px] text-ink transition-colors hover:bg-line"
         >
-          {/* No avatar and no name line when nothing recorded who acted —
-              an empty bold line above the sentence read as a person whose
-              name had failed to load. */}
-          {stats.lastAction.actorUser && <UserAvatar user={stats.lastAction.actorUser} size="sm" />}
+          {/* No avatar when nothing recorded who acted — a placeholder face in
+              front of the sentence read as a person whose picture had failed to
+              load. */}
+          {action.actorUser
+            ? <UserAvatar user={action.actorUser} size="xs" />
+            : <span aria-hidden className="h-[6px] w-[6px] shrink-0 rounded-full bg-faint" />}
 
-          {/* Activity Text details */}
-          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            <div className="flex items-baseline justify-between gap-2">
-              {stats.lastAction.actor
-                ? <span className="font-bold text-ink">{stats.lastAction.actor}</span>
-                : <span className="font-bold text-muted">Активність</span>}
-              {stats.lastAction.time && (
-                <span className="text-[10px] text-muted shrink-0 font-medium">{timeAgoString(stats.lastAction.time)}</span>
-              )}
-            </div>
-            <p className="text-muted leading-tight line-clamp-1">
-              {stats.lastAction.action}{' '}
-              <span className="text-ink font-semibold group-hover/activity:underline">
-                {stats.lastAction.issueKey}: {stats.lastAction.title}
-              </span>
-            </p>
-          </div>
-        </Link>
-      )}
-      
-      {/* No rule above the band. The card is one object and the band is the
-          last line of it, not a second panel.
-
-          Two marks live on the line above it, and they are kept because neither
-          is a status the band could carry: a deadline that has passed is a fact
-          about time, and being named is the one fact on the card addressed to
-          you. Both are drawn only when they are true, so a project with nothing
-          wrong is the band alone with no line above it — which is also why they
-          sit above rather than beside it. Room for them beside the band would
-          be room taken from the band on every card, including the ones that
-          never need it.
-
-          Everything else the old row counted — the total, the open count,
-          unread chat — the band already shows, or the sidebar's project dot
-          says, or the project itself answers in one click. */}
-      {(stats.overdue > 0 || mentionCount > 0) && (
-        <div className="flex w-full items-center gap-[12px] text-[11px]">
-          {/* Coloured now, where the same figure among four neutral counts was
-              deliberately not. It used to be one of four things set
-              identically, and colouring one of four is shouting; it is now an
-              exception rather than a measurement, and the colour is what says
-              which of the two it is. */}
-          {stats.overdue > 0 && (
-            <span
-              className="flex shrink-0 items-center gap-[5px] text-danger"
-              title="Завдання, у яких минув дедлайн"
-            >
-              <CalendarClock size={13} strokeWidth={2} aria-hidden />
-              <strong className="font-bold">{stats.overdue}</strong>
-              <span>прострочено</span>
+          <p className="min-w-0 flex-1 truncate leading-tight text-muted">
+            {action.actor && <span className="font-bold text-ink">{action.actor} </span>}
+            {action.action}{' '}
+            <span className="font-semibold text-ink group-hover/activity:underline">
+              {action.issueKey}: {action.title}
             </span>
+          </p>
+
+          {action.time && (
+            <span className="shrink-0 text-[10px] font-medium text-muted">{timeAgoString(action.time)}</span>
           )}
-          <TaskCounters mentions={mentionCount} className="ml-auto" />
-        </div>
-      )}
-      <ProjectStatusBand segments={stats.segments} total={stats.banded} isLarge={isLarge} />
+        </Link>
+      ))}
     </div>
   );
 }

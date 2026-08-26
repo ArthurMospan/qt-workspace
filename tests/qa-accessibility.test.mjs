@@ -11,13 +11,31 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 test('quiet text tokens and generated sidebar themes keep AA contrast', () => {
   assert.deepEqual(auditA11y().contrastFailures, []);
 
+  // Two floors, because the rail holds two kinds of thing. `text` and `muted`
+  // carry the navigation and hold AA for body text. The project list, its
+  // header, its «+» and the collapse toggle are scanned rather than read, and
+  // are deliberately quieter — held at 4.5 they could not be quieter than
+  // anything, because on most backgrounds that floor is already where they
+  // want to sit. See SCANNABLE_CONTRAST in sidebarTheme.js.
   for (let channel = 0; channel <= 255; channel += 17) {
     const hex = `#${channel.toString(16).padStart(2, '0').repeat(3)}`;
     const theme = computeSidebarTheme(hex);
-    for (const token of ['text', 'muted', 'mutedProject', 'mutedHeader']) {
+    for (const token of ['text', 'muted']) {
       assert.ok(
         contrastRatio(theme[token], theme.bg) >= 4.5,
-        `${token} must pass on custom sidebar ${hex}`,
+        `${token} must pass AA on custom sidebar ${hex}`,
+      );
+    }
+    for (const token of ['mutedProject', 'mutedHeader']) {
+      assert.ok(
+        contrastRatio(theme[token], theme.bg) >= 3.5,
+        `${token} must stay legible on custom sidebar ${hex}`,
+      );
+      // And quieter than the navigation is the whole point of the tier, so a
+      // change that erases the step fails here rather than on screen.
+      assert.ok(
+        contrastRatio(theme[token], theme.bg) <= contrastRatio(theme.muted, theme.bg),
+        `${token} must not be louder than the navigation on ${hex}`,
       );
     }
   }
@@ -37,10 +55,16 @@ test('the glass tab bar keeps AA against the colour it is actually seen as', () 
         assert.equal(glass.isDark, computeSidebarTheme(hex).isDark, `tone must hold on ${hex}`);
         assert.ok(glass.opacity >= 0.88 && glass.opacity <= 1, `opacity budget on ${hex}`);
         assert.equal(glass.bg, computeSidebarTheme(hex).bg, `the painted colour stays the brand on ${hex}`);
-        for (const token of ['text', 'muted', 'mutedProject', 'mutedHeader']) {
+        for (const token of ['text', 'muted']) {
           assert.ok(
             contrastRatio(glass[token], glass.perceived) >= 4.5,
-            `${token} must pass on the glass bar over ${hex}`,
+            `${token} must pass AA on the glass bar over ${hex}`,
+          );
+        }
+        for (const token of ['mutedProject', 'mutedHeader']) {
+          assert.ok(
+            contrastRatio(glass[token], glass.perceived) >= 3.5,
+            `${token} must stay legible on the glass bar over ${hex}`,
           );
         }
       }

@@ -38,15 +38,22 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KIT_DIR = join(ROOT, 'src', 'components', 'ui');
 const OUTPUT = join(ROOT, 'src', 'app', 'ui-kit', 'a11y-audit.generated.json');
 const GLOBAL_STYLES = join(ROOT, 'src', 'app', 'globals.css');
-const MIN_TEXT_CONTRAST = 4.5;
 // The brand's two quiet greys are a deliberate product decision and sit below
 // WCAG AA for body text. Holding them to 4.5:1 collapsed them into one mid grey
 // nine points apart, which removed the distinction the two tokens exist for.
 // What is still worth guarding is that neither drifts to invisible and that the
 // order between them survives — a floor plus a hierarchy check, not AA.
-// Generated sidebar themes keep the full AA gate below: nobody picks those
-// values by hand, so there is no deliberate decision there to respect.
+// Generated sidebar themes keep a gate below, with the same shape for the same
+// reason: the rail's own words hold AA, and the project list under them is
+// scanned rather than read and is deliberately quieter — see
+// SCANNABLE_CONTRAST in sidebarTheme.js.
 const MIN_BRAND_QUIET_CONTRAST = { muted: 2.5, faint: 1.4 };
+const MIN_SIDEBAR_CONTRAST = {
+  text: 4.5,
+  muted: 4.5,
+  mutedProject: 3.5,
+  mutedHeader: 3.5,
+};
 
 // Controls whose whole content can be a single icon. A `<button>` is one by
 // definition; the kit's two icon wrappers take their name as a prop.
@@ -183,11 +190,11 @@ function auditContrast() {
     minimum: MIN_BRAND_QUIET_CONTRAST[foreground],
   }));
   const sidebar = computeSidebarTheme(SIDEBAR_PRESETS.dark);
-  const sidebarPairs = ['text', 'muted', 'mutedProject', 'mutedHeader'].map(foreground => ({
+  const sidebarPairs = Object.keys(MIN_SIDEBAR_CONTRAST).map(foreground => ({
     name: `default sidebar ${foreground}`,
     foreground: sidebar[foreground],
     background: sidebar.bg,
-    minimum: MIN_TEXT_CONTRAST,
+    minimum: MIN_SIDEBAR_CONTRAST[foreground],
   }));
 
   const failures = [...tokenPairs, ...sidebarPairs].flatMap(pair => {
@@ -385,7 +392,7 @@ export function auditA11y() {
       imagesWithoutAlt: 'Every <img> declares alt, empty when the image is decoration.',
       positiveTabIndex: 'Tab order is the document order. A positive tabIndex overrides it and strands whatever it forgot.',
       fakeButtons: 'A click handler belongs on a button or a link. A div needs role, tabIndex and a key handler to be one — and then it should have been a button.',
-      contrastFailures: 'The brand quiet greys stay visible and stay distinct from each other; generated sidebar text keeps 4.5:1.',
+      contrastFailures: 'The brand quiet greys stay visible and stay distinct from each other; the sidebar keeps 4.5:1 for what it reads and 3.5:1 for the project list it scans.',
       runtimeNameVerification: 'Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name.',
     },
     totals: {

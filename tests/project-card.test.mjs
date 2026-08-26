@@ -16,41 +16,45 @@ test('project cards keep the familiar team-first composition', () => {
   assert.match(projectPage, /<UserAvatar key=\{uid\}[^/]*tooltip/);
 });
 
-test('the card ends in a status distribution, not a row of counts', () => {
-  // Five numbers set identically meant nothing on the card was the point. The
-  // last row is one band now: where this project's work is sitting, in the
-  // categories' own colours, so a colour means the same thing here as on a
-  // board column and a list section dot.
-  assert.match(projectPage, /function ProjectStatusBand/);
-  assert.match(projectPage, /<ProjectStatusBand segments=\{stats\.segments\} total=\{stats\.banded\} isLarge=\{isLarge\} \/>/);
-  assert.match(projectPage, /STATUS_CATEGORIES\[categoryId\]\.color/);
-  assert.match(projectPage, /STATUS_CATEGORY_IDS/);
-  // Never re-derived: the one module that decides what a status means is asked,
-  // and a status the workflow no longer has is left out rather than guessed at.
-  assert.match(projectPage, /statusCategoryById\.get\(statusId \|\| entryStatus\)/);
-  assert.doesNotMatch(projectPage, /\{stats\.inProgress\}/);
-  // Full width, and the last line on the card: a short bar floating in a wide
-  // card reads as a fragment of something, and every segment needs enough room
-  // to be a target rather than a sliver.
-  assert.match(projectPage, /flex w-full gap-\[2px\] overflow-hidden rounded-full bg-chart-track/);
-  assert.match(projectPage, /isLarge \? 'h-\[8px\]' : 'h-\[6px\]'/);
-  assert.doesNotMatch(projectPage, /max-w-\[240px\]/);
-  // Each segment names itself, and only itself. A legend under the bar meant
-  // reading five labels to learn about the one colour under the pointer.
-  assert.match(projectPage, /title=\{`\$\{segment\.label\}: \$\{segment\.count\}`\}/);
-  assert.doesNotMatch(projectPage, /group-hover\/band/);
-  assert.match(projectPage, /role="img"[\s\S]{0,200}Розподіл завдань за статусом/);
-  // Two marks survive the row because neither is a status: what is late, and
-  // who named you. Both only when they are true.
-  assert.match(projectPage, /CalendarClock[\s\S]{0,300}\{stats\.overdue\}[\s\S]{0,100}прострочено/);
-  assert.match(projectPage, /<TaskCounters mentions=\{mentionCount\} className="ml-auto" \/>/);
+test('a small card carries nothing under its description', () => {
+  // A row of counts, then a status band: both were numbers in a place too small
+  // to say what they were numbers of, on the screen you pass through rather
+  // than the one you read. The project's own board answers all of it in a click.
+  assert.match(projectPage, /if \(!isLarge\) return null;/);
+  assert.doesNotMatch(projectPage, /ProjectStatusBand/);
+  assert.doesNotMatch(projectPage, /STATUS_CATEGORY_IDS/);
+  assert.doesNotMatch(projectPage, /\{stats\.overdue\}/);
+  assert.doesNotMatch(projectPage, /\{stats\.active\}/);
+  // (`stats.total` still exists on this page and is not the card's: it is how
+  // many projects the plan allows, read by the new-project dialog.)
   assert.doesNotMatch(projectPage, /AtSign/);
 });
 
-test('the last-action block is a target, not a caption', () => {
-  // The whole block links to the task and answers the pointer; only the title
-  // used to be clickable, with nothing on the card saying so.
-  assert.match(projectPage, /stats\.lastAction && \([\s\S]{0,700}<Link[\s\S]{0,400}hover:bg-canvas/);
+test('the featured card shows the last three actions, not one', () => {
+  assert.match(projectPage, /const RECENT_ACTIONS = 3;/);
+  assert.match(projectPage, /\.slice\(0, RECENT_ACTIONS\)/);
+  // Sorted by what the activity record says, never `updatedAt`: a card whose
+  // position was renumbered by somebody else's drag had its document written
+  // and nothing else.
+  assert.match(projectPage, /issueActivity\(issue\)/);
+  assert.match(projectPage, /b\.activity\.millis - a\.activity\.millis/);
+  assert.match(projectPage, /recentActions\.map\(action =>/);
+  // Being named is still on the card, above the actions — those are things
+  // other people did, this is a thing addressed to you.
+  assert.match(projectPage, /<TaskCounters mentions=\{mentionCount\}/);
+});
+
+test('an action row is a target, and looks like one under the pointer', () => {
+  // The whole row links to the task; only the title used to, with nothing on
+  // the card saying so, so the block behaved like a caption you could hit by
+  // accident.
+  assert.match(projectPage, /recentActions\.map\(action => \([\s\S]{0,900}<Link/);
+  // And the hover is visible. A row sitting on `canvas` that hovered to
+  // `canvas` was a transition whose two ends were four points apart on a
+  // 255-point scale — a hover you could not see. One step darker is one you
+  // can point at.
+  assert.match(projectPage, /bg-canvas[^"]*hover:bg-line/);
+  assert.doesNotMatch(projectPage, /hover:bg-canvas/);
 });
 
 // «@ 3» on a project card, end to end.

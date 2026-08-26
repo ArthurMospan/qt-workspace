@@ -58,7 +58,39 @@ function blendColors(bg, fg, ratio) {
   };
 }
 
-function accessibleBlend(bg, fg, preferredRatio, minimumContrast = 4.5) {
+// AA for body text. Everything that carries the rail's own words holds this.
+const READABLE_CONTRAST = 4.5;
+// The floor for the project list: its section header, its «+», the project rows
+// themselves, and the control that folds the rail away.
+//
+// 4.5:1 is the requirement for text you read. These are not that — they are a
+// list you scan for a name you already know, and the one thing asked of them is
+// that they sit *under* the navigation without disappearing. Held at 4.5 they
+// could not sit under anything: the floor is where the dark preset's quiet ink
+// already lands, so every tier below the navigation was clamped to the same
+// value and the hierarchy existed only in the source.
+//
+// 3.5:1 is above the 3:1 WCAG asks of a UI component and below the 4.5 it asks
+// of prose, which is what these are — named things you point at, set quietly on
+// purpose. The rail's navigation, its active item and its own text are not
+// given this exemption.
+const SCANNABLE_CONTRAST = 3.5;
+
+// The rail's loudest ink, and why it is not the corner of the colour space.
+//
+// `text` was pure white on a dark rail and near-black on a light one, which is
+// the brightest a screen can be — and it is on the active item, the workspace
+// name and the branded organization name, so the three things the eye lands on
+// first were all at maximum. A rail is not the page; it is the thing beside the
+// page, and it was glowing.
+//
+// Backed off toward the background, held to AA like everything the rail reads.
+// A background with no room — a saturated brand colour where white itself
+// barely clears 4.5:1 — gets its white back, because `accessibleBlend` only
+// ever raises: the softening is a preference, the floor is not.
+const TEXT_BLEND = 0.86;
+
+function accessibleBlend(bg, fg, preferredRatio, minimumContrast = READABLE_CONTRAST) {
   let ratio = preferredRatio;
   let blended = blendColors(bg, fg, ratio);
   while (ratio < 1 && contrastRatio(bg, blended) < minimumContrast) {
@@ -75,26 +107,24 @@ function rgbToHex({ r, g, b }) {
 /**
  * Compute a complete sidebar color theme from a single background color.
  *
- * Three tiers of quiet ink, and why they are numbered the way they are.
+ * Three tiers of quiet ink, and the floor each one answers to.
  *
  * The rail has a hierarchy: the navigation is the rail's job, the project list
  * is a second thing inside it, and the section header, the «+» beside it and
  * the collapse toggle are chrome around both. That is `muted` →
  * `mutedProject` → `mutedHeader`, each a notch quieter than the last.
  *
- * The notches used to be 0.50 / 0.38 / 0.30 and they were invisible, because
- * `accessibleBlend` may only ever raise a blend: no organization colour is
- * allowed to produce navigation below AA. On the dark preset the 4.5:1 floor
- * lands at ≈0.46, so the two quieter tiers were both clamped to it and to each
- * other, and all three read as one colour.
+ * The notches were invisible for a long time, because `accessibleBlend` may
+ * only ever raise a blend and all three answered to the same 4.5:1 floor. On
+ * the dark preset that floor is roughly where the quietest tier wanted to be,
+ * so the two below the navigation were clamped to it and to each other, and the
+ * hierarchy existed only in the source.
  *
- * A tier therefore cannot be made quieter — the floor is not negotiable and
- * `tests/qa-accessibility.test.mjs` holds it for every background. The distance
- * is made by lifting the tier above instead: `muted` is asked for well clear of
- * the floor, so what sits under it has somewhere to sit. On a colour whose
- * floor is higher than the top tier's preference — a mid-tone that barely
- * carries any foreground at all — all three still collapse together, which is
- * the honest answer for a background with no room in it.
+ * Raising the navigation to make room was the wrong half to move: it changed
+ * the part of the rail nobody asked to change, and on a saturated brand colour
+ * — where white itself barely clears 4.5:1 — there is no room above to move
+ * into. The floor is what gives way instead, and only for the tiers that are
+ * not prose. See `SCANNABLE_CONTRAST`.
  *
  * @param {string} bgHex - Background HEX color (e.g. '#1f1f1f')
  * @returns {{ bg, text, muted, mutedProject, mutedHeader, hover, active, border, isDark }}
@@ -123,10 +153,10 @@ export function computeSidebarTheme(bgHex) {
     // Dark background → light text
     return {
       bg: fallback,
-      text: rgbToHex(textRgb),
-      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.66)),
-      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.52)),
-      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.34)),
+      text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND)),
+      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.46)),
+      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.40, SCANNABLE_CONTRAST)),
+      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.30, SCANNABLE_CONTRAST)),
       hover: 'rgba(255,255,255,0.04)',
       active: 'rgba(255,255,255,0.08)',
       border: 'rgba(255,255,255,0.06)',
@@ -137,10 +167,10 @@ export function computeSidebarTheme(bgHex) {
   // Light background → dark text
   return {
     bg: fallback,
-    text: rgbToHex(textRgb),
-    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.66)),
-    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.52)),
-    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.34)),
+    text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND)),
+    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.46)),
+    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.40, SCANNABLE_CONTRAST)),
+    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.30, SCANNABLE_CONTRAST)),
     hover: 'rgba(0,0,0,0.04)',
     active: 'rgba(0,0,0,0.06)',
     border: 'rgba(31,31,31,0.08)',

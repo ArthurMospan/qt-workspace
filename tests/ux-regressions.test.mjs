@@ -220,11 +220,13 @@ test('a project card offers no action the role cannot perform', async () => {
   assert.match(projects, /const canEditProject = can\(orgRole, 'edit:project_settings'\)/);
   assert.match(projects, /const canDeleteProject = can\(orgRole, 'delete:project'\)/);
   assert.match(projects, /\{projectMenuItems\.length > 0 && \(/);
-  // «N моїх» is not something anyone acts on; what is late and what is waiting
-  // for you is. It survived the card's last row becoming a status band, because
-  // a passed deadline is a fact about time rather than a place in the workflow.
+  // «N моїх» is not something anyone acts on — and neither, on a card, was any
+  // of the four counters that replaced it in turn. The featured card ends in
+  // the last three things that happened, which is a reason to open it; the
+  // small ones end in nothing at all.
   assert.doesNotMatch(projects, /<span>моїх<\/span>/);
-  assert.match(projects, /<span>прострочено<\/span>/);
+  assert.doesNotMatch(projects, /<span>прострочено<\/span>/);
+  assert.match(projects, /recentActions\.map\(action =>/);
 });
 
 test('a new task appears at the top of My tasks, as it does on a board', async () => {

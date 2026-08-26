@@ -75,10 +75,10 @@ test('nobody is notified about their own action, except a self-addressed test', 
 test('project activity names only who the activity record says acted', async () => {
   const page = await read('../src/app/(app)/page.js');
 
-  assert.match(page, /const actorId = newestIssue\.lastActivityActorId \|\| newestIssue\.updatedBy \|\| '';/);
+  assert.match(page, /const actorId = issue\.lastActivityActorId \|\| issue\.updatedBy \|\| '';/);
   // The reporter is who filed it, not who last touched it.
-  assert.doesNotMatch(page, /newestIssue\.reporterId\b/);
-  assert.doesNotMatch(page, /actorUser = members\.find\(m => m\.email && m\.email\.toLowerCase\(\) === newestIssue\.reporterName/);
+  assert.doesNotMatch(page, /issue\.reporterId\b/);
+  assert.doesNotMatch(page, /actorUser = members\.find\(m => m\.email && m\.email\.toLowerCase\(\) === issue\.reporterName/);
   assert.match(page, /const isExternalActor = isExternalActorId\(actorId\)/);
 
   // Every activity type reads as itself; "created" used to render as "updated".

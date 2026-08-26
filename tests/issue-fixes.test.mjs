@@ -61,9 +61,10 @@ test('QUI-76 uses the shared deterministic avatar in project activity', async ()
   // omitted rather than rendered blank.
   assert.match(source, /actorUser:\s*actorUser\s*\|\|\s*\(actorName\s*\?\s*\{/);
   // Size is a scale token, not a literal: raw pixel sizes moved into
-  // AVATAR_SIZES so the avatar scale has one place to change.
-  assert.match(source, /\{stats\.lastAction\.actorUser && <UserAvatar user=\{stats\.lastAction\.actorUser\} size="sm" \/>\}/);
-  assert.doesNotMatch(source, /stats\.lastAction\.actor\.slice\(0,\s*2\)/);
+  // AVATAR_SIZES so the avatar scale has one place to change. The card carries
+  // three rows now, so the face is the small one.
+  assert.match(source, /<UserAvatar user=\{action\.actorUser\} size="xs" \/>/);
+  assert.doesNotMatch(source, /action\.actor\.slice\(0,\s*2\)/);
 });
 
 test('QUI-75 exposes column visibility settings in both My Tasks views', async () => {

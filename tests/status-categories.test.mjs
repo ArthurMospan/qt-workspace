@@ -369,10 +369,11 @@ test('nothing decides completion or «в роботі» by a status’s position
 
   // The comment that records the old rule may name it; the code may not run it.
   assert.doesNotMatch(dashboard, /statuses\.slice\(1\)\.filter/);
-  // The project card counts what is still open rather than what is «в роботі» —
-  // one word for a status category and a card counter was one word too few. It
-  // is still the category set that decides, never a position in the list.
-  assert.match(dashboard, /!closedStatusIds\.includes\(statusId\)/);
+  // The project card counts nothing at all any more — its last line is what
+  // just happened, not how much is left. What the screen still derives from the
+  // workflow is a project's progress, and that reads the delivered set, never a
+  // position in the list.
+  assert.match(dashboard, /const deliveredSet = new Set\(deliveredStatusIds\)/);
   for (const [name, source] of [
     ['analytics', analytics],
     ['AnalyticsTab', analyticsTab],

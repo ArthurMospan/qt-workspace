@@ -6,12 +6,12 @@
     "imagesWithoutAlt": "Every <img> declares alt, empty when the image is decoration.",
     "positiveTabIndex": "Tab order is the document order. A positive tabIndex overrides it and strands whatever it forgot.",
     "fakeButtons": "A click handler belongs on a button or a link. A div needs role, tabIndex and a key handler to be one — and then it should have been a button.",
-    "contrastFailures": "The brand quiet greys stay visible and stay distinct from each other; generated sidebar text keeps 4.5:1.",
+    "contrastFailures": "The brand quiet greys stay visible and stay distinct from each other; the sidebar keeps 4.5:1 for what it reads and 3.5:1 for the project list it scans.",
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
     "files": 374,
-    "elements": 4369,
+    "elements": 4359,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
