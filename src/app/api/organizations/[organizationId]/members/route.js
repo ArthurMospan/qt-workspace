@@ -85,12 +85,20 @@ export async function GET(request, context) {
           .filter(field => profile.profile[field] !== undefined)
           .map(field => [field, serializeValue(profile.profile[field])]));
       }
+      // A deleted account leaves an archived seat and no profile at all — that
+      // is the point of deleting it. Without a name every hour they logged
+      // renders as «Невідомий» on the timesheet an invoice is built from, so
+      // the directory says what actually happened instead.
+      const accountDeleted = membership.accountDeleted === true;
+      if (accountDeleted && !safeProfile.name) safeProfile.name = 'Видалений акаунт';
+
       return {
         ...safeProfile,
         id: membership.userId,
         uid: membership.userId,
         role: membership.role,
         status: membership.status,
+        accountDeleted,
         deactivatedAt: serializeValue(membership.deactivatedAt) || null,
         joinedAt: serializeValue(membership.joinedAt) || null,
         positionId: membership.positionId || '',

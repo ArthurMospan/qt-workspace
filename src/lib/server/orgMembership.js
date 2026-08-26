@@ -79,6 +79,13 @@ export async function reactivateMembership({
     if (archived.orgId !== organizationId || archived.userId !== userId) {
       return { restored: false, reason: 'SCOPE_MISMATCH' };
     }
+    // The seat of somebody who deleted their account is a record, not an offer.
+    // There is no profile behind it and no person to invite back — a new
+    // invitation to the same address creates a different account with a
+    // different id, so restoring this one would put an empty chair on the team.
+    if (archived.accountDeleted === true) {
+      return { restored: false, reason: 'ACCOUNT_DELETED' };
+    }
     // The owner seat is never archived, so an archived role can only be admin
     // or member. Anything else is a corrupted document, not a promotion.
     const archivedRole = ['admin', 'member'].includes(archived.role) ? archived.role : 'member';
