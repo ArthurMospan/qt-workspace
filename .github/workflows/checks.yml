@@ -145,7 +145,19 @@ jobs:
           const response = await fetch(`http://${host}/`);
           console.log('emulator at', host, '->', response.status);
           PROBE
-          npx firebase --project demo-quickteam emulators:exec --only firestore 'node emulator-probe.mjs'
+          set +e
+          output=$(npx firebase --project demo-quickteam emulators:exec --only firestore 'node emulator-probe.mjs' --debug 2>&1)
+          code=$?
+          echo "$output"
+          # Repeated as an annotation, not for the person reading this page —
+          # they have the log above — but because the Actions log API needs a
+          # token and the annotations API does not, and whoever is debugging
+          # this from a terminal has the second and not the first.
+          if [ "$code" -ne 0 ]; then
+            echo "::error::emulators:exec failed ($code): $(echo "$output" | tail -c 1200 | tr '
+' ' ' | tr -d '')"
+            exit "$code"
+          fi
 
       # Named explicitly as IPv4. The suite discovers the emulator through the
       # hub or falls back to `localhost:8080`, and on a Linux runner `localhost`
