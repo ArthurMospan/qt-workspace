@@ -59,12 +59,17 @@ export const DEFAULT_PLAN = 'free';
 export const PLAN_LIMITS = [
   {
     id: 'projects',
-    label: 'Активні проєкти',
-    title: 'Ліміт активних проєктів вичерпано',
-    hint: 'Або заархівуйте проєкт, який уже завершено: архів звільняє місце, а повернути його можна, коли воно буде.',
+    label: 'Проєкти',
+    title: 'Ліміт проєктів вичерпано',
+    // No tip. It read «або заархівуйте проєкт, який уже завершено», which is a
+    // way of not paying, offered by the product, in the first sentence the
+    // product says about its own ceiling — and then repeated under the price
+    // list, where it was the last thing on the screen as well as the first.
+    // Archiving still frees a place; the archive is where that is said.
+    hint: '',
     absentTitle: 'Проєкти недоступні на цьому тарифі',
     absentHint: 'Проєкти зʼявляються на платному тарифі.',
-    overageHint: 'створені останніми стануть тільки для читання. Нічого не видаляється, і все повертається разом із тарифом.',
+    overageHint: 'створені останніми стануть тільки для читання, решта працює як працювала',
     enforced: true,
     enforcedAt: 'src/app/api/projects/route.js',
   },
@@ -75,7 +80,7 @@ export const PLAN_LIMITS = [
     hint: 'Або деактивуйте учасника, який більше не працює: його задачі, час і коментарі лишаються, місце звільняється.',
     absentTitle: 'Запрошення недоступні на цьому тарифі',
     absentHint: 'Запрошення зʼявляються на платному тарифі.',
-    overageHint: 'усі лишаються на місці й працюють. Нових не запросити, поки не звільниться місце.',
+    overageHint: 'усі лишаються й працюють, нових не запросити, поки не звільниться місце',
     enforced: true,
     enforcedAt: 'src/app/api/invitations/route.js',
   },
@@ -90,7 +95,7 @@ export const PLAN_LIMITS = [
     hint: 'Лічильник обнулиться першого числа наступного місяця.',
     absentTitle: 'AI Аудіо-завдання недоступні на цьому тарифі',
     absentHint: 'Запис наради стає саммарі, рішеннями й чернетками задач — на платному тарифі.',
-    overageHint: 'цього місяця витрачено більше, ніж дозволяє новий тариф. Лічильник обнулиться першого числа.',
+    overageHint: 'цього місяця вже витрачено більше, лічильник обнулиться першого числа',
     enforced: true,
     enforcedAt: 'src/app/api/ai/call-to-tasks/route.js',
   },
@@ -177,7 +182,10 @@ export const PLAN_CAPABILITIES = [
     id: 'ai-calls',
     label: 'AI Аудіо-завдання',
     detail: 'Запис наради стає саммарі, рішеннями й чернетками задач',
-    plans: ['lite', 'pro'],
+    // On every plan, because Free has three of them: a feature nobody can try
+    // is a line on a page. What differs is how many, and that is the ceiling
+    // in PLAN_LIMITS, not a capability somebody does or does not have.
+    plans: ['free', 'lite', 'pro'],
     enforced: false,
   },
   {
@@ -201,12 +209,12 @@ export const PLANS = [
   {
     id: 'free',
     name: 'Free',
-    tagline: 'Перша команда, до п’ятьох',
+    tagline: 'Щоб спробувати продукт у роботі',
     priceLabel: '0',
     currencyLabel: 'грн / міс',
     ctaLabel: 'Почати',
     ctaNote: 'Без картки й без строку',
-    limits: { projects: 3, members: 5, aiCalls: 0 },
+    limits: { projects: 3, members: 5, aiCalls: 3 },
   },
   {
     id: 'lite',
@@ -216,7 +224,7 @@ export const PLANS = [
     // application with its own database. Lite is the plan a team actually works
     // on — everything the product does, at the size of one team.
     name: 'Lite',
-    tagline: 'Команда, яка вже працює щодня',
+    tagline: 'Для малих і середніх компаній',
     priceLabel: '499',
     currencyLabel: 'грн / міс',
     ctaLabel: 'Спробувати',
@@ -229,7 +237,7 @@ export const PLANS = [
     // Pro adds no feature Lite does not have. What it takes away is the
     // ceilings, and the tagline says that rather than implying a fourth column
     // of things nobody would find on the card.
-    tagline: 'Коли команда переросла ліміти',
+    tagline: 'Для великих компаній',
     priceLabel: '999',
     currencyLabel: 'грн / міс',
     ctaLabel: 'Спробувати',
@@ -287,13 +295,15 @@ export function projectsOverPlanLimit(planId, projects) {
 }
 
 /**
- * What changes when a workspace moves down a plan, or `null` when nothing does.
+ * What changes when a workspace moves down a plan.
  *
- * Asked before the switch, not explained after it. Everything in it is
- * reversible and says so: a capability that turns off keeps its settings, a
- * ceiling that is already past keeps everything already made. The one thing
- * somebody could be surprised by is which projects go quiet, and that is the
- * line that names how many.
+ * Two lists, because they are two different kinds of change and answering them
+ * as one flat list of bullets made the dialog read like an error log. Something
+ * that *turns off* is a switch that stops working and keeps its setting; a
+ * ceiling that is *already past* is a number that stops growing while
+ * everything under it goes on working. Nothing in either list is destructive,
+ * which is why the dialog leads with that instead of ending with it — it is the
+ * part nobody believes without being told.
  *
  * Built from the registry rather than written out, so a plan that gains or
  * loses a capability changes this dialog by changing the table above.
@@ -301,21 +311,25 @@ export function projectsOverPlanLimit(planId, projects) {
 export function planDowngradeEffects(fromPlan, toPlan, used = {}) {
   const from = normalizePlan(fromPlan);
   const to = normalizePlan(toPlan);
-  const lines = [];
-  for (const capability of PLAN_CAPABILITIES) {
-    if (!capability.enforced) continue;
-    if (planAllows(from, capability.id) && !planAllows(to, capability.id)) {
-      lines.push(`${capability.label} — вимкнеться. Налаштування збережуться.`);
-    }
-  }
+  const turnedOff = PLAN_CAPABILITIES
+    .filter(capability => capability.enforced)
+    .filter(capability => planAllows(from, capability.id) && !planAllows(to, capability.id))
+    // The name and nothing else. The registry's `detail` is written as a line
+    // of a price list — capitalised, and sometimes three product names — and
+    // neither reads as a clause inside a sentence. What each of these is is one
+    // click away on the price list this dialog is asking about.
+    .map(capability => capability.label);
+
+  const overCeiling = [];
   for (const limit of PLAN_LIMITS) {
     const ceiling = planLimit(to, limit.id);
     if (!Number.isFinite(ceiling)) continue;
     const spent = typeof used[limit.id] === 'number' && used[limit.id] >= 0 ? used[limit.id] : null;
     if (spent === null || spent <= ceiling) continue;
-    lines.push(`${limit.label}: ${spent} із ${ceiling} — ${limit.overageHint || ''}`.trim());
+    overCeiling.push(`${limit.label}: ${spent} із ${ceiling}${limit.overageHint ? ` — ${limit.overageHint}` : ''}`);
   }
-  return lines;
+
+  return { turnedOff, overCeiling };
 }
 
 /**
@@ -325,13 +339,42 @@ export function planDowngradeEffects(fromPlan, toPlan, used = {}) {
  * a workspace was not using.
  */
 export function planDowngradeNotice(fromPlan, toPlan, used = {}) {
-  const lines = planDowngradeEffects(fromPlan, toPlan, used);
-  if (!lines.length) return null;
+  const { turnedOff, overCeiling } = planDowngradeEffects(fromPlan, toPlan, used);
+  if (!turnedOff.length && !overCeiling.length) return null;
+
+  const name = planName(toPlan);
+  const parts = [
+    `Нічого не видаляється. Проєкти, задачі, час, файли й налаштування лишаються на місці — і повертаються такими, як були, щойно тариф повернеться.`,
+  ];
+  if (turnedOff.length) {
+    parts.push('', 'Перестане працювати:', ...turnedOff.map(line => `• ${line}`));
+  }
+  if (overCeiling.length) {
+    parts.push('', `Уже більше, ніж дозволяє ${name}:`, ...overCeiling.map(line => `• ${line}`));
+  }
+  parts.push('', `Повернути тариф можна будь-коли — вмикати наново нічого не доведеться.`);
+
   return {
-    title: `Перейти на ${planName(toPlan)}?`,
-    message: ['Нічого не видаляється. Ось що зміниться:', '', ...lines.map(line => `• ${line}`)].join('\n'),
-    confirmLabel: `Перейти на ${planName(toPlan)}`,
+    title: `Перейти на ${name}?`,
+    message: parts.join('\n'),
+    confirmLabel: `Перейти на ${name}`,
   };
+}
+
+/**
+ * What the button on a plan's card says, given the plan the workspace is on.
+ *
+ * A card's own `ctaLabel` is written for somebody arriving at it from below:
+ * «Почати» is what Free says to a new account. Said to somebody on Pro it is
+ * nonsense — they have started, and pressing it would take something away. So a
+ * plan cheaper than the current one asks to be moved to by name, and only a
+ * plan above it keeps its own invitation.
+ */
+export function planCtaLabel(planId, activePlanId) {
+  const plan = planById(planId);
+  const order = PLANS.map(entry => entry.id);
+  const goingDown = order.indexOf(plan.id) < order.indexOf(normalizePlan(activePlanId));
+  return goingDown ? `Перейти на ${plan.name}` : plan.ctaLabel;
 }
 
 export function normalizePlan(value) {

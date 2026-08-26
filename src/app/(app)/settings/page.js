@@ -161,11 +161,6 @@ const NAV = [
 
 // Which sections belong to the plan rather than to the role. Both have been
 // sold as paid since the price list existed; neither was ever gated.
-const NAV_CAPABILITIES = {
-  integrations: 'integrations',
-  migration: 'data-import',
-};
-
 // ── Primitives ───────────────────────────────────────────────────────
 // Toggle removed - using ToggleSwitch from UI Kit
 
@@ -1236,7 +1231,22 @@ export default function SettingsPage() {
   const [generatingKey, setGeneratingKey] = useState(false);
 
   // ── Billing ──
-  const [orgPlan,        setOrgPlan]        = useState(DEFAULT_PLAN);
+  //
+  // The plan is the live organization document's, not a read of this screen's
+  // own. It used to be local state seeded with «free» and filled in by a
+  // `getDoc` at the end of a chain of awaits, so every visit here spent about
+  // two seconds telling a paying workspace it was on Free: the badge went red,
+  // and crowns appeared beside «Інтеграції» and «Перенесення даних» before
+  // disappearing again.
+  //
+  // `planOverride` is the moment between pressing a plan and the snapshot that
+  // confirms it — the write goes through a server route, and the listener is a
+  // round trip behind it.
+  const [planOverride, setPlanOverride] = useState('');
+  const orgPlan = planOverride || planLimits.plan;
+  const planKnown = planLimits.planKnown;
+  // «Not read yet» is not «not allowed». See `usePlanLimits`.
+  const allowsOnPlan = capabilityId => !planKnown || planAllows(orgPlan, capabilityId);
   const [projectsCount,  setProjectsCount]  = useState(0);
   // Which plan is being switched to, not merely that one is: with three plans a
   // boolean put the spinner on both buttons that were not the current one.
@@ -1410,6 +1420,17 @@ export default function SettingsPage() {
     queueMicrotask(() => refreshAuthProviders());
   }, [currentUser?.id, currentUser?.uid]);
 
+  // The optimistic plan lasts exactly until the snapshot that makes it
+  // unnecessary — and no longer, or switching organizations would carry one
+  // workspace's plan into another.
+  useEffect(() => {
+    if (!planOverride || planLimits.plan !== planOverride) return;
+    queueMicrotask(() => setPlanOverride(''));
+  }, [planOverride, planLimits.plan]);
+  useEffect(() => {
+    queueMicrotask(() => setPlanOverride(''));
+  }, [activeOrgId]);
+
   // ── Breadcrumbs ──
   // Removed breadcrumbs to avoid duplicate 'Налаштування' in WorkspaceHeader
   useEffect(() => {
@@ -1469,12 +1490,8 @@ export default function SettingsPage() {
           setQtEnabled(intSnap.data().qtPortalEnabled !== false);
         }
         
-        const orgSnap = await getDoc(doc(db, 'organizations', organizationId));
-        if (!isCurrentWorkflowLoad()) return;
-        if (orgSnap.exists()) {
-          const orgData = orgSnap.data();
-          setOrgPlan(normalizePlan(orgData.plan));
-        }
+        // The organization document is already subscribed by the workspace
+        // context, so this screen does not read it again for one field.
 
         if (isAdmin) {
           const keyResult = await apiKeysRequest();
@@ -2240,7 +2257,7 @@ export default function SettingsPage() {
     setUpgradingTo(next);
     try {
       await switchOrganizationPlan(activeOrgId, next);
-      setOrgPlan(next);
+      setPlanOverride(next);
       // The plan's own name. The toast had two branches for three plans, so
       // switching to Lite announced «Тариф змінено на Безкоштовний».
       showToast(`Тариф змінено на ${planName(next)}`);
@@ -3017,7 +3034,7 @@ export default function SettingsPage() {
         // not turn off branding a workspace already has: downgrading should
         // stop somebody changing how the product looks, not repaint it under
         // them without warning.
-        const brandingAllowed = planAllows(orgPlan, 'branding');
+        const brandingAllowed = allowsOnPlan('branding');
         const handleBrandingToggle = (val) => {
           if (!brandingAllowed) return;
           setOrgCustomBranding(val);
@@ -3076,26 +3093,16 @@ export default function SettingsPage() {
           {/* Zone 2: Branding — the one thing the paid plan actually buys.
               Two locks, and they are different: without a logo there is nothing
               to brand with, and without the plan there is nothing to brand on.
-              The second says which plan and how to get there, because a control
-              greyed out with no reason is indistinguishable from a broken one. */}
-          <Card
-            preset="borderless"
-            padding="lg"
-            className={`transition-opacity ${!orgLogo || !brandingAllowed ? 'opacity-50 pointer-events-none' : ''}`}
-          >
-            {/* The star sits on the label rather than in the price list. A
-                price list already says what a plan includes by listing it; the
-                place this is worth saying is where somebody reaches for the
-                switch and it will not move. */}
-            <GroupLabel
-              label="Брендинг"
-              action={!brandingAllowed && <PlanMark capabilityId="branding" label={capabilityAvailability('branding')} />}
-            />
-            {!brandingAllowed ? (
-              <p className="text-[12px] text-muted mb-3">
-                Доступно на тарифах Lite і Pro — «Налаштування» → «Тарифний план».
-              </p>
-            ) : !orgLogo && (
+
+              Neither dims the card any more. Half-opacity over a whole block is
+              the product's way of saying «this is loading or broken», and it
+              was being spent on «this costs money» — which is what the crown
+              means, everywhere else, beside the one control that will not move.
+              So the block reads normally, the switch is disabled, and the crown
+              sits on the row it is about. */}
+          <Card preset="borderless" padding="lg">
+            <GroupLabel label="Брендинг" />
+            {brandingAllowed && !orgLogo && (
               <p className="text-[12px] text-muted mb-3">Завантажте логотип організації, щоб розблокувати налаштування брендингу</p>
             )}
             <Row label="Брендинг у сайдбарі" desc="Замінити логотип QuickTeam на логотип вашої організації для всіх учасників">
@@ -3108,6 +3115,9 @@ export default function SettingsPage() {
                     alt="Логотип"
                     className="w-[32px] h-[32px] rounded-[8px] object-cover border border-line"
                   />
+                )}
+                {!brandingAllowed && (
+                  <PlanMark capabilityId="branding" label={capabilityAvailability('branding')} />
                 )}
                 <ToggleSwitch
                   checked={orgCustomBranding}
@@ -3269,12 +3279,18 @@ export default function SettingsPage() {
           }
         };
 
+        // Each row names the capability it needs rather than inheriting one
+        // from the section. The rail used to carry that decision for all three
+        // at once, which left nowhere to say «this one is free» — and giving a
+        // single integration away is a thing a price list should be able to do
+        // by changing one line here.
         const integrationRows = [
           {
             id: 'quickteam-plus',
             title: 'QuickTeam+',
             description: 'Клієнтські запити та оновлення з порталу.',
             logo: '/quickteam.png',
+            capability: 'integrations',
             status: qtEnabled ? 'Підключено' : 'Вимкнено',
             active: qtEnabled,
           },
@@ -3283,6 +3299,7 @@ export default function SettingsPage() {
             title: 'Telegram',
             description: 'Створення задач із робочої Telegram-групи.',
             logo: '/integrations/telegram.svg',
+            capability: 'integrations',
             status: telegramGroupStatus.connected
               ? 'Підключено'
               : telegramGroupStatus.configured ? 'Не підключено' : 'Недоступно',
@@ -3293,6 +3310,7 @@ export default function SettingsPage() {
             title: 'BuggyBag Portal',
             description: 'Баг-репорти клієнтів як задачі QuickTeam.',
             logo: '/bug-logo.png',
+            capability: 'integrations',
             status: buggyBagEnabled ? 'Підключено' : 'Вимкнено',
             active: buggyBagEnabled,
           },
@@ -3302,29 +3320,41 @@ export default function SettingsPage() {
           return (
             <Section title="Інтеграції" desc="Підключені сервіси та доступні канали">
               <div className="flex flex-col gap-[8px]">
-                {integrationRows.map(item => (
-                  <Card
-                    key={item.id}
-                    preset="bordered"
-                    padding="md"
-                    interactive
-                    onClick={() => setIntegrationDetail(item.id)}
-                  >
-                    <div className="flex items-center gap-[12px]">
-                      <span className="flex h-[40px] w-[40px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white">
-                        <Image src={item.logo} alt="" width={30} height={30} className="h-[28px] w-[28px] object-contain" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[13px] font-bold text-ink">{item.title}</span>
-                        <span className="mt-[2px] block truncate text-[11px] text-muted">{item.description}</span>
-                      </span>
-                      <Pill color={item.active ? '#10b981' : '#9a9a9a'} size="md" appearance="soft-outline">
-                        {item.status}
-                      </Pill>
-                      <ChevronRight size={16} className="shrink-0 text-faint" />
-                    </div>
-                  </Card>
-                ))}
+                {integrationRows.map(item => {
+                  const locked = Boolean(item.capability) && !allowsOnPlan(item.capability);
+                  return (
+                    <Card
+                      key={item.id}
+                      preset="bordered"
+                      padding="md"
+                      interactive
+                      onClick={() => setIntegrationDetail(item.id)}
+                    >
+                      <div className="flex items-center gap-[12px]">
+                        <span className="flex h-[40px] w-[40px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white">
+                          <Image src={item.logo} alt="" width={30} height={30} className="h-[28px] w-[28px] object-contain" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[13px] font-bold text-ink">{item.title}</span>
+                          <span className="mt-[2px] block truncate text-[11px] text-muted">{item.description}</span>
+                        </span>
+                        {/* Beside the one it is about, not on the rail entry
+                            above all three. */}
+                        {locked ? (
+                          <PlanMark
+                            capabilityId={item.capability}
+                            label={capabilityAvailability(item.capability)}
+                          />
+                        ) : (
+                          <Pill color={item.active ? '#10b981' : '#9a9a9a'} size="md" appearance="soft-outline">
+                            {item.status}
+                          </Pill>
+                        )}
+                        <ChevronRight size={16} className="shrink-0 text-faint" />
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
             </Section>
           );
@@ -4341,23 +4371,21 @@ export default function SettingsPage() {
   // be there rather than only inside the section.
   const allowedNav = NAV.filter(n => !n.adminOnly || isAdmin).map(item => {
     if (item.id === 'billing') {
-      return { ...item, badge: planName(orgPlan), badgeAlert: orgPlan === DEFAULT_PLAN };
+      // No badge until the document has actually been read: a red «Free»
+      // beside the plan section is exactly the wrong thing to guess.
+      return planKnown
+        ? { ...item, badge: planName(orgPlan), badgeAlert: orgPlan === DEFAULT_PLAN }
+        : item;
     }
-    const capability = NAV_CAPABILITIES[item.id];
-    if (capability && !planAllows(orgPlan, capability)) return { ...item, locked: true };
     return item;
   });
 
   const handleNavChange = async (id) => {
-    // A locked section opens the price list instead of itself. Letting it open
-    // and putting the wall inside would be a click spent to be told no; the
-    // crown on the row said so already, and this is what the crown does
-    // everywhere else in the product.
-    const capability = NAV_CAPABILITIES[id];
-    if (capability && !planAllows(orgPlan, capability)) {
-      openPlanUpgrade({ capabilityId: capability });
-      return;
-    }
+    // Every section opens. «Інтеграції» and «Перенесення даних» used to be
+    // locked on the rail, which put one decision — «is this workspace allowed
+    // integrations» — in front of a list where the answer may differ per row:
+    // a single integration could be free one day, and a locked rail entry has
+    // nowhere to say so. The crown moved inside, beside each thing it is about.
     const success = await handleSectionChange(id);
     if (success) setMobilePane('content');
   };

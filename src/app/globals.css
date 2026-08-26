@@ -757,16 +757,14 @@
     width: 100%;
     align-items: center;
     gap: 10px;
-    border: 1px solid color-mix(in srgb, var(--sb-text, #ffffff) 14%, transparent);
     border-radius: 12px;
-    background: color-mix(in srgb, var(--sb-text, #ffffff) 7%, transparent);
+    background: color-mix(in srgb, var(--sb-text, #ffffff) 8%, transparent);
     padding: 8px 10px;
     text-align: left;
-    transition: background-color 150ms, border-color 150ms;
+    transition: background-color 150ms;
   }
   .ui-rail-notice:hover {
-    border-color: color-mix(in srgb, var(--sb-text, #ffffff) 24%, transparent);
-    background: color-mix(in srgb, var(--sb-text, #ffffff) 13%, transparent);
+    background: color-mix(in srgb, var(--sb-text, #ffffff) 15%, transparent);
   }
   .ui-rail-notice[data-ui-rail-notice='collapsed'] {
     width: 32px;

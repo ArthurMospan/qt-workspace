@@ -9,6 +9,7 @@ import Pill from '@/components/ui/DataDisplay/Pill';
 import {
   PLANS,
   planAddedCapabilities,
+  planCtaLabel,
   planInheritanceLabel,
   planLimitRows,
 } from '@/lib/utils/plans.mjs';
@@ -137,20 +138,29 @@ export default function PlanCards({
             </ul>
 
             <div className="flex flex-col gap-2 px-5 pb-6">
-              {/* The plan already in force is an outline, not a dimmed fill.
-                  A secondary button at 50% opacity is the product's way of
-                  saying «this is broken or not yours»; what this says is «this
-                  is the one you are on», which is a state worth reading. */}
+              {/* Every plan you are not on gets the same black button.
+                  Giving one of the three a filled button and the other two a
+                  grey one is the card telling somebody which plan we would
+                  like them to buy — and the two grey ones then read as the
+                  lesser options rather than as the other options. The one plan
+                  that looks different is the one you are on, and it is a flat
+                  grey block: nothing to press, and nothing shouting about it.
+                  It used to be a 2px outline, which drew a heavier frame around
+                  the current plan than the card itself has.
+
+                  The label follows the direction of travel. «Почати» is what
+                  Free says to a new account; said to somebody on Pro it is
+                  nonsense, so a cheaper plan asks to be moved to by name. */}
               <Button
                 onClick={() => onChoose?.(plan.id)}
-                style={isActive ? 'outline' : plan.recommended ? 'primary' : 'secondary'}
+                style={isActive ? 'secondary' : 'primary'}
                 size="lg"
                 icon={isLocked ? PlanCrownIcon : undefined}
                 disabled={isActive || isLocked || busy}
                 loading={busyPlanId === plan.id}
                 className="w-full"
               >
-                {isLocked ? lockedLabel : isActive ? activeLabel : plan.ctaLabel}
+                {isLocked ? lockedLabel : isActive ? activeLabel : planCtaLabel(plan.id, activePlanId)}
               </Button>
               <p className="text-center text-[11px] leading-relaxed text-faint">{plan.ctaNote}</p>
             </div>

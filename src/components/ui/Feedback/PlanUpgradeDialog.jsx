@@ -57,20 +57,14 @@ export default function PlanUpgradeDialog({
           onChoose={onChoose}
           busyPlanId={busyPlanId}
         />
-        <div className="flex flex-col gap-1">
-          {/* The way out that costs nothing, said here rather than in the strip
-              across the workspace. It is real — archiving a project takes it
-              off every board, every picker and every report, and bringing it
-              back is checked against the same ceiling — so it belongs on the
-              screen. It just does not belong in the first sentence a workspace
-              says about its own limit. */}
-          {notice?.hint ? (
-            <p className="text-[12px] leading-relaxed text-ink-soft">{notice.hint}</p>
-          ) : null}
-          <p className="text-[12px] leading-relaxed text-muted">
-            Оплата ще не підключена — тариф можна перемкнути будь-коли й без карти.
-          </p>
-        </div>
+        {/* One line under the cards, and it is about paying rather than about
+            not paying. The hint used to be printed here as well as in the
+            dialog's own description two inches above it — the same sentence
+            twice on one screen, and the second copy was the last word the
+            dialog said. */}
+        <p className="text-[12px] leading-relaxed text-muted">
+          Оплата ще не підключена — тариф можна перемкнути будь-коли й без карти.
+        </p>
       </div>
     </Dialog>
   );

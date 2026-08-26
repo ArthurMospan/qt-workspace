@@ -27,6 +27,7 @@ import {
   planById,
   planInheritanceLabel,
   planLimit,
+  planLimitById,
   planLimitNotices,
   planLimitRefusal,
   planLimitRows,
@@ -99,8 +100,11 @@ test('стеля друкується числом, рискою або марк
   // А в реченні іконці нема де стати, тому там і далі слово.
   assert.equal(planLimitText('pro', 'projects'), 'Безліміт');
   assert.equal(planLimitText('free', 'projects'), '3');
-  // Чого в тарифі немає зовсім — риска, а не нуль.
-  assert.equal(planLimitValue('free', 'aiCalls'), '–');
+  // Три AI-завдання на Free: фіча, якої не можна спробувати, — це рядок на
+  // сторінці, а не можливість. Тому нуля в стелях більше немає ніде, і риска
+  // лишається як стан, а не як тариф.
+  assert.equal(planLimitValue('free', 'aiCalls'), '3');
+  assert.equal(planLimitValue('казна-що', 'aiCalls'), '3');
 });
 
 test('реєстр називає фічу так само, як її підписано в продукті', () => {
@@ -213,7 +217,13 @@ test('рядки стель приходять готовими до друку'
   // рядком записаний маркер.
   assert.deepEqual(planLimitRows('pro').map(row => row.unlimited), [true, true, false]);
   assert.deepEqual(planLimitRows('free').map(row => row.unlimited), [false, false, false]);
-  assert.ok(planLimitRows('free').find(row => row.id === 'aiCalls').absent);
+  // Жодна стеля не стоїть на нулі: кожен тариф дає спробувати все, що продукт
+  // уміє, і різниця між тарифами — у числі, а не в наявності.
+  for (const plan of PLANS) {
+    for (const row of planLimitRows(plan.id)) {
+      assert.equal(row.absent, false, `${plan.id}: «${row.label}» немає зовсім`);
+    }
+  }
 });
 
 test('у документ організації безліміт пишеться як null, а не як Infinity', () => {
@@ -248,8 +258,8 @@ test('кожен enforced-прапорець вказує на код, який 
     // будь-яке інше місце, що читає тариф якось інакше, могло поставити
     // `enforced: true` й нічого не стерегти.
     const asks = new RegExp(
-      `(planAllows|planLimit|planLimitRefusalResponse|reserveAiCall)\\b[\\s\\S]{0,120}?'${entry.id}'`
-      + `|'${entry.id}'[\\s\\S]{0,120}?(planAllows|planLimit)\\b`
+      `(planAllows|allowsOnPlan|planLimit|planLimitRefusalResponse|reserveAiCall)\\b[\\s\\S]{0,120}?'${entry.id}'`
+      + `|'${entry.id}'[\\s\\S]{0,120}?(planAllows|allowsOnPlan|planLimit)\\b`
       // `PlanGate` is the third way of asking, and the only one that can put a
       // whole screen behind the answer. It names the capability as a literal
       // and calls `planAllows` itself, which is what the other two do inline.
@@ -282,11 +292,12 @@ test('стан стелі — одна функція, а не шість коп
   assert.equal(unlimited.reading, '');
 
   // Стеля в нуль — це не «вичерпано», це «цього тут немає»: інше речення і
-  // інша відповідь.
-  const none = planLimitState('free', 'aiCalls', 0);
-  assert.equal(none.absent, true);
-  assert.equal(none.reached, false);
-  assert.equal(none.blocked, true);
+  // інша відповідь. Жоден тариф зараз на нулі не стоїть, але стан лишається:
+  // саме він відрізняє «закінчилось» від «цього у вас не було».
+  const none = planLimitState('вигаданий-тариф', 'вигадана-стеля', 0);
+  assert.equal(planLimitState('free', 'aiCalls', 3).absent, false);
+  assert.equal(planLimitState('free', 'aiCalls', 3).reached, true);
+  assert.equal(none.absent, false);
 
   // Число, якого ніхто ще не порахував, — це не нуль. Інакше порожній кеш
   // означав би «все вільно» саме тоді, коли він нічого не знає.
@@ -298,17 +309,19 @@ test('стан стелі — одна функція, а не шість коп
 
 test('речення відмови збирається з реєстру, і в ньому є вихід', () => {
   const refusal = planLimitRefusal('free', 'projects', 3);
-  assert.match(refusal, /Ліміт активних проєктів вичерпано/);
-  // Вихід, що не коштує грошей, названий першим.
-  assert.match(refusal, /заархівуйте/);
+  assert.match(refusal, /Ліміт проєктів вичерпано/);
+  // Без поради «заархівуйте»: спосіб не платити, запропонований продуктом у
+  // першому ж реченні про власну стелю, — і повторений під прайслистом.
+  assert.doesNotMatch(refusal, /заархівуйте/);
+  assert.equal(planLimitById('projects').hint, '');
   // І названі обидва тарифи, що піднімають цю стелю, а не тільки найдорожчий.
   assert.match(refusal, /на Lite — 20/);
   // Серверне речення не має куди подіти іконку, тому безліміт у ньому — слово.
   assert.match(refusal, /на Pro — Безліміт/);
   assert.doesNotMatch(refusal, /unlimited/);
 
-  // Того, чого в тарифі немає, не «вичерпано».
-  assert.match(planLimitRefusal('free', 'aiCalls', 0), /AI Аудіо-завдання недоступні/);
+  // А те, що в тарифі є й закінчилось, — саме «вичерпано».
+  assert.match(planLimitRefusal('free', 'aiCalls', 3), /AI Аудіо-завдання на цей місяць вичерпано/);
   // А там, де все гаразд, речення немає взагалі.
   assert.equal(planLimitRefusal('free', 'projects', 2), '');
   assert.equal(planLimitRefusal('pro', 'projects', 9999), '');
@@ -710,9 +723,16 @@ test('пониження тарифу описане до того, як ста�
   const notice = planDowngradeNotice('pro', 'free', { projects: 12, members: 20, aiCalls: 30 });
   assert.match(notice.title, /Free/);
   assert.match(notice.message, /Нічого не видаляється/);
+  // Дві різні речі — і два різні списки: перемикач, який перестане працювати,
+  // і число, яке перестане рости. Одним плоским переліком це читалось як лог
+  // помилок.
+  assert.match(notice.message, /Перестане працювати:/);
+  assert.match(notice.message, /Уже більше, ніж дозволяє Free:/);
   assert.match(notice.message, /Власний брендинг/);
-  assert.match(notice.message, /Активні проєкти: 12 із 3/);
+  assert.match(notice.message, /Проєкти: 12 із 3/);
   assert.match(notice.message, /Учасники команди: 20 із 5/);
+  // І в кінці — що це оборотно, бо саме в це не вірять.
+  assert.match(notice.message, /Повернути тариф можна будь-коли/);
   // Угору по тарифах нічого не втрачається, тож і питати нема про що.
   assert.equal(planDowngradeNotice('free', 'pro', { projects: 1, members: 1 }), null);
   // І вниз теж, поки простір не переріс нову стелю й нічого платного не вмикав.
@@ -721,10 +741,15 @@ test('пониження тарифу описане до того, як ста�
 
 test('брендинг зачинений тарифом, але не вимикається заднім числом', async () => {
   const page = await read('src/app/(app)/settings/page.js');
-  assert.match(page, /const brandingAllowed = planAllows\(orgPlan, 'branding'\)/);
+  assert.match(page, /const brandingAllowed = allowsOnPlan\('branding'\)/);
   assert.match(page, /disabled=\{!orgLogo \|\| !brandingAllowed\}/);
   assert.match(page, /if \(!brandingAllowed\) return;/);
-  // Причина названа: контрол, згаслий без пояснення, не відрізняється від
-  // зламаного.
-  assert.match(page, /Доступно на тарифах Lite і Pro/);
+  // Причина названа короною біля самого перемикача — так само, як скрізь у
+  // продукті. Півпрозорий блок цього не каже: 50% непрозорості означає «щось
+  // вантажиться або зламалось», а не «це коштує грошей».
+  assert.match(page, /<PlanMark capabilityId="branding"/);
+  // І сам `allowsOnPlan` — це реєстр плюс одне: «документ уже прочитано».
+  assert.match(page, /const allowsOnPlan = capabilityId => !planKnown \|\| planAllows\(orgPlan, capabilityId\);/);
+  assert.doesNotMatch(page, /opacity-50 pointer-events-none/);
+  assert.doesNotMatch(page, /Доступно на тарифах Lite і Pro/);
 });
