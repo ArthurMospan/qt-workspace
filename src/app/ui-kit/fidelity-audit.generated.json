@@ -26,7 +26,7 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 46,
+    "localSurfaceExceptions": 45,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 119,
-      "used": 119,
+      "components": 120,
+      "used": 120,
       "unused": 0,
-      "covered": 114,
+      "covered": 115,
       "uncovered": 0,
       "routes": 12,
-      "previews": 150,
+      "previews": 151,
       "internal": 5,
       "unlisted": 0
     },
@@ -527,11 +527,6 @@
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },
     {
-      "location": "src/app/(app)/layout.js:92",
-      "tag": "div",
-      "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
-    },
-    {
       "location": "src/app/(app)/page.js:179",
       "tag": "div",
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
@@ -622,7 +617,7 @@
       "className": "mt-4 rounded-[12px] border border-dashed border-faint bg-white p-2"
     },
     {
-      "location": "src/components/migrations/DataMigrationSettings.jsx:90",
+      "location": "src/components/migrations/DataMigrationSettings.jsx:91",
       "tag": "div",
       "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
     },

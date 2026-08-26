@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 119,
-    "props": 882,
-    "documentedProps": 882,
+    "components": 120,
+    "props": 887,
+    "documentedProps": 887,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4520,6 +4520,47 @@
           "type": "(planId: string) => void",
           "values": [],
           "description": "Fires with the plan whose button was pressed."
+        }
+      ]
+    },
+    "PlanDowngradeDialog": {
+      "file": "src/components/ui/Feedback/PlanDowngradeDialog.jsx",
+      "summary": "The question asked before a workspace loses something.",
+      "props": [
+        {
+          "name": "busy",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "The switch is in flight."
+        },
+        {
+          "name": "isOpen",
+          "default": "",
+          "type": "boolean",
+          "values": [],
+          "description": "Whether it is on screen."
+        },
+        {
+          "name": "notice",
+          "default": "",
+          "type": "object",
+          "values": [],
+          "description": "From `planDowngradeNotice` — the whole dialog, in data."
+        },
+        {
+          "name": "onConfirm",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Goes ahead with the downgrade."
+        },
+        {
+          "name": "onStay",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Keeps the current plan. The × , the overlay and Escape do this too."
         }
       ]
     },

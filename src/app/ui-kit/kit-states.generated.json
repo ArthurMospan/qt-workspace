@@ -13,9 +13,9 @@
     "long-text"
   ],
   "totals": {
-    "components": 119,
-    "stateful": 106,
-    "hover": 70,
+    "components": 120,
+    "stateful": 107,
+    "hover": 71,
     "focus": 69,
     "disabled": 35,
     "loading": 7,
@@ -344,6 +344,9 @@
       "long-text": "children, label"
     },
     "PlanCards": {},
+    "PlanDowngradeDialog": {
+      "hover": "css"
+    },
     "PlanGate": {
       "long-text": "children"
     },
@@ -798,6 +801,9 @@
     ],
     "PlanCards": [
       "surfaces"
+    ],
+    "PlanDowngradeDialog": [
+      "feedback"
     ],
     "PlanGate": [
       "feedback"
