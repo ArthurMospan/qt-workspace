@@ -7,7 +7,22 @@ This file contains current owner guardrails and confirmed open work. Completed i
 - QuickTeam Workspace is an internal team product. Organization roles are `owner`, `admin`, and `member`; do not add a client/viewer role to the workspace.
 - Client collaboration belongs to the separate QuickTeam+ portal. The two products integrate through the documented OAuth and project-link flow; do not couple their primary Firebase sessions or data models.
 - `issues` is the canonical task collection. `tasks` is legacy/read-only and must not receive new features.
-- Subscription billing will be supplied by the wider product ecosystem. Do not expand placeholder Free/Lite/Pro logic without an explicit product decision.
+- Subscription billing will be supplied by the wider product ecosystem. The
+  owner has since made the product decision the old wording was waiting for:
+  two plans, `free` and `pro`, described once in `src/lib/utils/plans.mjs` and
+  rendered by «Налаштування» → «Тарифний план» rather than restated there.
+  Branding and the project ceiling are enforced; everything else the registry
+  lists carries `enforced: false` and the screen shows it under «Скоро», which
+  is the whole point of the flag. Do not add a capability without deciding which
+  of the two it is — a pricing page listing something nobody is stopped from
+  using is a bug with a price beside it, and `tests/plans.test.mjs` holds every
+  `enforced: true` to a named place in the code.
+- Money is not connected. Switching plans is a field on the organization
+  document, written the way branding is, so today the plan gates how the
+  workspace looks and not who may use it. When billing is real, `plan` moves
+  behind a server route and joins `apiKeys` among the fields firestore.rules
+  refuses from a client — until that happens, no plan check is a security
+  boundary and none of them should be described as one.
 - Organization deletion stays disabled until an owner-only, idempotent server cascade safely handles Firestore and external files and has integration coverage.
 - Multi-tenant isolation and server-authorized privileged writes take precedence over UI convenience.
 

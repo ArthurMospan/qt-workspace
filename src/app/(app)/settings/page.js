@@ -30,13 +30,21 @@ import {
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { useAccountSessions } from '@/lib/hooks/useAccountSessions';
 import { describeSignInMethods } from '@/lib/utils/accountSessions.mjs';
+import {
+  PLANS,
+  SHARED_FEATURES,
+  normalizePlan,
+  planAllows,
+  planFeatureGroups,
+  planLimit,
+} from '@/lib/utils/plans.mjs';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import {
   User, Bell, Shield, Zap, Users, GitBranch,
   Shapes, Check, Plus, Trash2, Edit2, X, Save,
-  Building, LogOut, Download, RefreshCw, Mail,
+  Building, LogOut, Download, RefreshCw, Mail, Clock,
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
@@ -2198,8 +2206,31 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpgradePlan = async (newPlan = 'pro') => {
-    showToast('Підключення платіжної системи в розробці 🛠');
+  // Switching plans, with nothing to pay.
+  //
+  // This used to open a toast saying the payment system was in development,
+  // which was true and also the whole of the feature. Until money is involved
+  // the honest version is that an owner picks a plan and the workspace changes
+  // — written the same way branding is written, straight to the organization
+  // document, because that is the only writer there is.
+  //
+  // When billing is real this becomes a server route and `plan` joins `apiKeys`
+  // among the fields firestore.rules refuses from a client. Until then it is not
+  // a paywall and nothing here pretends otherwise: what it gates is what the
+  // workspace looks like, not who may use it.
+  const handleUpgradePlan = async (newPlan) => {
+    const next = normalizePlan(newPlan);
+    if (next === orgPlan || upgrading) return;
+    setUpgrading(true);
+    try {
+      await updateDoc(doc(db, 'organizations', activeOrgId), { plan: next });
+      setOrgPlan(next);
+      showToast(next === 'pro' ? 'Тариф змінено на Професійний' : 'Тариф змінено на Безкоштовний');
+    } catch (error) {
+      showToast(userFacingErrorMessage(error, 'Не вдалося змінити тариф'), 'error');
+    } finally {
+      setUpgrading(false);
+    }
   };
 
   const unarchiveProject = async (id) => {
@@ -2964,7 +2995,16 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'workspace': {
-        const handleBrandingToggle = (val) => { setOrgCustomBranding(val); persistBranding({ orgCustomBranding: val }); };
+        // The plan decides whether this can be turned on. It deliberately does
+        // not turn off branding a workspace already has: downgrading should
+        // stop somebody changing how the product looks, not repaint it under
+        // them without warning.
+        const brandingAllowed = planAllows(orgPlan, 'branding');
+        const handleBrandingToggle = (val) => {
+          if (!brandingAllowed) return;
+          setOrgCustomBranding(val);
+          persistBranding({ orgCustomBranding: val });
+        };
         const handleThemeChange = (newTheme) => { setSidebarTheme(newTheme); persistBranding({ sidebarTheme: newTheme }); };
         const handleColorChange = (newColor) => {
           setSidebarColor(newColor);
@@ -3015,10 +3055,22 @@ export default function SettingsPage() {
                 organisation *is*, not where you look up its key. */}
           </Card>
 
-          {/* Zone 2: Branding */}
-          <Card preset="borderless" padding="lg" className={`transition-opacity ${!orgLogo ? 'opacity-50 pointer-events-none' : ''}`}>
+          {/* Zone 2: Branding — the one thing the paid plan actually buys.
+              Two locks, and they are different: without a logo there is nothing
+              to brand with, and without the plan there is nothing to brand on.
+              The second says which plan and how to get there, because a control
+              greyed out with no reason is indistinguishable from a broken one. */}
+          <Card
+            preset="borderless"
+            padding="lg"
+            className={`transition-opacity ${!orgLogo || !brandingAllowed ? 'opacity-50 pointer-events-none' : ''}`}
+          >
             <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Брендинг</p>
-            {!orgLogo && (
+            {!brandingAllowed ? (
+              <p className="text-[12px] text-muted mb-3">
+                Доступно на професійному тарифі — «Налаштування» → «Тарифний план».
+              </p>
+            ) : !orgLogo && (
               <p className="text-[12px] text-muted mb-3">Завантажте логотип організації, щоб розблокувати налаштування брендингу</p>
             )}
             <Row label="Брендинг у сайдбарі" desc="Замінити логотип QuickTeam на логотип вашої організації для всіх учасників">
@@ -3035,7 +3087,7 @@ export default function SettingsPage() {
                 <ToggleSwitch
                   checked={orgCustomBranding}
                   onChange={handleBrandingToggle}
-                  disabled={!orgLogo}
+                  disabled={!orgLogo || !brandingAllowed}
                 />
               </div>
             </Row>
@@ -3457,68 +3509,139 @@ export default function SettingsPage() {
 
       // ──────────────────────────────────────────────────────────────
       case 'billing': {
-        const isPro = orgPlan === 'pro';
-        const projectLimit = isPro ? Infinity : 3;
-        const projectsPercent = isPro ? 100 : Math.min(100, (projectsCount / projectLimit) * 100);
 
         return (
-          <Section title="Тарифний план" desc="Управління підпискою та лімітами організації" rightAction={saveButton}>
-            <Card preset="bordered" padding="none" className="overflow-hidden transition-all">
-              <div className={`bg-white px-6 py-6 border-b border-line`}>
-                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                  <div>
-                    <Pill appearance="outline" shape="badge" size="md" uppercase className="mb-3">
-                      {isPro ? 'PRO PLAN' : 'FREE PLAN'}
-                    </Pill>
-                    <h3 className="ui-type-detail-title text-ink mb-1">{isPro ? 'Професійний тариф' : 'Безкоштовний тариф'}</h3>
-                    <p className="text-[13px] text-muted">{isPro ? 'Безлімітні проєкти та всі функції розблоковано' : 'Використовується для тестування (Demo)'}</p>
+          <Section
+          title="Тарифний план"
+          desc="Що входить у кожен тариф і на якому ви зараз"
+        >
+          {/* Two cards, side by side, because a plan means nothing on its own —
+              what a person is deciding is «чим цей відрізняється від того», and
+              two columns answer that without anybody reading twice.
+
+              What is on them comes from `plans.mjs` rather than from here. The
+              card this replaced was built from two ternaries — `isPro ? '$15' :
+              '$0'` — and the rest of the product had never heard of a plan at
+              all, so the button under it opened a toast about a payment system
+              in development. */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {PLANS.map(plan => {
+              const isCurrent = plan.id === orgPlan;
+              const groups = planFeatureGroups(plan.id);
+              const limit = planLimit(plan.id, 'projects');
+              return (
+                <Card
+                  key={plan.id}
+                  preset="bordered"
+                  padding="none"
+                  className={`flex flex-col overflow-hidden ${isCurrent ? 'border-ink' : ''}`}
+                >
+                  <div className="flex flex-col gap-3 border-b border-line px-6 py-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="ui-type-detail-title text-ink">{plan.name}</h3>
+                        <p className="mt-1 text-[13px] leading-relaxed text-muted">{plan.tagline}</p>
+                      </div>
+                      {isCurrent && <Pill size="md" className="shrink-0">Ваш тариф</Pill>}
+                    </div>
+                    <p className="flex items-baseline gap-1.5">
+                      <span className="text-[32px] font-black leading-none text-ink">{plan.priceLabel}</span>
+                      <span className="text-[13px] font-medium text-faint">{plan.periodLabel}</span>
+                    </p>
                   </div>
-                  <div className="text-left sm:text-right">
-                    <p className="text-[32px] font-black text-ink leading-none mb-1">{isPro ? '$15' : '$0'}<span className="text-[14px] text-faint font-medium">/міс</span></p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="px-6 py-5">
-                <p className="text-[12px] font-bold text-muted uppercase tracking-wider mb-4">Ліміти плану</p>
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <div className="flex items-center justify-between text-[13px] font-medium mb-2">
-                      <span className="text-ink">Учасники команди</span>
-                      <span className="text-ink">{members.length} / Необмежено</span>
+
+                  <div className="flex flex-1 flex-col gap-5 px-6 py-5">
+                    <div>
+                      <p className="ui-type-eyebrow text-muted">Проєкти</p>
+                      <p className="mt-1 text-[13px] text-ink">
+                        {limit === Infinity ? 'Скільки завгодно' : `До ${limit}`}
+                        {isCurrent && <span className="text-muted">{` · зараз ${projectsCount}`}</span>}
+                      </p>
                     </div>
-                    <div className="h-[6px] bg-canvas rounded-full overflow-hidden">
-                      <div className="h-full bg-success-solid rounded-full" style={{ width: '15%' }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-[13px] font-medium mb-2">
-                      <span className="text-ink">Активні проєкти</span>
-                      <span className="text-ink">{projectsCount} / {isPro ? 'Необмежено' : projectLimit}</span>
-                    </div>
-                    <div className="h-[6px] bg-canvas rounded-full overflow-hidden">
-                      <div className={`h-full ${isPro ? 'bg-success-solid' : (projectsCount >= projectLimit ? 'bg-danger-solid' : 'bg-warning-solid')} rounded-full transition-all`} style={{ width: `${projectsPercent}%` }} />
-                    </div>
-                    {!isPro && projectsCount >= projectLimit && (
-                      <p className="text-[11px] text-danger mt-1 font-medium">Ліміт досягнуто. Перейдіть на Pro для створення нових проєктів.</p>
+
+                    {groups.included.length > 0 && (
+                      <div>
+                        <p className="ui-type-eyebrow text-muted">Що додає</p>
+                        <ul className="mt-2 flex flex-col gap-2">
+                          {groups.included.map(capability => (
+                            <li key={capability.id} className="flex gap-2">
+                              <Check size={14} className="mt-[3px] shrink-0 text-success" />
+                              <span className="min-w-0">
+                                <span className="text-[13px] font-medium text-ink">{capability.label}</span>
+                                <span className="block text-[12px] leading-relaxed text-muted">{capability.detail}</span>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Kept apart from the list above, and labelled. A pricing
+                        page that lists a feature nobody is stopped from using is
+                        not marketing — it is a bug with a price beside it.
+                        `enforced` in plans.mjs decides which group a line lands
+                        in, so a feature moves up here on the day something
+                        actually refuses it. */}
+                    {groups.planned.length > 0 && (
+                      <div>
+                        <p className="ui-type-eyebrow text-muted">Скоро в цьому тарифі</p>
+                        <ul className="mt-2 flex flex-col gap-2">
+                          {groups.planned.map(capability => (
+                            <li key={capability.id} className="flex gap-2">
+                              <Clock size={14} className="mt-[3px] shrink-0 text-faint" />
+                              <span className="min-w-0">
+                                <span className="text-[13px] font-medium text-muted">{capability.label}</span>
+                                <span className="block text-[12px] leading-relaxed text-faint">{capability.detail}</span>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </div>
-                </div>
-              </div>
 
-              <div className="px-6 py-4 bg-canvas border-t border-line flex justify-end">
-                {isPro ? (
-                  <Button onClick={() => handleUpgradePlan('free')} disabled={upgrading} loading={upgrading} style="secondary" size="lg">
-                    {upgrading ? 'Завантаження...' : 'Скасувати підписку'}
-                  </Button>
-                ) : (
-                  <Button onClick={() => handleUpgradePlan('pro')} disabled={upgrading} loading={upgrading} style="primary" size="lg">
-                    {upgrading ? 'Оновлення...' : 'Оновити до PRO'}
-                  </Button>
-                )}
-              </div>
-            </Card>
-          </Section>
+                  <div className="border-t border-line bg-canvas px-6 py-4">
+                    <Button
+                      onClick={() => handleUpgradePlan(plan.id)}
+                      style={isCurrent ? 'secondary' : 'primary'}
+                      size="lg"
+                      disabled={isCurrent || upgrading}
+                      loading={upgrading && !isCurrent}
+                      className="w-full"
+                    >
+                      {isCurrent ? 'Це ваш тариф' : `Перейти на ${plan.name.toLowerCase()}`}
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Said once, under both, rather than repeated on each card: what the
+              two have in common is what makes the free one a plan and not a
+              trial. */}
+          <Card preset="borderless" padding="lg">
+            <CardHeading
+              icon={Check}
+              title="В обох тарифах"
+              caption="Нічого з цього не вимикається"
+            />
+            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+              {SHARED_FEATURES.map(feature => (
+                <li key={feature} className="flex gap-2 text-[13px] text-ink">
+                  <Check size={14} className="mt-[3px] shrink-0 text-faint" />
+                  <span className="min-w-0">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          {/* Nobody is charged yet, and a plan screen that did not say so would
+              be the one dishonest thing left on it. */}
+          <p className="text-[12px] leading-relaxed text-muted">
+            Оплата ще не підключена — тариф можна перемкнути будь-коли й без карти.
+          </p>
+        </Section>
         );
       }
 
