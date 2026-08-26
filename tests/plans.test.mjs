@@ -471,6 +471,25 @@ test('смуга і діалог висять у каркасі, а не на к
   assert.doesNotMatch(dialog, /\d+ грн|\$\d/);
 });
 
+test('усе, що створює проєкт, питає одну стелю', async () => {
+  // Їх троє, і третій ховався: імпорт із YouTrack теж створює проєкт, і теж мав
+  // власну копію — `plan !== 'pro'` з захардкодженою трійкою і «перейдіть на
+  // Pro» як єдиним виходом. Стеля, записана тричі, розходиться в трьох місцях.
+  const creators = [
+    'src/app/api/projects/route.js',
+    'src/app/api/projects/[projectId]/route.js',
+    'src/lib/server/youtrackImporter.js',
+  ];
+  for (const path of creators) {
+    const source = withoutComments(await read(path));
+    assert.match(source, /planLimit\([^)]*, 'projects'\)/, `${path}: не питає реєстр про стелю`);
+    assert.match(source, /planLimitRefusal\(/, `${path}: пише відмову сам`);
+    assert.doesNotMatch(source, /!== 'pro'/, `${path}: досі порівнює з Pro`);
+    assert.doesNotMatch(source, />= 3\b/, `${path}: досі має захардкоджену трійку`);
+    assert.doesNotMatch(source, /перейдіть на Pro|Перейдіть на Pro/, `${path}: називає лише найдорожчий тариф`);
+  }
+});
+
 test('усі три стелі мають роут, який справді рахує', async () => {
   const invitations = withoutComments(await read('src/app/api/invitations/route.js'));
   const ai = withoutComments(await read('src/app/api/ai/call-to-tasks/route.js'));
