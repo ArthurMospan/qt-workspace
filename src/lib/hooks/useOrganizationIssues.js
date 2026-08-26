@@ -34,7 +34,6 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
-import { countRead } from '@/lib/utils/readMeter.mjs';
 import {
   chunkProjectIds,
   flattenDocumentBuckets,
@@ -69,7 +68,6 @@ function createOrganizationIssuesStore(organizationId, projectIds) {
       ),
       { includeMetadataChanges: true },
       documentSnapshot => {
-        countRead('useOrganizationIssues', documentSnapshot);
         buckets.set(chunkIndex, documentSnapshot.docs.map(document => ({
           ...document.data({ serverTimestamps: 'estimate' }),
           id: document.id,

@@ -28,7 +28,6 @@ import Button from '@/components/ui/Button';
 import { CloudOff, DatabaseZap, LockKeyhole } from 'lucide-react';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 import { isQuotaExceededError } from '@/lib/utils/errors';
-import { exposeReadMeter } from '@/lib/utils/readMeter.mjs';
 import { isQuotaRefused, QUOTA_FAILURE_COPY } from '@/lib/utils/quotaState.mjs';
 
 // A spinner is a promise that something is coming. When nothing is, it is the
@@ -164,12 +163,6 @@ export default function WorkspaceLayout({ children }) {
   const isFocusedRoute = Boolean(pathname) && (
     /^\/[^/]+\/issue\/[^/]+/.test(pathname) || pathname.startsWith('/calendar/event/')
   );
-
-  // `qtReads()` in the browser console: how many documents each wide query has
-  // actually been billed for since the page loaded. docs/ROADMAP.md names its
-  // absence as the missing half of the quota story — the product says when the
-  // day's reads are spent, and nothing said which screen spent them.
-  useEffect(() => { exposeReadMeter(); }, []);
 
   // Published on <body> so the CSS that reserves room for the bar can stop
   // reserving it, the same way the on-screen keyboard already does.

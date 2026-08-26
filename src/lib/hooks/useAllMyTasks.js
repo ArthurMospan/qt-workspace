@@ -31,7 +31,6 @@ import {
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-import { countRead } from '@/lib/utils/readMeter.mjs';
 import { myTaskChildScopes, mergeMyTaskChildren } from '@/lib/utils/myTaskChildren.mjs';
 
 function issueLabel(issue) {
@@ -120,7 +119,6 @@ export function useAllMyTasks(userId) {
       { includeMetadataChanges: true },
       snap => {
         if (!active || (snap.empty && snap.metadata.fromCache)) return;
-        countRead('useAllMyTasks:children', snap);
         buckets.set(index, snap.docs.map(document => ({ ...document.data(), id: document.id })));
         ready.add(index);
         errors.delete(index);
@@ -211,7 +209,6 @@ export function useAllMyTasks(userId) {
           where('assigneeIds', 'array-contains', userId),
         ),
         snap => {
-          countRead('useAllMyTasks', snap);
           publishStreamError(issuesKey);
           issueBuckets.set(issuesKey, snap.docs.map(d => ({ ...d.data(), id: d.id })));
           publishIssues();

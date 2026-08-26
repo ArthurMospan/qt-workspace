@@ -7,7 +7,6 @@ import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { reportLoadError } from '@/lib/utils/errors';
-import { countRead } from '@/lib/utils/readMeter.mjs';
 export function useSprints() {
   const {
     activeOrgId, currentUser
@@ -41,7 +40,6 @@ export function useSprints() {
     const unsub = onSnapshot(q, {
       serverTimestamps: 'estimate'
     }, snap => {
-      countRead('useSprints', snap);
       const docs = snap.docs.map(d => ({
         ...d.data(),
         id: d.id,
