@@ -1,0 +1,111 @@
+name: Checks
+
+# What AGENTS.md already says must hold, actually asked on every change.
+#
+# The repository is written around commands that fail: `npm run test:unit`
+# fails while a component in src/components/ui is unreachable, while a variant
+# has no preview, while a colour is not a token, while a documented `npm run …`
+# does not exist. Every one of those was true — and none of them was ever asked
+# unless somebody remembered to ask. 1065 assertions and four generated reports
+# were an honour system, on a repository whose own memory says verified work
+# goes straight to main.
+#
+# Nothing here touches the product: no deploy, no database, no writes. It runs
+# the same four commands a person would run and reports what they said. Actions
+# minutes are free and unmetered on a public repository, so this costs nothing
+# but the wait.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A second push replaces the run in flight rather than queueing behind it.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Next.js does not run lint as part of the build, which is why this is
+      # its own step rather than something the build would have caught.
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      # No secrets: every NEXT_PUBLIC_* value is read at runtime by the browser
+      # and the build completes without them. If that ever stops being true,
+      # this step is where it will be found — which is the point.
+      - name: Build
+        run: npm run build
+
+  reports:
+    name: Generated reports match the code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # In this order on purpose: the later two read the earlier output.
+      - name: Regenerate
+        run: |
+          npm run kit:scan
+          npm run kit:drift
+          npm run kit:audit
+          npm run kit:colors
+          npm run kit:a11y
+
+      # A report is committed alongside the change that moved it. A difference
+      # here means somebody changed the UI and did not re-run the scans, so the
+      # committed reports describe a product that no longer exists.
+      - name: Committed reports are current
+        run: |
+          if ! git diff --exit-code --stat; then
+            echo "::error::Generated reports are out of date. Run npm run kit:scan && npm run kit:drift && npm run kit:audit && npm run kit:colors && npm run kit:a11y, then commit the result."
+            exit 1
+          fi
+
+  rules:
+    name: Firestore rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # The Firestore emulator is a Java program. The runner ships a JDK, but
+      # naming it here means a change to the image surfaces as "no Java" rather
+      # than as a rules suite that mysteriously stopped running.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+
+      - name: Rules against the emulator
+        run: npm run test:rules:emulator

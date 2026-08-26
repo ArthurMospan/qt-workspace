@@ -35,6 +35,7 @@ above — a new file is a place for the next reader not to look.
 - This is not the older Next.js API you may remember. Before changing routes, rendering, caching, metadata, proxy behavior, or other framework APIs, read the relevant guide in `node_modules/next/dist/docs/` and heed deprecations.
 - Authenticated routes live under `src/app/(app)`. API routes live under `src/app/api`. Request interception lives in `src/proxy.js`; do not reintroduce `middleware.js`.
 - Use `npm run lint`, `npm run test:unit`, and `npm run build` as separate checks. Next.js does not run lint as part of the build.
+- `.github/workflows/checks.yml` asks all of them on every push and pull request, together with the rules suite and a check that the generated reports match the code. Every "`npm run test:unit` fails while…" in this file is a claim that workflow now makes true; before it existed they held only while somebody remembered to run the command.
 - Firestore rule changes require `npm run test:rules:emulator`.
 - After changing shared UI usage, run `npm run kit:scan` and commit the generated report when it changes.
 
