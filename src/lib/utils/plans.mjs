@@ -236,6 +236,24 @@ export const PLANS = [
   },
 ];
 
+/**
+ * One free workspace per account, said once.
+ *
+ * The screen and the route have to agree about this or the product refuses in
+ * two voices: onboarding greys out the Free card, and `/api/organizations`
+ * is the half that actually holds the line — a rule in `firestore.rules`
+ * cannot count how many organizations somebody already owns, because rules
+ * cannot count anything.
+ *
+ * Nothing punitive: the second workspace is a second workspace, and a free plan
+ * is what the first one is for.
+ */
+export const FREE_WORKSPACE = {
+  lockedLabel: 'Уже використано',
+  hint: 'Безкоштовний робочий простір на акаунті вже є — цей буде на платному тарифі.',
+  refusal: 'Безкоштовний робочий простір на акаунті вже є. Другий створюється на платному тарифі — наявний нікуди не дінеться.',
+};
+
 export function normalizePlan(value) {
   return PLANS.some(plan => plan.id === value) ? value : DEFAULT_PLAN;
 }

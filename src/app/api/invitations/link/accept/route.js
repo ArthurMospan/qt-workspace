@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server';
 import { authenticateRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { hashInviteToken } from '@/lib/server/inviteLinks';
+import {
+  countActiveMembers,
+  organizationPlan,
+  planLimitRefusalResponse,
+} from '@/lib/server/planLimits';
 import { restoreProjectAccess } from '@/lib/server/orgMembership';
 import { MEMBERSHIP_ARCHIVE } from '@/lib/utils/orgMembership.mjs';
 
@@ -35,6 +40,34 @@ export async function POST(request) {
     if (snap.empty) return INVALID();
 
     const inviteRef = snap.docs[0].ref;
+
+    // A seat is a seat however somebody arrives in it. The route that *sends*
+    // an invitation has counted the ceiling since the ceiling existed, and this
+    // one — the link somebody clicks — had never asked: a workspace that went
+    // back to Free with a live link kept letting people in past its plan for as
+    // long as the link had uses left. Somebody already on the team is not a new
+    // seat, so re-using a link is not refused for a workspace that is full of
+    // people including them.
+    const inviteOrganizationId = typeof snap.docs[0].data().organizationId === 'string'
+      ? snap.docs[0].data().organizationId
+      : '';
+    if (inviteOrganizationId) {
+      const membershipSnap = await db.collection('orgMemberships')
+        .doc(`${inviteOrganizationId}_${uid}`)
+        .get();
+      if (!membershipSnap.exists) {
+        const [organizationSnap, seatsTaken] = await Promise.all([
+          db.collection('organizations').doc(inviteOrganizationId).get(),
+          countActiveMembers(db, inviteOrganizationId),
+        ]);
+        const refusal = planLimitRefusalResponse(
+          organizationPlan(organizationSnap),
+          'members',
+          seatsTaken,
+        );
+        if (refusal) return refusal;
+      }
+    }
 
     // Transaction: two users clicking the last remaining use at the same time
     // must not both pass the maxUses check.

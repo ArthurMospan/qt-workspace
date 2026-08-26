@@ -12,12 +12,24 @@ import { useModalFocus } from '@/lib/hooks/useModalFocus';
 import { organizationRoleLabel } from '@/lib/utils/orgMembership.mjs';
 import { withNotificationOrganization } from '@/lib/utils/notificationNavigation.mjs';
 import { useOrganizationUnreadCounts } from '@/lib/hooks/useOrganizationUnreadCounts';
+import { planAllows } from '@/lib/utils/plans.mjs';
+
+// Власний логотип — платна можливість, і питати про це має кожен, хто його
+// малює, а не лише перемикач у налаштуваннях. Поле в базі лишається на місці:
+// повернувся тариф — повернувся й логотип.
+function orgIsBranded(org) {
+  return Boolean(org?.customBranding) && planAllows(org?.plan, 'branding');
+}
+
+function orgLogo(org) {
+  return orgIsBranded(org) ? (org.logo || org.logoUrl || '') : '';
+}
 
 // Логотипи бувають темні/прозорі (png, svg) і зливаються з темним фоном
 // пікера. Тому під лого завжди є підложка: біла за замовчуванням, або колір
 // брендингу, якщо власник обрав свій колір сайдбару.
 function orgLogoBackdrop(org) {
-  if (org?.customBranding && org?.sidebarTheme === 'custom' && org?.sidebarColor) {
+  if (orgIsBranded(org) && org?.sidebarTheme === 'custom' && org?.sidebarColor) {
     return org.sidebarColor;
   }
   return '#ffffff';
@@ -25,7 +37,8 @@ function orgLogoBackdrop(org) {
 
 function OrgBigCard({ org, role, unreadCount, onClick }) {
   const firstLetter = (org.name || 'О')[0].toUpperCase();
-  const hasLogo = Boolean(org.logo || org.logoUrl);
+  const logoSrc = orgLogo(org);
+  const hasLogo = Boolean(logoSrc);
 
   return (
     <button
@@ -40,7 +53,7 @@ function OrgBigCard({ org, role, unreadCount, onClick }) {
         >
           {hasLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={org.logo || org.logoUrl} alt={org.name} className="w-full h-full object-cover" />
+            <img src={logoSrc} alt={org.name} className="w-full h-full object-cover" />
           ) : (
             <span className="text-[40px] font-medium text-white">{firstLetter}</span>
           )}
@@ -157,14 +170,14 @@ export default function OrgSwitcherScreen({ onClose }) {
               height: 110,
               transform: `translate(-50%, -50%) scale(${expandingOrg.active ? 1.2 : 1})`,
               boxShadow: expandingOrg.active ? '0 0 0 150vw #ffffff' : '0 0 0 3px #ffffff',
-              backgroundColor: (expandingOrg.org.logo || expandingOrg.org.logoUrl)
+              backgroundColor: orgLogo(expandingOrg.org)
                 ? orgLogoBackdrop(expandingOrg.org)
                 : '#2a2a2a',
             }}
           >
-            {(expandingOrg.org.logo || expandingOrg.org.logoUrl) ? (
+            {orgLogo(expandingOrg.org) ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={expandingOrg.org.logo || expandingOrg.org.logoUrl} alt="" className="w-full h-full object-cover" />
+              <img src={orgLogo(expandingOrg.org)} alt="" className="w-full h-full object-cover" />
             ) : (
               <span className="text-[40px] font-medium text-white">{(expandingOrg.org.name || 'О')[0].toUpperCase()}</span>
             )}

@@ -106,7 +106,7 @@ On Windows with Firebase CLI 15 and Node 24, the rules assertions can finish suc
 - Firebase ID tokens authenticate API requests.
 - `/api/auth/session` exchanges an ID token for an HTTP-only Firebase session cookie used by Next.js Proxy.
 - Firestore rules remain authoritative for browser Firestore access.
-- Memberships are created only by the onboarding bootstrap or authenticated invitation APIs; client self-join is forbidden.
+- Organizations and memberships are created only by authenticated server routes (`/api/organizations` for the first pair, the invitation APIs for the rest); every `create` on both collections is refused from a browser.
 - Roles are `owner`, `admin` and `member`. Owner and admin manage the organization; an admin may also change roles between member and admin. The owner seat moves only through the ownership-transfer route, and the owner cannot be deactivated or demoted while holding it.
 - A member's rights are scoped by `project.team`: inside the projects they belong to they may create, edit, archive and restore tasks; outside them they see nothing. Owners and admins reach every project of the organization.
 - Owners and admins may delete another person's comment or group-channel message, never edit one. Direct rooms are neither readable nor moderatable by them.

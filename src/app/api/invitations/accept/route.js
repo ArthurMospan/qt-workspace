@@ -4,6 +4,8 @@ import { authenticateRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { restoreProjectAccess } from '@/lib/server/orgMembership';
 import { MEMBERSHIP_ARCHIVE } from '@/lib/utils/orgMembership.mjs';
+import { countActiveMembers, organizationPlan } from '@/lib/server/planLimits';
+import { planLimit } from '@/lib/utils/plans.mjs';
 
 export async function POST(request) {
   try {
@@ -23,10 +25,14 @@ export async function POST(request) {
       .where('status', '==', 'pending')
       .get();
 
-    if (invitationsSnap.empty) return NextResponse.json({ accepted: 0 });
+    if (invitationsSnap.empty) return NextResponse.json({ accepted: 0, refusedSeats: 0 });
 
     const batch = db.batch();
     let accepted = 0;
+    // Invitations this account holds that its workspace no longer has room
+    // for. They stay pending rather than being consumed: the moment a seat is
+    // freed or the plan goes back up, the same invitation still works.
+    let refusedSeats = 0;
     const acceptedOrganizationIds = new Set();
     // Projects to hand back to someone who used to be here; restored after the
     // batch, because each id has to be read before it can be written to.
@@ -39,6 +45,18 @@ export async function POST(request) {
 
       const organizationSnap = await db.collection('organizations').doc(organizationId).get();
       if (!organizationSnap.exists) continue;
+
+      // The ceiling is asked here as well as where the invitation was sent.
+      // Between the two, a workspace can change plan — and an invitation
+      // written on Lite used to seat its holder on Free without a word.
+      const membershipExists = (
+        await db.collection('orgMemberships').doc(`${organizationId}_${uid}`).get()
+      ).exists;
+      if (!membershipExists
+        && await countActiveMembers(db, organizationId) >= planLimit(organizationPlan(organizationSnap), 'members')) {
+        refusedSeats += 1;
+        continue;
+      }
 
       // Projects the inviter scoped this invitation to. They are re-checked
       // here rather than trusted: a project can be deleted or moved between the
@@ -106,7 +124,7 @@ export async function POST(request) {
     for (const [organizationId, projectIds] of projectsToRestore) {
       await restoreProjectAccess({ organizationId, userId: uid, projectIds });
     }
-    return NextResponse.json({ accepted });
+    return NextResponse.json({ accepted, refusedSeats });
   } catch (error) {
     return routeErrorResponse(error, { context: 'Invitation Accept', fallbackMessage: 'Internal Server Error' });
   }

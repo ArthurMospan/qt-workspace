@@ -3,8 +3,12 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import {
   DEFAULT_PLAN,
+  capabilityAvailability,
+  capabilityById,
   normalizePlan,
+  planAllows,
   planLimit,
+  planName,
   planLimitRefusal,
   planUsagePeriod,
 } from '@/lib/utils/plans.mjs';
@@ -85,6 +89,48 @@ export function planLimitRefusalResponse(plan, key, used) {
     error: planLimitRefusal(plan, key, used),
     planLimit: { id: key, plan: normalizePlan(plan), ceiling: Number.isFinite(ceiling) ? ceiling : null, used },
   }, { status: 403 });
+}
+
+/**
+ * The 403 a route sends when the plan does not include the capability at all,
+ * or `null` to carry on.
+ *
+ * A capability is not a ceiling: nothing filled up, the plan simply does not
+ * have it. That matters most *after* a downgrade, which is where these were
+ * missing — a screen the plan no longer opens was hidden, and the route behind
+ * it kept answering. An API key issued on Lite went on letting a caller in on
+ * Free; a Telegram bot went on posting; an import went on running. Nothing is
+ * deleted for it: the key, the bot and the logo all stay where they are and
+ * start working again the moment the plan does.
+ *
+ * The sentence comes from the registry, like every other refusal here, so the
+ * price list and the door cannot describe the same feature differently.
+ */
+export function planCapabilityRefusalResponse(plan, capabilityId) {
+  if (planAllows(plan, capabilityId)) return null;
+  const capability = capabilityById(capabilityId);
+  const availability = capabilityAvailability(capabilityId);
+  return NextResponse.json({
+    error: [
+      `${capability?.label || 'Ця можливість'} недоступна на тарифі ${planName(plan)}.`,
+      availability && `Доступно ${availability}.`,
+      'Дані збережені — усе вмикається назад разом із тарифом.',
+    ].filter(Boolean).join(' '),
+    planCapability: { id: capabilityId, plan: normalizePlan(plan) },
+  }, { status: 403 });
+}
+
+/**
+ * The same refusal for a route that has an organization id and no plan in hand.
+ *
+ * One extra read, on actions nobody performs twice a minute — minting an API
+ * key, connecting a bot, starting an import, issuing an invoice. A route that
+ * already holds the organization snapshot asks `planCapabilityRefusalResponse`
+ * directly and reads nothing.
+ */
+export async function refuseWithoutCapability(db, organizationId, capabilityId) {
+  const snapshot = await db.collection('organizations').doc(organizationId).get();
+  return planCapabilityRefusalResponse(organizationPlan(snapshot), capabilityId);
 }
 
 /**

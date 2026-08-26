@@ -142,8 +142,12 @@ service cloud.firestore {
     // ── organizations/{orgId} ──────────────────────────────────────────
     match /organizations/{orgId} {
       allow read: if signedIn() && (isOrgMember(orgId) || resource.data.ownerId == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid &&
-        !request.resource.data.keys().hasAny(['apiKeys']);
+      // Created by /api/organizations, and it has to be: «one free workspace per
+      // account» is a count of the documents somebody already owns, and a rule
+      // cannot count anything. The check this replaces — «the new document names
+      // you as its owner» — is true of every second, third and tenth free
+      // workspace as well, so it was never the rule the product meant.
+      allow create: if false;
       allow update: if isOrgAdminOrOwner(orgId) &&
         request.resource.data.ownerId == resource.data.ownerId &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['apiKeys']);
@@ -161,21 +165,18 @@ service cloud.firestore {
       allow read: if signedIn() &&
         (resource.data.userId == request.auth.uid || isOrgAdminOrOwner(resource.data.orgId));
 
-      allow create: if signedIn() &&
-        request.resource.data.id == membershipId &&
-        !request.resource.data.keys().hasAny(['hourlyRate']) &&
-        membershipId == request.resource.data.orgId + '_' + request.resource.data.userId && (
-        // Bootstrap: first owner of a freshly created org (org doc already
-        // carries ownerId == you, written by the same onboarding flow).
-        (request.resource.data.userId == request.auth.uid &&
-         request.resource.data.role == 'owner' &&
-         get(/databases/$(database)/documents/organizations/$(request.resource.data.orgId)).data.ownerId == request.auth.uid)
-      );
-
-      // Roles, positions, rates and removals are privileged multi-document
-      // mutations. The Admin SDK routes validate them and perform their
-      // cascades; no browser write may bypass those routes.
-      allow update, delete: if false;
+      // Nothing writes a seat from a browser any more. The one exception was
+      // the first owner of a freshly created organization, and that seat is now
+      // written by /api/organizations in the same batch as the organization
+      // itself — the only place that can hold «one free workspace per account».
+      // What the bootstrap allowed, once the organization document could no
+      // longer be forged, was narrow; what it cost to keep was a second path
+      // into the collection that decides every permission in the product.
+      //
+      // Roles, positions, rates and removals were already privileged
+      // multi-document mutations. The Admin SDK routes validate them and
+      // perform their cascades; no browser write may bypass those routes.
+      allow create, update, delete: if false;
     }
 
     // ── orgMembershipArchive/{orgId}_{uid} ─────────────────────────────

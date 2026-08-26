@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readJsonBody } from '@/lib/server/apiErrors';
-import { authorizeOrgRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
+import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { refuseWithoutCapability } from '@/lib/server/planLimits';
 import { youTrackRouteErrorResponse } from '@/lib/server/youtrackRouteErrors';
 import {
   cancelYouTrackImport,
@@ -48,6 +49,11 @@ export async function POST(request) {
     if (!(await enforceRateLimit(`youtrack-import-${body.action || 'unknown'}`, authorization.user.uid, rateLimit, 60))) {
       return NextResponse.json({ error: 'Імпорт виконується надто швидко, повторіть за хвилину' }, { status: 429 });
     }
+    // The importer already asks the registry about the project ceiling; it had
+    // never been asked whether the plan has importing at all. A job prepared on
+    // Lite and continued after a downgrade went on writing.
+    const refusal = await refuseWithoutCapability(getAdminDb(), organizationId, 'data-import');
+    if (refusal) return refusal;
 
     if (body.action === 'prepare') {
       const job = await prepareYouTrackImport({

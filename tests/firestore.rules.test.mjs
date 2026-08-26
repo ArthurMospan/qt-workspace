@@ -119,6 +119,21 @@ async function seedDirectRoom() {
   });
 }
 
+test('a browser cannot create an organization or seat itself in one', async () => {
+  // «One free workspace per account» is a count of the documents somebody
+  // already owns, and rules cannot count. The rule that stood here — «the new
+  // document names you as its owner» — is true of every second, third and tenth
+  // free workspace too, so /api/organizations writes both documents now and
+  // both creates are closed.
+  const db = environment.authenticatedContext('owner-b').firestore();
+  await assertFails(setDoc(doc(db, 'organizations', 'org-b'), {
+    id: 'org-b', ownerId: 'owner-b', name: 'Org B', plan: 'free',
+  }));
+  await assertFails(setDoc(doc(db, 'orgMemberships', 'org-a_owner-b'), {
+    id: 'org-a_owner-b', orgId: 'org-a', userId: 'owner-b', role: 'owner',
+  }));
+});
+
 test('an authenticated outsider cannot self-join an organization', async () => {
   const db = environment.authenticatedContext('outsider').firestore();
   await assertFails(setDoc(doc(db, 'orgMemberships', 'org-a_outsider'), {
@@ -226,20 +241,6 @@ test('issue deletion cannot bypass the hierarchy-aware server route', async () =
   const adminDb = environment.authenticatedContext('admin-a').firestore();
   await assertFails(deleteDoc(doc(memberDb, 'issues', 'issue-a')));
   await assertFails(deleteDoc(doc(adminDb, 'issues', 'issue-a')));
-});
-
-test('the membership bootstrap cannot put a rate in the public membership document', async () => {
-  const db = environment.authenticatedContext('founder-with-rate').firestore();
-  await assertSucceeds(setDoc(doc(db, 'organizations', 'org-rate'), {
-    ownerId: 'founder-with-rate', name: 'Rate Org',
-  }));
-  await assertFails(setDoc(doc(db, 'orgMemberships', 'org-rate_founder-with-rate'), {
-    id: 'org-rate_founder-with-rate',
-    orgId: 'org-rate',
-    userId: 'founder-with-rate',
-    role: 'owner',
-    hourlyRate: 100,
-  }));
 });
 
 test('the issue trash is server-only, including for organization admins', async () => {
@@ -992,13 +993,21 @@ test('a member can send a DM using only the metadata the rules allow', async () 
   ));
 });
 
-test('organization bootstrap still allows the first owner membership', async () => {
+test('organization bootstrap is a server route, not a rule', async () => {
+  // It used to be both documents from the browser, guarded by «the organization
+  // names you as its owner». That guard is true of the tenth free workspace an
+  // account creates as well, and «one free workspace per account» is a count no
+  // rule can make — so /api/organizations writes the pair, and the rate the old
+  // bootstrap had to be told not to accept has no client path to arrive by.
   const db = environment.authenticatedContext('founder').firestore();
-  await assertSucceeds(setDoc(doc(db, 'organizations', 'org-new'), {
+  await assertFails(setDoc(doc(db, 'organizations', 'org-new'), {
     ownerId: 'founder', name: 'New Org',
   }));
-  await assertSucceeds(setDoc(doc(db, 'orgMemberships', 'org-new_founder'), {
+  await assertFails(setDoc(doc(db, 'orgMemberships', 'org-new_founder'), {
     id: 'org-new_founder', orgId: 'org-new', userId: 'founder', role: 'owner',
+  }));
+  await assertFails(setDoc(doc(db, 'orgMemberships', 'org-new_founder'), {
+    id: 'org-new_founder', orgId: 'org-new', userId: 'founder', role: 'owner', hourlyRate: 100,
   }));
 });
 

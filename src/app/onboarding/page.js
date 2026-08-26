@@ -10,8 +10,9 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { PlanCards } from '@/components/ui';
-import { DEFAULT_PLAN, normalizePlan, storedPlanLimit } from '@/lib/utils/plans.mjs';
+import { DEFAULT_PLAN, FREE_WORKSPACE, normalizePlan, storedPlanLimit } from '@/lib/utils/plans.mjs';
 import { normalizeTimeZone } from '@/lib/utils/timeZone.mjs';
+import { createOrganization } from '@/lib/services/organizations';
 
 function OnboardingPageContent() {
   const router = useRouter();
@@ -27,6 +28,10 @@ function OnboardingPageContent() {
   // state any more: the card's own button is the choice and the action at
   // once, so nothing is held between them.
   const [creatingPlan, setCreatingPlan] = useState('');
+  // What the server said when it refused. The screen greys the Free card out on
+  // what it can see; the account's other workspaces are what the route counts,
+  // and the two can disagree — another tab, another device, a stale list.
+  const [createError, setCreateError] = useState('');
 
   // Auto-fill org name
   useEffect(() => {
@@ -74,11 +79,10 @@ function OnboardingPageContent() {
   // One free workspace per account. The second one somebody creates is a second
   // workspace, and a free plan is what the first is for.
   //
-  // This is the screen saying so, not the product enforcing it: the organization
-  // document is still written straight from the browser, so the authoritative
-  // version of this rule needs organization creation to become a server route.
-  // Until it is, this is a locked button and nothing more, and the registry does
-  // not claim otherwise.
+  // This is the screen saying so; `/api/organizations` is what holds the line. A
+  // Firestore rule cannot: «how many free organizations does this account
+  // already own» is a count, and `allow create` only ever sees the one document
+  // in front of it.
   const ownsFreeWorkspace = (allOrgs || []).some(organization => (
     orgRoles?.[organization.id] === 'owner'
     && normalizePlan(organization.plan) === DEFAULT_PLAN
@@ -95,27 +99,36 @@ function OnboardingPageContent() {
     if (!orgName.trim() || saving) return;
     setSaving(true);
     setCreatingPlan(selectedPlan);
-    const uid = currentUser?.id || currentUser?.uid;
     const isFreshOrganization = isNewOrg || !activeOrgId;
-    const orgId = isFreshOrganization ? `org_${uid?.slice(0, 8)}_${Date.now()}` : activeOrgId;
+    // A fresh workspace is named by the server that writes it; there is
+    // nothing left for the browser to invent here.
+    const orgId = isFreshOrganization ? '' : activeOrgId;
     const detectedTimeZone = normalizeTimeZone(
       Intl.DateTimeFormat().resolvedOptions().timeZone,
     );
     
     try {
-      // Upsert the org doc
-      await setDoc(doc(db, 'organizations', orgId), {
+      // A brand-new workspace and the owner's seat in it are two privileged
+      // writes, so they are one server call — and the only place that can hold
+      // «one free workspace per account», which is a count no rule can make.
+      const createdId = isFreshOrganization
+        ? await createOrganization({
+          name: orgName.trim(),
+          logo: logoUrl,
+          plan: selectedPlan,
+          timezone: activeOrg?.timezone || detectedTimeZone,
+        })
+        : orgId;
+
+      if (!isFreshOrganization) await setDoc(doc(db, 'organizations', orgId), {
         id: orgId,
         name: orgName.trim(),
         logo: logoUrl,
-        ownerId: uid,
-        memberUids: [uid],
-        members: [{ uid, role: 'owner', email: currentUser?.email || '' }],
         plan: selectedPlan,
         timezone: activeOrg?.timezone || detectedTimeZone,
         // The ceilings come from the registry, not from a ternary. This line
         // used to read `plan === 'free' ? 3 : null`, which handed Lite the
-        // unlimited copy of a ceiling the price list sets at ten — the same
+        // unlimited copy of a ceiling the price list sets at twenty — the same
         // split that made Lite equal to Free everywhere else.
         limits: {
           maxProjects: storedPlanLimit(selectedPlan, 'projects'),
@@ -123,38 +136,14 @@ function OnboardingPageContent() {
         },
         onboarded: true,
         onboardedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
-      // The owner seat, written once — with the organization it belongs to.
-      //
-      // Only a new organization needs one. Onboarding an organization that is
-      // already the active one means its seat is what made it active, and a
-      // client write to a membership that already exists is refused outright:
-      // roles, rates and removals are server-owned, and a merge write onto an
-      // existing document is an update like any other. So this used to fail on
-      // a line whose whole job was to be a no-op, telling the owner the
-      // workspace could not be saved after it already had been.
-      //
-      // Reading first is not the way around it either — the read rule tests
-      // `resource.data.userId`, and on a document that is not there yet that is
-      // a denial rather than an empty answer. Knowing which case we are in is.
-      if (isFreshOrganization) {
-        await setDoc(doc(db, 'orgMemberships', `${orgId}_${uid}`), {
-          id: `${orgId}_${uid}`,
-          orgId,
-          userId: uid,
-          role: 'owner',
-          joinedAt: new Date().toISOString(),
-        });
-      }
-
       // Force local state update immediately, bypassing switchOrg's allOrgs check
       if (setActiveOrgId) {
-        setActiveOrgId(orgId);
+        setActiveOrgId(createdId);
       }
-      sessionStorage.setItem('qt_active_org_id', orgId);
+      sessionStorage.setItem('qt_active_org_id', createdId);
       localStorage.removeItem('qt_active_org_id');
       sessionStorage.setItem('qt_org_selected_this_session', '1');
       
@@ -163,6 +152,9 @@ function OnboardingPageContent() {
       }, 100);
     } catch (err) {
       console.error('[Onboarding] saveOrg error:', err);
+      // Said on the screen, not only in the console. A refusal nobody can read
+      // is a button that quietly stopped working.
+      setCreateError(err?.message || 'Не вдалося створити організацію');
       setSaving(false);
       setCreatingPlan('');
     }
@@ -230,7 +222,7 @@ function OnboardingPageContent() {
                 <h1 className="mb-[6px] text-[28px] font-black tracking-tight text-white sm:text-[32px]">Оберіть тариф</h1>
                 <p className="text-white/50 text-[15px] leading-relaxed">
                   {freeTaken
-                    ? 'Безкоштовний робочий простір на акаунті вже є — цей буде на платному тарифі.'
+                    ? FREE_WORKSPACE.hint
                     : `Оберіть тариф — і ${orgName} відкриється одразу. Змінити його можна будь-коли.`}
                 </p>
               </div>
@@ -247,9 +239,15 @@ function OnboardingPageContent() {
               onChoose={handleFinish}
               busyPlanId={creatingPlan}
               lockedPlanIds={freeTaken ? ['free'] : []}
-              lockedLabel="Уже використано"
+              lockedLabel={FREE_WORKSPACE.lockedLabel}
               className="mb-6"
             />
+
+            {createError && (
+              <p role="alert" className="mb-4 text-center text-[13px] leading-relaxed text-white/70">
+                {createError}
+              </p>
+            )}
 
             <p className="text-white/30 text-[12px] leading-relaxed text-center">
               Оплата ще не підключена. Тариф можна змінити будь-коли в Налаштуваннях.

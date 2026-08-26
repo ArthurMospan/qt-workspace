@@ -28,7 +28,7 @@ test('each browser tab owns its organization selection and keeps it in the URL',
   assert.match(context, /sessionStorage\.getItem\(TAB_STORAGE_KEY\)/);
   assert.doesNotMatch(context, /localStorage\.(?:getItem|setItem)\(TAB_STORAGE_KEY/);
   assert.match(context, /window\.history\.replaceState\(null, '', scoped\)/);
-  assert.match(onboarding, /sessionStorage\.setItem\('qt_active_org_id', orgId\)/);
+  assert.match(onboarding, /sessionStorage\.setItem\('qt_active_org_id', createdId\)/);
   assert.doesNotMatch(onboarding, /localStorage\.setItem\('qt_active_org_id'/);
   assert.match(guard, /withNotificationOrganization\(current, activeOrgId\)/);
   // A click must navigate to the organization it selected. A bare `/` races
@@ -387,19 +387,31 @@ test('the obsolete client-side organization bootstrap is gone', async () => {
 // Onboarding an organization that already had its seat failed on that no-op,
 // after the organization itself had already been saved.
 //
-// Asking whether the document is there first would swap that failure for a
-// worse one: the read rule tests `resource.data.userId`, so on a membership
-// that does not exist yet the answer is a denial rather than an empty snapshot,
-// and the failure would move to the new-organization path everybody takes.
-// Which case we are in is already known — a new organization is the one whose
-// id was minted a few lines above.
-test('onboarding writes the owner membership only for an organization it just made', async () => {
+test('a new organization and its owner seat are written by the server', async () => {
   const onboarding = await read('../src/app/onboarding/page.js');
 
+  // Both privileged documents used to be written from this screen, guarded by a
+  // rule that could only ever check «the organization names you as its owner» —
+  // which is true of the tenth free workspace an account creates as well.
+  // «One free workspace per account» is a count, and rules cannot count.
   assert.match(onboarding, /const isFreshOrganization = isNewOrg \|\| !activeOrgId;/);
-  assert.match(onboarding, /const orgId = isFreshOrganization \? `org_\$\{uid\?\.slice\(0, 8\)\}_\$\{Date\.now\(\)\}` : activeOrgId;/);
-  assert.match(onboarding, /if \(isFreshOrganization\) \{\s*\n\s*await setDoc\(doc\(db, 'orgMemberships'/);
-  // Created outright, never merged onto whatever is there, and never read first.
-  assert.doesNotMatch(onboarding, /'orgMemberships'[\s\S]{0,400}\{ merge: true \}/);
+  assert.match(onboarding, /createOrganization\({/);
+  assert.doesNotMatch(onboarding, /'orgMemberships'/);
+  assert.doesNotMatch(onboarding, /ownerId: uid/);
+  // Finishing the onboarding of an organization that already exists is an
+  // update by its owner, which the rules can check on their own — so it stays
+  // a client write, and only that branch takes it.
+  assert.match(onboarding, /if \(!isFreshOrganization\) await setDoc\(doc\(db, 'organizations'/);
   assert.doesNotMatch(onboarding, /getDoc\(/);
+
+  const route = await read('../src/app/api/organizations/route.js');
+  assert.match(route, /export async function POST\(request\)/);
+  assert.match(route, /FREE_WORKSPACE\.refusal/);
+  assert.match(route, /collection\('orgMemberships'\)/);
+
+  const rules = await read('../firestore.rules');
+  const organizations = rules.slice(rules.indexOf('match /organizations/{orgId}'), rules.indexOf('match /orgMemberships/{membershipId}'));
+  assert.match(organizations, /allow create: if false;/);
+  const memberships = rules.slice(rules.indexOf('match /orgMemberships/{membershipId}'));
+  assert.match(memberships.slice(0, 1600), /allow create, update, delete: if false;/);
 });

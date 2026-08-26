@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { randomUUID } from 'node:crypto';
 import { enforceRateLimit, getAdminDb, getOrganizationApiKeys, hashApiKey, isValidApiKey } from '@/lib/server/firebaseAdmin';
+import { planCapabilityRefusalResponse } from '@/lib/server/planLimits';
 import {
   DEFAULT_PRIORITY_IDS,
   DEFAULT_TYPE_IDS,
@@ -95,6 +96,13 @@ export async function POST(req) {
     if (!validApiKey) {
       return NextResponse.json({ error: 'Unauthorized. Invalid or revoked API Key for this organization.' }, { status: 401 });
     }
+    // A key is not a plan. «Інтеграції» is a paid capability, and the screen
+    // that issues keys was the only thing asking about it — so a key minted on
+    // Lite went on letting a caller in after the workspace returned to Free:
+    // the door was open while the room was locked. The key itself is left
+    // exactly where it is and starts working again with the plan.
+    const capabilityRefusal = planCapabilityRefusalResponse(orgData.plan, 'integrations');
+    if (capabilityRefusal) return capabilityRefusal;
     if (!(await enforceRateLimit('integration-task', `${organizationId}:${hashApiKey(apiKey)}`, 120, 60))) {
       return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
     }
