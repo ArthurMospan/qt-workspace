@@ -48,10 +48,23 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      # No secrets: every NEXT_PUBLIC_* value is read at runtime by the browser
-      # and the build completes without them. If that ever stops being true,
-      # this step is where it will be found — which is the point.
+      # Placeholders, not secrets. Static prerendering evaluates
+      # src/lib/firebase.js, and the Firebase SDK refuses to construct an auth
+      # instance from an empty apiKey — so /help, /errors and /_not-found fail
+      # to export with no configuration at all. Nothing here reaches a network:
+      # the build is checking that the code compiles and every page renders, and
+      # the real values are supplied by Vercel at deploy time. Keeping them
+      # inline rather than in repository secrets is deliberate — a NEXT_PUBLIC_*
+      # value is shipped to every browser anyway, and a secret nobody can read
+      # would make this workflow one more thing to set up.
       - name: Build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: build-only-placeholder
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: example.firebaseapp.com
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: example
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: example.appspot.com
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
+          NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:0000000000000000000000'
         run: npm run build
 
   reports:
@@ -106,6 +119,18 @@ jobs:
           java-version: 17
 
       - run: npm ci
+
+      # Split from the run below on purpose. The emulator is fetched from
+      # Google on first use, and when that is folded into the same step a
+      # download problem and a rules failure are the same red mark. Separated,
+      # the job list says which of the two happened without opening a log.
+      - name: Fetch the Firestore emulator
+        run: npx firebase setup:emulators:firestore
+
+      - name: Java and CLI versions
+        run: |
+          java -version
+          npx firebase --version
 
       - name: Rules against the emulator
         run: npm run test:rules:emulator
