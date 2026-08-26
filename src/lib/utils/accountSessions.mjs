@@ -33,6 +33,33 @@ const PLATFORMS = [
   [/linux/i, 'Linux'],
 ];
 
+// Phone, tablet or computer — the shape of the thing, not its name.
+//
+// «Chrome · Windows» already says what the browser is; what a person scanning
+// this list is actually doing is looking for the one row that is not one of
+// their own machines, and a phone among two laptops is visible before any of
+// the text is read.
+//
+// Order matters as much as it does above. An iPad says «iPad», but an Android
+// tablet is an Android that omits «Mobile» — the presence of a word, not a word
+// of its own — so the tablet tests have to run before the phone ones.
+//
+// One case is deliberately wrong and cannot be right: iPadOS Safari has
+// reported itself as «Macintosh» since 13, so an iPad in its default mode is a
+// computer here. Guessing around that with touch heuristics costs more than the
+// icon is worth, and would make some real Macs into tablets.
+const DEVICE_KINDS = [
+  [/ipad|tablet|playbook|silk|kindle/i, 'tablet'],
+  [/android(?!.*mobile)/i, 'tablet'],
+  [/iphone|ipod|mobile|phone|windows phone/i, 'mobile'],
+  [/windows nt|mac os x|macintosh|cros|linux|x11/i, 'desktop'],
+];
+
+/** @returns {'mobile'|'tablet'|'desktop'|'unknown'} */
+export function deviceKind(userAgent) {
+  return firstMatch(DEVICE_KINDS, typeof userAgent === 'string' ? userAgent : '') || 'unknown';
+}
+
 function firstMatch(table, value) {
   for (const [pattern, label] of table) {
     if (pattern.test(value)) return label;
@@ -121,6 +148,10 @@ export function listSessions(stored, { currentSessionId = null } = {}) {
     .map(([id, record]) => ({
       id,
       device: record.device || describeDevice(record.userAgent),
+      // Read from the stored user agent every time rather than from a stored
+      // field: rows written before this existed have no `kind`, and a list
+      // where half the icons are missing reads as a bug rather than as history.
+      kind: deviceKind(record.userAgent),
       place: record.place || null,
       firstSeenMillis: millisOf(record.firstSeenAt),
       lastSeenMillis: millisOf(record.lastSeenAt),

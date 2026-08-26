@@ -6,6 +6,7 @@ import {
   describeDevice,
   describePlace,
   describeSignInMethods,
+  deviceKind,
   expiredSessionIds,
   isSessionId,
   listSessions,
@@ -91,4 +92,87 @@ test('sign-in methods are named the way the sign-in page names them', () => {
   ]);
   assert.deepEqual(methods.map(method => method.label), ['Google', 'Пошта і пароль']);
   assert.deepEqual(describeSignInMethods(undefined), []);
+});
+
+// ── Форма пристрою, а не його назва ──────────────────────────────────────
+//
+// «Chrome · Windows» уже каже, що це за браузер. Людина, яка проглядає цей
+// список, шукає рядок, який не є жодною з її машин — і телефон між двома
+// ноутбуками видно раніше, ніж прочитано бодай слово.
+
+const ANDROID_PHONE = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36';
+const ANDROID_TABLET = 'Mozilla/5.0 (Linux; Android 13; SM-X200) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36';
+const IPAD = 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1';
+const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15';
+
+test('телефон, планшет і компʼютер розрізняються за user agent', () => {
+  assert.equal(deviceKind(SAFARI_IOS), 'mobile');
+  assert.equal(deviceKind(ANDROID_PHONE), 'mobile');
+  assert.equal(deviceKind(CHROME_WINDOWS), 'desktop');
+  assert.equal(deviceKind(MAC), 'desktop');
+  assert.equal(deviceKind(IPAD), 'tablet');
+  // Android-планшет — це Android без слова «Mobile», тобто відсутність слова, а
+  // не власне слово. Тому перевірки на планшет мусять іти перед телефонними.
+  assert.equal(deviceKind(ANDROID_TABLET), 'tablet');
+});
+
+test('нерозпізнаний user agent не вигадує собі форму', () => {
+  assert.equal(deviceKind(''), 'unknown');
+  assert.equal(deviceKind(null), 'unknown');
+  assert.equal(deviceKind('щось геть інше'), 'unknown');
+});
+
+test('рядок списку несе форму пристрою, навіть якщо його записали раніше', () => {
+  const rows = listSessions({
+    // Записано до появи `kind`: поле читається з user agent щоразу, тому
+    // історія не лишається без іконок.
+    old: { userAgent: SAFARI_IOS, lastSeenAt: 2 },
+    fresh: { userAgent: CHROME_WINDOWS, lastSeenAt: 1 },
+  });
+  assert.deepEqual(rows.map(row => row.kind), ['mobile', 'desktop']);
+});
+
+// ── Два чесні масштаби виходу ────────────────────────────────────────────
+//
+// Firebase відкликає акаунт, а не пристрій: API «завершити цей один сеанс» не
+// існує. Побудувати його поверх теж не можна — робочий простір читає Firestore
+// прямо з браузера, а правило безпеки не знає, для якого пристрою випущено
+// токен. Кнопка в рядку зупиняла б запис і лишала читання, тобто робила б менше
+// за власну назву.
+
+test('маршрут пропонує рівно два масштаби і жодного «одного пристрою»', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../src/app/api/account/sessions/route.js', import.meta.url), 'utf8');
+  // Без коментарів: те, чому обидва виклики стоять саме в цьому порядку,
+  // написано прозою над ними, і проза про виклик — не виклик.
+  const route = source.split(/\r?\n/).filter(line => !/^\s*\/\//.test(line)).join('\n');
+
+  assert.match(route, /const SCOPES = new Set\(\['all', 'others'\]\)/);
+  // `others` мусить знати, кого лишити; `all` не лишає нікого.
+  assert.match(route, /scope === 'others' && !isSessionId\(sessionId\)/);
+  // Ключ випускається до відкликання і обмінюється після — саме це лишає
+  // поточний пристрій усередині: відкликається refresh-токен, а цього ще немає.
+  const mint = route.indexOf('createCustomToken');
+  const revoke = route.indexOf('revokeRefreshTokens');
+  assert.ok(mint > 0 && revoke > 0 && mint < revoke, 'ключ випускається перед відкликанням');
+  // Рядки завершених пристроїв прибираються, інакше список стверджував би, що
+  // акаунт досі на них відкритий.
+  assert.match(route, /scope === 'all' \|\| id !== sessionId/);
+});
+
+test('панель називає масштаб до того, як його підтверджують', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const page = await readFile(new URL('../src/app/(app)/settings/page.js', import.meta.url), 'utf8');
+
+  // Кнопки в рядку більше немає — вона робила вчетверо більше за свою назву і
+  // казала про це лише у вже відкритому діалозі.
+  assert.doesNotMatch(page, /accountSecurity\.endSession/);
+  assert.match(page, /accountSecurity\.endOtherSessions\(\)/);
+  assert.match(page, /accountSecurity\.endAllSessions\(\)/);
+  assert.match(page, /Вийти на інших пристроях/);
+  assert.match(page, /Вийти на всіх/);
+  // І обмеження сказане в самій панелі, а не тільки в підтвердженні.
+  assert.match(page, /Окремий пристрій завершити не можна/);
+  // Іконка за формою пристрою.
+  assert.match(page, /DEVICE_ICONS = \{ mobile: Smartphone, tablet: Tablet, desktop: Monitor \}/);
 });

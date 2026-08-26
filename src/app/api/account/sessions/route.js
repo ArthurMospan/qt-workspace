@@ -86,6 +86,29 @@ export async function POST(request) {
   }
 }
 
+// Signing out, in the only two shapes Firebase actually offers.
+//
+// `revokeRefreshTokens` takes an account, not a device: there is no API for
+// «end this one session», and there cannot be one built on top of it either,
+// because the workspace reads Firestore directly from the browser and a
+// security rule cannot tell which device a token was minted for. A per-row
+// «Завершити» would therefore have stopped that device writing and left it
+// reading everything — a control that does less than its label. So the two
+// honest scopes are all, and all-but-this-one.
+//
+// `others` is possible because a *new* refresh token issued after the
+// revocation is not revoked. The caller gets a custom token in the response and
+// exchanges it immediately, so this device comes back with a session minted a
+// moment after the cut while every other device is left holding a dead one.
+//
+// One caveat is inherent and is written on the panel rather than hidden here:
+// an ID token already in another browser's memory stays cryptographically valid
+// until it expires. Our own routes refuse it at once — `verifyIdToken` is
+// called with `checkRevoked` — but Firestore does not check revocation, so that
+// browser can still *read* for as long as an hour. It cannot write, and it
+// cannot come back afterwards.
+const SCOPES = new Set(['all', 'others']);
+
 export async function DELETE(request) {
   try {
     const authorization = await authenticateRequest(request);
@@ -93,8 +116,14 @@ export async function DELETE(request) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     }
     const uid = authorization.user.uid;
-    const sessionId = new URL(request.url).searchParams.get('sessionId') || '';
-    if (!isSessionId(sessionId)) {
+    const parameters = new URL(request.url).searchParams;
+    const sessionId = parameters.get('sessionId') || '';
+    const scope = parameters.get('scope') || 'all';
+    if (!SCOPES.has(scope)) {
+      return NextResponse.json({ error: 'Невідома дія' }, { status: 400 });
+    }
+    // `others` has to know which one to keep. `all` keeps none, so it does not.
+    if (scope === 'others' && !isSessionId(sessionId)) {
       return NextResponse.json({ error: 'Невідомий сеанс' }, { status: 400 });
     }
 
@@ -107,13 +136,30 @@ export async function DELETE(request) {
     }
 
     const db = getAdminDb();
-    await sessionsRef(db, uid).set({ [sessionId]: FieldValue.delete() }, { merge: true });
-    // Firebase can revoke an account's refresh tokens; it cannot revoke one
-    // device's. So ending a session ends every one of them — which is the safe
-    // direction, and the only honest one. The confirmation says so.
+    const reference = sessionsRef(db, uid);
+    const stored = (await reference.get()).data() || {};
+    // Every row but the one being kept. A device that has just been signed out
+    // is not a device this account is signed in on, and leaving its row behind
+    // would make the list say otherwise until the next heartbeat.
+    const removed = Object.keys(stored).filter(id => scope === 'all' || id !== sessionId);
+    if (removed.length > 0) {
+      await reference.update(Object.fromEntries(removed.map(id => [id, FieldValue.delete()])));
+    }
+
+    // Minted before the cut and exchanged after it, which is what makes the
+    // returned session survive: what `revokeRefreshTokens` invalidates is the
+    // refresh token, and this one does not exist yet.
+    const customToken = scope === 'others'
+      ? await getAdminAuth().createCustomToken(uid)
+      : null;
     await getAdminAuth().revokeRefreshTokens(uid);
 
-    return NextResponse.json({ success: true, signedOutEverywhere: true });
+    return NextResponse.json({
+      success: true,
+      scope,
+      endedCount: removed.length,
+      ...(customToken ? { customToken } : {}),
+    });
   } catch (error) {
     return routeErrorResponse(error, {
       context: 'account-sessions-end',

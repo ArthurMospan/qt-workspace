@@ -9,6 +9,7 @@
 // screen changes while somebody is looking at it.
 
 import { useCallback, useEffect, useState } from 'react';
+import { signInWithCustomToken } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
@@ -120,18 +121,44 @@ export function useAccountSessions(userId) {
     return () => { cancelled = true; };
   }, [currentSessionId, userId]);
 
-  const endSession = useCallback(async sessionId => {
-    setBusyId(sessionId);
+  // Everywhere, this device included. The caller signs out afterwards; there is
+  // nothing left to sign out of.
+  const endAllSessions = useCallback(async () => {
+    setBusyId('all');
     try {
       await authenticatedRequest(
-        `/api/account/sessions?sessionId=${encodeURIComponent(sessionId)}`,
+        '/api/account/sessions?scope=all',
         { method: 'DELETE' },
-        'Не вдалося завершити сеанс',
+        'Не вдалося завершити сеанси',
       );
     } finally {
       setBusyId(null);
     }
   }, []);
+
+  // Everywhere but here. The server cuts every refresh token — Firebase has no
+  // smaller unit than the account — and hands back a custom token minted for
+  // this device, which is exchanged below for a session issued a moment after
+  // the cut. Other browsers are left holding one from before it.
+  const endOtherSessions = useCallback(async () => {
+    if (!currentSessionId) throw new Error('Цей браузер не запамʼятав свій сеанс');
+    setBusyId('others');
+    try {
+      const result = await authenticatedRequest(
+        `/api/account/sessions?scope=others&sessionId=${encodeURIComponent(currentSessionId)}`,
+        { method: 'DELETE' },
+        'Не вдалося завершити інші сеанси',
+      );
+      // Not optional, and not deferred: from the moment the server revoked, the
+      // token in this browser is refused by our own routes. Failing here leaves
+      // this device signed out too, which the confirmation says can happen.
+      if (result?.customToken) await signInWithCustomToken(auth, result.customToken);
+      setSessions(current => current.filter(session => session.isCurrent));
+      return result;
+    } finally {
+      setBusyId(null);
+    }
+  }, [currentSessionId]);
 
   // `metadata.lastSignInTime` and `metadata.creationTime` are deliberately not
   // published. The panel printed them as «Останній вхід» and «Обліковий запис
@@ -145,7 +172,8 @@ export function useAccountSessions(userId) {
     sessions,
     loading,
     busyId,
-    endSession,
+    endAllSessions,
+    endOtherSessions,
     currentSessionId,
     providerData: signInUser?.providerData || [],
   };

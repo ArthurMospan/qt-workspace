@@ -41,7 +41,7 @@ import {
   PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
   Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock,
-  UserRoundX, ShieldCheck, MonitorSmartphone, Undo2
+  UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
@@ -3891,22 +3891,44 @@ export default function SettingsPage() {
           hour12: savedTimeFormat === '12h',
         }).format(date);
         const whenLabel = date => `${formatDate(date)}, ${clockLabel(date)}`;
-        // Firebase can revoke an account's refresh tokens; it cannot revoke one
-        // device's. So the button says what it does — and it is the right thing
-        // to do when the row you do not recognise is somebody else's.
-        const endSession = async session => {
+        // Firebase revokes an account, never a device: there is no API for
+        // «end this one session». So there is no per-row button, because the
+        // one that used to be there did something four times larger than its
+        // label and only said so once the confirmation was open. The two
+        // scopes that exist are both here instead, each named for what it does.
+        const DEVICE_ICONS = { mobile: Smartphone, tablet: Tablet, desktop: Monitor };
+
+        const endOthers = async () => {
           const confirmed = await confirmDialog({
-            title: session.isCurrent ? 'Завершити цей сеанс?' : 'Завершити сеанс?',
-            message: 'Вихід відбудеться на всіх пристроях, включно з цим — увійдіть ще раз там, де хочете лишитися.',
-            confirmText: 'Завершити',
+            title: 'Вийти на інших пристроях?',
+            message: 'Цей пристрій лишиться в акаунті, решта вийдуть. Якщо щось піде не так на цьому кроці, вийти доведеться й тут — тоді просто увійдіть ще раз.',
+            confirmText: 'Вийти на інших',
             danger: true,
           });
           if (!confirmed) return;
           try {
-            await accountSecurity.endSession(session.id);
+            const result = await accountSecurity.endOtherSessions();
+            showToast(result?.endedCount
+              ? `Завершено сеансів: ${result.endedCount}`
+              : 'Інших пристроїв не було');
+          } catch (error) {
+            showToast(userFacingErrorMessage(error, 'Не вдалося завершити інші сеанси'), 'error');
+          }
+        };
+
+        const endEverywhere = async () => {
+          const confirmed = await confirmDialog({
+            title: 'Вийти на всіх пристроях?',
+            message: 'Включно з цим — увійдіть ще раз там, де хочете лишитися.',
+            confirmText: 'Вийти всюди',
+            danger: true,
+          });
+          if (!confirmed) return;
+          try {
+            await accountSecurity.endAllSessions();
             signOut();
           } catch (error) {
-            showToast(userFacingErrorMessage(error, 'Не вдалося завершити сеанс'), 'error');
+            showToast(userFacingErrorMessage(error, 'Не вдалося завершити сеанси'), 'error');
           }
         };
         return (
@@ -3915,7 +3937,7 @@ export default function SettingsPage() {
         // in at all. The screen used to open with a link to another screen.
         <Section
           title="Безпека"
-          desc="Хто заходив у цей обліковий запис і звідки. Якщо якийсь пристрій вам незнайомий — завершіть його сеанс і перевірте, через які сервіси сюди можна увійти."
+          desc="Хто заходив у цей обліковий запис і звідки. Якщо якийсь пристрій вам незнайомий — вийдіть на інших пристроях і перевірте, через які сервіси сюди можна увійти."
         >
           {/* Звідки заходили — first, because it is the answer. One row per
               browser the account has been opened in, newest first, this one at
@@ -3939,7 +3961,13 @@ export default function SettingsPage() {
                 {accountSecurity.sessions.map(session => (
                   <div key={session.id} className="flex items-center justify-between gap-3 py-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <MonitorSmartphone size={16} className="shrink-0 text-muted" />
+                      {/* The shape of the thing, not its name. Two laptops and
+                          a phone are told apart before any of the text is
+                          read, which is the whole job of this list. */}
+                      {(() => {
+                        const DeviceIcon = DEVICE_ICONS[session.kind] || MonitorSmartphone;
+                        return <DeviceIcon size={16} className="shrink-0 text-muted" />;
+                      })()}
                       <div className="min-w-0">
                         <div className="flex min-w-0 items-center gap-2">
                           <p className="truncate text-[13px] font-semibold text-ink">{session.device}</p>
@@ -3962,18 +3990,44 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      onClick={() => endSession(session)}
-                      style="ghost"
-                      color="red"
-                      size="sm"
-                      loading={accountSecurity.busyId === session.id}
-                      disabled={Boolean(accountSecurity.busyId)}
-                    >
-                      Завершити
-                    </Button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {accountSecurity.sessions.length > 0 && (
+              <div className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
+                {/* Said here rather than in a confirmation nobody has opened
+                    yet. The scope of these buttons is the surprising thing
+                    about them, and a person deciding whether to press one is
+                    reading this line, not that dialog. */}
+                <p className="text-[12px] text-muted">
+                  Окремий пристрій завершити не можна — Firebase виходить з акаунта
+                  цілком. Одразу після виходу інші пристрої втрачають право щось
+                  змінювати; читати вже відкриту сторінку вони можуть ще до години,
+                  поки не спливе їхній ключ доступу.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={endOthers}
+                    style="secondary"
+                    size="sm"
+                    loading={accountSecurity.busyId === 'others'}
+                    disabled={Boolean(accountSecurity.busyId) || accountSecurity.sessions.length < 2}
+                  >
+                    Вийти на інших пристроях
+                  </Button>
+                  <Button
+                    onClick={endEverywhere}
+                    style="ghost"
+                    color="red"
+                    size="sm"
+                    loading={accountSecurity.busyId === 'all'}
+                    disabled={Boolean(accountSecurity.busyId)}
+                  >
+                    Вийти на всіх
+                  </Button>
+                </div>
               </div>
             )}
           </Card>
