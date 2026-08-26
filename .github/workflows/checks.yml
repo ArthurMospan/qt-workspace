@@ -132,6 +132,13 @@ jobs:
           java -version
           npx firebase --version
 
+      # Does emulators:exec work here at all? A demo-* project needs no login,
+      # but that is the assumption most likely to be wrong on a runner with no
+      # Firebase credentials — and if it is, the suite below can only fail in a
+      # way that looks like the rules being wrong.
+      - name: Emulator starts and answers
+        run: npx firebase --project demo-quickteam emulators:exec --only firestore "node -e \"const h=process.env.FIRESTORE_EMULATOR_HOST; if(!h) throw new Error('FIRESTORE_EMULATOR_HOST unset'); console.log('emulator at', h);\""
+
       # Named explicitly as IPv4. The suite discovers the emulator through the
       # hub or falls back to `localhost:8080`, and on a Linux runner `localhost`
       # resolves to ::1 first while the emulator binds 127.0.0.1 — which is a

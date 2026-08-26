@@ -11,9 +11,18 @@ import { arrayUnion, doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, col
 let environment;
 
 before(async () => {
+  // Addressed rather than discovered. Left to itself the library asks the
+  // emulator hub and falls back to `localhost:8080`, and on a Linux CI runner
+  // `localhost` resolves to ::1 before 127.0.0.1 while the emulator binds IPv4
+  // only — a refused connection that arrives looking like a rules failure.
+  // `emulators:exec` exports FIRESTORE_EMULATOR_HOST, so this reads what the
+  // emulator actually bound and only guesses when nothing said.
+  const [emulatorHost, emulatorPort] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
   environment = await initializeTestEnvironment({
     projectId: 'quickteam-rules-test',
     firestore: {
+      host: emulatorHost || '127.0.0.1',
+      port: Number(emulatorPort) || 8080,
       rules: await readFile(new URL('../firestore.rules', import.meta.url), 'utf8'),
     },
   });
