@@ -11,14 +11,14 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 test('quiet text tokens and generated sidebar themes keep AA contrast', () => {
   assert.deepEqual(auditA11y().contrastFailures, []);
 
-  // Three floors, because the rail holds three kinds of thing, and only the
-  // first of them is read. `text` carries the workspace name and the item you
-  // are standing on and keeps AA. The navigation is eight fixed words found by
-  // position and icon; the project list is scanned for a name already known.
-  // Those two sit at or above the 3:1 WCAG asks of an interface component —
-  // held at 4.5 they could not be quieter than anything at all, because on the
-  // dark preset that floor is already where they were. See sidebarTheme.js.
-  const FLOORS = { text: 4.5, muted: 3.5, mutedProject: 3.0, mutedHeader: 3.0 };
+  // The rail's own text and its navigation keep AA — the navigation was never
+  // what needed to move. The project group under them is deliberately far
+  // quieter than any accessibility floor: a list of names you already know,
+  // found by position and by icon, asked to stop competing with the navigation
+  // above it. Every attempt to do that at 3:1 or better moved it by nine to
+  // twenty points out of 255, which is a change that does not exist on a
+  // screen. See SCANNABLE_CONTRAST in sidebarTheme.js.
+  const FLOORS = { text: 4.5, muted: 4.5, mutedProject: 2.4, mutedHeader: 2.4 };
   for (let channel = 0; channel <= 255; channel += 17) {
     const hex = `#${channel.toString(16).padStart(2, '0').repeat(3)}`;
     const theme = computeSidebarTheme(hex);
@@ -56,7 +56,7 @@ test('the glass tab bar keeps AA against the colour it is actually seen as', () 
         assert.ok(glass.opacity >= 0.88 && glass.opacity <= 1, `opacity budget on ${hex}`);
         assert.equal(glass.bg, computeSidebarTheme(hex).bg, `the painted colour stays the brand on ${hex}`);
         for (const [token, floor] of Object.entries({
-          text: 4.5, muted: 3.5, mutedProject: 3.0, mutedHeader: 3.0,
+          text: 4.5, muted: 4.5, mutedProject: 2.4, mutedHeader: 2.4,
         })) {
           assert.ok(
             contrastRatio(glass[token], glass.perceived) >= floor,

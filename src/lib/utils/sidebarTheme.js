@@ -17,7 +17,7 @@
 // version into the cache makes a change to this file invalidate every copy of
 // it automatically, instead of relying on somebody thinking to clear their
 // storage.
-export const SIDEBAR_THEME_VERSION = 2;
+export const SIDEBAR_THEME_VERSION = 3;
 
 export const SIDEBAR_PRESETS = {
   dark:  '#1f1f1f',
@@ -74,55 +74,29 @@ function blendColors(bg, fg, ratio) {
   };
 }
 
-// How quiet the rail is allowed to be, and why it is quieter than the page.
-//
-// This started at one number — 4.5:1, WCAG AA for body text — applied to every
-// token the rail produces. That is the right floor for a page. It is the wrong
-// floor for the thing standing beside the page, and holding it here had two
-// consequences that took three attempts to see.
-//
-// The first: on the dark preset 4.5:1 lands at #858585, which is almost exactly
-// where the navigation already was. So «make the rail quieter» could move it by
-// nine points out of 255 and no further — a change that exists in a diff and
-// not on a screen.
-//
-// The second: every tier under the navigation was clamped to that same value,
-// so a three-level hierarchy rendered as one grey.
-//
-// A rail is not prose. Its labels are eight fixed words a person learns in a
-// day and afterwards finds by position and by icon; its project list is scanned
-// for a name already known. Both sit at 3:1 or better, which is what WCAG asks
-// of a user-interface component, and both are the *destination* of a click
-// rather than something read to extract meaning. The rail's own text — the
-// workspace name, the active item, a running timer's digits — is the loudest
-// thing here and stays well clear of every floor.
-//
-// This is a deliberate departure from AA for the navigation labels, taken with
-// the product owner, and it is written here rather than left to be rediscovered.
-const READABLE_CONTRAST = 3.5;
-// The project list, its header, its «+» and the collapse toggle: one step below
-// the navigation, at the floor WCAG sets for an interface component.
-const SCANNABLE_CONTRAST = 3.0;
+// AA for body text. The rail's own words hold it, and the navigation holds it
+// because the navigation was never what needed to move.
+const READABLE_CONTRAST = 4.5;
 
-// The rail's loudest ink, and why it is not the corner of the colour space.
+// The project group: the «ПРОЄКТИ» header, the «+» beside it, the project rows
+// with their icons, and the control that folds the rail away. One tier, because
+// that is how it was asked for — one group that should stop competing with the
+// navigation above it.
 //
-// `text` was pure white on a dark rail and near-black on a light one, which is
-// the brightest a screen can be — and it is on the active item, the workspace
-// name and the branded organization name, so the three things the eye lands on
-// first were all at maximum. A rail is the thing beside the page, and it was
-// glowing.
-//
-// Backed well off toward the background. A background with no room — a
-// saturated brand colour where white itself barely clears the floor — gets its
-// white back, because `accessibleBlend` only ever raises: the softening is a
-// preference, the floor is not.
-const TEXT_BLEND = 0.74;
-// …and it keeps AA, which is the one floor in this file that did not move. It
-// carries the workspace name and the item you are standing on, it is the only
-// thing here that is read rather than scanned, and on the dark preset the blend
-// above clears it four times over — the floor only bites on a saturated brand
-// colour, which is exactly where it should.
-const TEXT_CONTRAST = 4.5;
+// 2.4:1 is well below anything WCAG asks of text, and that is the point: this
+// group is not read, it is a list of names you already know, found by position
+// and by icon. Every attempt to do this at an accessibility floor produced a
+// change of nine to twenty points out of 255 — invisible on a screen — because
+// on the dark preset those floors are already where this group was sitting.
+// The number is low because the ask was «stop taking attention», and nothing
+// higher delivers that.
+const SCANNABLE_CONTRAST = 2.4;
+
+// The rail's loudest ink. Pure white on a dark rail is the brightest a screen
+// can be, and it is on the workspace name and the active item. Backed off a
+// little; it keeps AA, and on a brand colour with no room it gets its white
+// back, because `accessibleBlend` only ever raises.
+const TEXT_BLEND = 0.88;
 
 function accessibleBlend(bg, fg, preferredRatio, minimumContrast = READABLE_CONTRAST) {
   let ratio = preferredRatio;
@@ -187,10 +161,10 @@ export function computeSidebarTheme(bgHex) {
     // Dark background → light text
     return {
       bg: fallback,
-      text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND, TEXT_CONTRAST)),
-      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.40)),
-      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.32, SCANNABLE_CONTRAST)),
-      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.24, SCANNABLE_CONTRAST)),
+      text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND)),
+      muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.50)),
+      mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.26, SCANNABLE_CONTRAST)),
+      mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.22, SCANNABLE_CONTRAST)),
       hover: 'rgba(255,255,255,0.04)',
       active: 'rgba(255,255,255,0.08)',
       border: 'rgba(255,255,255,0.06)',
@@ -201,10 +175,10 @@ export function computeSidebarTheme(bgHex) {
   // Light background → dark text
   return {
     bg: fallback,
-    text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND, TEXT_CONTRAST)),
-    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.40)),
-    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.32, SCANNABLE_CONTRAST)),
-    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.24, SCANNABLE_CONTRAST)),
+    text: rgbToHex(accessibleBlend(rgb, textRgb, TEXT_BLEND)),
+    muted: rgbToHex(accessibleBlend(rgb, textRgb, 0.50)),
+    mutedProject: rgbToHex(accessibleBlend(rgb, textRgb, 0.26, SCANNABLE_CONTRAST)),
+    mutedHeader: rgbToHex(accessibleBlend(rgb, textRgb, 0.22, SCANNABLE_CONTRAST)),
     hover: 'rgba(0,0,0,0.04)',
     active: 'rgba(0,0,0,0.06)',
     border: 'rgba(31,31,31,0.08)',
