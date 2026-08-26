@@ -132,5 +132,12 @@ jobs:
           java -version
           npx firebase --version
 
+      # Named explicitly as IPv4. The suite discovers the emulator through the
+      # hub or falls back to `localhost:8080`, and on a Linux runner `localhost`
+      # resolves to ::1 first while the emulator binds 127.0.0.1 — which is a
+      # connection refused that looks like a rules failure. Harmless if the hub
+      # was answering all along.
       - name: Rules against the emulator
+        env:
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
         run: npm run test:rules:emulator
