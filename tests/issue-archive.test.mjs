@@ -60,12 +60,17 @@ test('archived tasks leave the working lists but keep their own link', async () 
     read('../src/components/workspace/IssueDetail.jsx'),
     read('../src/lib/hooks/useOrganizationIssues.js'),
   ]);
-  assert.match(issues, /withoutCancelledIssues\(withoutArchivedIssues\(docs\)\)/);
-  assert.match(myTasks, /withoutArchivedIssues\(flattenDocumentBuckets\(issueBuckets\)\)/);
-  // The home screen's subscription is shared rather than its own now, but it is
-  // still a subscription outside `useIssues`, so it still needs the rule by
-  // hand or a project's progress bar counts work nobody is doing.
-  assert.match(home, /withoutCancelledIssues\(withoutArchivedIssues\(flattenDocumentBuckets\(buckets\)\)\)/);
+  // The rule is applied once, where the tasks are read — every screen shares
+  // one subscription now, so «архівне не в роботі» is one filter rather than
+  // four copies of it that could drift.
+  assert.match(home, /const allIssues = useMemo\(\(\) => withoutCancelledIssues\(documents\)/);
+  assert.match(home, /const issues = useMemo\(\(\) => withoutArchivedIssues\(allIssues\)/);
+  // The board takes the working set for its own project…
+  assert.match(issues, /withoutCancelledIssues\(withoutArchivedIssues\(own\)\)/);
+  // …and «Мої завдання» takes the same working set and filters it by assignee,
+  // so a task somebody archived leaves that list too.
+  assert.match(myTasks, /issues: workspaceIssues,/);
+  assert.match(myTasks, /workspaceIssues\s*\n\s*\.filter\(issue => issue\.assigneeIds\?\.includes\(userId\)\)/);
   // The detail is the one reader that asks for them, so «Архів» can open a
   // task and put it back instead of showing "not found".
   assert.match(detail, /useIssues\(projectId, \{ includeLinks: false, includeSetAside: true \}\)/);
@@ -76,8 +81,8 @@ test('archived tasks leave the working lists but keep their own link', async () 
 
   // One subscription, three readings: the working set for what is open, the
   // record for what was done, and the cancelled ones for the one screen that
-  // lists them.
-  assert.match(analytics, /const issues = useMemo\(\(\) => withoutArchivedIssues\(record\)/);
+  // lists them. The analytics hook names all three rather than deriving its own.
+  assert.match(analytics, /allIssues: record,\s*\n\s*cancelledIssues,/);
   assert.match(analytics, /allIssues: record,\s*\n\s*cancelledIssues,\s*\n\s*timeLogs: recordTimeLogs,/);
 });
 

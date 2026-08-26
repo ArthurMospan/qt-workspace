@@ -1,10 +1,30 @@
 'use client';
 
-// src/lib/hooks/useIssues.js — CRUD for issues collection with audit logging
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+// src/lib/hooks/useIssues.js — the board's view of the shared task set, plus
+// the writes a board makes.
+//
+// This used to run the board's own pair of listeners: every task of one
+// project, and every link in it. That looked like the cheap read — one project
+// instead of the organization — and it was the opposite, because the dashboard
+// already held a listener over the same documents and Firestore charges for
+// every delivery to every listener. Opening a task on the board added a third
+// copy of the same query, since the task screen wants archived and cancelled
+// work included and asked for it separately.
+//
+// So there is no listener here. The tasks come from `useOrganizationIssues`,
+// which every screen shares, and this hook is the board's slice of it: one
+// project's cards, sorted the way a board sorts them. A workspace whose
+// dashboard has not been opened pays for the whole set on the first screen
+// rather than for one project — the same set the next screen would have read
+// anyway, and once, not once per screen.
+import { useCallback, useMemo } from 'react';
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
+import {
+  useOrganizationIssueLinks,
+  useOrganizationIssues,
+} from '@/lib/hooks/useOrganizationIssues';
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
@@ -13,7 +33,7 @@ import {
   notifyIssueAssigned,
   transitionIssueStatusViaApi,
 } from '@/lib/services/issues';
-import { createResponseError, reportLoadError } from '@/lib/utils/errors';
+import { createResponseError } from '@/lib/utils/errors';
 import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import { withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
 import { statusLabel } from '@/lib/utils/workflowDefaults.mjs';
@@ -26,6 +46,12 @@ import {
 } from '@/lib/utils/issueAuditEvents.mjs';
 import { compareIssues, pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
+
+// Stable references for "this caller wants none of that", so a hook that is
+// not asking for links does not hand a new empty array down on every render.
+const NO_PROJECTS = Object.freeze([]);
+const NO_LINKS = Object.freeze([]);
+const NO_ISSUES = Object.freeze([]);
 
 // ---------------------------------------------------------------------------
 // Helper — write an audit log entry to issues/{issueId}/audit subcollection
@@ -56,142 +82,63 @@ async function writeAudit(issueId, {
 // ---------------------------------------------------------------------------
 export function useIssues(projectId, { includeLinks = true, includeSetAside = false } = {}) {
   const {
-    activeOrgId, currentUser, authLoading, orgLoading
+    activeOrgId, currentUser, projects, authLoading, orgLoading, projectsLoading,
   } = useAppContext();
   const { closedStatusIds, statuses } = useWorkflowConfig();
-  const [snapshotIssues, setSnapshotIssues] = useState([]);
-  const [issueLinks, setIssueLinks] = useState([]);
-  const [linksReady, setLinksReady] = useState(!includeLinks);
-  const [linksError, setLinksError] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Depend on the uid, not on the `currentUser` object: the profile listener
+  // hands back a fresh object whenever anything on the user document changes.
+  const currentUserId = currentUser?.uid || currentUser?.id || null;
+  // The projects this account can already open — the scope of the shared read.
+  // Firestore evaluates the read rule per document, so one project this user is
+  // not on the team of would reject a query over the whole organization.
+  const projectIds = useMemo(
+    () => [...new Set((projects || []).map(project => project.id).filter(Boolean))],
+    [projects],
+  );
+  const {
+    documents,
+    error,
+    loading: issuesLoading,
+  } = useOrganizationIssues(activeOrgId, projectIds);
+  const {
+    issueLinks: sharedLinks,
+    error: sharedLinksError,
+    loading: sharedLinksLoading,
+  } = useOrganizationIssueLinks(activeOrgId, includeLinks ? projectIds : NO_PROJECTS);
+
+  // This board's cards, in board order. Neither an archived nor a cancelled
+  // task is part of the working set; one flag covers both because one reader
+  // wants both — the task's own screen, where a link has to keep opening
+  // whatever it points at, whichever of the two was done to it.
+  const snapshotIssues = useMemo(() => {
+    if (!projectId || !activeOrgId) return NO_ISSUES;
+    const own = documents.filter(issue => issue.projectId === projectId);
+    const scoped = includeSetAside
+      ? own
+      : withoutCancelledIssues(withoutArchivedIssues(own));
+    // Sorted here rather than in the query, which would need a composite index
+    // for a set the browser already holds.
+    return scoped.sort(compareIssues);
+  }, [documents, projectId, activeOrgId, includeSetAside]);
+
+  const issueLinks = useMemo(() => (
+    includeLinks && projectId
+      ? sharedLinks.filter(link => link.projectId === projectId)
+      : NO_LINKS
+  ), [includeLinks, sharedLinks, projectId]);
+  const linksError = includeLinks ? sharedLinksError : null;
+  const linksReady = !includeLinks || (!sharedLinksLoading && !linksError);
+
+  // "Nothing was asked" is not "nothing was found". On a page refresh the uid,
+  // the organization and the project list all arrive a beat after the first
+  // render, and reporting `loading: false` with an empty list there is what
+  // made the task page flash «Задачу не знайдено» before the task appeared.
+  const loading = Boolean(projectId) && (
+    issuesLoading || authLoading || orgLoading || projectsLoading || !currentUserId
+  );
+
   // A drag & drop is painted from this overlay until Firestore echoes it back.
   const [issues, applyPatch, revertPatch] = useOptimisticPatch(snapshotIssues, compareIssues);
-  const deliveredRef = useRef(false);
-  // Depend on the uid, not on the `currentUser` object: the profile listener
-  // hands back a fresh object whenever anything on the user document changes,
-  // and that identity churn used to tear down and rebuild this subscription.
-  const currentUserId = currentUser?.uid || currentUser?.id || null;
-  // Which query the rows on screen belong to. Re-running the effect for the
-  // same project must not blank them — the board renders a spinner while
-  // `loading` is true, so clearing on every re-subscribe is exactly the
-  // "board reloaded itself" flash. Rows are only stale once the target moves.
-  const targetRef = useRef(null);
-  useEffect(() => {
-    const target = `${activeOrgId || ''}/${projectId || ''}`;
-    const targetChanged = targetRef.current !== target;
-    targetRef.current = target;
-    if (targetChanged) deliveredRef.current = false;
-    if (!projectId || !activeOrgId || !currentUserId) {
-      // Nothing was subscribed, so the next run has to count as a fresh target
-      // however it is reached — otherwise the run that finally has a uid would
-      // skip the reset below and render an empty board instead of a spinner.
-      targetRef.current = null;
-      deliveredRef.current = false;
-      // "Nothing was asked" is not "nothing was found". On a page refresh the
-      // uid and the organization arrive a beat after the first render, and
-      // reporting `loading: false` with an empty list there is what made the
-      // task page flash «Задачу не знайдено» for a second before the task
-      // appeared. While auth or the organization is still resolving the honest
-      // answer is that we are still loading; only a caller with no project at
-      // all has genuinely finished with nothing.
-      const stillResolving = authLoading || orgLoading || !currentUserId || !activeOrgId;
-      queueMicrotask(() => {
-        setSnapshotIssues([]);
-        setIssueLinks([]);
-        setLinksReady(!includeLinks);
-        setLinksError(null);
-        setError(null);
-        setLoading(Boolean(projectId) && stillResolving);
-      });
-      return;
-    }
-
-    if (targetChanged) {
-      queueMicrotask(() => {
-        setSnapshotIssues([]);
-        setIssueLinks([]);
-        setLinksReady(!includeLinks);
-        setLinksError(null);
-        setError(null);
-        setLoading(true);
-      });
-    }
-
-    // No orderBy — sorted client-side to avoid composite index
-    const q = query(
-      collection(db, 'issues'),
-      where('organizationId', '==', activeOrgId),
-      where('projectId', '==', projectId),
-    );
-    const unsub = onSnapshot(q, {
-      // Needed so an empty project still leaves the loading state once the
-      // server confirms it really is empty (a metadata-only transition).
-      includeMetadataChanges: true,
-    }, snap => {
-      // An empty cache is not proof that a task was deleted. While Firestore is
-      // offline or quota-blocked, wait for a server result (or the error callback)
-      // instead of flashing the destructive "task not found" state.
-      if (snap.empty && snap.metadata.fromCache) {
-        setError(null);
-        setLoading(true);
-        return;
-      }
-      // Metadata-only event — typically the server acknowledging a write we
-      // already applied locally. The documents are identical to what is on
-      // screen, so publishing a fresh array would re-render every card for
-      // nothing; mid drop-animation that repaint is exactly the visible blink.
-      if (deliveredRef.current && snap.docChanges().length === 0) {
-        setError(null);
-        setLoading(false);
-        return;
-      }
-      const docs = snap.docs.map(d => ({
-        ...d.data({ serverTimestamps: 'estimate' }),
-        id: d.id,
-      }));
-      // Sort client-side by order ASC, fallback to createdAt asc
-      docs.sort(compareIssues);
-      deliveredRef.current = true;
-      // Neither an archived nor a cancelled task is part of the working set.
-      // One flag covers both because one reader wants both: the task screen,
-      // where a link has to keep opening whatever it points at, whichever of
-      // the two was done to it.
-      setSnapshotIssues(includeSetAside
-        ? docs
-        : withoutCancelledIssues(withoutArchivedIssues(docs)));
-      setError(null);
-      setLoading(false);
-    }, err => {
-      reportLoadError('[useIssues]', err);
-      setError(err);
-      setLoading(false);
-    });
-
-    let unsubLinks = () => {};
-    if (includeLinks) {
-      // Scoped to this project, like the issue stream above. Links never cross
-      // projects, and an organization-wide link query is rejected outright:
-      // Firestore evaluates the read rule per document, so a single link in a
-      // project this user cannot open fails the whole query.
-      const lq = query(
-        collection(db, 'issueLinks'),
-        where('organizationId', '==', activeOrgId),
-        where('projectId', '==', projectId),
-      );
-      unsubLinks = onSnapshot(lq, { serverTimestamps: 'estimate' }, snap => {
-        setIssueLinks(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-        setLinksReady(true);
-        setLinksError(null);
-      }, err => {
-        reportLoadError('[useIssues] links', err);
-        setLinksReady(false);
-        setLinksError(err);
-      });
-    }
-
-    return () => { unsub(); unsubLinks(); };
-  }, [projectId, activeOrgId, includeLinks, includeSetAside, currentUserId, authLoading, orgLoading]);
 
   // -------------------------------------------------------------------------
   // createIssue — atomic issueCounter increment + addDoc + audit

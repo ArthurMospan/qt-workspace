@@ -12,12 +12,11 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
-import { reportLoadError } from '@/lib/utils/errors';
-import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
 import {
-  cancelledIssuesOf,
-  withoutCancelledIssues,
-} from '@/lib/utils/issueCancel.mjs';
+  useOrganizationIssueLinks,
+  useOrganizationIssues,
+} from '@/lib/hooks/useOrganizationIssues';
+import { reportLoadError } from '@/lib/utils/errors';
 import {
   isTimeLogWindow,
   timeLogWindowKey,
@@ -26,6 +25,11 @@ import {
   chunkProjectIds,
   flattenDocumentBuckets,
 } from '@/lib/utils/projectScopedQueries.mjs';
+
+// Frozen so that «this caller wants no links» is one stable reference rather
+// than a new empty array on every render.
+const NO_PROJECTS = Object.freeze([]);
+const NO_LINKS = Object.freeze([]);
 
 /**
  * One subscription, three readings of it.
@@ -67,7 +71,12 @@ import {
  *
  * ── Живе чи разове ───────────────────────────────────────────────────────
  *
- * `live` decides whether these are subscriptions or one reading.
+ * `live` decides whether the *time logs* are a subscription or one reading.
+ * The tasks are neither any more: they come from `useOrganizationIssues`, the
+ * workspace's single shared subscription, because four screens reading the same
+ * documents through four listeners is what a delivery-per-listener bill is made
+ * of. One shared live listener costs less than four separate one-off reads of
+ * the same set, so a report joins it rather than buying its own copy.
  *
  * A live listener is worth its cost where somebody is acting on the data as it
  * changes: a board they are dragging cards on, a task two people are editing,
@@ -89,14 +98,24 @@ export function useWorkspaceAnalytics(projectIds = [], {
   live = true,
 } = {}) {
   const { activeOrgId, authLoading, orgLoading } = useAppContext();
-  const [allIssues, setAllIssues] = useState([]);
+  // Tasks and links, from the workspace's one shared subscription. The three
+  // readings this hook publishes are the same three that module derives, so
+  // «working set», «record» and «скасовані» mean one thing in one place.
+  const {
+    issues,
+    allIssues: record,
+    cancelledIssues,
+    error: issuesError,
+    loading: issuesLoading,
+  } = useOrganizationIssues(activeOrgId, projectIds);
+  const {
+    issueLinks: sharedIssueLinks,
+    error: issueLinksError,
+  } = useOrganizationIssueLinks(activeOrgId, includeLinks ? projectIds : NO_PROJECTS);
+  const issueLinks = includeLinks ? sharedIssueLinks : NO_LINKS;
   const [timeLogs, setTimeLogs] = useState([]);
-  const [issueLinks, setIssueLinks] = useState([]);
-  const [issuesLoading, setIssuesLoading] = useState(true);
   const [timeLogsLoading, setTimeLogsLoading] = useState(true);
-  const [issuesReadAt, setIssuesReadAt] = useState(null);
   const [timeLogsReadAt, setTimeLogsReadAt] = useState(null);
-  const [issuesError, setIssuesError] = useState(null);
   const [timeLogsError, setTimeLogsError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   // Bumped by `refresh`. In live mode nothing reads it, because there is
@@ -113,14 +132,20 @@ export function useWorkspaceAnalytics(projectIds = [], {
     setNonce(value => value + 1);
   }, []);
   const projectScope = [...new Set(projectIds.filter(Boolean))].sort().join(',');
+  // The task set is live, so it was last read the moment it was last delivered.
+  // «Оновлено о» next to the hours therefore still has something true to say.
+  const [issuesReadAt, setIssuesReadAt] = useState(null);
+  useEffect(() => {
+    // `record` is the signal rather than a value: a new array is a new delivery.
+    const at = record && !issuesLoading ? Date.now() : null;
+    queueMicrotask(() => setIssuesReadAt(at));
+  }, [record, issuesLoading]);
   const windowedTimeLogs = includeTimeLogs && isTimeLogWindow(timeLogWindow);
   const sinceMillis = windowedTimeLogs ? timeLogWindow.sinceMillis : null;
   const untilMillis = windowedTimeLogs && Number.isFinite(timeLogWindow.untilMillis)
     ? timeLogWindow.untilMillis
     : null;
-  const issueTarget = `${activeOrgId || ''}/${projectScope}/${includeLinks ? 'links' : 'no-links'}`;
   const timeTarget = `${activeOrgId || ''}/${projectScope}/${windowedTimeLogs ? timeLogWindowKey(timeLogWindow) : 'no-time'}`;
-  const issueTargetRef = useRef('');
   const timeTargetRef = useRef('');
 
   useEffect(() => {
@@ -131,86 +156,6 @@ export function useWorkspaceAnalytics(projectIds = [], {
       );
     }
   }, [includeTimeLogs, windowedTimeLogs]);
-
-  // ── Tasks and links ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!activeOrgId) {
-      issueTargetRef.current = '';
-      queueMicrotask(() => {
-        setAllIssues([]);
-        setIssueLinks([]);
-        setIssuesError(null);
-        // Still resolving the organization is not the same as having read it
-        // and found nothing — the difference is a spinner versus an empty
-        // state that says the workspace has no data.
-        setIssuesLoading(Boolean(authLoading || orgLoading));
-      });
-      return undefined;
-    }
-
-    if (issueTargetRef.current !== issueTarget) {
-      issueTargetRef.current = issueTarget;
-      queueMicrotask(() => {
-        setIssuesLoading(true);
-        setAllIssues([]);
-        setIssueLinks([]);
-        setIssuesError(null);
-      });
-    }
-
-    const chunks = chunkProjectIds(projectScope ? projectScope.split(',') : []);
-    const issueBuckets = new Map();
-    const linkBuckets = new Map();
-    const readyStreams = new Set();
-    const expectedStreamCount = chunks.length * (1 + (includeLinks ? 1 : 0));
-    const unsubs = [];
-    if (expectedStreamCount === 0) {
-      queueMicrotask(() => setIssuesLoading(false));
-    }
-    const subscribe = options => unsubs.push(readBucket({
-      ...options,
-      live,
-      readyStreams,
-      expectedStreamCount,
-      onReady: () => {
-        setIssuesLoading(false);
-        setIssuesReadAt(Date.now());
-        setRefreshing(false);
-      },
-      onError: setIssuesError,
-    }));
-
-    chunks.forEach((chunk, chunkIndex) => {
-      subscribe({
-        key: `issues:${chunkIndex}`,
-        buckets: issueBuckets,
-        publish: setAllIssues,
-        sourceQuery: query(
-          collection(db, 'issues'),
-          where('organizationId', '==', activeOrgId),
-          where('projectId', 'in', chunk),
-        ),
-      });
-
-      // Links must be scoped to the same authorized project list. An
-      // organization-wide link query is rejected outright, because Firestore
-      // evaluates the rule per document and one unreachable project fails all.
-      if (includeLinks) {
-        subscribe({
-          key: `links:${chunkIndex}`,
-          buckets: linkBuckets,
-          publish: setIssueLinks,
-          sourceQuery: query(
-            collection(db, 'issueLinks'),
-            where('organizationId', '==', activeOrgId),
-            where('projectId', 'in', chunk),
-          ),
-        });
-      }
-    });
-
-    return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [activeOrgId, authLoading, orgLoading, projectScope, issueTarget, includeLinks, live, nonce]);
 
   // ── Time logs, inside the window the caller is drawing ──────────────────
   useEffect(() => {
@@ -317,9 +262,6 @@ export function useWorkspaceAnalytics(projectIds = [], {
     nonce,
   ]);
 
-  const record = useMemo(() => withoutCancelledIssues(allIssues), [allIssues]);
-  const issues = useMemo(() => withoutArchivedIssues(record), [record]);
-  const cancelledIssues = useMemo(() => cancelledIssuesOf(allIssues), [allIssues]);
   // The hours follow the task out. Time logs arrive on their own subscription
   // and are read straight — the timesheet and the period totals do not join
   // them back to the issue list — so a cancelled task's hours would go on being
@@ -344,8 +286,11 @@ export function useWorkspaceAnalytics(projectIds = [], {
     issueLinks,
     loading: issuesLoading || (windowedTimeLogs && timeLogsLoading),
     refreshing: live ? false : refreshing,
-    error: issuesError || (windowedTimeLogs ? timeLogsError : null),
-    errors: { issues: issuesError, timeLogs: windowedTimeLogs ? timeLogsError : null },
+    error: issuesError || issueLinksError || (windowedTimeLogs ? timeLogsError : null),
+    errors: {
+      issues: issuesError || issueLinksError,
+      timeLogs: windowedTimeLogs ? timeLogsError : null,
+    },
     // When the reading was taken, and how to take another. Null while this is a
     // live subscription, because «оновлено о» would be a lie about data that is
     // never more than a moment old.

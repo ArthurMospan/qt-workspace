@@ -102,15 +102,18 @@ test('a cancelled task leaves every set the numbers are built from', async () =>
   ]);
   // Filtered at every source, so that no reader downstream — a board, a chart,
   // an invoice — has to know that cancelling exists.
-  assert.match(issues, /withoutCancelledIssues\(withoutArchivedIssues\(docs\)\)/);
-  assert.match(myTasks, /withoutCancelledIssues\(/);
+  assert.match(issues, /withoutCancelledIssues\(withoutArchivedIssues\(own\)\)/);
+  // «Мої завдання» filters the shared working set, which has already had them
+  // removed — there is one place cancelling is subtracted, not four.
+  assert.match(myTasks, /issues: workspaceIssues,/);
   assert.match(home, /withoutCancelledIssues\(/);
   assert.match(candidates, /isCancelledIssue\(issue\)/);
   assert.match(search, /!isCancelledIssue\(item\.data\(\)\)/);
   // Including the record: `allIssues` is what the timesheet and the invoice
   // read, and cancelled work is not part of what happened either.
-  assert.match(analytics, /const record = useMemo\(\(\) => withoutCancelledIssues\(allIssues\)/);
-  assert.match(analytics, /const issues = useMemo\(\(\) => withoutArchivedIssues\(record\)/);
+  assert.match(home, /const allIssues = useMemo\(\(\) => withoutCancelledIssues\(documents\)/);
+  assert.match(home, /const issues = useMemo\(\(\) => withoutArchivedIssues\(allIssues\)/);
+  assert.match(analytics, /allIssues: record,/);
 });
 
 test('the hours follow the task out, and calendar time stays put', async () => {

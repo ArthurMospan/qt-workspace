@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
+import { claimActivityHeartbeat } from '@/lib/utils/activity';
 import { reportLoadError } from '@/lib/utils/errors';
 import {
   buildOrganizationList,
@@ -26,6 +27,9 @@ import { firestoreDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 
 const TAB_STORAGE_KEY = 'qt_active_org_id';
 const ORG_LOAD_RETRY_LIMIT = 3;
+// How often returning to the tab may re-verify the organization directory.
+// See `refreshOnFocus` below for why this is a repair path and not a refresh.
+const DIRECTORY_RECHECK_MS = 30 * 60 * 1000;
 const OrgContext = createContext(null);
 
 function persistTabOrganization(orgId) {
@@ -375,7 +379,20 @@ export function OrgProvider({ user, children }) {
 
     subscribe();
     refreshOrganizationDirectory();
+    // Coming back to the tab is not news about the membership list — it is a
+    // guess that something might have changed while nobody was looking. The
+    // live listener above already asks for a verified directory the moment the
+    // membership signature actually moves, and the organization document has
+    // its own listener, so this is purely a repair path for a browser whose
+    // Firestore cache is stuck.
+    //
+    // Left unthrottled it was the single most-executed query in the product:
+    // every alt-tab, in every open tab, ran `orgMemberships where userId ==`
+    // on the server — four hundred executions in one evening for an answer
+    // that had not changed once. The claim is shared through localStorage, so
+    // four tabs make one request between them, not four.
     const refreshOnFocus = () => {
+      if (!claimActivityHeartbeat(`org-directory:${uid}`, DIRECTORY_RECHECK_MS)) return;
       directoryRetryAttempt = 0;
       refreshOrganizationDirectory();
     };

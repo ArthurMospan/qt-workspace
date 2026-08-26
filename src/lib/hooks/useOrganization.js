@@ -13,9 +13,13 @@ import {
   reactivateOrganizationMember,
   updateOrganizationMember,
 } from '@/lib/services/members';
+import { claimActivityHeartbeat } from '@/lib/utils/activity';
 import { reportLoadError } from '@/lib/utils/errors';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import { firestoreDocumentData } from '@/lib/utils/firestoreDocument.mjs';
+
+// How often returning to the tab may re-read the member directory.
+const MEMBER_RECHECK_MS = 30 * 60 * 1000;
 
 const ORGANIZATION_SERVER_SNAPSHOT = Object.freeze({
   org: null,
@@ -100,7 +104,18 @@ function createOrganizationStore(organizationId, viewerScope) {
         reportLoadError('[useOrganization] own membership', error);
       })
       : () => {};
-    focusListener = () => refresh();
+    // Same repair path, same throttle, same reason as the organization
+    // directory in `OrgContext`. The member list is invalidated by two live
+    // signals already — `memberDirectoryVersion` on the organization document
+    // and this account's own membership — and every write that changes it
+    // refreshes explicitly. What was left was a forced read of
+    // `orgMemberships where orgId ==` on every alt-tab in every open tab,
+    // which is roughly two hundred executions in an evening for an unchanged
+    // answer. The claim is shared through localStorage across tabs.
+    focusListener = () => {
+      if (!claimActivityHeartbeat(`org-members:${organizationId}`, MEMBER_RECHECK_MS)) return;
+      refresh();
+    };
     window.addEventListener('focus', focusListener);
   };
 

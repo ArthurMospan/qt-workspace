@@ -15,12 +15,12 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 // false. While the context is still resolving, the honest answer is a spinner.
 test('a hook that has not subscribed yet reports loading, not emptiness', async () => {
   const cases = [
-    ['../src/lib/hooks/useIssues.js', /const stillResolving = authLoading \|\| orgLoading \|\| !currentUserId \|\| !activeOrgId;/],
+    ['../src/lib/hooks/useIssues.js', /issuesLoading \|\| authLoading \|\| orgLoading \|\| projectsLoading \|\| !currentUserId/],
     ['../src/lib/hooks/useCalendarEvents.js', /setLoading\(Boolean\(authLoading \|\| orgLoading\)\);/],
-    // Two subscriptions, two flags: the task set and the windowed time logs
-    // move on different clocks, and `loading` is their union.
-    ['../src/lib/hooks/useWorkspaceAnalytics.js', /setIssuesLoading\(Boolean\(authLoading \|\| orgLoading\)\);/],
-    ['../src/lib/hooks/useAllMyTasks.js', /setLoading\(Boolean\(authLoading \|\| orgLoading \|\| projectsLoading\)\);/],
+    // Two subscriptions, two flags: the shared task set and the windowed time
+    // logs move on different clocks, and `loading` is their union.
+    ['../src/lib/hooks/useWorkspaceAnalytics.js', /setTimeLogsLoading\(!activeOrgId && Boolean\(authLoading \|\| orgLoading\)\);/],
+    ['../src/lib/hooks/useAllMyTasks.js', /const loading = issuesLoading \|\| Boolean\(authLoading \|\| orgLoading \|\| projectsLoading\);/],
   ];
   for (const [file, pattern] of cases) {
     const source = await read(file);
@@ -33,13 +33,22 @@ test('a hook that has not subscribed yet reports loading, not emptiness', async 
 
 test('useIssues only finishes empty when there is genuinely no project', async () => {
   const source = await read('../src/lib/hooks/useIssues.js');
-  assert.match(source, /setLoading\(Boolean\(projectId\) && stillResolving\);/);
-  // The resolution flags have to be in the dependency list, or the hook never
-  // re-runs when they flip.
+  assert.match(source, /const loading = Boolean\(projectId\) && \(/);
+});
+
+// And the subscription every one of them now reads through says the same
+// thing: a listener that has not answered yet is loading, and an empty answer
+// out of the local cache is not an answer at all.
+test('the shared task subscription reports loading until something answers', async () => {
+  const source = await read('../src/lib/hooks/useOrganizationIssues.js');
+  assert.match(source, /loading: delivered\.size < chunks\.length,/);
   assert.match(
     source,
-    /\}, \[projectId, activeOrgId, includeLinks, includeSetAside, currentUserId, authLoading, orgLoading\]\);/,
+    /documentSnapshot\.empty\s*\n\s*&& documentSnapshot\.metadata\.fromCache\) return;/,
   );
+  // A screen with no scope at all — no organization, no projects — has
+  // genuinely finished with nothing, and must not spin forever.
+  assert.match(source, /const RESOLVED_EMPTY_SNAPSHOT = Object\.freeze\(\{/);
 });
 
 test('an unloaded membership list is not treated as a denied organization', async () => {

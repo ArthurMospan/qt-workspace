@@ -43,10 +43,16 @@ function listeners() {
       if (!line.includes('onSnapshot(')) return;
       const context = lines.slice(Math.max(0, index - 15), index + 6).join('\n');
       const collectionMatch = context.match(/collection\(\s*db,\s*'([^']+)'/);
+      // The collection itself rather than a subcollection under it:
+      // `collection(db, 'issues')` is the task stream, `collection(db,
+      // 'issues', id, 'audit')` is one task's history and a different cost.
+      const rootCollections = [...context.matchAll(/collection\(\s*db,\s*'([^']+)'\s*\)/g)]
+        .map(match => match[1]);
       found.push({
         file: relative(root, file).split(sep).join('/'),
         line: index + 1,
         collection: collectionMatch?.[1] || null,
+        rootCollections,
         bounded: /\blimit\(/.test(context),
         // A listener on one document reads one document, whatever else is true.
         singleDocument: !/collection\(/.test(context) && /\bdoc\(/.test(context),
@@ -80,17 +86,16 @@ const BOUNDED_WITHOUT_LIMIT = new Map([
   ['lib/portal/usePortalChat.js', 'one portal conversation'],
   ['components/workspace/BillingTab.jsx', 'invoices of one project'],
 
-  // Bounded by the work itself, and reviewed as a deliberate cost: these are
-  // the task datasets the boards, the analytics and «Мої завдання» are made of.
-  // They are the product's core read, and the one thing left that grows without
-  // a ceiling as the workspace ages. See docs/ARCHITECTURE.md → «Вартість читання».
-  ['lib/hooks/useIssues.js', 'tasks and links of one project — the board itself'],
-  ['lib/hooks/useAllMyTasks.js', 'tasks assigned to one person'],
-  ['lib/hooks/useWorkspaceAnalytics.js', 'tasks of the authorized projects; the time logs ARE windowed by loggedAt'],
-  // The dashboard's read, moved out of the screen so leaving it does not throw
-  // the subscription away and coming back does not buy it again. Same query,
-  // same ceiling; what changed is how many times a day it is paid for.
-  ['lib/hooks/useOrganizationIssues.js', 'tasks of the projects this user can open — the dashboard'],
+  // Bounded by the work itself, and reviewed as a deliberate cost: this is the
+  // task dataset the boards, the analytics and «Мої завдання» are all made of.
+  // It is the product's core read, and the one thing left that grows without a
+  // ceiling as the workspace ages. See docs/ARCHITECTURE.md → «Вартість читання».
+  //
+  // There is exactly one entry here now, and that is the point: four hooks used
+  // to hold four listeners over these same documents, and Firestore bills a
+  // delivery to each of them.
+  ['lib/hooks/useOrganizationIssues.js', 'tasks and links of the projects this user can open — the whole product reads this one'],
+  ['lib/hooks/useWorkspaceAnalytics.js', 'the time logs, and they ARE windowed by loggedAt'],
   ['lib/hooks/useTimeLogs.js', 'time logged against one task'],
   ['lib/hooks/useProjectTimeLogs.js', 'time logged against one project'],
   ['lib/hooks/useProjectAllTimeLogs.js', 'time logged against one project'],
@@ -122,6 +127,45 @@ test('the listeners that carry a limit keep carrying it', () => {
     assert.ok(
       bounded.has(file),
       `${file} reads a history that grows forever; it must stay windowed by limit().`,
+    );
+  }
+});
+
+// One query, four readers.
+//
+// «Мої завдання», the board, the task screen and the reports all describe the
+// same documents; what differs is which ones each of them hides. Reading them
+// four times over four listeners is not four times the answer, it is four
+// times the bill — and it was roughly two thirds of the day the free tier's
+// fifty thousand reads ran out at nine in the evening.
+//
+// So the rule is that no screen opens its own `issues` or `issueLinks` stream.
+// This test is what stops the next convenient exception, because a second
+// listener over this collection does not look expensive at the call site: it
+// looks like one more `onSnapshot`.
+test('only the shared subscription reads tasks and the links between them', () => {
+  const readers = listeners().filter(entry => (
+    entry.rootCollections.includes('issues') || entry.rootCollections.includes('issueLinks')
+  ));
+  assert.deepEqual(
+    [...new Set(readers.map(entry => entry.file))],
+    ['lib/hooks/useOrganizationIssues.js'],
+    'Tasks are read once, by useOrganizationIssues, and filtered in memory by '
+    + 'whoever needs a narrower view. A second listener over the same documents '
+    + 'is a second delivery charge for the same write.',
+  );
+
+  // …and the screens that used to own one take the shared set instead.
+  for (const file of [
+    'lib/hooks/useIssues.js',
+    'lib/hooks/useAllMyTasks.js',
+    'lib/hooks/useWorkspaceAnalytics.js',
+  ]) {
+    const sourceText = readFileSync(join(root, file.split('/').join(sep)), 'utf8');
+    assert.match(
+      sourceText,
+      /useOrganizationIssues/,
+      `${file} must read tasks through the shared subscription`,
     );
   }
 });
@@ -225,6 +269,11 @@ test('every screen that reads time logs says which window it is drawing', async 
 // the product for as long as the tab is left up.
 test('the report screens take a reading rather than holding a subscription', () => {
   const hook = readFileSync(join(root, 'lib', 'hooks', 'useWorkspaceAnalytics.js'), 'utf8');
+  // What `live` governs is the time logs. The tasks are no longer this hook's
+  // to subscribe to or to read once: they come from the shared subscription,
+  // where one live listener serves every screen — which is cheaper than four
+  // screens each buying their own one-off copy of the same documents.
+  assert.match(hook, /useOrganizationIssues\(activeOrgId, projectIds\)/);
   // One hook, two modes — not two code paths that can drift apart.
   assert.match(hook, /live = true,/);
   assert.match(hook, /if \(live\) \{\s*\n\s*return onSnapshot\(/);

@@ -17,7 +17,10 @@ test('analytics hooks publish read failures instead of converting them to zero',
   assert.doesNotMatch(rollups, /return \{ docs: \[\] \}/);
 
   assert.match(workspace, /onError\?\.\(error\)/);
-  assert.match(workspace, /error: issuesError \|\| \(windowedTimeLogs \? timeLogsError : null\)/);
+  assert.match(
+    workspace,
+    /error: issuesError \|\| issueLinksError \|\| \(windowedTimeLogs \? timeLogsError : null\)/,
+  );
 
   for (const hook of [projectTime, projectAllTime]) {
     assert.match(hook, /setError\(error\)/);

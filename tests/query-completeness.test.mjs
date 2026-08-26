@@ -7,19 +7,24 @@ import { COLUMN_VIRTUALIZATION_THRESHOLD } from '../src/lib/utils/boardRendering
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 test('workspace task listeners expose their complete authorized scope', async () => {
-  const [issues, mine, sprints, analytics] = await Promise.all([
+  const [issues, mine, sprints, analytics, shared] = await Promise.all([
     read('src/lib/hooks/useIssues.js'),
     read('src/lib/hooks/useAllMyTasks.js'),
     read('src/lib/hooks/useSprints.js'),
     read('src/lib/hooks/useWorkspaceAnalytics.js'),
+    read('src/lib/hooks/useOrganizationIssues.js'),
   ]);
 
-  for (const source of [issues, mine, sprints, analytics]) {
+  for (const source of [issues, mine, sprints, analytics, shared]) {
     assert.doesNotMatch(source, /limit\(/);
     assert.doesNotMatch(source, /hasMore/);
     assert.doesNotMatch(source, /loadMore/);
   }
-  assert.match(mine, /where\('assigneeIds', 'array-contains', userId\)/);
+  // «Мої завдання» is a filter over the shared set rather than a query of its
+  // own — the same complete scope, asked for once. The filter is still by
+  // assignee and still says so.
+  assert.match(mine, /issue\.assigneeIds\?\.includes\(userId\)/);
+  assert.match(shared, /where\('projectId', 'in', chunk\)/);
   assert.match(sprints, /orderBy\('createdAt', 'desc'\)/);
   assert.match(analytics, /includeTimeLogs/);
 });

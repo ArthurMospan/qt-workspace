@@ -1,19 +1,31 @@
 'use client';
 
-// src/lib/hooks/useAllMyTasks.js — Fetch all tasks assigned to current user across all projects
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+// src/lib/hooks/useAllMyTasks.js — «Мої завдання», read from the shared task set.
+//
+// This used to run its own pair of queries per project chunk — the tasks
+// assigned to this person, and their links — plus a third wave of queries for
+// the children of those tasks, because a personal query by assignee cannot see
+// a subtask somebody else is doing. Three sets of listeners over documents the
+// dashboard was already subscribed to, and Firestore bills a delivery per
+// listener.
+//
+// So there are none here now. `useOrganizationIssues` reads every task of every
+// project this account can open, once, and «Мої завдання» is a filter over it:
+// the cards are the tasks with this person among the assignees, and the context
+// the cards need — children, blockers, the project's own ordering — is the rest
+// of that same set, which is why the separate child subscription could be
+// deleted outright rather than shared.
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import {
-  chunkProjectIds,
-  flattenDocumentBuckets,
-} from '@/lib/utils/projectScopedQueries.mjs';
+  useOrganizationIssueLinks,
+  useOrganizationIssues,
+} from '@/lib/hooks/useOrganizationIssues';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import { reportLoadError } from '@/lib/utils/errors';
-import { withoutArchivedIssues } from '@/lib/utils/issueArchive.mjs';
-import { withoutCancelledIssues } from '@/lib/utils/issueCancel.mjs';
 import { pickPatchableFields, planDrop } from '@/lib/utils/optimistic.mjs';
 import { issueCompletionBlockers } from '@/lib/utils/issueExecution.mjs';
 import { issueParticipants } from '@/lib/utils/issueParticipants.mjs';
@@ -31,7 +43,6 @@ import {
 import { sendNotification } from '@/lib/hooks/useNotifications';
 import { transitionIssueStatusViaApi } from '@/lib/services/issues';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
-import { myTaskChildScopes, mergeMyTaskChildren } from '@/lib/utils/myTaskChildren.mjs';
 
 function issueLabel(issue) {
   return issue?.issueKey || issue?.title || issue?.id || 'без назви';
@@ -46,19 +57,49 @@ export function useAllMyTasks(userId) {
     projectsLoading,
   } = useAppContext();
   const { closedStatusIds, statuses } = useWorkflowConfig();
-  const [snapshotTasks, setSnapshotTasks] = useState([]);
-  const [snapshotAllIssues, setSnapshotAllIssues] = useState([]);
-  const [childSnapshot, setChildSnapshot] = useState(null);
-  const [issueLinks, setIssueLinks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const targetRef = useRef('');
+  // Only the projects this user can already open. An organization-wide query
+  // is rejected in full the moment it touches one project they are not on the
+  // team of, which is what used to empty this page for every member.
+  const projectIds = useMemo(
+    () => [...new Set((projects || []).map(project => project.id).filter(Boolean))],
+    [projects],
+  );
+  // The workspace's one task subscription. `issues` is the working set —
+  // archived and cancelled work is already out of it — which is exactly what
+  // this screen is about: a task put aside is not on anybody's list of what to
+  // do next.
+  const {
+    issues: workspaceIssues,
+    error: issuesError,
+    loading: issuesLoading,
+  } = useOrganizationIssues(activeOrgId, projectIds);
+  const {
+    issueLinks,
+    error: linksError,
+  } = useOrganizationIssueLinks(activeOrgId, projectIds);
   const [myTaskOrders, setMyTaskOrders] = useState({});
   const [myTaskOrderLoading, setMyTaskOrderLoading] = useState(true);
+
+  // The cards. Everything else in the set stays available below as context: a
+  // subtask somebody else is doing still decides whether the parent may close,
+  // and a card's position among its project's tasks is computed against all of
+  // them, not against the handful this person happens to own.
+  const snapshotTasks = useMemo(() => {
+    if (!userId) return [];
+    return workspaceIssues
+      .filter(issue => issue.assigneeIds?.includes(userId))
+      .sort((a, b) => {
+        const aTime = a.dueDate?.toMillis?.() ?? a.createdAt?.toMillis?.() ?? 0;
+        const bTime = b.dueDate?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0;
+        return aTime - bTime;
+      });
+  }, [workspaceIssues, userId]);
+
   // Keeps the "My tasks" kanban from springing a dropped card back to its old
   // column while the write is in flight. Sorted by due date here, not by
   // `order`, so the merged list needs no re-sort.
   const [tasks, applyPatch, revertPatch] = useOptimisticPatch(snapshotTasks);
+  const [allIssues, applyAllPatch, revertAllPatch] = useOptimisticPatch(workspaceIssues);
   const compareTaskCards = useMemo(
     () => compareMyTaskIssues(myTaskOrders),
     [myTaskOrders],
@@ -67,183 +108,10 @@ export function useAllMyTasks(userId) {
     issue => statusCategoryOf(issue?.columnId || issue?.status || null, statuses),
     [statuses],
   );
-  // Only the projects this user can already open. An organization-wide query
-  // is rejected in full the moment it touches one project they are not on the
-  // team of, which is what used to empty this page for every member.
-  const projectScope = useMemo(
-    () => [...new Set((projects || []).map(project => project.id).filter(Boolean))]
-      .sort()
-      .join(','),
-    [projects],
-  );
-  const queryTarget = `${activeOrgId || ''}/${userId || ''}/${projectScope}`;
-  const childScopes = useMemo(() => myTaskChildScopes(snapshotAllIssues, {
-    organizationId: activeOrgId,
-    userId,
-    projectIds: projectScope ? projectScope.split(',') : [],
-  }), [snapshotAllIssues, activeOrgId, userId, projectScope]);
-  const childTarget = JSON.stringify({ queryTarget, scopes: childScopes });
-  const childrenCurrent = childSnapshot?.target === childTarget;
-  const contextIssues = useMemo(() => mergeMyTaskChildren(
-    snapshotAllIssues,
-    childrenCurrent ? childSnapshot.issues : [],
-    childScopes,
-  ), [snapshotAllIssues, childrenCurrent, childSnapshot, childScopes]);
-  const [allIssues, applyAllPatch, revertAllPatch] = useOptimisticPatch(contextIssues);
-  const childrenLoading = childScopes.length > 0 && (!childrenCurrent || !childSnapshot.ready);
-  const childrenError = childrenCurrent ? childSnapshot.error : null;
-
-  useEffect(() => {
-    const { scopes } = JSON.parse(childTarget);
-    if (!scopes.length) return;
-    let active = true;
-    const buckets = new Map();
-    const ready = new Set();
-    const errors = new Map();
-    const publish = () => {
-      if (!active) return;
-      setChildSnapshot({
-        target: childTarget,
-        issues: flattenDocumentBuckets(buckets),
-        ready: ready.size === scopes.length,
-        error: errors.values().next().value || null,
-      });
-    };
-    const unsubs = scopes.map((scope, index) => onSnapshot(
-      query(
-        collection(db, 'issues'),
-        where('organizationId', '==', scope.organizationId),
-        where('projectId', '==', scope.projectId),
-        where(scope.field, 'in', scope.parentIds),
-      ),
-      { includeMetadataChanges: true },
-      snap => {
-        if (!active || (snap.empty && snap.metadata.fromCache)) return;
-        buckets.set(index, snap.docs.map(document => ({ ...document.data(), id: document.id })));
-        ready.add(index);
-        errors.delete(index);
-        publish();
-      },
-      error => {
-        if (!active) return;
-        reportLoadError('[useAllMyTasks] children', error);
-        ready.add(index);
-        errors.set(index, error);
-        publish();
-      },
-    ));
-    return () => {
-      active = false;
-      unsubs.forEach(unsubscribe => unsubscribe());
-    };
-  }, [childTarget]);
-
-  useEffect(() => {
-    const projectIds = projectScope ? projectScope.split(',') : [];
-    if (!activeOrgId || !userId || projectIds.length === 0) {
-      targetRef.current = '';
-      queueMicrotask(() => {
-        setSnapshotTasks([]);
-        setSnapshotAllIssues([]);
-        setIssueLinks([]);
-        setError(null);
-        // An empty project list before the projects have loaded is not a user
-        // with nothing assigned to them.
-        setLoading(Boolean(authLoading || orgLoading || projectsLoading));
-      });
-      return;
-    }
-    const targetChanged = targetRef.current !== queryTarget;
-    targetRef.current = queryTarget;
-    if (targetChanged) {
-      queueMicrotask(() => {
-        setSnapshotTasks([]);
-        setSnapshotAllIssues([]);
-        setIssueLinks([]);
-        setError(null);
-        setLoading(true);
-      });
-    }
-
-    const chunks = chunkProjectIds(projectIds);
-    const issueBuckets = new Map();
-    const linkBuckets = new Map();
-    const streamErrors = new Map();
-    const readyStreams = new Set();
-    const expectedStreamCount = chunks.length * 2;
-    const unsubs = [];
-    const markReady = key => {
-      readyStreams.add(key);
-      if (readyStreams.size >= expectedStreamCount) {
-        setLoading(false);
-      }
-    };
-    const publishStreamError = (key, nextError = null) => {
-      if (nextError) streamErrors.set(key, nextError);
-      else streamErrors.delete(key);
-      setError(streamErrors.values().next().value || null);
-    };
-    const publishIssues = () => {
-      // A task put aside is not on anybody's list of what to do next.
-      const allDocs = withoutCancelledIssues(
-        withoutArchivedIssues(flattenDocumentBuckets(issueBuckets)),
-      );
-      const docs = allDocs
-        .filter(issue => issue.assigneeIds?.includes(userId));
-      docs.sort((a, b) => {
-        const aTime = a.dueDate?.toMillis?.() ?? a.createdAt?.toMillis?.() ?? 0;
-        const bTime = b.dueDate?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0;
-        return aTime - bTime;
-      });
-      setSnapshotAllIssues(allDocs);
-      setSnapshotTasks(docs);
-    };
-
-    chunks.forEach((chunk, chunkIndex) => {
-      const issuesKey = `issues:${chunkIndex}`;
-      unsubs.push(onSnapshot(
-        query(
-          collection(db, 'issues'),
-          where('organizationId', '==', activeOrgId),
-          where('projectId', 'in', chunk),
-          where('assigneeIds', 'array-contains', userId),
-        ),
-        snap => {
-          publishStreamError(issuesKey);
-          issueBuckets.set(issuesKey, snap.docs.map(d => ({ ...d.data(), id: d.id })));
-          publishIssues();
-          markReady(issuesKey);
-        },
-        err => {
-          reportLoadError('[useAllMyTasks]', err);
-          publishStreamError(issuesKey, err);
-          markReady(issuesKey);
-        },
-      ));
-
-      const linksKey = `links:${chunkIndex}`;
-      unsubs.push(onSnapshot(
-        query(
-          collection(db, 'issueLinks'),
-          where('organizationId', '==', activeOrgId),
-          where('projectId', 'in', chunk),
-        ),
-        snap => {
-          publishStreamError(linksKey);
-          linkBuckets.set(linksKey, snap.docs.map(d => ({ ...d.data(), id: d.id })));
-          setIssueLinks(flattenDocumentBuckets(linkBuckets));
-          markReady(linksKey);
-        },
-        err => {
-          reportLoadError('[useAllMyTasks] links', err);
-          publishStreamError(linksKey, err);
-          markReady(linksKey);
-        },
-      ));
-    });
-
-    return () => unsubs.forEach(unsubscribe => unsubscribe());
-  }, [userId, activeOrgId, projectScope, authLoading, orgLoading, projectsLoading, queryTarget]);
+  // An empty project list before the projects have loaded is not a user with
+  // nothing assigned to them.
+  const loading = issuesLoading || Boolean(authLoading || orgLoading || projectsLoading);
+  const error = issuesError || linksError;
 
   // Project `order` belongs to project boards. This private settings document
   // holds the user's own cross-project order for "My tasks".
@@ -505,8 +373,8 @@ export function useAllMyTasks(userId) {
     tasks,
     allIssues,
     issueLinks,
-    loading: loading || myTaskOrderLoading || childrenLoading,
-    error: error || childrenError,
+    loading: loading || myTaskOrderLoading,
+    error,
     moveTask,
     moveTaskToCategory,
     compareTaskCards,
