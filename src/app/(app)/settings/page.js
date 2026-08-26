@@ -259,6 +259,30 @@ const isSwitchNode = node => {
   return Children.toArray(node.props?.children).some(isSwitchNode);
 };
 
+// The heading of a block, as against the label of a setting.
+//
+// «Сповіщення» has had this shape all along — an icon in a tinted square, a
+// bold name, a quiet line under it — and «Безпека» used `Row` for the same job.
+// `Row` is built for a setting: a label on the left and its control on the
+// right. Handed a section name it reads as a setting nobody can change, which
+// is why those two headings looked like nothing else on the screen.
+function CardHeading({ icon: Icon, title, caption, action = null }) {
+  return (
+    <div className="flex items-start justify-between gap-4 pb-1">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-canvas">
+          <Icon size={16} className="text-ink" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[13px] font-bold text-ink leading-none">{title}</p>
+          {caption && <p className="mt-[5px] text-[12px] text-muted truncate">{caption}</p>}
+        </div>
+      </div>
+      {action && <div className="shrink-0 pt-[2px]">{action}</div>}
+    </div>
+  );
+}
+
 function Row({ label, desc, children, danger = false }) {
   const items = Children.toArray(children);
   const switchOnly = items.length > 0 && items.every(isSwitchNode);
@@ -2710,21 +2734,10 @@ export default function SettingsPage() {
         // label column and the same right-hand control column.
         const channelCard = ({ id, icon: ChannelIcon, title, caption, master, available, offNote, showDesc = false, footer = null }) => (
           <Card preset="borderless" padding="lg">
-            <div className="flex items-start justify-between gap-4 pb-1">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-canvas">
-                  <ChannelIcon size={16} className="text-ink" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-bold text-ink leading-none">{title}</p>
-                  {caption && <p className="mt-[5px] text-[12px] text-muted truncate">{caption}</p>}
-                </div>
-              </div>
-              {/* The channel switch is the big one: it governs every row in
-                  the card below it. The rows are `sm`, so the difference in
-                  size says which is which without a word. */}
-              {master && <div className="shrink-0 pt-[2px]">{master}</div>}
-            </div>
+            {/* The channel switch is the big one: it governs every row in the
+                card below it. The rows are `sm`, so the difference in size says
+                which is which without a word. */}
+            <CardHeading icon={ChannelIcon} title={title} caption={caption} action={master} />
 
             {available ? eventRows.map(row => (
               <Row key={row.key} label={row.label} desc={showDesc ? row.desc : undefined}>
@@ -3933,17 +3946,24 @@ export default function SettingsPage() {
                 directly under it — a number the reader counts faster than they
                 read it, and one that said nothing about whether any of the
                 three is a stranger. */}
-            <Row label="Пристрої" desc="Браузери, у яких відкривали цей обліковий запис">
-              <Button
-                onClick={endOthers}
-                style="secondary"
-                size="sm"
-                loading={accountSecurity.busyId === 'others'}
-                disabled={Boolean(accountSecurity.busyId) || accountSecurity.sessions.length < 2}
-              >
-                Вийти з усіх, крім цього
-              </Button>
-            </Row>
+            <CardHeading
+              icon={MonitorSmartphone}
+              title="Пристрої"
+              caption="Де відкривали цей обліковий запис"
+              action={(
+                <Button
+                  onClick={endOthers}
+                  style="ghost"
+                  color="red"
+                  size="sm"
+                  icon={LogOut}
+                  loading={accountSecurity.busyId === 'others'}
+                  disabled={Boolean(accountSecurity.busyId) || accountSecurity.sessions.length < 2}
+                >
+                  Вийти з усіх, крім цього
+                </Button>
+              )}
+            />
             {accountSecurity.loading ? (
               <div className="flex justify-center py-8"><LoadingSpinner size="md" /></div>
             ) : accountSecurity.sessions.length === 0 ? (
@@ -3996,10 +4016,11 @@ export default function SettingsPage() {
               «хто може сюди зайти», and the two halves were on two screens with
               a button on one pointing at the other. */}
           <Card preset="borderless" padding="lg">
-            <Row
-              label="Способи входу"
-              desc={signInMethods.length
-                ? `Через ці сервіси можна увійти в цей акаунт: ${signInMethods.map(method => method.label).join(', ')}`
+            <CardHeading
+              icon={ShieldCheck}
+              title="Способи входу"
+              caption={signInMethods.length
+                ? signInMethods.map(method => method.label).join(', ')
                 : 'Жодного сервісу не підключено'}
             />
             <div className="divide-y divide-canvas">

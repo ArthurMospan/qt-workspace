@@ -169,6 +169,16 @@ test('панель пропонує одну дію і не пояснює, як
   assert.doesNotMatch(page, /endAllSessions/);
   assert.match(page, /accountSecurity\.endOtherSessions\(\)/);
   assert.match(page, /Вийти з усіх, крім цього/);
+  // Та сама червона кнопка виходу, що й «Вийти з акаунта» нижче на екрані —
+  // одна дія, один вигляд.
+  assert.match(page, /style="ghost"\s+color="red"\s+size="sm"\s+icon=\{LogOut\}/);
+  // І заголовок блоку — заголовок, а не рядок налаштування: `Row` кладе
+  // підпис ліворуч і контрол праворуч, тож назва секції в ньому читалась як
+  // налаштування, яке нікому не змінити.
+  assert.match(page, /<CardHeading\s+icon=\{MonitorSmartphone\}/);
+  assert.match(page, /<CardHeading\s+icon=\{ShieldCheck\}/);
+  // Один компонент, не два: «Сповіщення» малювали цю ж шапку власною розміткою.
+  assert.match(page, /<CardHeading icon=\{ChannelIcon\}/);
   // Пояснення, як це влаштовано, пішло: людині, яка вийшла з чужого ноутбука,
   // назва платформи не допомагає ніяк. (Firebase лишається згаданим на цьому
   // екрані в іншому місці — там, де власник іде вмикати OAuth, і це для нього
