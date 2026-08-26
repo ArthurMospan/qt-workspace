@@ -1,38 +1,39 @@
 // What a plan gives, in one place, so the page and the product cannot disagree.
 //
 // Three of them, and they were already named: the onboarding screen has offered
-// Free, Lite and Pro at $0/$9/$19 since before this file existed. What was
-// missing was anything reading them afterwards. The settings screen drew a
-// two-plan card from ternaries, `/api/projects` refused a fourth project with a
-// hardcoded `plan !== 'pro' && count >= 3` — which quietly made Lite the same
-// thing as Free — and nothing else in `src/` mentioned a plan at all.
+// Free, Lite and Pro since before this file existed. What was missing was
+// anything reading them afterwards. The settings screen drew a two-plan card
+// from ternaries, `/api/projects` refused a fourth project with a hardcoded
+// `plan !== 'pro' && count >= 3` — which quietly made Lite the same thing as
+// Free — and nothing else in `src/` mentioned a plan at all.
 //
-// The registry below is the product's answer to «що дає який тариф», and both
-// the screen and the route read it rather than restating it. That is the same
-// arrangement `ISSUE_BULK_ACTIONS` has for bulk actions and `can.js` has for
-// roles, and it exists for the same reason: a list somebody has to remember to
-// update in three places is a list that will disagree with itself.
+// ── How the price list is shaped, and why ────────────────────────────────
+//
+// Two blocks per plan, in the order everybody's price list uses because it is
+// the order the questions arrive in.
+//
+//   1. The ceilings, as a table of numbers. Not «До 10» — a column of bare
+//      figures is compared down the row at a glance, and the word in front of
+//      each one is read three times and adds nothing. A plan that does not have
+//      something at all shows «–», and no ceiling shows «∞».
+//   2. What the plan adds, as «Все з Lite +» and then only the new lines.
+//      Repeating twelve shared features on every card makes the columns
+//      unreadable and buries the two lines that actually differ.
 //
 // ── The one rule that keeps this honest ──────────────────────────────────
 //
-// Every limit and every capability carries `enforced`. `true` means something
-// in the product actually refuses it on the wrong plan, and `enforcedAt` names
-// the file that does. `false` means intended and not yet built.
+// Every limit and capability carries `enforced`, and `enforcedAt` names the
+// file that does the refusing. `false` means intended and not yet built.
+// `planAllows` answers «yes» for an unenforced capability on every plan — a
+// gate nobody built is not a gate, and reporting one would make the product
+// hide something people are already using.
 //
-// The plan screen marks the two differently and never shows the second as
-// though it were the first — a pricing page listing a feature nobody is stopped
-// from using is not marketing, it is a bug with a price beside it. Flipping a
-// flag to `true` is the last step of enforcing something, not the first, and
-// `tests/plans.test.mjs` holds every `true` to a file that reads the plan.
+// `tests/plans.test.mjs` holds every `enforced: true` to a file that reads the
+// plan, so flipping a flag is the last step of enforcing something.
 
 export const DEFAULT_PLAN = 'free';
 
-/**
- * The numbers a plan puts a ceiling on.
- *
- * `Infinity` is the ceiling for «безліміт», so a caller compares with `<` either
- * way instead of branching on a null.
- */
+/** Rendered by `planLimitRows`: `0` is «–», `Infinity` is «∞». */
 export const PLAN_LIMITS = [
   {
     id: 'projects',
@@ -40,15 +41,50 @@ export const PLAN_LIMITS = [
     enforced: true,
     enforcedAt: 'src/app/api/projects/route.js',
   },
-  {
-    id: 'members',
-    label: 'Учасники команди',
-    enforced: false,
-  },
+  { id: 'members', label: 'Учасники команди', enforced: false },
+  { id: 'portalClients', label: 'Клієнти в порталі', enforced: false },
+  { id: 'aiCalls', label: 'Розбір дзвінків / місяць', enforced: false },
+  { id: 'storageGb', label: 'Сховище файлів', unit: 'ГБ', enforced: false },
 ];
 
-/** Capabilities a plan may or may not include. Ids are stable; labels are not. */
+// Deliberately not a limit: the number of tasks.
+//
+// It is the one ceiling that stops a task tracker being a task tracker, and no
+// competitor uses it — Jira, Asana and Linear cap people, Trello caps boards,
+// and all of them leave the work itself alone. A team that hits a task ceiling
+// does not upgrade, it stops writing tasks down, and then the tracker is wrong
+// about what the team is doing, which is worse for us than the free plan is.
+//
+// What is capped instead is what costs us money as it grows (files, AI calls)
+// or what marks the customer growing into a paying one (projects, people,
+// clients in the portal).
+
+/** What a plan adds over the one before it. Ids are stable; labels are not. */
 export const PLAN_CAPABILITIES = [
+  {
+    id: 'boards',
+    label: 'Дошки, списки, таблиця і спринти',
+    plans: ['free', 'lite', 'pro'],
+    enforced: false,
+  },
+  {
+    id: 'calendar',
+    label: 'Календар, події та нагадування',
+    plans: ['free', 'lite', 'pro'],
+    enforced: false,
+  },
+  {
+    id: 'chat',
+    label: 'Чат і обговорення в задачах',
+    plans: ['free', 'lite', 'pro'],
+    enforced: false,
+  },
+  {
+    id: 'time',
+    label: 'Облік часу, табель і аналітика',
+    plans: ['free', 'lite', 'pro'],
+    enforced: false,
+  },
   {
     id: 'branding',
     label: 'Власний брендинг',
@@ -58,9 +94,16 @@ export const PLAN_CAPABILITIES = [
     enforcedAt: 'src/app/(app)/settings/page.js',
   },
   {
+    id: 'invoices',
+    label: 'Виставлення рахунків і ставки',
+    detail: 'Погодинні ставки команди й рахунок із табеля',
+    plans: ['lite', 'pro'],
+    enforced: false,
+  },
+  {
     id: 'integrations',
     label: 'Інтеграції',
-    detail: 'Telegram, YouTrack, API-ключі, портал для клієнтів',
+    detail: 'Telegram, YouTrack, API-ключі',
     plans: ['lite', 'pro'],
     enforced: false,
   },
@@ -72,9 +115,16 @@ export const PLAN_CAPABILITIES = [
     enforced: false,
   },
   {
-    id: 'invoices',
-    label: 'Виставлення рахунків',
-    detail: 'Погодинні ставки команди й рахунок із табеля',
+    id: 'portal',
+    label: 'Портал для клієнтів',
+    detail: 'Замовник бачить свої проєкти, не заходячи в робочий простір',
+    plans: ['lite', 'pro'],
+    enforced: false,
+  },
+  {
+    id: 'ai-calls',
+    label: 'Розбір дзвінків',
+    detail: 'Запис наради стає саммарі, рішеннями й чернетками задач',
     plans: ['lite', 'pro'],
     enforced: false,
   },
@@ -83,45 +133,43 @@ export const PLAN_CAPABILITIES = [
     label: 'Пріоритетна підтримка',
     detail: 'Відповідаємо першими й розбираємось до кінця',
     plans: ['pro'],
-    // Not a switch in the product, and it never will be. Listed with the rest
+    // Not a switch in the product and never will be. Listed with the rest
     // because it is part of what the plan buys; flagged like the rest because
     // nothing in the code enforces it.
     enforced: false,
   },
 ];
 
-/** What every plan includes. Listed on each card so «безкоштовний» does not read as «урізаний». */
-export const SHARED_FEATURES = [
-  { id: 'tasks', label: 'Задачі, дошки, списки і спринти' },
-  { id: 'calendar', label: 'Календар, події та нагадування' },
-  { id: 'chat', label: 'Чат робочого простору й обговорення в задачах' },
-  { id: 'time', label: 'Облік часу, табель і аналітика' },
-];
-
 export const PLANS = [
   {
     id: 'free',
     name: 'Free',
-    tagline: 'Щоб почати працювати командою вже сьогодні',
-    priceLabel: '$0',
-    periodLabel: 'назавжди',
-    limits: { projects: 3, members: 5 },
+    tagline: 'Для тесту й першої команди',
+    priceLabel: '0',
+    currencyLabel: '$ / міс',
+    ctaLabel: 'Почати',
+    ctaNote: 'Без картки й без строку',
+    limits: { projects: 3, members: 5, portalClients: 0, aiCalls: 0, storageGb: 1 },
   },
   {
     id: 'lite',
     name: 'Lite',
     tagline: 'Коли робочий простір показують клієнтам',
-    priceLabel: '$9',
-    periodLabel: 'за місяць',
-    limits: { projects: 10, members: 15 },
+    priceLabel: '9',
+    currencyLabel: '$ / міс',
+    ctaLabel: 'Спробувати',
+    ctaNote: 'Оплата ще не підключена',
+    limits: { projects: 10, members: 15, portalClients: 10, aiCalls: 10, storageGb: 20 },
   },
   {
     id: 'pro',
     name: 'Pro',
-    tagline: 'Усе, що є в Lite, без стелі й з підтримкою поперед черги',
-    priceLabel: '$19',
-    periodLabel: 'за місяць',
-    limits: { projects: Infinity, members: Infinity },
+    tagline: 'Для агенцій і команд, що ростуть',
+    priceLabel: '19',
+    currencyLabel: '$ / міс',
+    ctaLabel: 'Спробувати',
+    ctaNote: 'Оплата ще не підключена',
+    limits: { projects: Infinity, members: Infinity, portalClients: Infinity, aiCalls: 50, storageGb: 100 },
     recommended: true,
   },
 ];
@@ -140,10 +188,29 @@ export function planLimit(value, key) {
   return typeof limit === 'number' ? limit : Infinity;
 }
 
-/** «До 10» / «Без обмежень», so the screen never formats `Infinity`. */
-export function planLimitLabel(value, key) {
+/**
+ * A number, «–» or «∞» — never «До 10».
+ *
+ * A column of bare figures is compared down the row at a glance; a word in
+ * front of every one of them is read three times and says the same thing each
+ * time.
+ */
+export function planLimitValue(value, key) {
   const limit = planLimit(value, key);
-  return limit === Infinity ? 'Без обмежень' : `До ${limit}`;
+  if (limit === Infinity) return '∞';
+  if (limit === 0) return '–';
+  return String(limit);
+}
+
+/** The ceiling rows for one plan's card, ready to print. */
+export function planLimitRows(value) {
+  return PLAN_LIMITS.map(limit => ({
+    id: limit.id,
+    label: limit.label,
+    unit: limit.unit || '',
+    value: planLimitValue(value, limit.id),
+    absent: planLimit(value, limit.id) === 0,
+  }));
 }
 
 /**
@@ -161,35 +228,38 @@ export function planAllows(value, capabilityId) {
 }
 
 /** The cheapest plan that includes a capability — «тільки в Lite і Pro». */
-export function capabilityAvailability(capability) {
+export function capabilityAvailability(capabilityId) {
+  const capability = PLAN_CAPABILITIES.find(entry => entry.id === capabilityId);
+  if (!capability) return '';
   const named = PLANS.filter(plan => capability.plans.includes(plan.id)).map(plan => plan.name);
-  if (named.length === 0) return '';
+  if (named.length === 0 || named.length === PLANS.length) return '';
   if (named.length === 1) return `тільки в ${named[0]}`;
   return `тільки в ${named.slice(0, -1).join(', ')} і ${named.at(-1)}`;
 }
 
-/**
- * Every capability, for one plan's card — the ones it has and the ones it does
- * not, in one list.
- *
- * Deliberately not two lists. A card that only prints what a plan includes
- * cannot answer «а що я втрачаю, лишившись тут», which is the entire question
- * somebody on the free plan is asking.
- */
-export function planCapabilityRows(value) {
-  const id = normalizePlan(value);
-  return PLAN_CAPABILITIES.map(capability => ({
-    ...capability,
-    included: capability.plans.includes(id),
-    availability: capabilityAvailability(capability),
-  }));
+/** The plan before this one, or `null` for the first. */
+export function previousPlan(value) {
+  const index = PLANS.findIndex(plan => plan.id === normalizePlan(value));
+  return index > 0 ? PLANS[index - 1] : null;
 }
 
-/** The limit rows for one plan's card, each with its own number. */
-export function planLimitRows(value) {
-  return PLAN_LIMITS.map(limit => ({
-    ...limit,
-    label: limit.label,
-    value: planLimitLabel(value, limit.id),
-  }));
+/**
+ * Only what this plan adds over the one before it, plus the heading that says
+ * so. The first plan inherits nothing, so it lists everything it has.
+ *
+ * This is why the columns stay readable: repeating the four shared lines on
+ * every card buries the two that actually differ.
+ */
+export function planAddedCapabilities(value) {
+  const id = normalizePlan(value);
+  const earlier = previousPlan(id);
+  return PLAN_CAPABILITIES.filter(capability => (
+    capability.plans.includes(id)
+    && (!earlier || !capability.plans.includes(earlier.id))
+  ));
+}
+
+export function planInheritanceLabel(value) {
+  const earlier = previousPlan(value);
+  return earlier ? `Все з ${earlier.name} +` : 'Що входить';
 }

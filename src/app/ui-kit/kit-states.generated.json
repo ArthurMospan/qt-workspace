@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 114,
-    "stateful": 103,
+    "components": 115,
+    "stateful": 104,
     "hover": 68,
     "focus": 68,
     "disabled": 35,
     "loading": 7,
     "error": 6,
-    "long-text": 72
+    "long-text": 73
   },
   "components": {
     "Alert": {
@@ -341,6 +341,9 @@
     },
     "Pill": {
       "long-text": "children, label"
+    },
+    "PlanMark": {
+      "long-text": "label"
     },
     "Popover": {
       "focus": "global",
@@ -782,6 +785,9 @@
       "detail-layout",
       "variant-matrix",
       "states"
+    ],
+    "PlanMark": [
+      "badges"
     ],
     "Popover": [
       "task-attributes",

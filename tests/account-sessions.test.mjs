@@ -179,7 +179,7 @@ test('панель пропонує одну дію і не пояснює, як
   assert.match(page, /<GroupLabel label="Способи входу" \/>/);
   // Один компонент, не три: «Загальні» малювали цей підпис власними утилітами.
   assert.match(page, /<GroupLabel label="Організація" \/>/);
-  assert.match(page, /<GroupLabel label="Брендинг" \/>/);
+  assert.match(page, /<GroupLabel\s+label="Брендинг"/);
   assert.doesNotMatch(page, /text-\[11px\] font-bold text-muted uppercase tracking-wider/);
   // Пояснення, як це влаштовано, пішло: людині, яка вийшла з чужого ноутбука,
   // назва платформи не допомагає ніяк. (Firebase лишається згаданим на цьому

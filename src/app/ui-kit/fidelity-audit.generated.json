@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 114,
-      "used": 114,
+      "components": 115,
+      "used": 115,
       "unused": 0,
-      "covered": 109,
+      "covered": 110,
       "uncovered": 0,
       "routes": 12,
-      "previews": 145,
+      "previews": 146,
       "internal": 5,
       "unlisted": 0
     },
@@ -520,22 +520,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:554",
+      "location": "src/app/(app)/settings/page.js:531",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:574",
+      "location": "src/app/(app)/settings/page.js:551",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:618",
+      "location": "src/app/(app)/settings/page.js:595",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:737",
+      "location": "src/app/(app)/settings/page.js:714",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },

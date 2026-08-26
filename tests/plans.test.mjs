@@ -20,15 +20,16 @@ import {
   PLANS,
   PLAN_CAPABILITIES,
   PLAN_LIMITS,
-  SHARED_FEATURES,
   capabilityAvailability,
   normalizePlan,
+  planAddedCapabilities,
   planAllows,
   planById,
-  planCapabilityRows,
+  planInheritanceLabel,
   planLimit,
-  planLimitLabel,
   planLimitRows,
+  planLimitValue,
+  previousPlan,
 } from '../src/lib/utils/plans.mjs';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -36,7 +37,7 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 test('три тарифи, і саме ті, що названі в онбордингу', () => {
   assert.deepEqual(PLANS.map(plan => plan.id), ['free', 'lite', 'pro']);
   assert.deepEqual(PLANS.map(plan => plan.name), ['Free', 'Lite', 'Pro']);
-  assert.deepEqual(PLANS.map(plan => plan.priceLabel), ['$0', '$9', '$19']);
+  assert.deepEqual(PLANS.map(plan => plan.priceLabel), ['0', '9', '19']);
 });
 
 test('невідомий тариф читається як безкоштовний, а не як помилка', () => {
@@ -59,10 +60,28 @@ test('стелі ростуть від тарифу до тарифу і зак�
   assert.equal(planLimit('free', 'придумане'), Infinity);
 });
 
-test('стеля показується словами, а не числом Infinity', () => {
-  assert.equal(planLimitLabel('free', 'projects'), 'До 3');
-  assert.equal(planLimitLabel('lite', 'members'), 'До 15');
-  assert.equal(planLimitLabel('pro', 'projects'), 'Без обмежень');
+test('стеля друкується числом, рискою або нескінченністю', () => {
+  // Стовпчик голих чисел порівнюється поглядом по рядку; слово «до» перед
+  // кожним читається тричі й щоразу означає те саме.
+  assert.equal(planLimitValue('free', 'projects'), '3');
+  assert.equal(planLimitValue('lite', 'members'), '15');
+  assert.equal(planLimitValue('pro', 'projects'), '∞');
+  // Чого в тарифі немає зовсім — риска, а не нуль.
+  assert.equal(planLimitValue('free', 'portalClients'), '–');
+  assert.equal(planLimitValue('free', 'aiCalls'), '–');
+});
+
+test('кількість задач навмисно не обмежується', () => {
+  // Єдина стеля, від якої трекер перестає бути трекером, і жоден конкурент її
+  // не ставить: Jira й Asana рахують людей, Trello — дошки, роботу не чіпає
+  // ніхто. Команда, що вперлась у ліміт задач, не переходить на платний — вона
+  // перестає записувати задачі, і трекер починає брехати про те, чим вона
+  // зайнята. Обмежується натомість те, що коштує грошей у міру росту, і те,
+  // що означає клієнта, який виріс у платного.
+  assert.deepEqual(
+    PLAN_LIMITS.map(limit => limit.id),
+    ['projects', 'members', 'portalClients', 'aiCalls', 'storageGb'],
+  );
 });
 
 test('Pro має все, що має Lite, і ще щось понад те', () => {
@@ -72,8 +91,12 @@ test('Pro має все, що має Lite, і ще щось понад те', ()
     assert.ok(capability.plans.includes('pro'), `${capability.id} є в Lite, але не в Pro`);
   }
   assert.ok(pro.length > lite.length, 'Pro мусить додавати щось понад Lite');
-  // Безкоштовний не має жодної з платних можливостей — саме це робить їх платними.
-  assert.equal(PLAN_CAPABILITIES.filter(item => item.plans.includes('free')).length, 0);
+  // І все, що є в безкоштовному, є в обох платних: сходинка вгору нічого не
+  // забирає.
+  for (const capability of PLAN_CAPABILITIES.filter(item => item.plans.includes('free'))) {
+    assert.ok(capability.plans.includes('lite'), `${capability.id} зникає в Lite`);
+    assert.ok(capability.plans.includes('pro'), `${capability.id} зникає в Pro`);
+  }
 });
 
 test('брендинг починається з Lite і відмовляє безкоштовному', () => {
@@ -93,41 +116,53 @@ test('можливість, якої ніхто не стереже, не вда
 });
 
 test('замок називає найдешевший тариф, у якому фіча є', () => {
-  const branding = PLAN_CAPABILITIES.find(capability => capability.id === 'branding');
-  assert.equal(capabilityAvailability(branding), 'тільки в Lite і Pro');
-  const support = PLAN_CAPABILITIES.find(capability => capability.id === 'priority-support');
-  assert.equal(capabilityAvailability(support), 'тільки в Pro');
+  assert.equal(capabilityAvailability('branding'), 'тільки в Lite і Pro');
+  assert.equal(capabilityAvailability('priority-support'), 'тільки в Pro');
+  // Те, що є всюди, не має чим бути обмеженим — і мовчить.
+  assert.equal(capabilityAvailability('boards'), '');
+  assert.equal(capabilityAvailability('вигадане'), '');
 });
 
-test('картка тарифу показує кожну можливість — і ту, якої в ньому немає', () => {
-  const free = planCapabilityRows('free');
-  // Не два списки: картка, що друкує лише включене, не відповідає на «а що я
-  // втрачаю, лишившись тут».
-  assert.equal(free.length, PLAN_CAPABILITIES.length);
-  assert.ok(free.every(row => row.included === false));
-  assert.ok(free.every(row => row.availability.startsWith('тільки в')));
+test('картка друкує лише те, що тариф додає до попереднього', () => {
+  // Дванадцять спільних рядків на кожній картці ховають ті два, що справді
+  // різні. Тому кожен тариф каже «Все з попереднього +» і перелічує нове.
+  assert.equal(previousPlan('free'), null);
+  assert.equal(previousPlan('lite').id, 'free');
+  assert.equal(previousPlan('pro').id, 'lite');
 
-  const pro = planCapabilityRows('pro');
-  assert.ok(pro.every(row => row.included === true));
+  assert.equal(planInheritanceLabel('free'), 'Що входить');
+  assert.equal(planInheritanceLabel('lite'), 'Все з Free +');
+  assert.equal(planInheritanceLabel('pro'), 'Все з Lite +');
 
-  const lite = planCapabilityRows('lite');
-  assert.equal(lite.filter(row => row.included).length, PLAN_CAPABILITIES.length - 1);
+  const free = planAddedCapabilities('free').map(capability => capability.id);
+  const lite = planAddedCapabilities('lite').map(capability => capability.id);
+  const pro = planAddedCapabilities('pro').map(capability => capability.id);
+
+  assert.ok(free.includes('boards'));
+  assert.ok(lite.includes('branding'));
+  assert.ok(pro.includes('priority-support'));
+  // Нічого не повторюється між сходинками — саме це робить список читабельним.
+  assert.equal(free.some(id => lite.includes(id)), false);
+  assert.equal(lite.some(id => pro.includes(id)), false);
+  // І разом вони покривають увесь реєстр.
+  assert.equal(new Set([...free, ...lite, ...pro]).size, PLAN_CAPABILITIES.length);
 });
 
 test('рядки стель приходять готовими до друку', () => {
   const rows = planLimitRows('lite');
   assert.deepEqual(rows.map(row => row.id), PLAN_LIMITS.map(limit => limit.id));
-  assert.deepEqual(rows.map(row => row.value), ['До 10', 'До 15']);
+  assert.deepEqual(rows.map(row => row.value), ['10', '15', '10', '10', '20']);
+  assert.equal(rows.at(-1).unit, 'ГБ');
+  assert.ok(planLimitRows('free').find(row => row.id === 'aiCalls').absent);
 });
 
 test('кожен тариф має все, що потрібно, щоб його намалювати', () => {
   for (const plan of PLANS) {
-    for (const field of ['name', 'tagline', 'priceLabel', 'periodLabel']) {
+    for (const field of ['name', 'tagline', 'priceLabel', 'currencyLabel', 'ctaLabel', 'ctaNote']) {
       assert.equal(typeof plan[field], 'string', `${plan.id}.${field}`);
       assert.ok(plan[field].trim().length > 0, `${plan.id}.${field}`);
     }
   }
-  assert.ok(SHARED_FEATURES.length >= 3);
   const ids = PLAN_CAPABILITIES.map(capability => capability.id);
   assert.equal(new Set(ids).size, ids.length, 'id можливостей унікальні');
 });
@@ -178,20 +213,25 @@ test('екран тарифів рендерить реєстр, а не пер�
   assert.doesNotMatch(page, /isPro \? '\$15' : '\$0'/);
   assert.doesNotMatch(page, /isPro \? Infinity : 3/);
   assert.match(page, /PLANS\.map\(plan =>/);
-  assert.match(page, /planCapabilityRows\(plan\.id\)/);
+  assert.match(page, /planAddedCapabilities\(plan\.id\)/);
+  assert.match(page, /planInheritanceLabel\(plan\.id\)/);
   assert.match(page, /planLimitRows\(plan\.id\)/);
   assert.match(page, /lg:grid-cols-3/);
 
   // Кнопка стоїть під ціною, а не в підвалі картки: «скільки це коштує» і «чи
   // беру» — одне рішення. І всі три картки однакової висоти.
   const price = page.indexOf('{plan.priceLabel}');
+  const limits = page.indexOf('planLimitRows(plan.id)');
   const button = page.indexOf('handleUpgradePlan(plan.id)');
-  const features = page.indexOf('planLimitRows(plan.id)');
-  assert.ok(price > 0 && button > price && features > button, 'ціна → кнопка → список');
+  const added = page.indexOf('planInheritanceLabel(plan.id)');
+  assert.ok(price > 0 && limits > price && button > limits && added > button,
+    'ціна -> стелі -> кнопка -> що додає');
   assert.match(page, /flex h-full flex-col overflow-hidden/);
 
-  // Замкнена фіча позначена зіркою.
-  assert.match(page, /<Star size=\{13\}/);
+  // Зірочка живе біля контрола в продукті, а не в прайслисті: прайс уже сказав,
+  // що входить у тариф, тим що перелічив це.
+  assert.doesNotMatch(page.slice(price, added), /<Star|<PlanMark/);
+  assert.match(page, /<PlanMark label=\{capabilityAvailability\('branding'\)\} \/>/);
 
   // Перемикання щось робить, а не показує тост про майбутнє.
   assert.doesNotMatch(page, /Підключення платіжної системи в розробці/);
@@ -206,5 +246,5 @@ test('брендинг зачинений тарифом, але не вимик
   assert.match(page, /if \(!brandingAllowed\) return;/);
   // Причина названа: контрол, згаслий без пояснення, не відрізняється від
   // зламаного.
-  assert.match(page, /Доступно на/);
+  assert.match(page, /Доступно на тарифах Lite і Pro/);
 });

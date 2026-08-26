@@ -32,10 +32,11 @@ import { useAccountSessions } from '@/lib/hooks/useAccountSessions';
 import { describeSignInMethods } from '@/lib/utils/accountSessions.mjs';
 import {
   PLANS,
-  SHARED_FEATURES,
+  capabilityAvailability,
   normalizePlan,
+  planAddedCapabilities,
   planAllows,
-  planCapabilityRows,
+  planInheritanceLabel,
   planLimitRows,
 } from '@/lib/utils/plans.mjs';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
@@ -52,31 +53,7 @@ import {
   UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { 
-  Button, 
-  Input, 
-  Textarea, 
-  Select, 
-  ToggleSwitch, 
-  Alert, 
-  Card,
-  ColorSwatch,
-  LoadingSpinner,
-  SidebarLayout,
-  MobilePaneBack,
-  InnerNavigation,
-  PageHeader,
-  Dialog,
-  DatePicker,
-  IconAction,
-  Label,
-  Pill,
-  PriorityBadge,
-  Surface,
-  Tabs,
-  useConfirm,
-  Popover
-} from '@/components/ui';
+import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -282,7 +259,7 @@ function GroupLabel({ label, action = null }) {
   return (
     <div className="flex min-h-[24px] items-center justify-between gap-3 pb-2">
       <p className="ui-type-eyebrow">{label}</p>
-      {action && <div className="shrink-0">{action}</div>}
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
@@ -3081,10 +3058,17 @@ export default function SettingsPage() {
             padding="lg"
             className={`transition-opacity ${!orgLogo || !brandingAllowed ? 'opacity-50 pointer-events-none' : ''}`}
           >
-            <GroupLabel label="Брендинг" />
+            {/* The star sits on the label rather than in the price list. A
+                price list already says what a plan includes by listing it; the
+                place this is worth saying is where somebody reaches for the
+                switch and it will not move. */}
+            <GroupLabel
+              label="Брендинг"
+              action={!brandingAllowed && <PlanMark label={capabilityAvailability('branding')} />}
+            />
             {!brandingAllowed ? (
               <p className="text-[12px] text-muted mb-3">
-                Доступно на професійному тарифі — «Налаштування» → «Тарифний план».
+                Доступно на тарифах Lite і Pro — «Налаштування» → «Тарифний план».
               </p>
             ) : !orgLogo && (
               <p className="text-[12px] text-muted mb-3">Завантажте логотип організації, щоб розблокувати налаштування брендингу</p>
@@ -3531,107 +3515,102 @@ export default function SettingsPage() {
           title="Тарифний план"
           desc="Що входить у кожен тариф і на якому ви зараз"
         >
-          {/* Three cards, one row, all the same height. `items-stretch` is the
-              grid default and the cards are `h-full` columns, so the row is as
-              tall as its tallest card whatever any of them contains.
+          {/* The order the questions arrive in, which is why every price list
+              is built this way: name, what it is for, what it costs, the
+              button — then the ceilings as a table of bare numbers, then only
+              what this plan adds over the one before it.
 
-              The button sits directly under the price rather than at the foot
-              of the card: what somebody is deciding is «скільки це коштує і чи
-              беру», and those two belong to each other. The list underneath is
-              the answer to «а що я за це отримую», which is read after.
+              Not «До 10». A column of figures is compared down the row at a
+              glance, and the word in front of each one is read three times and
+              says the same thing every time. Not twelve shared lines on every
+              card either: repeating them buries the two that actually differ,
+              which is what «Все з Lite +» is for.
 
-              Everything on them comes from `plans.mjs`. This card used to be
-              built from ternaries over two plans while the product offered
-              three, which is how Lite came to be refused a fourth project like
-              a free workspace. */}
-          <div className="grid gap-4 lg:grid-cols-3">
+              The row is `items-stretch` and the cards are `h-full` columns, so
+              all three end level however much any of them holds. */}
+          <div className="grid gap-5 lg:grid-cols-3">
             {PLANS.map(plan => {
               const isCurrent = plan.id === orgPlan;
+              const added = planAddedCapabilities(plan.id);
               return (
-                <Card
-                  key={plan.id}
-                  preset="bordered"
-                  padding="none"
-                  className={`flex h-full flex-col overflow-hidden ${isCurrent ? 'border-ink' : ''}`}
-                >
-                  <div className="flex flex-col gap-4 border-b border-line px-6 py-6">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="ui-type-detail-title text-ink">{plan.name}</h3>
-                        <p className="mt-1 text-[13px] leading-relaxed text-muted">{plan.tagline}</p>
+                <div key={plan.id} className="relative flex h-full flex-col pt-3">
+                  {plan.recommended && (
+                    <span className="absolute left-1/2 top-0 z-10 -translate-x-1/2">
+                      <Pill size="md" tone="info" uppercase>Найпопулярніший</Pill>
+                    </span>
+                  )}
+                  <Card
+                    preset="bordered"
+                    padding="none"
+                    className={`flex h-full flex-col overflow-hidden ${
+                      isCurrent ? 'border-ink' : plan.recommended ? 'border-info' : ''
+                    }`}
+                  >
+                    <div className="flex flex-col gap-6 px-7 py-7">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="ui-type-detail-title text-ink">{plan.name}</h3>
+                          <p className="mt-2 text-[13px] leading-relaxed text-muted">{plan.tagline}</p>
+                        </div>
+                        {isCurrent && <Pill size="md" className="shrink-0">Ваш тариф</Pill>}
                       </div>
-                      {isCurrent
-                        ? <Pill size="md" className="shrink-0">Ваш тариф</Pill>
-                        : plan.recommended && <Pill size="md" tone="info" className="shrink-0">Рекомендовано</Pill>}
+
+                      <p className="flex items-baseline gap-2">
+                        <span className="text-[40px] font-black leading-none tracking-tight text-ink">
+                          {plan.priceLabel}
+                        </span>
+                        <span className="text-[13px] font-medium text-muted">{plan.currencyLabel}</span>
+                      </p>
+
+                      {/* The ceilings. Label left, figure right, so the three
+                          cards read as one table across the row. */}
+                      <ul className="flex flex-col gap-[10px]">
+                        {planLimitRows(plan.id).map(limit => (
+                          <li key={limit.id} className="flex items-baseline justify-between gap-4 text-[13px]">
+                            <span className={`min-w-0 ${limit.absent ? 'text-faint' : 'text-muted'}`}>
+                              {limit.label}
+                            </span>
+                            <span className={`shrink-0 font-bold tabular-nums ${limit.absent ? 'text-faint' : 'text-ink'}`}>
+                              {limit.value}{limit.unit && !limit.absent ? ` ${limit.unit}` : ''}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          onClick={() => handleUpgradePlan(plan.id)}
+                          style={isCurrent ? 'secondary' : plan.recommended ? 'primary' : 'secondary'}
+                          size="lg"
+                          disabled={isCurrent || upgrading}
+                          loading={upgrading && !isCurrent}
+                          className="w-full"
+                        >
+                          {isCurrent ? 'Це ваш тариф' : plan.ctaLabel}
+                        </Button>
+                        <p className="text-center text-[11px] leading-relaxed text-faint">{plan.ctaNote}</p>
+                      </div>
                     </div>
 
-                    <p className="flex items-baseline gap-1.5">
-                      <span className="text-[32px] font-black leading-none text-ink">{plan.priceLabel}</span>
-                      <span className="text-[13px] font-medium text-faint">{plan.periodLabel}</span>
-                    </p>
-
-                    <Button
-                      onClick={() => handleUpgradePlan(plan.id)}
-                      style={isCurrent ? 'secondary' : 'primary'}
-                      size="lg"
-                      disabled={isCurrent || upgrading}
-                      loading={upgrading && !isCurrent}
-                      className="w-full"
-                    >
-                      {isCurrent ? 'Це ваш тариф' : `Перейти на ${plan.name}`}
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-1 flex-col gap-5 px-6 py-5">
-                    <ul className="flex flex-col gap-2">
-                      {planLimitRows(plan.id).map(limit => (
-                        <li key={limit.id} className="flex items-baseline justify-between gap-3 text-[13px]">
-                          <span className="min-w-0 text-muted">{limit.label}</span>
-                          <span className="shrink-0 font-semibold text-ink">{limit.value}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* Every capability on every card, present or not.
-                        A card that prints only what a plan includes cannot
-                        answer «а що я втрачаю, лишившись тут» — which is the
-                        one question somebody on the free plan is asking. */}
-                    <ul className="flex flex-col gap-2 border-t border-line pt-4">
-                      {planCapabilityRows(plan.id).map(capability => (
-                        <li key={capability.id} className="flex gap-2">
-                          {capability.included
-                            ? <Check size={14} className="mt-[3px] shrink-0 text-success" />
-                            : <Star size={13} className="mt-[3px] shrink-0 fill-ink text-ink" />}
-                          <span className="min-w-0">
-                            <span className={`text-[13px] font-medium ${capability.included ? 'text-ink' : 'text-muted'}`}>
-                              {capability.label}
-                            </span>
-                            <span className="block text-[12px] leading-relaxed text-faint">
-                              {capability.included ? capability.detail : capability.availability}
-                            </span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* On every card and identical on every card, because that
-                        is what makes the free one a plan rather than a trial. */}
-                    <ul className="flex flex-col gap-2 border-t border-line pt-4">
-                      {SHARED_FEATURES.map(feature => (
-                        <li key={feature.id} className="flex gap-2">
-                          <Check size={14} className="mt-[3px] shrink-0 text-faint" />
-                          <span className="min-w-0 text-[13px] text-ink">{feature.label}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Card>
+                    {/* Only what this plan adds. The heading says where the
+                        rest of it came from. */}
+                    <div className="flex flex-1 flex-col gap-3 border-t border-line px-7 py-6">
+                      <p className="ui-type-eyebrow">{planInheritanceLabel(plan.id)}</p>
+                      <ul className="flex flex-col gap-[10px]">
+                        {added.map(capability => (
+                          <li key={capability.id} className="flex gap-2.5">
+                            <Check size={15} className="mt-[2px] shrink-0 text-success" />
+                            <span className="min-w-0 text-[13px] leading-snug text-ink">{capability.label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </Card>
+                </div>
               );
             })}
           </div>
 
-          {/* Nobody is charged yet, and a plan screen that did not say so would
-              be the one dishonest thing left on it. */}
           <p className="text-[12px] leading-relaxed text-muted">
             Оплата ще не підключена — тариф можна перемкнути будь-коли й без карти.
           </p>

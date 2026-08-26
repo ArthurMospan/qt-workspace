@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 114,
-    "props": 857,
-    "documentedProps": 857,
+    "components": 115,
+    "props": 859,
+    "documentedProps": 859,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -4463,6 +4463,26 @@
             "medium"
           ],
           "description": "Font weight."
+        }
+      ]
+    },
+    "PlanMark": {
+      "file": "src/components/ui/DataDisplay/PlanMark.jsx",
+      "summary": "A filled black star beside something the current plan does not include. It belongs next to the control, not on the price list.",
+      "props": [
+        {
+          "name": "className",
+          "default": "''",
+          "type": "string",
+          "values": [],
+          "description": "Placement in the parent only."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "string",
+          "values": [],
+          "description": "What the plan is missing — becomes the tooltip."
         }
       ]
     },
