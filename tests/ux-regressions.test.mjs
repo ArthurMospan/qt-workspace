@@ -314,4 +314,17 @@ test('the task composer can attach a file, like the task screen already could', 
   // Тека — та сама, що й у завдання, і вона scoped на організацію: підпис
   // /api/upload/sign відмовляє в чужій.
   assert.match(composer, /`organizations\/\$\{organizationId\}\/attachments`/);
+
+  // І скріпка стоїть перед «Посилання», а не в кінці рядка. Тулбар
+  // прокручується, коли редактор вузький — а вузький він саме в модалці
+  // створення, — тож остання кнопка в рядку невидима, доки хтось не здогадається
+  // його потягнути.
+  const clip = editor.indexOf('icon={uploading ? LoaderCircle : Paperclip}');
+  const link = editor.indexOf('label="Посилання (Ctrl+K)"');
+  const quote = editor.indexOf('label="Цитата"');
+  assert.ok(clip > 0 && link > 0 && quote > 0, 'усі три кнопки на місці');
+  assert.ok(quote < clip && clip < link, 'скріпка між «Цитата» і «Посилання»');
+  // В одній групі з посиланням, кодом і таблицею — тобто без власного
+  // розділювача між нею і ними.
+  assert.doesNotMatch(editor.slice(clip, link), /<ToolbarDivider \/>/);
 });

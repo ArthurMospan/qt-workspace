@@ -16,6 +16,8 @@ import {
   Bold,
   Braces,
   CheckSquare,
+  ChevronLeft,
+  ChevronRight,
   Code2,
   Columns2,
   Eye,
@@ -308,6 +310,56 @@ export default function MarkdownEditor({
   }, [commit]);
 
   const { canUndo, canRedo } = historyState;
+
+  // Whether the toolbar has more to show in either direction.
+  //
+  // The row scrolls sideways when the editor is narrow, and «scrolls» is
+  // something a trackpad owner discovers and a mouse owner does not: a plain
+  // wheel scrolls the page, not the row, so half the toolbar simply was not
+  // there. The two arrows below appear only when there is something behind
+  // them and scroll on a click.
+  //
+  // They are drawn over the row rather than beside it, so appearing does not
+  // take width from what they are reporting on — an arrow that made the row
+  // narrower could make itself necessary, and then unnecessary, and flicker
+  // between the two.
+  const toolbarRef = useRef(null);
+  const [toolbarOverflow, setToolbarOverflow] = useState({ start: false, end: false });
+
+  useEffect(() => {
+    const node = toolbarRef.current;
+    if (!node) return undefined;
+    const measure = () => {
+      const remaining = node.scrollWidth - node.clientWidth - node.scrollLeft;
+      setToolbarOverflow(current => {
+        // A pixel of slack: sub-pixel layout leaves a fraction behind at the
+        // end of a row that has genuinely finished scrolling.
+        const next = { start: node.scrollLeft > 1, end: remaining > 1 };
+        return next.start === current.start && next.end === current.end ? current : next;
+      });
+    };
+    measure();
+    node.addEventListener('scroll', measure, { passive: true });
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => {
+      node.removeEventListener('scroll', measure);
+      observer.disconnect();
+    };
+  }, [onUploadFiles, fullscreen, mode]);
+
+  const scrollToolbar = useCallback(direction => {
+    const node = toolbarRef.current;
+    if (!node) return;
+    const reduced = typeof window !== 'undefined'
+      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    // Most of a screenful, so a click makes visible progress without landing
+    // somewhere nobody asked for.
+    node.scrollBy({
+      left: direction * Math.max(120, node.clientWidth * 0.7),
+      behavior: reduced ? 'auto' : 'smooth',
+    });
+  }, []);
   // Fullscreen is always its own box, whatever frame the inline editor wears.
   const editorClassName = fullscreen
     ? 'fixed inset-3 z-[200] flex flex-col overflow-hidden rounded-[16px] border border-line bg-white sm:inset-6'
@@ -323,47 +375,67 @@ export default function MarkdownEditor({
           <ToolbarButton icon={Redo2} label="Повторити (Ctrl+Shift+Z)" onClick={redo} disabled={!canRedo} />
         </div>
         <ToolbarDivider />
-        <div className="hide-scrollbar flex min-w-0 flex-1 items-center overflow-x-auto">
-          <ToolbarButton icon={Heading1} label="Заголовок 1" onClick={() => applyHeading(1)} />
-          <ToolbarButton icon={Heading2} label="Заголовок 2" onClick={() => applyHeading(2)} />
-          <ToolbarButton icon={Heading3} label="Заголовок 3" onClick={() => applyHeading(3)} />
-          <ToolbarDivider />
-          <ToolbarButton icon={Bold} label="Жирний (Ctrl+B)" onClick={() => applyInline('**', '**', 'жирний текст')} />
-          <ToolbarButton icon={Italic} label="Курсив (Ctrl+I)" onClick={() => applyInline('*', '*', 'курсив')} />
-          <ToolbarButton icon={Strikethrough} label="Закреслений" onClick={() => applyInline('~~', '~~', 'закреслений текст')} />
-          <ToolbarButton icon={Code2} label="Вбудований код" onClick={() => applyInline('`', '`', 'код')} />
-          <ToolbarDivider />
-          <ToolbarButton icon={List} label="Маркований список" onClick={() => applyList('bullet')} />
-          <ToolbarButton icon={ListOrdered} label="Нумерований список" onClick={() => applyList('ordered')} />
-          <ToolbarButton icon={CheckSquare} label="Чекліст" onClick={() => applyList('task')} />
-          <ToolbarButton icon={Quote} label="Цитата" onClick={() => applyList('quote')} />
-          <ToolbarDivider />
-          <ToolbarButton icon={LinkIcon} label="Посилання (Ctrl+K)" onClick={insertLink} />
-          <ToolbarButton icon={Braces} label="Блок коду" onClick={insertCodeBlock} />
-          <ToolbarButton icon={Table2} label="Таблиця" onClick={() => insertBlock('| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значення | Значення |')} />
-          <ToolbarButton icon={Minus} label="Розділювач" onClick={() => insertBlock('---')} />
-          {onUploadFiles && (
-            <>
-              <ToolbarDivider />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ATTACHMENT_UPLOAD_ACCEPT}
-                multiple
-                className="hidden"
-                onChange={event => {
-                  uploadAndInsert(event.target.files);
-                  event.target.value = '';
-                }}
-              />
-              <ToolbarButton
-                icon={uploading ? LoaderCircle : Paperclip}
-                label="Додати зображення або файл"
-                disabled={uploading}
-                onClick={() => fileInputRef.current?.click()}
-              />
-            </>
+        <div className="relative flex min-w-0 flex-1 items-center">
+          {toolbarOverflow.start && (
+            <div className="pointer-events-none absolute left-0 z-10 flex items-center bg-gradient-to-r from-canvas via-canvas to-transparent pr-3">
+              <span className="pointer-events-auto">
+                <ToolbarButton icon={ChevronLeft} label="Прокрутити ліворуч" onClick={() => scrollToolbar(-1)} />
+              </span>
+            </div>
           )}
+          {toolbarOverflow.end && (
+            <div className="pointer-events-none absolute right-0 z-10 flex items-center bg-gradient-to-l from-canvas via-canvas to-transparent pl-3">
+              <span className="pointer-events-auto">
+                <ToolbarButton icon={ChevronRight} label="Прокрутити праворуч" onClick={() => scrollToolbar(1)} />
+              </span>
+            </div>
+          )}
+          <div ref={toolbarRef} className="hide-scrollbar flex min-w-0 flex-1 items-center overflow-x-auto">
+            <ToolbarButton icon={Heading1} label="Заголовок 1" onClick={() => applyHeading(1)} />
+            <ToolbarButton icon={Heading2} label="Заголовок 2" onClick={() => applyHeading(2)} />
+            <ToolbarButton icon={Heading3} label="Заголовок 3" onClick={() => applyHeading(3)} />
+            <ToolbarDivider />
+            <ToolbarButton icon={Bold} label="Жирний (Ctrl+B)" onClick={() => applyInline('**', '**', 'жирний текст')} />
+            <ToolbarButton icon={Italic} label="Курсив (Ctrl+I)" onClick={() => applyInline('*', '*', 'курсив')} />
+            <ToolbarButton icon={Strikethrough} label="Закреслений" onClick={() => applyInline('~~', '~~', 'закреслений текст')} />
+            <ToolbarButton icon={Code2} label="Вбудований код" onClick={() => applyInline('`', '`', 'код')} />
+            <ToolbarDivider />
+            <ToolbarButton icon={List} label="Маркований список" onClick={() => applyList('bullet')} />
+            <ToolbarButton icon={ListOrdered} label="Нумерований список" onClick={() => applyList('ordered')} />
+            <ToolbarButton icon={CheckSquare} label="Чекліст" onClick={() => applyList('task')} />
+            <ToolbarButton icon={Quote} label="Цитата" onClick={() => applyList('quote')} />
+            <ToolbarDivider />
+            {/* Ahead of the link rather than at the end of the row. The toolbar
+                scrolls when the editor is narrow — which is what the composer's
+                editor is — and last in a scrolling row means invisible until
+                somebody thinks to drag it. It belongs with the other three
+                «insert something» buttons anyway. */}
+            {onUploadFiles && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ATTACHMENT_UPLOAD_ACCEPT}
+                  multiple
+                  className="hidden"
+                  onChange={event => {
+                    uploadAndInsert(event.target.files);
+                    event.target.value = '';
+                  }}
+                />
+                <ToolbarButton
+                  icon={uploading ? LoaderCircle : Paperclip}
+                  label="Додати зображення або файл"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                />
+              </>
+            )}
+            <ToolbarButton icon={LinkIcon} label="Посилання (Ctrl+K)" onClick={insertLink} />
+            <ToolbarButton icon={Braces} label="Блок коду" onClick={insertCodeBlock} />
+            <ToolbarButton icon={Table2} label="Таблиця" onClick={() => insertBlock('| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значення | Значення |')} />
+            <ToolbarButton icon={Minus} label="Розділювач" onClick={() => insertBlock('---')} />
+          </div>
         </div>
         <ToolbarDivider />
         <div className="flex items-center gap-0.5 rounded-[10px] bg-black/[0.04] p-0.5">

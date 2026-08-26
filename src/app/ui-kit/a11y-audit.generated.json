@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 375,
-    "elements": 4360,
+    "elements": 4366,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -156,7 +156,7 @@
     },
     {
       "element": "IconAction",
-      "location": "src/components/ui/Forms/MarkdownEditor.jsx:47",
+      "location": "src/components/ui/Forms/MarkdownEditor.jsx:49",
       "attributes": [
         "label"
       ]
