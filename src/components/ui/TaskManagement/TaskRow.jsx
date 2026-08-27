@@ -268,12 +268,12 @@ export default function TaskRow({
       ? `flex items-center gap-[3px] text-[9px] font-bold shrink-0 ml-1 ${isOverdue ? 'text-danger' : 'text-muted'}`
       : `flex items-center gap-[4px] text-[11px] font-semibold shrink-0 ${isOverdue ? 'text-danger' : 'text-muted'}`}>
       <CalendarIcon size={dense ? 10 : 12} strokeWidth={2} className="shrink-0" />
-      <span>{fmtDate(due, timeZone)}</span>
-      {isOverdue && (
-        <span className={dense ? 'font-bold uppercase text-[8px] ml-0.5' : 'font-bold uppercase text-[9px]'}>
-          • Прострочено
-        </span>
-      )}
+      {/* Прострочене завдання друкує лише «Прострочено» — так само, як картка
+          на дошці. Дата, яка вже минула, нічого не додає до цього слова, а
+          два написи поспіль коштували рядку ширини, якої йому бракує. */}
+      {isOverdue
+        ? <span className="font-bold uppercase">Прострочено</span>
+        : <span>{fmtDate(due, timeZone)}</span>}
     </div>
   ) : null);
 

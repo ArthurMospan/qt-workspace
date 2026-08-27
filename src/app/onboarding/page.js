@@ -10,7 +10,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { PlanCards } from '@/components/ui';
-import { DEFAULT_PLAN, FREE_WORKSPACE, normalizePlan } from '@/lib/utils/plans.mjs';
+import { FREE_WORKSPACE, freeWorkspaceElsewhere, normalizePlan } from '@/lib/utils/plans.mjs';
 import { normalizeTimeZone } from '@/lib/utils/timeZone.mjs';
 import { createOrganization } from '@/lib/services/organizations';
 import { switchOrganizationPlan } from '@/lib/services/organizationPlan';
@@ -84,10 +84,13 @@ function OnboardingPageContent() {
   // Firestore rule cannot: «how many free organizations does this account
   // already own» is a count, and `allow create` only ever sees the one document
   // in front of it.
-  const ownsFreeWorkspace = (allOrgs || []).some(organization => (
-    orgRoles?.[organization.id] === 'owner'
-    && normalizePlan(organization.plan) === DEFAULT_PLAN
-    && organization.id !== activeOrgId
+  //
+  // Той самий підрахунок робить екран тарифів у налаштуваннях і маршрут, що
+  // перемикає тариф, — звідси спільна функція: три копії однієї умови рано чи
+  // пізно починають рахувати по-різному.
+  const ownsFreeWorkspace = Boolean(freeWorkspaceElsewhere(
+    (allOrgs || []).filter(organization => orgRoles?.[organization.id] === 'owner'),
+    activeOrgId,
   ));
   const freeTaken = isNewOrg && ownsFreeWorkspace;
 

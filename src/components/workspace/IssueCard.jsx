@@ -366,14 +366,20 @@ export default function IssueCard({ issue, issues = [], allIssues, issueLinks = 
             })}
           </div>
 
-          {/* Row 5: Due date (thinner medium weight, lighter text, thinner stroke width) */}
+          {/* Row 5: Due date (thinner medium weight, lighter text, thinner stroke width)
+
+              Прострочене завдання друкує лише «Прострочено». Дата, яка вже
+              минула, не додає нічого до цього слова — вона лише подвоює рядок
+              і забирає ширину в мітках поруч. Точний термін лишається на
+              сторінці завдання, де він є полем, а не присудом. */}
           {due && (
             <div className={`flex items-center gap-[5px] mb-[12px] text-[11px] font-medium ${
               isOverdue ? 'text-danger' : 'text-muted'
             }`}>
               <CalendarIcon size={11} strokeWidth={1.8} className="shrink-0" />
-              <span>{formatDate(due, { timeZone })}</span>
-              {isOverdue && <span className="font-semibold">• Прострочено</span>}
+              {isOverdue
+                ? <span className="font-semibold">Прострочено</span>
+                : <span>{formatDate(due, { timeZone })}</span>}
             </div>
           )}
 

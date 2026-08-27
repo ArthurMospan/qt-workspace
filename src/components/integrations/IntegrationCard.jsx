@@ -3,8 +3,15 @@
 import Image from 'next/image';
 import { Button, Card, ToggleSwitch } from '@/components/ui';
 
+// «Підключено» — стан, а не успіх.
+//
+// Увімкнена інтеграція носила зелений — єдиний теплий колір на екрані, — і
+// голосніше за неї на картці не було нічого, включно з назвою сервісу. Гама
+// продукту темна, тож увімкнений стан бере її: біле на ink. Три інші лишаються
+// кольоровими, бо вони справді щось повідомляють: «зачекайте», «зламалося»,
+// «вимкнено». Зелене в продукті означає «вийшло», а не «увімкнено».
 const STATUS_STYLES = {
-  connected: 'bg-success-soft text-success',
+  connected: 'bg-ink text-white',
   pending: 'bg-warning-soft text-warning',
   error: 'bg-danger-soft text-danger',
   unavailable: 'bg-canvas text-muted',
@@ -12,7 +19,7 @@ const STATUS_STYLES = {
 };
 
 const STATUS_DOTS = {
-  connected: 'bg-success-solid',
+  connected: 'bg-white',
   pending: 'bg-warning-solid',
   error: 'bg-danger-solid',
   unavailable: 'bg-faint',
@@ -118,7 +125,7 @@ export default function IntegrationCard({
 
           <div className="mt-3 border-t border-line pt-3">
             <div className="flex flex-wrap items-center gap-3">
-              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[11px] font-semibold ${statusStyle}`}>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-[4px] text-[12px] font-semibold ${statusStyle}`}>
                 <span className={`h-[5px] w-[5px] rounded-full ${dotStyle}`} />
                 {statusLabel}
               </span>

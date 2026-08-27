@@ -32,7 +32,9 @@ import { useAccountSessions } from '@/lib/hooks/useAccountSessions';
 import { describeSignInMethods } from '@/lib/utils/accountSessions.mjs';
 import {
   DEFAULT_PLAN,
+  FREE_WORKSPACE,
   capabilityAvailability,
+  freeWorkspaceElsewhere,
   normalizePlan,
   planAllows,
   planDowngradeNotice,
@@ -789,7 +791,7 @@ const cleanWorkflowItems = arr => (arr || [])
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { currentUser, signOut, activeOrgId, projects, orgRole } = useAppContext();
+  const { currentUser, signOut, activeOrgId, projects, orgRole, allOrgs, orgRoles } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const confirmDialog = useConfirm();
   const {
@@ -1265,6 +1267,9 @@ export default function SettingsPage() {
   // really». The same dialog the crown's price list opens, from the same
   // registry — one of the two must not be a quieter way to lose a feature.
   const [downgrade, setDowngrade] = useState(null);
+  // Той простір, який уже займає безкоштовний тариф, поки пояснюємо, чому цей
+  // на нього не перемикається. `null`, доки нічого не пояснюємо.
+  const [freeTakenBy, setFreeTakenBy] = useState(null);
 
   // ── Notifications ──
   // `channels` is the event × channel matrix; the flat per-event flags beside it
@@ -2252,6 +2257,15 @@ export default function SettingsPage() {
   // which was true and also the whole of the feature. Until money is involved
   // the honest version is that an owner picks a plan and the workspace changes.
   //
+  // Той простір акаунта, який уже займає безкоштовний тариф — якщо він не цей.
+  // Рахуємо лише ті, де ця людина власник: тариф чужої організації не її
+  // справа, і не її обмеження. Той самий підрахунок робить маршрут, який пише
+  // поле, — звідси спільна функція, а не друга копія умови.
+  const ownedFreeWorkspace = useMemo(() => freeWorkspaceElsewhere(
+    (allOrgs || []).filter(organization => orgRoles?.[organization.id] === 'owner'),
+    activeOrgId,
+  ), [allOrgs, orgRoles, activeOrgId]);
+
   // The write itself is `switchOrganizationPlan`, because there are two screens
   // that do it now — this one and the dialog the crown opens — and one field
   // written from two places is one field that will be written two ways. What
@@ -2275,6 +2289,14 @@ export default function SettingsPage() {
   const handleUpgradePlan = (newPlan) => {
     const next = normalizePlan(newPlan);
     if (next === orgPlan || upgradingTo) return;
+    // Один безкоштовний робочий простір на акаунт. Правило тримає маршрут, а
+    // це — його голос: кнопка, яка нічого не робить і нічого не каже, читається
+    // як зламана, а не як відмова. Дізнатися причину можна лише натиснувши, тож
+    // кнопка лишається натискною, а пояснення відкривається на місці відповіді.
+    if (next === DEFAULT_PLAN && ownedFreeWorkspace) {
+      setFreeTakenBy(ownedFreeWorkspace);
+      return;
+    }
     // Asked before the switch, never explained after it. Everything on the list
     // is reversible and says so; the one thing somebody could be surprised by is
     // which projects go read-only, so that line names how many.
@@ -3367,10 +3389,18 @@ export default function SettingsPage() {
                             capabilityId={item.capability}
                             label={capabilityAvailability(item.capability)}
                           />
+                        ) : item.active ? (
+                          // «Підключено» — це факт, а не свято.
+                          //
+                          // Зелений тут був єдиним теплим кольором на екрані й
+                          // тягнув на себе більше уваги, ніж назва сервісу, під
+                          // якою він стоїть. Гама продукту — ink, тож увімкнений
+                          // стан бере її: біле на #1f1f1f. Зелений лишається
+                          // тому, що справді щось означає — «успішно», а не
+                          // «увімкнено».
+                          <Pill tone="dark" size="md">{item.status}</Pill>
                         ) : (
-                          <Pill color={item.active ? '#10b981' : '#9a9a9a'} size="md" appearance="soft-outline">
-                            {item.status}
-                          </Pill>
+                          <Pill tone="neutral" size="md" appearance="soft-outline">{item.status}</Pill>
                         )}
                         <ChevronRight size={16} className="shrink-0 text-faint" />
                       </div>
@@ -3608,6 +3638,15 @@ export default function SettingsPage() {
             onChoose={handleUpgradePlan}
             busyPlanId={upgradingTo}
           />
+
+          {/* Сказано до натискання, а не тільки після. Кнопка лишається
+              натискною — пояснення відкривається саме там, де людина шукала
+              відповідь, — але правило не має бути сюрпризом. */}
+          {ownedFreeWorkspace && (
+            <p className="text-[12px] leading-relaxed text-muted">
+              {FREE_WORKSPACE.switchHint}
+            </p>
+          )}
 
           <p className="text-[12px] leading-relaxed text-muted">
             Оплата ще не підключена — тариф можна перемкнути будь-коли й без карти.
@@ -4443,6 +4482,53 @@ export default function SettingsPage() {
       </main>
 
 
+
+      {/* Питання перед тим, як щось вимкнеться.
+          `handleUpgradePlan` виставляв цей стан із самого початку, а діалог
+          ніхто не монтував: імпорт був, рендера не було. Тому «Перейти на Free»
+          з платного тарифу нічого не робив — стан ставився, і на цьому все
+          закінчувалося. Це та сама пара, що вже стоїть у
+          `WorkspacePlanUpgradeHost`; жоден із двох шляхів до зниження тарифу не
+          має бути тихішим за інший. */}
+      <PlanDowngradeDialog
+        isOpen={Boolean(downgrade)}
+        notice={downgrade}
+        onStay={() => setDowngrade(null)}
+        onConfirm={() => applyPlan(downgrade.planId)}
+        busy={Boolean(upgradingTo)}
+      />
+
+      {/* Чому Free не перемикається. Правило тримає маршрут; тут воно
+          говорить — і називає той простір, який уже займає безкоштовний тариф,
+          бо «десь є ще одна організація» не підказує, куди йти її міняти. */}
+      <Dialog
+        isOpen={Boolean(freeTakenBy)}
+        onClose={() => setFreeTakenBy(null)}
+        size="sm"
+        title={FREE_WORKSPACE.switchTitle}
+        description={FREE_WORKSPACE.switchLead}
+        footer={(
+          <Button style="primary" size="md" onClick={() => setFreeTakenBy(null)} autoFocus>
+            Зрозуміло
+          </Button>
+        )}
+      >
+        <div className="flex flex-col gap-4">
+          <div data-ui-surface="compact-bordered-panel" data-ui-padding="wide" className="ui-surface flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-ink text-[13px] font-bold text-white">
+              {(freeTakenBy?.name || 'О')[0].toUpperCase()}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-[13px] font-bold text-ink">
+                {freeTakenBy?.name || 'Інша організація'}
+              </span>
+              <span className="block text-[12px] text-muted">Зараз на тарифі {planName(DEFAULT_PLAN)}</span>
+            </span>
+          </div>
+          <p className="text-[13px] leading-relaxed text-ink-soft">{FREE_WORKSPACE.switchHow}</p>
+          <p className="text-[12px] leading-relaxed text-muted">{FREE_WORKSPACE.switchReassurance}</p>
+        </div>
+      </Dialog>
 
       <InviteMemberDialog
         isOpen={showInviteModal}

@@ -160,7 +160,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/OrgSwitcherScreen.jsx:44",
+      "location": "src/components/OrgSwitcherScreen.jsx:54",
       "className": "flex flex-col items-center gap-4 transition-all duration-300 group/item w-[160px] group-hover/list:opacity-30 hover:!opacity-100",
       "text": "",
       "childElements": [
@@ -537,22 +537,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:535",
+      "location": "src/app/(app)/settings/page.js:537",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:555",
+      "location": "src/app/(app)/settings/page.js:557",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:599",
+      "location": "src/app/(app)/settings/page.js:601",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:718",
+      "location": "src/app/(app)/settings/page.js:720",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -592,22 +592,22 @@
       "className": "rounded-[14px] border border-line bg-white p-4 transition-opacity ${…}"
     },
     {
-      "location": "src/components/integrations/IntegrationCard.jsx:29",
+      "location": "src/components/integrations/IntegrationCard.jsx:36",
       "tag": "div",
       "className": "rounded-[10px] border border-line bg-canvas p-3 ${…}"
     },
     {
-      "location": "src/components/integrations/IntegrationCard.jsx:88",
+      "location": "src/components/integrations/IntegrationCard.jsx:95",
       "tag": "div",
       "className": "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:543",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:579",
       "tag": "div",
       "className": "rounded-[10px] bg-white p-2"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:639",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:675",
       "tag": "div",
       "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
     },

@@ -195,10 +195,12 @@ export default function DataMigrationSettings({
                   capabilityId={lockedCapabilityId}
                   label={capabilityAvailability(lockedCapabilityId)}
                 />
+              ) : provider.ready ? (
+                // Та сама гама, що й у списку інтеграцій поруч: «Готово» —
+                // стан, а не успіх, тож воно біле на ink, а не зелене.
+                <Pill tone="dark" size="md">{provider.status}</Pill>
               ) : (
-                <Pill color={provider.ready ? '#10b981' : '#9a9a9a'} appearance="soft-outline" size="md">
-                  {provider.status}
-                </Pill>
+                <Pill tone="neutral" appearance="soft-outline" size="md">{provider.status}</Pill>
               )}
               <ChevronRight size={16} className="shrink-0 text-faint" />
             </div>

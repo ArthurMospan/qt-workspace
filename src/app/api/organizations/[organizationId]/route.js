@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, FieldValue, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { resyncProjectsOverPlanLimit } from '@/lib/server/planLimits';
-import { normalizePlan, storedPlanLimit } from '@/lib/utils/plans.mjs';
+import {
+  DEFAULT_PLAN,
+  FREE_WORKSPACE,
+  freeWorkspaceElsewhere,
+  normalizePlan,
+  storedPlanLimit,
+} from '@/lib/utils/plans.mjs';
 
 export async function PATCH(request, context) {
   try {
@@ -28,6 +34,32 @@ export async function PATCH(request, context) {
     if (action === 'set-plan') {
       const plan = normalizePlan(body.plan);
       const db = getAdminDb();
+
+      // Один безкоштовний робочий простір на акаунт — і це рахунок, тож
+      // тримати його може лише маршрут: `firestore.rules` бачить один документ
+      // і не вміє рахувати, скільки їх уже є.
+      //
+      // Створення це вже питало, а перемикання — ні, тож правило трималося на
+      // одному маршруті й обходилося у два кроки: створити другу організацію на
+      // платному тарифі й одразу перемкнути її на Free. Читаємо за власником і
+      // рахуємо тут — акаунт має кілька організацій, а запит по одному полю не
+      // потребує складеного індексу.
+      if (plan === DEFAULT_PLAN) {
+        const owned = await db.collection('organizations')
+          .where('ownerId', '==', authorization.user.uid)
+          .get();
+        const taken = freeWorkspaceElsewhere(
+          owned.docs.map(document => ({ id: document.id, plan: document.data().plan })),
+          organizationId,
+        );
+        if (taken) {
+          return NextResponse.json({
+            error: FREE_WORKSPACE.switchRefusal,
+            code: 'FREE_WORKSPACE_TAKEN',
+          }, { status: 403 });
+        }
+      }
+
       await db.collection('organizations').doc(organizationId).update({
         plan,
         // The ceilings the organization document carries are the registry's,

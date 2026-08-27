@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, RefreshCw, Search, Upload } from 'lucide-react';
-import { Alert, Button, Checkbox, Input, Select, useConfirm } from '@/components/ui';
+import { Alert, Button, Checkbox, IconAction, Input, Pill, Select, useConfirm } from '@/components/ui';
 import IntegrationCard, { IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import {
@@ -28,9 +28,29 @@ function statusLabel(status) {
   }[status] || status || 'Не розпочато';
 }
 
+// Стан імпорту носить бейдж, а не зелений напис: у продукту одна темна гама, і
+// «йде» чи «завершено» — це те, що сталося, а не привід світитися.
+const JOB_TONES = {
+  prepared: 'neutral',
+  running: 'dark',
+  completed: 'dark',
+  cancelled: 'neutral',
+};
+
 function progressFor(job) {
   if (!job?.totalIssues) return job?.status === 'completed' ? 100 : 0;
   return Math.min(100, Math.round(((job.processedIssues + job.failedIssues) / job.totalIssues) * 100));
+}
+
+// Підсумок називає лише те, що справді сталося. «Успішно: 0 · Помилок: 0 ·
+// Зв'язків: 0» — три нулі, які нічого не повідомляють; кількість перенесених
+// задач лишається завжди, бо це і є відповідь на питання «скільки вже».
+function jobSummaryParts(job) {
+  if (!job) return [];
+  const parts = [`Успішно: ${job.processedIssues || 0}`];
+  if (job.failedIssues > 0) parts.push(`Помилок: ${job.failedIssues}`);
+  if (job.processedLinks > 0) parts.push(`Зв’язків: ${job.processedLinks}`);
+  return parts;
 }
 
 export default function YouTrackImportCard({
@@ -369,6 +389,7 @@ export default function YouTrackImportCard({
 
   const visibleUsers = discovery?.users?.filter(user => !user.banned).slice(0, 250) || [];
   const progress = progressFor(job);
+  const jobSummary = jobSummaryParts(job);
   const activeJob = ACTIVE_JOB_STATUSES.has(job?.status);
   // A migration belongs to whoever started it — see `assertImportControl` on the
   // server, which refuses the same calls this hides. Everyone who can open this
@@ -505,14 +526,29 @@ export default function YouTrackImportCard({
         ) : null
       ) : (
         <div className="space-y-4">
+              {/* Одна підписана дія, а не три речі поспіль.
+                  «Знайти проєкти» — те, по що сюди приходять, тож воно
+                  лишається кнопкою з назвою; «Оновити» перечитує той самий
+                  стан і не заслуговує на другу підпис-кнопку поруч. А речення
+                  про світчер було просто неправдою в цьому вигляді: у
+                  «Перенесенні даних» угорі стоїть кнопка «Відключити», ніякого
+                  світчера там немає — він є лише в «Інтеграціях». */}
               <div className="flex flex-wrap items-center gap-2">
-                <Button style="secondary" size="sm" icon={Search} onClick={discover} loading={action === 'discover'}>
+                <Button style="secondary" size="md" icon={Search} onClick={discover} loading={action === 'discover'}>
                   Знайти проєкти
                 </Button>
-                <Button style="ghost" size="sm" icon={RefreshCw} onClick={refresh} loading={loading}>
-                  Оновити
-                </Button>
-                <p className="text-[11px] text-muted">Вимкнути інтеграцію можна світчером угорі.</p>
+                <IconAction
+                  label="Оновити стан"
+                  tooltip
+                  icon={RefreshCw}
+                  size="compact"
+                  appearance="surface"
+                  onClick={refresh}
+                  disabled={loading}
+                />
+                {!migrationPresentation && (
+                  <p className="text-[12px] text-muted">Вимкнути інтеграцію можна світчером угорі.</p>
+                )}
               </div>
 
               {discovery && (
@@ -682,28 +718,37 @@ export default function YouTrackImportCard({
                       className="mb-3"
                     />
                   )}
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="text-[12px] font-semibold text-ink">
-                        {statusLabel(job.status)} · {job.processedIssues + job.failedIssues} / {job.totalIssues} {plural(job.totalIssues, ['задача', 'задачі', 'задач'])}
-                      </p>
-                      <p className="mt-1 text-[11px] text-muted">
-                        Успішно: {job.processedIssues} · Помилок: {job.failedIssues} · Зв’язків: {job.processedLinks}
-                      </p>
+                  {/* Стан імпорту — один рядок, а не чотири.
+                      Тут стояли назва стану, лічильник задач, три підсумкові
+                      числа й відсоток — п'ять написів про те саме, набраних
+                      11–12-м кеглем, з яких три завжди були нулями. Стан бере
+                      бейдж, обсяг — читабельне число, а підсумок називає лише
+                      те, що справді сталося. */}
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Pill tone={JOB_TONES[job.status] || 'neutral'} size="md">{statusLabel(job.status)}</Pill>
+                      <span className="text-[13px] font-semibold text-ink">
+                        {job.processedIssues + job.failedIssues} / {job.totalIssues} {plural(job.totalIssues, ['задача', 'задачі', 'задач'])}
+                      </span>
                     </div>
-                    <span className="text-[12px] font-bold text-ink">{progress}%</span>
+                    <span className="text-[13px] font-bold tabular-nums text-ink">{progress}%</span>
                   </div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-canvas">
                     <div className="h-full rounded-full bg-ink transition-[width]" style={{ width: `${progress}%` }} />
                   </div>
-                  {job.lastError && <p className="mt-2 break-words text-[11px] text-danger">{job.lastError}</p>}
+                  {jobSummary.length > 0 && (
+                    <p className="mt-2 text-[12px] text-muted">{jobSummary.join(' · ')}</p>
+                  )}
+                  {job.lastError && (
+                    <Alert variant="danger" className="mt-3">{job.lastError}</Alert>
+                  )}
                   {job.warnings?.length > 0 && (
-                    <p className="mt-2 text-[11px] text-warning">
+                    <p className="mt-2 text-[12px] text-warning">
                       {job.warnings.length} {plural(job.warnings.length, ['попередження', 'попередження', 'попереджень'])}. Дані без помилок продовжують імпортуватися.
                     </p>
                   )}
                   {!jobIsMine && (
-                    <p className="mt-2 text-[11px] text-muted">
+                    <p className="mt-2 text-[12px] leading-relaxed text-muted">
                       Цей імпорт запустив(ла) {jobOwnerName}
                       {isOrganizationOwner
                         ? '. Продовжити його може лише той, хто розпочав; ви як власник можете його зупинити.'

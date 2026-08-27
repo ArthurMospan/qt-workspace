@@ -51,6 +51,15 @@ const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 // the start of the working day on open.
 const HOURS = Array.from({ length: 24 }, (_, index) => index);
 const WORKDAY_START_HOUR = 7;
+// Сірий, яким календар відсуває клітинку на другий план: вихідні у тижні, рядок
+// «Весь день» і дні поза поточним місяцем.
+//
+// Він був `bg-canvas` — тобто рівно те саме #f4f4f5, що й полотно застосунку
+// навколо картки календаря. Затінена клітинка всередині картки читалася як
+// продовження фону зовні, і на вихідних край календаря просто зникав. Півтону
+// вистачає: клітинка досі помітно відсунута від білого сусіда, але вже світліша
+// за полотно, тож картка знову має власну межу.
+const RECESSED_CELL = 'bg-canvas/50';
 const TYPE_CONFIG = {
   ...Object.fromEntries(CALENDAR_EVENT_TYPE_OPTIONS.map(option => [option.value, option])),
   birthday: { label: 'День народження', color: '#db2777', bg: '#fdf2f8', icon: CakeSlice },
@@ -212,7 +221,7 @@ function DayEntryList({ items, onEventClick, onDeadlineClick }) {
 
 function AllDayRow({ days, events, deadlines, timeZone, onEventClick, onDeadlineClick }) {
   return (
-    <div className="grid border-b border-line bg-canvas" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
+    <div className={`grid border-b border-line ${RECESSED_CELL}`} style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(120px, 1fr))` }}>
       <div className="px-2 py-2 text-[10px] font-semibold text-muted border-r border-line">Весь день</div>
       {days.map(day => {
         const dayEvents = events.filter(event => event.allDay && isCalendarEventOnDay(event, day));
@@ -299,7 +308,7 @@ function ScheduleView({ anchor, view, events, deadlines, timeZone, onEventClick,
           return (
             <div
               key={dateKey(day)}
-              className={`relative border-r last:border-r-0 border-line ${day.getDay() === 0 || day.getDay() === 6 ? 'bg-canvas' : 'bg-white'}`}
+              className={`relative border-r last:border-r-0 border-line ${day.getDay() === 0 || day.getDay() === 6 ? RECESSED_CELL : 'bg-white'}`}
               style={{ height: MINUTES_PER_DAY }}
             >
               {HOURS.map(hour => (
@@ -355,7 +364,7 @@ function MonthView({ anchor, events, deadlines, timeZone, onEventClick, onDeadli
             <div
               key={dateKey(day)}
               className={`min-h-[128px] p-[7px] border-r border-b border-line last:border-r-0 group ${
-                day.getMonth() !== anchor.getMonth() ? 'bg-canvas' : 'bg-white'
+                day.getMonth() !== anchor.getMonth() ? RECESSED_CELL : 'bg-white'
               }`}
             >
               <div className="flex items-center justify-between mb-[6px]">
