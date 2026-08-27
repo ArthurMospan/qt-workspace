@@ -10,6 +10,7 @@ import { reminderLabel } from '@/lib/utils/reminderCandidates.mjs';
 import {
   DISPATCH_BATCH,
   OUTBOX_COLLECTION,
+  cancellableRowIds,
   dueRows,
   deliveryAttemptUpdate,
   groupByRecipient,
@@ -98,12 +99,23 @@ async function reconcile(candidates, { pendingRows, windowStartMs, windowEndMs, 
     }
   }
 
-  // Anything pending in this window that nothing wants any more.
+  // Anything pending in this window that nothing wants any more — decided by
+  // `cancellableRowIds` rather than here, so the rule and the test of the rule
+  // are about the same code. It is the rule that says a retry row owed to a
+  // person is nobody's to cancel.
+  const cancellable = new Set(cancellableRowIds(
+    pendingRows.map(document => ({
+      id: document.id,
+      status: document.get('status'),
+      type: document.get('type'),
+      deliverAtMs: document.get('deliverAtMs'),
+    })),
+    new Set(wanted.keys()),
+    { windowStartMs, windowEndMs },
+  ));
   let cancelled = 0;
   for (const document of pendingRows) {
-    if (wanted.has(document.id)) continue;
-    const at = Number(document.get('deliverAtMs'));
-    if (!Number.isFinite(at) || at < windowStartMs || at > windowEndMs) continue;
+    if (!cancellable.has(document.id)) continue;
     batch.update(document.ref, { status: 'cancelled', cancelledAtMs: nowMs });
     cancelled += 1;
   }
@@ -120,7 +132,7 @@ export async function materialiseCandidates(candidates, { windowStartMs, windowE
     .where('status', '==', 'pending')
     .where('deliverAtMs', '>=', windowStartMs)
     .where('deliverAtMs', '<=', windowEndMs)
-    .select('status', 'deliverAtMs')
+    .select('status', 'type', 'deliverAtMs')
     .get();
   return reconcile(candidates, {
     pendingRows: pendingSnapshot.docs,
@@ -166,7 +178,7 @@ export async function reconcileScopedRows(candidates, {
   const pendingSnapshot = await outboxRef()
     .where(field, '==', value)
     .where('status', '==', 'pending')
-    .select('status', 'deliverAtMs')
+    .select('status', 'type', 'deliverAtMs')
     .limit(SCOPED_ROW_LIMIT)
     .get();
   return reconcile(candidates, {

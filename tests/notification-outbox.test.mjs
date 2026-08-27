@@ -83,15 +83,42 @@ test('re-materialising corrects timing and wording but never identity or state',
 test('cancellation is confined to the window the pass can actually see', () => {
   const window = { windowStartMs: 1000, windowEndMs: 2000 };
   const pending = [
-    { id: 'still-wanted', status: 'pending', deliverAtMs: 1500 },
-    { id: 'orphan', status: 'pending', deliverAtMs: 1500 },
-    { id: 'outside-window', status: 'pending', deliverAtMs: 9999 },
-    { id: 'already-sent', status: 'sent', deliverAtMs: 1500 },
+    { id: 'still-wanted', type: 'deadline', status: 'pending', deliverAtMs: 1500 },
+    { id: 'orphan', type: 'deadline', status: 'pending', deliverAtMs: 1500 },
+    { id: 'outside-window', type: 'deadline', status: 'pending', deliverAtMs: 9999 },
+    { id: 'already-sent', type: 'deadline', status: 'sent', deliverAtMs: 1500 },
   ];
   assert.deepEqual(
     cancellableRowIds(pending, new Set(['still-wanted']), window),
     ['orphan'],
   );
+});
+
+// A retry row is a debt, not a derivation.
+//
+// `/api/notifications` writes one when somebody's Telegram or email did not
+// answer. It carries the issueId of the task the event was about, and
+// `deliverAtMs: now` — dead centre of every window this ever runs over. It is
+// absent from the candidate list because no deadline produced it, and absence
+// is not evidence about it: the event already happened and the person is still
+// owed the message. Cancelling one is how somebody silently never hears that
+// they were assigned a task.
+test('a retry row owed to a person is not this pass to cancel', async () => {
+  const window = { windowStartMs: 0, windowEndMs: 10_000 };
+  const pending = [
+    { id: 'deadline-orphan', type: 'deadline', status: 'pending', deliverAtMs: 1500 },
+    { id: 'assigned-retry', type: 'assigned', status: 'pending', deliverAtMs: 1500 },
+    { id: 'status-retry', type: 'status_changed', status: 'pending', deliverAtMs: 1500 },
+    { id: 'mention-retry', type: 'mention', status: 'pending', deliverAtMs: 1500 },
+  ];
+  assert.deepEqual(cancellableRowIds(pending, new Set(), window), ['deadline-orphan']);
+
+  // And the server reconciliation asks that same function rather than keeping
+  // its own copy of the rule, which is how the two drifted apart in the first
+  // place — a pure helper nothing called, next to a loop nothing tested.
+  const source = await read('../src/lib/server/notificationOutbox.js');
+  assert.match(source, /const cancellable = new Set\(cancellableRowIds\(/);
+  assert.match(source, /\.select\('status', 'type', 'deliverAtMs'\)/);
 });
 
 test('one dispatch pass groups its rows into one message per person', () => {

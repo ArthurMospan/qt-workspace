@@ -193,10 +193,25 @@ export function outboxRowChanges(existing, candidate) {
 // it — the event was deleted or moved out, the task was completed — should not
 // fire. Rows outside the window are left alone: this pass has no opinion about
 // them, and cancelling on absence would delete everything the window cannot see.
+//
+// And only a row that has a source at all. The outbox holds two kinds, and they
+// cancel by opposite rules. A reminder is *derived*: when the deadline or the
+// occurrence it came from stops saying it, the row is wrong and must go. A retry
+// row is not derived from anything — it is a debt. The event already happened,
+// the person was already told in the app, and the row exists only because their
+// Telegram or their email did not answer. Nothing that happens to the task
+// afterwards can make that debt untrue.
+//
+// `/api/notifications` writes those retry rows carrying the `issueId` of the
+// task the event was about, and `deliverAtMs: now` — dead centre of every window
+// this ever runs over. Absence from the candidate list is not evidence about
+// them, so `OUTBOX_BACKED_TYPES` is what this pass is allowed to have an opinion
+// about, and everything else is somebody else's row.
 export function cancellableRowIds(pendingRows, expectedIds, { windowStartMs, windowEndMs }) {
   const expected = expectedIds instanceof Set ? expectedIds : new Set(expectedIds || []);
   return (pendingRows || [])
     .filter(row => row && row.status === 'pending')
+    .filter(row => OUTBOX_BACKED_TYPES.has(row.type))
     .filter(row => {
       const at = Number(row.deliverAtMs);
       return Number.isFinite(at) && at >= windowStartMs && at <= windowEndMs;
