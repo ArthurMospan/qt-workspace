@@ -335,6 +335,18 @@ test('setting a deadline writes its reminder down, rather than leaving it to be 
     assert.match(await read(`../${file}`), /syncCalendarEventReminderRows/, file);
   }
 
+  // And the route that recomputes on the browser's behalf verifies the token
+  // before it reads anything. Reading the task first — to learn which
+  // organization to authorize against — is an unauthenticated Firestore read
+  // anybody can ask for at any rate they like, against a daily read cap.
+  const remindersRoute = await read('../src/app/api/issues/[issueId]/reminders/route.js');
+  const gate = remindersRoute.indexOf('authenticateRequest(request)');
+  const firstRead = remindersRoute.indexOf('.doc(issueId).get()');
+  assert.ok(gate > 0 && firstRead > gate, 'the token is checked before the first read');
+  assert.ok(
+    remindersRoute.indexOf('enforceRateLimit') < firstRead,
+    'the rate limit is keyed to a verified person, before anything is read',
+  );
   // The deadline is still written straight from the browser, and the browser
   // cannot write the queue — so the composer asks the server to recompute it.
   const service = await read('../src/lib/services/issues.js');

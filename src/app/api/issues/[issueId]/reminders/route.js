@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import {
+  authenticateRequest,
+  authorizeOrgRequest,
+  enforceRateLimit,
+  getAdminDb,
+} from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 
@@ -32,11 +37,26 @@ export async function POST(request, context) {
       return NextResponse.json({ error: 'Некоректне завдання' }, { status: 400 });
     }
 
+    // The token is checked before anything is read, and this order is the whole
+    // security of the route. Reading the task first to find out which
+    // organization to authorize against reads on behalf of a caller who has not
+    // said who they are — which is an unauthenticated Firestore read that
+    // anybody can ask for, at any rate they like, against a project on a daily
+    // read cap. Verifying an ID token costs no read at all, so it goes first
+    // and the rate limit goes second, keyed to a person rather than to nobody.
+    const identity = await authenticateRequest(request);
+    if (identity.error) {
+      return NextResponse.json({ error: identity.error }, { status: identity.status });
+    }
+    if (!(await enforceRateLimit('issue-reminders', identity.user.uid, 60, 60))) {
+      return NextResponse.json({ error: 'Забагато запитів' }, { status: 429 });
+    }
+
     const db = getAdminDb();
     const issueSnapshot = await db.collection('issues').doc(issueId).get();
     // A task that is gone still has rows to take away, but there is no
     // organization left to authorize against — and the route that deleted it
-    // has already cancelled them. Nothing to do, and nothing to leak.
+    // has already cancelled them. Nothing to do.
     if (!issueSnapshot.exists) {
       return NextResponse.json({ ok: true, issueId, missing: true });
     }
@@ -52,9 +72,6 @@ export async function POST(request, context) {
     );
     if (authorization.error) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });
-    }
-    if (!(await enforceRateLimit('issue-reminders', authorization.user.uid, 60, 60))) {
-      return NextResponse.json({ error: 'Забагато запитів' }, { status: 429 });
     }
 
     const result = await syncIssueReminderRows({ issueId, issue });
