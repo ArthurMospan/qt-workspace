@@ -40,7 +40,8 @@
     "migrate:api-keys": "node scripts/migrate-api-keys.mjs",
     "cleanup:rate-limits": "node scripts/cleanup-rate-limits.mjs",
     "reconcile:issue-time": "node scripts/reconcile-issue-spent-minutes.mjs",
-    "backfill:analytics-rollups": "node scripts/backfill-analytics-rollups.mjs"
+    "backfill:analytics-rollups": "node scripts/backfill-analytics-rollups.mjs",
+    "backfill:project-issue-counts": "node scripts/backfill-project-issue-counts.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
