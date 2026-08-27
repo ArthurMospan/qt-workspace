@@ -24,11 +24,18 @@ name: Scheduled notifications
 #   than nightly because «Нещодавно видалене» promises twenty-four hours, and a
 #   nightly pass would stretch that to forty-eight.
 #
-# materialise (nightly) — the safety net. Rebuilds the outbox from the source
-#   data and posts birthday greetings. This is the expensive pass — it reads
-#   deadlines and calendar events rather than an indexed queue — and it used to
-#   run every twenty minutes, which is what made the sweep unaffordable on a
-#   free tier at all.
+# materialise (twice a day) — the safety net. Rebuilds the outbox from the
+#   source data and posts birthday greetings. This is the expensive pass — it
+#   reads deadlines and calendar events rather than an indexed queue — and it
+#   used to run every twenty minutes, which is what made the sweep unaffordable
+#   on a free tier at all.
+#
+#   Twice rather than once because a day-scale reminder belongs to a day in the
+#   organization's timezone: the pass that writes it has to run while it is
+#   still early morning where the workspace is, and one UTC hour cannot be early
+#   morning everywhere. Twelve hours apart covers every timezone, and
+#   MATERIALISE_INTERVAL_MS (12h) is what stops the second run doing the work
+#   again where the first one already did it.
 #
 # Requires the CRON_SECRET repository secret to hold exactly the same value as
 # the CRON_SECRET environment variable in the production deployment.
@@ -38,6 +45,7 @@ on:
     - cron: '*/5 * * * *'
     - cron: '7 * * * *'
     - cron: '11 3 * * *'
+    - cron: '11 15 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -83,7 +91,7 @@ jobs:
         run: bash .github/scripts/sweep-notifications.sh
 
   materialise:
-    if: github.event.schedule == '11 3 * * *'
+    if: github.event.schedule == '11 3 * * *' || github.event.schedule == '11 15 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:
