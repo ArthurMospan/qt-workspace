@@ -52,6 +52,18 @@ while : ; do
     fail "The request to ${APP_URL}/api/cron/notifications?mode=${MODE} did not complete at all — the host is unreachable or timed out."
   fi
 
+  # The daily Firestore read cap. Not a failure of this run: the sweep throws
+  # before advancing its watermark, so the first pass after the counter resets
+  # covers everything the exhausted ones could not read. Failing here would turn
+  # one spent quota into a wall of red runs for the rest of the day.
+  if [ "${status}" = "503" ]; then
+    echo "::warning title=Quota exhausted::The Firestore daily read limit is spent, so the ${MODE} pass read nothing. It resets at 10:00 Kyiv time and the next pass picks up where this one stopped."
+    failures=0
+    [ "${SWEEP_MINUTES}" = "0" ] && break
+    sleep "${SWEEP_INTERVAL_SECONDS}"
+    continue
+  fi
+
   if [ "${status}" != "200" ]; then
     failures=$(( failures + 1 ))
     if [ "${failures}" -ge 5 ]; then

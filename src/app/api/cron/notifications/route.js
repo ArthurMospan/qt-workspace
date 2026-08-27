@@ -2,6 +2,8 @@ import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { runScheduledNotificationSweep } from '@/lib/server/reminderJobs';
+import { isQuotaExceededError } from '@/lib/utils/errors';
+import { QUOTA_FAILURE_COPY } from '@/lib/utils/quotaState.mjs';
 
 // The last secret here still compared with `!==`. Telegram's webhook secret and
 // the API keys both use a constant-time comparison already; this one is the odd
@@ -43,6 +45,20 @@ export async function GET(request) {
     const result = await runScheduledNotificationSweep({ mode: requested });
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
+    // The daily read cap is not a broken sweep, and reporting it as one is how
+    // a scheduler that runs every minute turns one exhausted quota into
+    // fourteen hundred red runs. Nothing was lost: the sweep throws before it
+    // advances its watermark, so the next pass after the counter resets covers
+    // everything this one could not read.
+    if (isQuotaExceededError(error)) {
+      console.warn('[cron] Firestore daily quota is exhausted; nothing swept this pass');
+      return NextResponse.json({
+        ok: false,
+        code: 'QUOTA_EXCEEDED',
+        mode: requested,
+        error: QUOTA_FAILURE_COPY.title,
+      }, { status: 503 });
+    }
     return routeErrorResponse(error, {
       context: 'scheduled notifications',
       fallbackMessage: 'Scheduled notification sweep failed',
