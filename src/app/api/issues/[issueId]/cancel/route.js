@@ -73,10 +73,10 @@ export async function PATCH(request, context) {
     const rollupDeltas = await analyticsRollupDeltasFor(db, issue.organizationId);
     const countDeltas = await projectIssueCountDeltasFor(db, issue.organizationId);
     const result = await db.runTransaction(async transaction => {
-      // Firestore re-runs this body on contention; the counter accumulator
-      // lives outside it and would otherwise count the same task once per
-      // attempt.
+      // Firestore re-runs this body on contention; both accumulators live
+      // outside it and would otherwise move their totals once per attempt.
       countDeltas.reset();
+      rollupDeltas.reset();
       const [currentSnap, projectSnap, estimateReservationSnap] = await Promise.all([
         transaction.get(issueRef),
         transaction.get(projectRef),

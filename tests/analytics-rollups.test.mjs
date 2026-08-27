@@ -397,6 +397,38 @@ test('every path that changes logged minutes changes the daily totals with them'
   assert.match(importer, /rollupDeltas\.add\(row\.fields, 1/);
 });
 
+test('a retried transaction does not log the same minutes twice', async () => {
+  // Firestore re-runs a transaction body on contention, and every time entry
+  // already writes the project document — which is exactly what two people
+  // logging time in one project contend on. An accumulator built outside the
+  // body and added to inside it therefore has to be emptied at the top of it,
+  // or a retry files the same minutes again and the day is permanently over.
+  //
+  // This is not visible at the call site and nothing else would catch it: the
+  // totals are an aggregate, and an aggregate that is wrong by one entry looks
+  // exactly like an aggregate that is right.
+  const files = [
+    'src/app/api/issues/[issueId]/time-logs/route.js',
+    'src/app/api/issues/[issueId]/time-logs/[logId]/route.js',
+    'src/app/api/calendar/events/[eventId]/time-logs/route.js',
+    'src/app/api/issues/[issueId]/cancel/route.js',
+  ];
+  for (const file of files) {
+    const source = await read(file);
+    const outside = (source.match(/const rollupDeltas = await analyticsRollupDeltasFor/g) || []).length;
+    const resets = (source.match(/rollupDeltas\.reset\(\)/g) || []).length;
+    const bodies = (source.match(/await db\.runTransaction\(async transaction => \{[\s\S]{0,400}?rollupDeltas\.reset\(\)/g) || []).length;
+    assert.ok(outside > 0, `${file} builds its accumulator outside the transaction`);
+    assert.equal(resets, bodies, `${file} resets the accumulator at the top of every transaction that uses it`);
+    assert.ok(resets > 0, `${file} never resets a rollup accumulator that outlives its transaction`);
+  }
+
+  // The importer is the one that does not need it, because it builds the
+  // accumulator inside the body — which is the other way to be correct.
+  const importer = await read('src/lib/server/youtrackImporter.js');
+  assert.match(importer, /const rollupDeltas = new AnalyticsRollupDeltas\(rollupTimeZone\)/);
+});
+
 test('the rollup is never allowed to become the money', async () => {
   const [invoices, billing, invoicePayload] = await Promise.all([
     read('src/app/api/invoices/route.js'),

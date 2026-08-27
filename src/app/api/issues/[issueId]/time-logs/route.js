@@ -100,6 +100,11 @@ export async function POST(request, context) {
     // every time entry contend on the organization document.
     const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention — and every time entry writes
+      // the project document, which is exactly what two people logging time in
+      // one project contend on. The accumulator lives outside the body, so it
+      // would otherwise add the same minutes once per attempt.
+      rollupDeltas.reset();
       if (timerSessionId) {
         const [timerSnapshot, existingLogSnapshot] = await Promise.all([
           transaction.get(timerRef),

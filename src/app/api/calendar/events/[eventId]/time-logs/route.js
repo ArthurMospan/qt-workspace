@@ -403,6 +403,9 @@ export async function POST(request, context) {
     let logCreated = true;
     const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention, and the accumulator lives
+      // outside it: without the reset a retry moves the day's total twice.
+      rollupDeltas.reset();
       if (timerSessionId) {
         const [timerSnapshot, existingLogSnapshot] = await Promise.all([
           transaction.get(timerRef),
@@ -552,6 +555,9 @@ export async function PATCH(request, context) {
     const logRef = db.collection('timeLogs').doc(logId);
     const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention, and the accumulator lives
+      // outside it: without the reset a retry moves the day's total twice.
+      rollupDeltas.reset();
       const { event, projectRef, canTrackTime, trackingDisabledReason } = await readLiveEventContext({
         transaction,
         db,
@@ -643,6 +649,9 @@ export async function DELETE(request, context) {
     const logRef = db.collection('timeLogs').doc(logId);
     const rollupDeltas = await analyticsRollupDeltasFor(db, organizationId);
     await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention, and the accumulator lives
+      // outside it: without the reset a retry moves the day's total twice.
+      rollupDeltas.reset();
       const { event, projectRef } = await readLiveEventContext({
         transaction,
         db,
