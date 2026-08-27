@@ -246,16 +246,14 @@ export async function recountProjectIssueCounts({ nowMs = Date.now(), organizati
   // zero, and a project with no tasks at all has to be established rather than
   // left unreadable. Projects are bounded by the size of the business, not by
   // use, so this is the cheap half.
-  let projectQuery = db.collection('projects').select('organizationId', PROJECT_ISSUE_COUNTS_FIELD);
-  if (Array.isArray(organizationIds) && organizationIds.length === 1) {
-    projectQuery = db.collection('projects')
-      .where('organizationId', '==', organizationIds[0])
-      .select('organizationId', PROJECT_ISSUE_COUNTS_FIELD);
-  }
-  const projectSnapshot = await projectQuery.get();
   const wanted = Array.isArray(organizationIds) && organizationIds.length
     ? new Set(organizationIds)
     : null;
+  const projectsCollection = db.collection('projects');
+  const projectSnapshot = await (wanted?.size === 1
+    ? projectsCollection.where('organizationId', '==', organizationIds[0])
+    : projectsCollection
+  ).select('organizationId', PROJECT_ISSUE_COUNTS_FIELD).get();
   const projects = projectSnapshot.docs
     .map(document => ({ ...document.data(), id: document.id }))
     .filter(project => project.organizationId && (!wanted || wanted.has(project.organizationId)));
