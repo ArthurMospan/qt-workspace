@@ -2294,7 +2294,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                       >
                         <Link
                           href={issuePath(otherIssue || { id: perspective.otherIssueId }, otherProject || otherProjectId)}
-                          className="text-[13px] font-semibold text-ink hover:underline truncate"
+                          // `IssueLinkRow` fills and rings under the pointer,
+                          // so the title needs no line of its own.
+                          className="text-[13px] font-semibold text-ink truncate"
                         >
                           <span className="text-muted font-medium mr-1 uppercase">{otherKey}</span>
                           {otherTitle}

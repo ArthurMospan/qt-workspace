@@ -452,7 +452,10 @@ export default function TaskTableView({
         const identity = issue.issueKey || '—';
         // Struck when the task is finished, like the key on a card and in a
         // list row — the three draw the same thing and have to agree.
-        const identityClass = `truncate font-mono text-[11px] font-bold text-muted hover:text-ink hover:underline${
+        // Darker, not underlined. The row itself already fills to `canvas`
+        // under the pointer, so a line under the id was the second answer to a
+        // question the row had already answered.
+        const identityClass = `truncate font-mono text-[11px] font-bold text-muted hover:text-ink${
           statusCategoryById.get(issue.columnId || issue.status) === 'done'
             ? ' line-through decoration-[1.5px]'
             : ''

@@ -94,7 +94,10 @@ export default function SearchModal({ isOpen, results, loading, query, onClose, 
                         <code className="text-[11px] font-semibold text-muted shrink-0">
                           {issue.issueKey || 'Без ID'}
                         </code>
-                        <span className="text-[13px] font-semibold text-ink truncate group-hover:underline transition-colors">
+                        {/* The row is a `ListRow` and fills to `canvas` under
+                            the pointer. An underline on the title as well is
+                            the same fact said twice. */}
+                        <span className="text-[13px] font-semibold text-ink truncate transition-colors">
                           {issue.title}
                         </span>
                       </div>

@@ -179,10 +179,10 @@ export default function DataTable({
                       className={`${rowHeight} ${BODY_CELL} ${typeOf(column)} ${ALIGN[alignOf(column)]}`}
                     >
                       {column === leadColumn && href ? (
-                        // `Link`, not a bare anchor: these rows point at other
-                        // workspace screens, and a plain href reloaded the whole
-                        // application to move between two analytics tabs.
-                        <Link href={href} className="block min-w-0 group-hover:underline">
+                        // `Link`, not a bare anchor: a plain href reloaded the
+                        // whole application to move between two analytics tabs.
+                        // No underline: the row already fills under the pointer.
+                        <Link href={href} className="block min-w-0">
                           {column.cell(row)}
                         </Link>
                       ) : column.cell(row)}

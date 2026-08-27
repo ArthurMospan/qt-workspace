@@ -441,7 +441,12 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
           <p className="min-w-0 flex-1 truncate leading-tight text-muted">
             {action.actor && <span className="font-bold text-ink">{action.actor} </span>}
             {action.action}{' '}
-            <span className="font-semibold text-ink group-hover/activity:underline">
+            {/* No underline on hover. The whole row already fills from
+                `canvas` to `line` under the pointer, which says «this is one
+                thing and it is clickable» better than a line under four words
+                inside it — and an underline on part of a row that is entirely
+                a link claims the rest of the row is not. */}
+            <span className="font-semibold text-ink">
               {action.issueKey}: {action.title}
             </span>
           </p>
@@ -978,7 +983,11 @@ export default function WorkspacePage() {
             </Surface>
           ) : (
             <Surface preset="panel" padding="lg" className="w-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
+              {/* Columns, gap and row height all live in `globals.css` behind
+                  this name: the featured card is two of these rows tall and a
+                  small one is exactly one, and that only holds while a single
+                  place owns both numbers. */}
+              <div className="ui-grid" data-ui-grid="project-cards">
                 {filteredProjects.map((p, index) => (
                   <WorkspaceProjectCard
                     key={p.id} 

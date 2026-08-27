@@ -189,6 +189,12 @@
     --ui-composition-guard: 40px;
     --ui-composition-metric: 42px;
 
+    /* One row of the projects bento, and the gap between rows. Every height on
+       that screen is one of these two numbers or arithmetic over them, so the
+       featured card and the small ones cannot drift apart. */
+    --ui-project-card-row: 176px;
+    --ui-project-card-gap: 16px;
+
     --ui-radius-action: 10px;
     --ui-radius-field: 10px;
     --ui-radius-inset: 12px;
@@ -921,8 +927,18 @@
     background: rgb(0 0 0 / 4.5%);
     padding: 6px 10px 6px 8px;
   }
+  /* The bento: one featured card two columns and two rows wide, and small
+     cards filling the 2×2 beside it. That arrangement only reads as an
+     arrangement if the small card is exactly half the tall one — otherwise the
+     grid decides the row height from whatever the featured card's activity
+     list happens to contain, the small card stretches to match, and what you
+     get is a short card blown up to 215px with 70px of nothing under the name.
+
+     So the row is a fixed track (`--ui-project-card-row`) and the two cards are
+     told the same number: one row for the small one, two rows plus the grid gap
+     for the featured one. 176 + 16 + 176 = 368. */
   .ui-surface[data-ui-surface='project-card'] {
-    min-height: 220px;
+    min-height: var(--ui-project-card-row);
     gap: 20px;
     border: 1px solid transparent;
     border-radius: var(--ui-radius-surface);
@@ -930,9 +946,33 @@
     padding: 24px 24px 28px;
   }
   .ui-surface[data-ui-surface='project-card'][data-ui-density='large'] {
-    min-height: 280px;
+    min-height: calc(var(--ui-project-card-row) * 2 + var(--ui-project-card-gap));
     gap: 32px;
     padding: 32px 32px 40px;
+  }
+  /* The grid the two heights above are measured against. Only from `md`: below
+     it the grid is one column, no card is featured, and a fixed track would
+     just crop a long project name. */
+  .ui-grid[data-ui-grid='project-cards'] {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: var(--ui-project-card-gap);
+  }
+  @media (width >= 48rem) {
+    .ui-grid[data-ui-grid='project-cards'] {
+      grid-auto-rows: var(--ui-project-card-row);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 80rem) {
+    .ui-grid[data-ui-grid='project-cards'] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 96rem) {
+    .ui-grid[data-ui-grid='project-cards'] {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
   .ui-surface[data-ui-surface='project-card']:hover {
     box-shadow: 0 0 0 4px #ececec;
