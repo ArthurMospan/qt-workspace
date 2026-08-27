@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 385,
-    "elements": 4490,
+    "elements": 4489,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:3773",
+      "location": "src/app/(app)/settings/page.js:3787",
       "attributes": [
         "title",
         "aria-label"
@@ -35,7 +35,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:682",
+      "location": "src/app/(app)/settings/page.js:691",
       "attributes": [
         "aria-label",
         "title"
@@ -273,14 +273,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:470",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:471",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:741",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:742",
       "attributes": [
         "title",
         "aria-label"
@@ -288,7 +288,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:921",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:946",
       "attributes": [
         "title"
       ]

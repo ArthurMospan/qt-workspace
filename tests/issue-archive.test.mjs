@@ -33,8 +33,8 @@ test('archiving and deleting are two actions, not one wearing two names', async 
   assert.match(registry, /id: 'delete'[^}]*permission: 'delete:issue'/);
   // The confirmations have to say which of the three is about to happen, and
   // the difference that matters is what happens to the numbers.
-  assert.match(bar, /У звітах, таймшиті та рахунках вони лишаються/);
-  assert.match(bar, /з усього обліку/);
+  assert.match(bar, /вони й далі в обліку часу та в рахунках/);
+  assert.match(bar, /перестануть рахуватися будь-де/);
   assert.match(bar, /«Нещодавно видалене»/);
 });
 

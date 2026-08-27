@@ -282,7 +282,7 @@ export function WorkspaceHeaderRight({ currentUser, signOut, mode }) {
   const handleNotifClick = (row) => {
     const n = row.notification;
     if (n.organizationId && !allOrgs.some(org => org.id === n.organizationId)) {
-      showToast('Ви більше не маєте доступу до організації цього сповіщення', 'error');
+      showToast('Ви більше не маєте доступу до організації цього сповіщення', 'error', { reportable: false });
       return;
     }
     const link = notificationDestinationWithOrganization(n);

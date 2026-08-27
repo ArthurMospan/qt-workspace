@@ -11,29 +11,29 @@
     "productFiles": 267,
     "parsedFiles": 267,
     "parseErrors": 0,
-    "nativeControls": 21,
+    "nativeControls": 20,
     "structures": {
       "chat": 2,
       "analytics": 1,
       "qtplus": 1,
       "settings": 1,
-      "shell": 13,
+      "shell": 12,
       "other": 3
     },
     "styledNativeControls": 12,
-    "reviewedNativeControls": 8,
+    "reviewedNativeControls": 7,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 45,
+    "localSurfaceExceptions": 46,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 21,
+    "button": 20,
     "input": 0,
     "textarea": 0,
     "select": 0
@@ -357,7 +357,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:299",
+      "location": "src/components/WorkspaceSidebar.jsx:298",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -372,7 +372,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:322",
+      "location": "src/components/WorkspaceSidebar.jsx:321",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -380,21 +380,6 @@
       ],
       "ariaLabel": "Розгорнути бічну панель",
       "styled": true,
-      "reviewed": "branding-action",
-      "resembles": "IconAction",
-      "structure": "shell",
-      "routes": []
-    },
-    {
-      "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:382",
-      "className": "transition-colors",
-      "text": "",
-      "childElements": [
-        "Plus"
-      ],
-      "ariaLabel": "Новий проєкт",
-      "styled": false,
       "reviewed": "branding-action",
       "resembles": "IconAction",
       "structure": "shell",
@@ -423,15 +408,15 @@
       "count": 3
     },
     {
-      "file": "src/components/WorkspaceSidebar.jsx",
-      "count": 3
-    },
-    {
       "file": "src/components/profile/ProfileView.jsx",
       "count": 2
     },
     {
       "file": "src/components/UserStatusDialog.jsx",
+      "count": 2
+    },
+    {
+      "file": "src/components/WorkspaceSidebar.jsx",
       "count": 2
     },
     {
@@ -491,17 +476,12 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:299",
+      "location": "src/components/WorkspaceSidebar.jsx:298",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:322",
-      "tag": "button",
-      "context": "branding-action"
-    },
-    {
-      "location": "src/components/WorkspaceSidebar.jsx:382",
+      "location": "src/components/WorkspaceSidebar.jsx:321",
       "tag": "button",
       "context": "branding-action"
     }
@@ -537,22 +517,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:537",
+      "location": "src/app/(app)/settings/page.js:546",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:557",
+      "location": "src/app/(app)/settings/page.js:566",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:601",
+      "location": "src/app/(app)/settings/page.js:610",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:720",
+      "location": "src/app/(app)/settings/page.js:729",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -602,12 +582,12 @@
       "className": "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:579",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:609",
       "tag": "div",
       "className": "rounded-[10px] bg-white p-2"
     },
     {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:675",
+      "location": "src/components/integrations/YouTrackImportCard.jsx:705",
       "tag": "div",
       "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
     },
@@ -617,7 +597,12 @@
       "className": "mt-4 rounded-[12px] border border-dashed border-faint bg-white p-2"
     },
     {
-      "location": "src/components/migrations/DataMigrationSettings.jsx:91",
+      "location": "src/components/migrations/DataMigrationSettings.jsx:228",
+      "tag": "div",
+      "className": "flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border border-line bg-white"
+    },
+    {
+      "location": "src/components/migrations/DataMigrationSettings.jsx:90",
       "tag": "div",
       "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
     },

@@ -12,6 +12,7 @@ import {
 } from '@/lib/utils/youtrackImport.mjs';
 import { statusCategoryLabel } from '@/lib/utils/statusCategories.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
+import { errorTextUk } from '@/lib/utils/errors';
 
 const ACTIVE_JOB_STATUSES = new Set(['prepared', 'running']);
 
@@ -75,6 +76,13 @@ export default function YouTrackImportCard({
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
   const [setupOpen, setSetupOpen] = useState(false);
+  // Відмова цього екрана — не подія, а стан: «знайти проєкти не вийшло, ось
+  // чому». Тост про таке спливав над нижнім краєм, за 800 пікселів від кнопки,
+  // яку натиснули, тримався дев'ять секунд і йшов — а причина лишалася чинною
+  // і після того, як напис зник. Тепер вона стоїть у картці, під тією самою
+  // кнопкою, доки її не усунуть. Тост лишається там, де він і має бути: на
+  // тому, що сталося і минуло («YouTrack підключено»).
+  const [failure, setFailure] = useState('');
   const keepRunning = useRef(false);
   const confirmDialog = useConfirm();
 
@@ -98,12 +106,13 @@ export default function YouTrackImportCard({
       setBaseUrl(nextConnection.baseUrl || '');
       setJob((imports.jobs || []).find(item => ACTIVE_JOB_STATUSES.has(item.status)) || imports.jobs?.[0] || null);
       if (nextConnection.connected) setSetupOpen(false);
+      setFailure('');
     } catch (error) {
-      showToast(error.message, 'error');
+      setFailure(errorTextUk(error?.message, 'Не вдалося прочитати стан інтеграції YouTrack. Спробуйте ще раз.'));
     } finally {
       setLoading(false);
     }
-  }, [organizationId, request, showToast]);
+  }, [organizationId, request]);
 
   useEffect(() => {
     keepRunning.current = false;
@@ -160,10 +169,11 @@ export default function YouTrackImportCard({
 
   const connect = async () => {
     if (!baseUrl.trim() || !token.trim()) {
-      showToast('Вкажіть адресу та постійний токен YouTrack', 'error');
+      setFailure('Вкажіть адресу YouTrack і постійний токен.');
       return;
     }
     setAction('connect');
+    setFailure('');
     try {
       const next = await request('/api/integrations/youtrack', {
         method: 'POST',
@@ -175,7 +185,7 @@ export default function YouTrackImportCard({
       setSetupOpen(false);
       showToast('YouTrack підключено');
     } catch (error) {
-      showToast(error.message, 'error');
+      setFailure(errorTextUk(error?.message, 'Не вдалося підключити YouTrack. Перевірте адресу й токен.'));
     } finally {
       setAction('');
     }
@@ -183,7 +193,7 @@ export default function YouTrackImportCard({
 
   const disconnect = async () => {
     if (ACTIVE_JOB_STATUSES.has(job?.status)) {
-      showToast('Спочатку зупиніть активний імпорт', 'error');
+      setFailure('Спочатку зупиніть активний імпорт — тоді YouTrack можна буде відключити.');
       return false;
     }
     if (!(await confirmDialog({
@@ -208,10 +218,11 @@ export default function YouTrackImportCard({
       setUserMappings({});
       setJob(null);
       setSetupOpen(false);
+      setFailure('');
       showToast('YouTrack відключено');
       return true;
     } catch (error) {
-      showToast(error.message, 'error');
+      setFailure(errorTextUk(error?.message, 'Не вдалося відключити YouTrack. Спробуйте ще раз.'));
       return false;
     } finally {
       setAction('');
@@ -233,6 +244,7 @@ export default function YouTrackImportCard({
 
   const discover = async () => {
     setAction('discover');
+    setFailure('');
     try {
       const result = await request('/api/integrations/youtrack/discover', {
         method: 'POST',
@@ -256,7 +268,7 @@ export default function YouTrackImportCard({
       setUserMappings(suggestUserMappings(result.users, members));
       showToast(`Знайдено ${result.projects.length} ${plural(result.projects.length, ['проєкт', 'проєкти', 'проєктів'])} YouTrack`);
     } catch (error) {
-      showToast(error.message, 'error');
+      setFailure(errorTextUk(error?.message, 'Не вдалося прочитати проєкти YouTrack. Спробуйте ще раз.'));
     } finally {
       setAction('');
     }
@@ -284,7 +296,7 @@ export default function YouTrackImportCard({
 
   const prepare = async () => {
     if (!selectedProjectIds.length) {
-      showToast('Оберіть хоча б один проєкт YouTrack', 'error');
+      setFailure('Оберіть хоча б один проєкт YouTrack.');
       return;
     }
     const projectWithoutStatuses = discovery?.projects?.find(project => (
@@ -293,7 +305,7 @@ export default function YouTrackImportCard({
       && (statusFilters[project.id] || []).length === 0
     ));
     if (projectWithoutStatuses) {
-      showToast(`Оберіть хоча б один статус для проєкту ${projectWithoutStatuses.name}`, 'error');
+      setFailure(`Оберіть хоча б один статус для проєкту ${projectWithoutStatuses.name}.`);
       return;
     }
     const unmappedStatus = discovery?.projects?.flatMap(project => (
@@ -306,10 +318,11 @@ export default function YouTrackImportCard({
         : []
     ))[0];
     if (unmappedStatus) {
-      showToast(`Оберіть статус QuickTeam для ${unmappedStatus.sourceStatus}`, 'error');
+      setFailure(`Оберіть статус QuickTeam для «${unmappedStatus.sourceStatus}».`);
       return;
     }
     setAction('prepare');
+    setFailure('');
     try {
       const result = await request('/api/integrations/youtrack/import', {
         method: 'POST',
@@ -324,14 +337,15 @@ export default function YouTrackImportCard({
         }),
       });
       setJob(result.job);
-      showToast(
-        result.job.totalIssues
-          ? `Перевірено: до імпорту готово ${result.job.totalIssues} ${plural(result.job.totalIssues, ['задача', 'задачі', 'задач'])}`
-          : 'Перевірено, але жодна задача не підпала під вибір. Перевірте обрані статуси.',
-        result.job.totalIssues ? 'success' : 'error',
-      );
+      // Порожня перевірка — не поломка, а результат: вибір такий, що під нього
+      // не підпала жодна задача. Це пояснення, і воно лишається на екрані.
+      if (result.job.totalIssues) {
+        showToast(`Перевірено: до імпорту готово ${result.job.totalIssues} ${plural(result.job.totalIssues, ['задача', 'задачі', 'задач'])}`);
+      } else {
+        setFailure('Під цей вибір не підпала жодна задача. Перевірте обрані проєкти та статуси.');
+      }
     } catch (error) {
-      showToast(error.message, 'error');
+      setFailure(errorTextUk(error?.message, 'Не вдалося перевірити імпорт. Спробуйте ще раз.'));
     } finally {
       setAction('');
     }
@@ -341,6 +355,7 @@ export default function YouTrackImportCard({
     if (!job?.id || !ACTIVE_JOB_STATUSES.has(job.status)) return;
     keepRunning.current = true;
     setAction('run');
+    setFailure('');
     try {
       let current = job;
       while (keepRunning.current && ACTIVE_JOB_STATUSES.has(current.status)) {
@@ -362,7 +377,7 @@ export default function YouTrackImportCard({
         showToast(`Імпорт завершено: ${current.processedIssues} ${plural(current.processedIssues, ['задача', 'задачі', 'задач'])}`);
       }
     } catch (error) {
-      showToast(`${error.message}. Імпорт можна продовжити тією ж кнопкою.`, 'error');
+      setFailure(`${errorTextUk(error?.message, 'Імпорт перервався')}\n\nПродовжити можна тією ж кнопкою — без дублів.`);
     } finally {
       keepRunning.current = false;
       setAction('');
@@ -379,9 +394,10 @@ export default function YouTrackImportCard({
         body: JSON.stringify({ action: 'cancel', organizationId, jobId: job.id }),
       });
       setJob(result.job);
+      setFailure('');
       showToast('Імпорт зупинено');
     } catch (error) {
-      showToast(error.message, 'error');
+      setFailure(errorTextUk(error?.message, 'Не вдалося зупинити імпорт. Спробуйте ще раз.'));
     } finally {
       setAction('');
     }
@@ -426,20 +442,15 @@ export default function YouTrackImportCard({
       description="Перенесіть проєкти, задачі, коментарі, вкладення, облік часу, зв’язки та користувачів без дублів."
       logoSrc="/integrations/youtrack.svg"
       logoAlt="YouTrack"
+      // Підключити й відключити джерело — один перемикач, як в «Інтеграціях».
+      // У «Перенесенні даних» на тому самому місці стояла текстова кнопка, що
+      // міняла назву («Налаштувати» / «Закрити» / «Відключити») і робила рівно
+      // те саме, що світчер поруч на сусідньому екрані: та сама дія у двох
+      // виглядах, і той із них, який виглядав як звичайна кнопка, нічим не
+      // показував, що інтеграція взагалі вимикається.
       enabled={cardEnabled}
       onToggle={toggleConnection}
       toggleDisabled={loading || Boolean(action) || activeJob}
-      actionLabel={migrationPresentation
-        ? connection.connected
-          ? 'Відключити'
-          : setupOpen
-            ? 'Закрити'
-            : 'Налаштувати'
-        : undefined}
-      onAction={() => toggleConnection(!cardEnabled)}
-      actionIcon={!connection.connected && !setupOpen ? Upload : undefined}
-      actionStyle={connection.connected || setupOpen ? 'ghost' : 'secondary'}
-      actionAriaLabel={connection.connected ? 'Відключити джерело YouTrack' : 'Налаштувати імпорт із YouTrack'}
       status={cardStatus}
       statusLabel={loading
         ? 'Перевіряємо'
@@ -454,6 +465,20 @@ export default function YouTrackImportCard({
         </span>
       ) : null}
     >
+      {(failure || connection.connected || setupOpen) ? (
+      <>
+      {/* Причина стоїть у картці, під кнопкою, яку натиснули, і тримається,
+          доки її не усунуть або доки читач сам її не закриє. Тост тут не
+          працював: він спливав над нижнім краєм екрана, за сотні пікселів від
+          дії, зникав за девʼять секунд — а причина лишалася чинною. І він
+          пропонував «Повідомити про помилку» там, де повідомляти нема про що:
+          зіпсований токен чи невибраний статус — це відповідь продукту, а не
+          його поломка. */}
+      {failure && (
+        <Alert variant="danger" className="mb-3" onClose={() => setFailure('')}>
+          <span className="whitespace-pre-line">{failure}</span>
+        </Alert>
+      )}
       {!connection.connected ? (
         setupOpen ? (
           <div className="space-y-3">
@@ -528,13 +553,21 @@ export default function YouTrackImportCard({
         <div className="space-y-4">
               {/* Одна підписана дія, а не три речі поспіль.
                   «Знайти проєкти» — те, по що сюди приходять, тож воно
-                  лишається кнопкою з назвою; «Оновити» перечитує той самий
-                  стан і не заслуговує на другу підпис-кнопку поруч. А речення
-                  про світчер було просто неправдою в цьому вигляді: у
-                  «Перенесенні даних» угорі стоїть кнопка «Відключити», ніякого
-                  світчера там немає — він є лише в «Інтеграціях». */}
-              <div className="flex flex-wrap items-center gap-2">
-                <Button style="secondary" size="md" icon={Search} onClick={discover} loading={action === 'discover'}>
+                  лишається кнопкою з назвою і бере всю ширину картки: на цьому
+                  кроці більше нічого не роблять, а короткий прямокутник ліворуч
+                  читався як щось необовʼязкове. «Оновити» перечитує той самий
+                  стан і лишається значком поруч. Речення про світчер пішло:
+                  світчер тепер стоїть на обох екранах, просто над цим рядком,
+                  і сам про себе все каже. */}
+              <div className="flex items-center gap-2">
+                <Button
+                  style="secondary"
+                  size="md"
+                  icon={Search}
+                  onClick={discover}
+                  loading={action === 'discover'}
+                  className="flex-1"
+                >
                   Знайти проєкти
                 </Button>
                 <IconAction
@@ -546,9 +579,6 @@ export default function YouTrackImportCard({
                   onClick={refresh}
                   disabled={loading}
                 />
-                {!migrationPresentation && (
-                  <p className="text-[12px] text-muted">Вимкнути інтеграцію можна світчером угорі.</p>
-                )}
               </div>
 
               {discovery && (
@@ -739,8 +769,15 @@ export default function YouTrackImportCard({
                   {jobSummary.length > 0 && (
                     <p className="mt-2 text-[12px] text-muted">{jobSummary.join(' · ')}</p>
                   )}
+                  {/* Це поле може містити що завгодно: воно зберігає те, що
+                      сказав шар, який зламався, і в базі вже лежать рядки,
+                      записані до того, як їх навчилися перекладати. Саме звідси
+                      під смугою прогресу зʼявилось Node-івське «Unsupported
+                      state or unable to authenticate data». */}
                   {job.lastError && (
-                    <Alert variant="danger" className="mt-3">{job.lastError}</Alert>
+                    <Alert variant="danger" className="mt-3">
+                      {errorTextUk(job.lastError, 'Крок імпорту не вдався. Спробуйте продовжити — уже перенесене не дублюється.')}
+                    </Alert>
                   )}
                   {job.warnings?.length > 0 && (
                     <p className="mt-2 text-[12px] text-warning">
@@ -773,6 +810,8 @@ export default function YouTrackImportCard({
               )}
             </div>
           )}
+      </>
+      ) : null}
     </IntegrationCard>
   );
 }

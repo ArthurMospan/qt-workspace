@@ -224,7 +224,7 @@ export default function AudioTaskPanel({
               accept={AUDIO_UPLOAD_ACCEPT}
               onChange={event => {
                 const file = event.target.files?.[0];
-                if (file?.size > 14 * 1024 * 1024) showToast('Файл завеликий — ліміт 14 МБ', 'error');
+                if (file?.size > 14 * 1024 * 1024) showToast('Файл завеликий — ліміт 14 МБ', 'error', { reportable: false });
                 else if (file) setAudioFile(file);
                 event.target.value = '';
               }}

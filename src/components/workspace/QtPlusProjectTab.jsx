@@ -14,6 +14,28 @@ import { linkQtPlusProject, unlinkQtPlusProject } from '@/lib/portal/qtplusProje
 import { disconnectQtPlusAccount, startQtPlusConnect } from '@/lib/portal/qtplusAccount';
 import QtPlusLinkedContent from '@/components/workspace/qtplus/QtPlusLinkedContent';
 import EmptyState from '@/components/ui/Feedback/EmptyState';
+import LoadingSpinner from '@/components/ui/Feedback/LoadingSpinner';
+
+// Відкриття сесії QuickTeam+ — це запит по кастомний токен і вхід у другий
+// проєкт Firebase, і разом воно триває довше, ніж людина готова дивитися на
+// нерухомий екран. Доти привʼязана вкладка малювала самий лише рядок із назвою
+// проєкту: нічого не рухалось, і це читалось як зависання. Тут стоїть той самий
+// каркас із двох панелей, що й у завантаженого вигляду, тож коли вміст
+// приходить, він не зсуває нічого — просто заступає спінер.
+function QtPlusLoading() {
+  return (
+    <div className="grid min-h-[520px] flex-1 grid-cols-1 items-stretch gap-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div
+        data-ui-surface="panel"
+        data-ui-padding="none"
+        className="ui-surface flex min-h-[520px] min-w-0 items-center justify-center lg:min-h-0"
+      >
+        <LoadingSpinner size="md" label="Завантажуємо QuickTeam+…" />
+      </div>
+      <div className="h-[520px] min-h-[440px] w-full rounded-[16px] bg-canvas lg:h-full lg:min-h-0" />
+    </div>
+  );
+}
 
 // Заголовок привʼязки. Раніше він сидів на власній білій картці всередині
 // білої ж панелі — прямокутник, обведений навколо назви й кнопки без жодної
@@ -158,7 +180,9 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
     if (!view.linked) return null;
     return (
       <div className="flex min-h-[240px] flex-1 flex-col">
-        {portalUser ? (
+        {sessionLoading ? (
+          <QtPlusLoading />
+        ) : portalUser ? (
           <QtPlusLinkedContent
             qtProjectId={link.projectId}
             portalUser={portalUser}
@@ -178,6 +202,9 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
   return (
     <div className={`flex min-h-[240px] flex-1 flex-col gap-4 rounded-[16px] ${view.linked ? 'bg-transparent' : 'bg-canvas p-[16px]'}`}>
       {view.linked ? (
+        sessionLoading ? (
+          <QtPlusLoading />
+        ) : (
         <>
           {portalUser && !view.staleAccess && (
             <QtPlusLinkedContent
@@ -242,8 +269,13 @@ export default function QtPlusProjectTab({ project, orgRole, currentUser, allPro
             </div>
           )}
         </>
+        )
       ) : sessionLoading || projectsLoading ? (
-        <p className="text-[13px] text-muted">Перевіряємо доступ до QuickTeam+…</p>
+        // Ще не привʼязано: далі буде картка `EmptyState`, а не дві панелі, тож
+        // чекання тут — просто спінер посеред того ж блока, без каркаса.
+        <div className="flex min-h-[240px] flex-1 items-center justify-center">
+          <LoadingSpinner size="md" label="Перевіряємо доступ до QuickTeam+…" />
+        </div>
       ) : (!portalUser || sessionError === 'not_connected') ? (
         <EmptyState
           icon={Plug}

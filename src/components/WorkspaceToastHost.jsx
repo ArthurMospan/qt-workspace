@@ -17,6 +17,8 @@ export default function WorkspaceToastHost() {
   const message = typeof toast === 'string' ? toast : toast?.message;
   const detail = typeof toast === 'string' ? '' : toast?.detail;
   const context = typeof toast === 'string' ? '' : toast?.context;
+  // Пояснювальна відмова — не баг. Викликач каже це через reportable: false.
+  const reportable = typeof toast === 'string' ? true : toast?.reportable !== false;
 
   // What the reader saw, what actually happened, and where. Sending it is one
   // click because a failure the user has to describe is a failure that never
@@ -50,9 +52,10 @@ export default function WorkspaceToastHost() {
       message={message}
       action={toast.action?.label}
       onAction={toast.action?.onClick}
-      // Only where there is somewhere to send it, and never for the toast that
-      // confirms a report — otherwise a failed report offers to report itself.
-      onReport={activeOrgId && context !== 'error-report' ? send : undefined}
+      // Only where there is somewhere to send it, never for the toast that
+      // confirms a report — otherwise a failed report offers to report itself —
+      // and never for a failure the product already explained.
+      onReport={reportable && activeOrgId && context !== 'error-report' ? send : undefined}
       autoClose={false}
       onClose={clearToast}
     />

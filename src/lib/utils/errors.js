@@ -39,10 +39,63 @@ const API_ERROR_MESSAGES = Object.freeze({
   RATE_LIMITED: 'Забагато спроб. Зачекайте хвилину й повторіть',
 });
 
-/** Prefer a stable localized API code, then the server's actionable message. */
+// Продукт розмовляє українською, і помилка — це теж мова продукту.
+//
+// Текст помилки приходить не лише з нашого коду. Він приходить від Node, від
+// Firebase, від чужого API, і з бази — там лежать рядки, записані ще до того,
+// як їх навчилися перекладати. Саме так під смугою прогресу імпорту опинилося
+// «Unsupported state or unable to authenticate data»: Node так називає збитий
+// GCM-тег, importer записав це в job, а екран надрукував як є. Джерело того
+// випадку вже виправлене, але рядок лишився в базі — і зʼявиться знову, щойно
+// зламається щось інше.
+//
+// Тому запобіжник стоїть не в місці поломки, а на межі виводу — тут, де вже
+// вирішується, що саме побачить людина.
+const FOREIGN_MESSAGES = [
+  [
+    'unsupported state or unable to authenticate data',
+    'Збережений токен більше не вдається прочитати. Відключіть інтеграцію та підключіть її знову — уже перенесені дані залишаться на місці.',
+  ],
+  ['failed to fetch', 'Не вдалося звʼязатися із сервером. Перевірте зʼєднання та спробуйте ще раз.'],
+  ['network error', 'Не вдалося звʼязатися із сервером. Перевірте зʼєднання та спробуйте ще раз.'],
+  ['networkerror', 'Не вдалося звʼязатися із сервером. Перевірте зʼєднання та спробуйте ще раз.'],
+  ['request timed out', 'Сервер не відповів вчасно. Спробуйте ще раз.'],
+  ['missing or insufficient permissions', 'Недостатньо прав для цієї дії.'],
+  ['permission denied', 'Недостатньо прав для цієї дії.'],
+  ['unauthorized', 'Потрібно увійти заново.'],
+  ['forbidden', 'Недостатньо прав для цієї дії.'],
+];
+
+const CYRILLIC = /[\u0400-\u04FF]/;
+
+/**
+ * Текст помилки, яким його можна показати людині.
+ *
+ * Рядок із кирилицею — уже наш, він повертається як є. Усе інше або має відомий
+ * український відповідник, або замінюється на `fallbackMessage`: краще чесне
+ * «не вийшло, спробуйте ще раз», ніж чужий технічний рядок англійською.
+ *
+ * Беремо саме рядок, а не Error: половина таких текстів приходить не з
+ * винятку, а з бази — як `job.lastError`.
+ */
+export function errorTextUk(raw, fallbackMessage = 'Щось пішло не так. Спробуйте ще раз.') {
+  const text = typeof raw === 'string' ? raw.trim() : '';
+  if (!text) return fallbackMessage;
+  if (CYRILLIC.test(text)) return text;
+  const lowered = text.toLowerCase();
+  for (const [needle, translation] of FOREIGN_MESSAGES) {
+    if (lowered.includes(needle)) return translation;
+  }
+  return fallbackMessage;
+}
+
+/**
+ * Prefer a stable localized API code, then the server's actionable message —
+ * and never a sentence in a language the product does not speak.
+ */
 export function userFacingErrorMessage(error, fallbackMessage) {
   const mapped = API_ERROR_MESSAGES[error?.code];
   if (mapped) return mapped;
-  const message = typeof error?.message === 'string' ? error.message.trim() : '';
-  return message || fallbackMessage;
+  const message = typeof error?.message === 'string' ? error.message : '';
+  return errorTextUk(message, fallbackMessage ?? 'Щось пішло не так. Спробуйте ще раз.');
 }

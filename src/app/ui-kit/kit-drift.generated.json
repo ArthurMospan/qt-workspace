@@ -13,9 +13,9 @@
     "undeclaredValues": 0,
     "unknownProps": 0,
     "chromeOverrides": 0,
-    "usedAndPreviewed": 237,
+    "usedAndPreviewed": 239,
     "usedWithoutPreview": 0,
-    "declaredUnused": 112
+    "declaredUnused": 110
   },
   "undeclaredValues": [],
   "unknownProps": [],
@@ -656,18 +656,6 @@
       "component": "Tag",
       "prop": "size",
       "value": "default",
-      "namespace": null
-    },
-    {
-      "component": "TextAction",
-      "prop": "size",
-      "value": "md",
-      "namespace": null
-    },
-    {
-      "component": "TextAction",
-      "prop": "tone",
-      "value": "ink",
       "namespace": null
     },
     {
@@ -1360,14 +1348,14 @@
     "ChatComposerDock.composition": ".chat-composer-dock[data-ui-composition]"
   },
   "usage": {
-    "LoadingSpinner.size.md": 21,
+    "LoadingSpinner.size.md": 24,
     "Button.size.lg": 29,
     "Button.composition.workspace-guard": 4,
     "Pill.tone.neutral": 21,
     "Pill.size.lg": 11,
     "Pill.shape.badge": 22,
     "Pill.tone.warning": 5,
-    "Button.size.icon-lg": 10,
+    "Button.size.icon-lg": 12,
     "Button.style.secondary": 76,
     "Button.style.primary": 48,
     "Select.filterRole.sprint": 2,
@@ -1379,10 +1367,10 @@
     "Select.filterRole.project": 1,
     "MultiSelect.filterRole.project": 7,
     "MultiSelect.variant.ghost": 7,
-    "Button.style.ghost": 84,
+    "Button.style.ghost": 83,
     "Button.size.icon-sm": 21,
-    "Button.size.sm": 55,
-    "Button.size.icon": 21,
+    "Button.size.sm": 54,
+    "Button.size.icon": 19,
     "Surface.preset.panel": 10,
     "Surface.padding.lg": 5,
     "Surface.composition.chart-panel": 2,
@@ -1426,6 +1414,8 @@
     "Select.filterRole.sort": 1,
     "Surface.padding.md": 5,
     "EmptyState.context.page": 5,
+    "TextAction.size.lg": 2,
+    "TextAction.tone.ink": 2,
     "MobilePaneBack.context.level": 1,
     "MobilePaneBack.context.pane": 1,
     "Input.composition.inline-edit": 1,
@@ -1514,8 +1504,8 @@
     "Skeleton.width.wide": 1,
     "Skeleton.width.half": 1,
     "Counter.status.info": 3,
+    "Alert.variant.danger": 2,
     "Alert.variant.info": 3,
-    "Alert.variant.danger": 1,
     "Pill.appearance.outline": 2,
     "IconAction.size.lg": 3,
     "IconAction.appearance.surface-plain": 2,
@@ -1538,7 +1528,6 @@
     "Pill.tone.danger": 4,
     "Tag.size.small": 3,
     "DetailSection.density.group": 5,
-    "TextAction.size.lg": 1,
     "DetailLayout.context.task": 1,
     "Popover.align.start": 1,
     "Popover.padding.default": 1,
@@ -1596,7 +1585,8 @@
     "Select.size.sm": 6,
     "Input.composition.project-name": 1,
     "Textarea.composition.project-description": 1,
-    "Input.composition.table-cell": 1
+    "Input.composition.table-cell": 1,
+    "TextAction.size.md": 1
   },
   "previewedValues": [
     "Alert.variant.danger",

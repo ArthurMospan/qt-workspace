@@ -10,7 +10,7 @@ import { Counter, IconAction, Skeleton } from '@/components/ui';
 import {
   Folder, Users, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
-  Plus, ChevronLeft, ChevronRight, PieChart, PanelLeftClose, PanelLeftOpen,
+  ChevronLeft, ChevronRight, PieChart, PanelLeftClose, PanelLeftOpen,
   Zap, Clock, Square as StopIcon, Sparkles,
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
@@ -23,12 +23,11 @@ import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 import WorkspaceHelpMenu from '@/components/WorkspaceHelpMenu';
 import WorkspacePlanLimitRail from '@/components/WorkspacePlanLimitRail';
 
-import { can } from '@/lib/utils/can';
 
 export default function WorkspaceSidebar() {
   const pathname  = usePathname();
   const router    = useRouter();
-  const { projects, activeOrg, activeOrgId, orgRole, currentUser, orgLoading } = useAppContext();
+  const { projects, activeOrg, activeOrgId, currentUser, orgLoading } = useAppContext();
   // Особиста преференція цього браузера/пристрою — НЕ дані організації, тому
   // ніяк не синхронізується і не видно іншим учасникам команди.
   const [collapsed, setCollapsed] = useState(() => {
@@ -373,25 +372,11 @@ export default function WorkspaceSidebar() {
 
       <div className="mx-[12px] mt-[16px] mb-[16px]" style={{ borderTop: '1px solid var(--sb-border)' }} />
 
-      {/* Projects Section */}
+      {/* Projects Section
+          Без заголовка «ПРОЄКТИ» і без «+». Список папок під розділювачем — це
+          і є проєкти, підпис до нього нічого не додавав; а новий проєкт
+          створюють із «Проєктів», де для цього стоїть підписана кнопка. */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {!collapsed && (
-          <div className="flex items-center justify-between px-[16px] mb-[16px]">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--sb-muted-header)' }}>ПРОЄКТИ</p>
-            {can(orgRole, 'create:project') && (
-              <button
-                onClick={() => router.push('/?new=1')}
-                data-ui-control="branding-action"
-                className="transition-colors" title="Новий проєкт"
-                style={{ color: 'var(--sb-muted-header)' }}
-                onMouseEnter={e => { e.currentTarget.style.color = 'var(--sb-text)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'var(--sb-muted-header)'; }}
-              >
-                <Plus size={16} />
-              </button>
-            )}
-          </div>
-        )}
         <div className="flex flex-col gap-[4px]">
           {(projects || [])
             .filter(p => p.status !== 'archived')

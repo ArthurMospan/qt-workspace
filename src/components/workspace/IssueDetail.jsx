@@ -59,7 +59,7 @@ import { sendNotification }    from '@/lib/hooks/useNotifications';
 import {
   AlignLeft, Heart, Clock, History, PanelRightClose, PanelRightOpen, ExternalLink, X, Plus, Search, Settings2, Share2, Send, CheckSquare, Square, MoreHorizontal, Pencil, Check, Trash2, Paperclip, ChevronRight, Minus, Eye, EyeOff,
   Play, Square as StopIcon,
-  Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon, Archive, ArchiveRestore,
+  Link2, Copy, CopyPlus, MessageCircle, Sparkles, Tag as TagIcon, Archive,
   Maximize2, User, Users, CircleDot, Ban, Undo2,
 } from 'lucide-react';
 import { ParentTaskIcon, TaskIcon } from '@/lib/design/icons';
@@ -1274,7 +1274,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const handleArchive = async (archived) => {
     if (archived && !(await confirmDialog({
       title: `Архівувати ${issue.issueKey}?`,
-      message: 'Завдання зникне з дошки, списків і підрахунку відкритої роботи, але лишиться в «Архіві» — без строку і без втрати даних. Записаний час нікуди не дінеться: він і далі буде в таймшиті та в рахунках. Повернути можна будь-коли.',
+      // Три короткі абзаци замість одного суцільного: що станеться, що
+      // лишиться, як повернути. І без слова «таймшит» — вкладка, на яку воно
+      // показувало, зветься «Табель», а сама річ — облік часу.
+      message: 'Завдання піде з дошки, зі списків і з підрахунку відкритої роботи.\n\n'
+        + 'Записані години нікуди не подінуться — вони й далі в обліку часу та в рахунках.\n\n'
+        + 'Лежатиме в «Архіві» без строку. Повернути можна будь-коли.',
       confirmText: 'Архівувати',
     }))) return;
     try {
@@ -1288,7 +1293,9 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const handleCancel = async (cancelled) => {
     if (cancelled && !(await confirmDialog({
       title: `Скасувати ${issue.issueKey}?`,
-      message: 'Скасування означає, що цієї роботи не буде. Завдання зникне не лише з дошки й списків, а й з усього обліку: з прогресу проєкту, зі звітів, з навантаження, з рахунків і з дедлайнів — так, ніби його не планували. Дані лишаються, воно чекає в «Архіві» → «Скасовані», і повернути можна будь-коли. Якщо робота відбулася і просто завершена — архівуйте, тоді вона лишиться у звітах.',
+      message: 'Скасовують те, чого не буде. Завдання перестане рахуватися будь-де: у прогресі проєкту, у звітах, у навантаженні, у рахунках і серед дедлайнів.\n\n'
+        + 'Якщо робота вже зроблена — краще архівувати: тоді години лишаться у звітах.\n\n'
+        + 'Нічого не втрачається: завдання чекатиме в «Архіві» → «Скасовані», повернути можна будь-коли.',
       confirmText: 'Так, скасувати',
       // The dismiss button is «Скасувати» everywhere else, and here that is the
       // name of the action itself — two buttons side by side, one meaning "do
@@ -1307,9 +1314,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   const handleDelete = async () => {
     if (!(await confirmDialog({
       title: `Видалити ${issue.issueKey}?`,
+      // Підзавдання не видаляються разом із батьком — вони виходять на верхній
+      // рівень (`childPolicy: 'promote'`). Стара фраза «прибрано з N
+      // підзавданнями» читалась рівно навпаки.
       message: childIssues.length > 0
-        ? `Задачу буде прибрано з ${childIssues.length} підзавданнями в ієрархії. Одразу після видалення дію можна скасувати.`
-        : 'Задачу буде прибрано. Одразу після видалення дію можна скасувати.',
+        ? `Завдання потрапить у «Нещодавно видалене» і полежить там добу — звідти його можна повернути. Потім зникне назавжди.\n\nЙого ${childIssues.length} ${plural(childIssues.length, ['підзавдання', 'підзавдання', 'підзавдань'])} лишаться на місці й вийдуть на верхній рівень.`
+        : 'Завдання потрапить у «Нещодавно видалене» і полежить там добу — звідти його можна повернути. Потім зникне назавжди.',
       confirmText: 'Видалити', danger: true,
     }))) return;
     try {
@@ -1410,7 +1420,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   : []),
               ] : []),
               ...(isIssueArchived && canWhileRoleLoads(orgRole, 'edit:issue')
-                ? [{ label: 'Повернути з архіву', icon: ArchiveRestore, onClick: () => handleArchive(false) }]
+                ? [{ label: 'Повернути з архіву', icon: Undo2, onClick: () => handleArchive(false) }]
                 : []),
               ...(isIssueCancelled && canWhileRoleLoads(orgRole, 'edit:issue')
                 ? [{ label: 'Повернути завдання', icon: Undo2, onClick: () => handleCancel(false) }]
@@ -1419,11 +1429,14 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
           />
         </>
       )}
+      {/* Той самий 36-піксельний квадрат, що й в олівця та кебаба поруч, і що
+          в усіх чотирьох кнопок передперегляду події. Ці дві були на 32px, тож
+          у шапці завдання стояв ряд із чотирьох кнопок двох розмірів. */}
       {isModal && onClose && (
         <>
           <Button
             style="secondary"
-            size="icon"
+            size="icon-lg"
             icon={Maximize2}
             onClick={() => {
               onClose();
@@ -1432,7 +1445,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
             aria-label="Відкрити на повній сторінці"
             title="Відкрити на повній сторінці"
           />
-          <Button style="secondary" size="icon" icon={X} onClick={onClose} aria-label="Закрити" title="Закрити" />
+          <Button style="secondary" size="icon-lg" icon={X} onClick={onClose} aria-label="Закрити" title="Закрити" />
         </>
       )}
     </>
@@ -1531,12 +1544,12 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
               <div className="mt-3">
                 <Alert variant="info" title="Завдання в архіві">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span>Воно прибране з дошки, списків і підрахунку відкритої роботи. У звітах, таймшиті та рахунках лишається — записаний час нікуди не дівся. Строку немає.</span>
+                    <span>Воно прибране з дошки, зі списків і з підрахунку відкритої роботи. У звітах, в обліку часу та в рахунках лишається — записані години нікуди не поділись. Строку немає.</span>
                     {canWhileRoleLoads(orgRole, 'edit:issue') && (
                       <Button
                         style="primary"
                         size="sm"
-                        icon={ArchiveRestore}
+                        icon={Undo2}
                         onClick={() => handleArchive(false)}
                       >
                         Повернути з архіву

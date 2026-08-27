@@ -357,6 +357,11 @@ const useWorkspaceStore = create((set, get) => ({
         // shown; `detail` is what actually happened, and only a failure has one.
         detail: options.detail || null,
         context: options.context || '',
+        // Не кожна червона плашка — поломка. Відмова з поясненням («так не
+        // можна, ось чому») не має пропонувати «Повідомити про помилку»: там
+        // нема чого чинити, і кнопка перетворює пояснення на звинувачення в
+        // багу. Такий виклик передає reportable: false.
+        reportable: options.reportable !== false,
       },
       _toastSeq: id,
       _toastTimer: timer,

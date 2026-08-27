@@ -12,7 +12,7 @@ import {
 } from '@/lib/utils/projectIssueCounts.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, MoreVertical, Trash2, User, Settings2 } from 'lucide-react';
+import { ExternalLink, Archive, Undo2, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, MoreVertical, Trash2, User, Settings2 } from 'lucide-react';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -123,7 +123,7 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
       ? [
         !isArchived
           ? { icon: Archive, label: 'Архівувати', onClick: () => archive(project.id) }
-          : { icon: ArchiveRestore, label: 'Розархівувати', onClick: () => unarchive(project.id), color: '#10b981' },
+          : { icon: Undo2, label: 'Розархівувати', onClick: () => unarchive(project.id), color: '#10b981' },
       ]
       : []),
     ...(canDeleteProject

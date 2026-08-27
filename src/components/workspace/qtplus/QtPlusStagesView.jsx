@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { LoadingSpinner } from '@/components/ui';
 import { usePortalStages } from '@/lib/portal/usePortalStages';
 import { usePortalStageMaterials } from '@/lib/portal/usePortalStageMaterials';
 import { stageProgress, defaultStageId, canAccessStage } from '@/lib/portal/qtplusStageModel.mjs';
@@ -7,24 +8,44 @@ import StageStepper from './StageStepper';
 import MaterialGrid from './MaterialGrid';
 import MediaLightbox from './MediaLightbox';
 
-function Spinner() {
-  return <div className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-ink" />;
+/**
+ * Те, що стоїть замість матеріалів: очікування, відмова або порожній етап.
+ *
+ * Раніше це був абзац із `py-4` — він приклеювався до лівого верхнього кута
+ * панелі заввишки 520 пікселів, під смугою етапів, і читався як обірваний
+ * підпис до неї, а не як відповідь про весь блок. Відповідь про порожній блок
+ * стоїть посеред нього.
+ */
+function StagePlaceholder({ children }) {
+  return (
+    <div className="flex flex-1 items-center justify-center px-4 py-10 text-center">
+      <p className="max-w-[320px] text-[13px] text-muted">{children}</p>
+    </div>
+  );
+}
+
+function StageLoading({ label }) {
+  return (
+    <div className="flex flex-1 items-center justify-center px-4 py-10">
+      <LoadingSpinner size="md" label={label} />
+    </div>
+  );
 }
 
 function StageMaterials({ stageId, onOpen }) {
   const { materials, loading, error } = usePortalStageMaterials(stageId);
 
-  if (loading) return <div className="py-4"><Spinner /></div>;
+  if (loading) return <StageLoading label="Завантажуємо матеріали…" />;
   if (error) {
     return (
-      <p className="py-4 text-[13px] text-muted">
+      <StagePlaceholder>
         {error === 'no_access'
           ? 'Немає доступу до матеріалів.'
           : 'Не вдалося завантажити матеріали. Спробуйте пізніше.'}
-      </p>
+      </StagePlaceholder>
     );
   }
-  if (materials.length === 0) return <p className="py-4 text-[13px] text-muted">У цьому етапі ще немає матеріалів.</p>;
+  if (materials.length === 0) return <StagePlaceholder>У цьому етапі ще немає матеріалів.</StagePlaceholder>;
   return <MaterialGrid materials={materials} onOpen={onOpen} />;
 }
 
@@ -66,23 +87,23 @@ export default function QtPlusStagesView({ qtProjectId, header = null }) {
 
   let body;
   if (loading) {
-    body = <div className="py-4"><Spinner /></div>;
+    body = <StageLoading label="Завантажуємо етапи…" />;
   } else if (error) {
     body = (
-      <p className="py-4 text-[13px] text-muted">
+      <StagePlaceholder>
         {error === 'no_access'
           ? 'Немає доступу до цього проєкту QuickTeam+ вашим акаунтом.'
           : 'Не вдалося завантажити етапи. Спробуйте пізніше.'}
-      </p>
+      </StagePlaceholder>
     );
   } else if (stages.length === 0) {
-    body = <p className="py-4 text-[13px] text-muted">Ще немає етапів.</p>;
+    body = <StagePlaceholder>Ще немає етапів.</StagePlaceholder>;
   } else if (selectedId === undefined) {
-    body = <div className="py-4"><Spinner /></div>;
+    body = <StageLoading label="Завантажуємо етапи…" />;
   } else if (!selected) {
-    body = <p className="py-4 text-[13px] text-muted">Роботу над проєктом ще не розпочато.</p>;
+    body = <StagePlaceholder>Роботу над проєктом ще не розпочато.</StagePlaceholder>;
   } else if (!canAccessStage(selected)) {
-    body = <p className="py-4 text-[13px] text-muted">Етап ще не розпочато.</p>;
+    body = <StagePlaceholder>Етап ще не розпочато.</StagePlaceholder>;
   } else {
     body = <StageMaterials stageId={selected.id} onOpen={setLightbox} />;
   }
@@ -91,7 +112,9 @@ export default function QtPlusStagesView({ qtProjectId, header = null }) {
     <div className="flex min-h-0 flex-1 flex-col">
       {headerNode && <div className="px-4 pb-3 pt-4">{headerNode}</div>}
       {hasStages && <StageStepper stages={stages} activeId={selectedId} onSelect={setSelectedId} />}
-      <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">{body}</div>
+      {/* Колонка, а не просто скролпорт: заглушка займає всю висоту, що лишилась,
+          і центрується в ній, а сітка матеріалів як була, так і лишається зверху. */}
+      <div className="hide-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-3">{body}</div>
 
       <MediaLightbox view={lightbox} onClose={() => setLightbox(null)} />
     </div>

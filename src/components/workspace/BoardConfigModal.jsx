@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import { Archive, Trash2, Undo2 } from 'lucide-react';
 import { collection, getCountFromServer, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -220,7 +220,7 @@ export default function BoardConfigModal({
           <Button
             style="secondary"
             size="md"
-            icon={ArchiveRestore}
+            icon={Undo2}
             onClick={async () => {
               if (await onUnarchive(project.id) !== false) onClose();
             }}

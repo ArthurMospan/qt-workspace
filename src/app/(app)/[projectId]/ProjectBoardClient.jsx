@@ -373,7 +373,10 @@ export default function ProjectBoardClient({ projectId, resourceOrganizationId }
         isBoard
           ? 'h-full pb-0'
           : isQtPlusWorkspace
-            ? 'min-h-full pb-[120px] lg:h-full lg:min-h-0 lg:pb-0'
+            // 20px під матеріалами й чатом — та сама смуга, що її лишає під
+            // собою сторінка завдання (`--ui-detail-bottom`). Без неї обидві
+            // панелі впиралися просто в нижній край вікна.
+            ? 'min-h-full pb-[120px] lg:h-full lg:min-h-0 lg:pb-[20px]'
             : 'min-h-full pb-[120px]'
       }`}>
 

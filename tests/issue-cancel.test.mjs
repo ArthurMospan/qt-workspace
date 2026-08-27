@@ -53,12 +53,12 @@ test('the difference between the two is stated where the choice is made', async 
   ]);
   // Archiving keeps the work in the record — the sentence people actually need,
   // because "it disappears" is what stops them using the archive at all.
-  assert.match(detail, /Записаний час нікуди не дінеться/);
-  assert.match(bar, /У звітах, таймшиті та рахунках вони лишаються/);
+  assert.match(detail, /Записані години нікуди не подінуться/);
+  assert.match(bar, /Записані години нікуди не подінуться/);
   // Cancelling does not, and says so in the same breath as the way back.
-  assert.match(detail, /з усього обліку/);
-  assert.match(detail, /Якщо робота відбулася і просто завершена — архівуйте/);
-  assert.match(bar, /Якщо робота відбулася — архівуйте/);
+  assert.match(detail, /перестане рахуватися будь-де/);
+  assert.match(detail, /Якщо робота вже зроблена — краще архівувати/);
+  assert.match(bar, /Якщо робота вже зроблена — краще архівувати/);
   // And the archive screen says which list means which.
   assert.match(settings, /Архівоване лишається у звітах і рахунках, скасоване не рахується ніде/);
 });

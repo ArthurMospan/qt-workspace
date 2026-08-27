@@ -53,11 +53,11 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
-  Archive, ArchiveRestore, Bug, SlidersHorizontal, DatabaseBackup, Lock,
+  Archive, Bug, SlidersHorizontal, DatabaseBackup, Lock,
   UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
+import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, TextAction, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -191,7 +191,19 @@ function ArchiveIssueRows({ issues, projectNameById, since, onOpen, restore }) {
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
               <Pill size="md" className="shrink-0">{issue.issueKey || '—'}</Pill>
-              <p className="truncate text-[13px] font-semibold text-ink">{issue.title || 'Без назви'}</p>
+              {/* Назва завдання і є посиланням на нього. Поруч стояла ще й
+                  кнопка «Відкрити», яка вела рівно туди ж — два способи зробити
+                  те саме в одному рядку, і той, що виглядав як кнопка, займав
+                  місце в ряду з дією, яка справді щось міняє. */}
+              <TextAction
+                size="lg"
+                tone="ink"
+                onClick={() => onOpen(issue)}
+                title="Відкрити завдання"
+                className="min-w-0"
+              >
+                <span className="min-w-0 truncate">{issue.title || 'Без назви'}</span>
+              </TextAction>
             </div>
             <p className="mt-0.5 truncate text-[12px] text-muted">
               {projectNameById(issue.projectId)}
@@ -199,13 +211,10 @@ function ArchiveIssueRows({ issues, projectNameById, since, onOpen, restore }) {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Button style="ghost" size="sm" icon={ExternalLink} onClick={() => onOpen(issue)}>
-              Відкрити
-            </Button>
             <Button
               style="secondary"
               size="sm"
-              icon={restore.icon}
+              icon={Undo2}
               onClick={() => restore.onClick(issue)}
             >
               {restore.label}
@@ -1807,7 +1816,8 @@ export default function SettingsPage() {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
     if (!hasGoogleAuth && !hasOneBAuth) {
-      return showToast('Спочатку підключіть Google або OneB, щоб не втратити доступ', 'error');
+      // Відмова з поясненням, а не поломка: звітувати нема про що.
+      return showToast('Спочатку підключіть Google або OneB, щоб не втратити доступ', 'error', { reportable: false });
     }
     setAuthMethodLoading('github-disconnect');
     try {
@@ -1826,7 +1836,7 @@ export default function SettingsPage() {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
     if (!hasGithubAuth && !hasOneBAuth) {
-      return showToast('Спочатку підключіть GitHub або OneB, щоб не втратити доступ', 'error');
+      return showToast('Спочатку підключіть GitHub або OneB, щоб не втратити доступ', 'error', { reportable: false });
     }
     setAuthMethodLoading('google-disconnect');
     try {
@@ -1872,7 +1882,7 @@ export default function SettingsPage() {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return showToast('Потрібно увійти повторно', 'error');
     if (!hasGithubAuth && !hasGoogleAuth) {
-      return showToast('Спочатку підключіть GitHub або Google, щоб не втратити доступ', 'error');
+      return showToast('Спочатку підключіть GitHub або Google, щоб не втратити доступ', 'error', { reportable: false });
     }
     setAuthMethodLoading('oneb-disconnect');
     try {
@@ -2105,7 +2115,8 @@ export default function SettingsPage() {
     if (qtEnabled && !enabled) {
       if (!(await confirmDialog({
         title: 'Відключити інтеграцію?',
-        message: 'Ви впевнені? Якщо ви відключите інтеграцію, ви більше не зможете інтегрувати проєкти з клієнтським порталом. Ваші клієнти втратять доступ до оновлень у реальному часі.',
+        message: 'Проєкти більше не можна буде звʼязати з клієнтським порталом.\n\n'
+          + 'Клієнти втратять доступ до оновлень, матеріалів і чату — доти, доки інтеграцію не увімкнуть знову.',
         confirmText: 'Відключити', danger: true,
       }))) return;
     }
@@ -2221,7 +2232,10 @@ export default function SettingsPage() {
     if (!uid || leavingOrganization) return;
     const typed = await confirmDialog({
       title: `Вийти з «${org?.name || 'організації'}»?`,
-      message: 'Ви втратите доступ до організації та її проєктів. Задачі, коментарі й записаний час залишаться за вами. Щоб повернутися, потрібне буде запрошення або відновлення доступу адміністратором.\n\nВведіть ВИЙТИ, щоб підтвердити.',
+      message: 'Ви втратите доступ до організації та її проєктів.\n\n'
+        + 'Ваші завдання, коментарі й записані години лишаються на місці — це запис того, що сталося, і він нікуди не дінеться.\n\n'
+        + 'Щоб повернутися, знадобиться запрошення або щоб адміністратор відновив доступ.\n\n'
+        + 'Введіть ВИЙТИ, щоб підтвердити.',
       confirmText: 'Вийти з організації',
       cancelText: 'Скасувати',
       danger: true,
@@ -4315,7 +4329,7 @@ export default function SettingsPage() {
                           onClick={() => unarchiveProject(p.id)}
                           style="secondary"
                           size="sm"
-                          icon={ArchiveRestore}
+                          icon={Undo2}
                           className="ml-4 shrink-0"
                         >
                           Розархівувати
@@ -4332,7 +4346,7 @@ export default function SettingsPage() {
                 ) : archivedIssueList.length === 0 ? (
                   <ArchiveEmpty
                     title="Немає архівованих завдань"
-                    hint="Архівують завершене: завдання йде з дошки й зі списків, але лишається у звітах, у таймшиті та в рахунках — записаний час і далі рахується як зроблена робота"
+                    hint="Архівують завершене: завдання йде з дошки й зі списків, але лишається у звітах, в обліку часу та в рахунках — записані години й далі рахуються як зроблена робота"
                   />
                 ) : (
                   <ArchiveIssueRows
@@ -4341,7 +4355,6 @@ export default function SettingsPage() {
                     since={issue => (issue.archivedAt ? ` · в архіві з ${formatDate(issue.archivedAt)}` : '')}
                     onOpen={issue => router.push(issuePath(issue, issue.projectId))}
                     restore={{
-                      icon: ArchiveRestore,
                       label: 'Повернути',
                       onClick: handleUnarchiveIssue,
                     }}
@@ -4364,7 +4377,6 @@ export default function SettingsPage() {
                     since={issue => (issue.cancelledAt ? ` · скасовано ${formatDate(issue.cancelledAt)}` : '')}
                     onOpen={issue => router.push(issuePath(issue, issue.projectId))}
                     restore={{
-                      icon: Undo2,
                       label: 'Повернути',
                       onClick: handleUncancelIssue,
                     }}
@@ -4396,7 +4408,7 @@ export default function SettingsPage() {
                         <Button
                           style="secondary"
                           size="sm"
-                          icon={ArchiveRestore}
+                          icon={Undo2}
                           onClick={() => handleRestoreDeletedIssue(item)}
                         >
                           Відновити

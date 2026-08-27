@@ -33,6 +33,7 @@ import Pill from '@/components/ui/DataDisplay/Pill';
 import PriorityIcon from '@/components/ui/DataDisplay/PriorityIcon';
 import Surface from '@/components/ui/Surface';
 import Tag from '@/components/ui/DataDisplay/Tag';
+import TextAction from '@/components/ui/TextAction';
 import TypeBadge from '@/components/ui/DataDisplay/TypeBadge';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import { DatePicker } from '@/components/ui/Forms/DatePicker';
@@ -769,6 +770,30 @@ export default function TaskTableView({
         padding="none"
         className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
       >
+        {/* The second step, and the reason the header box does not take it by
+            itself. Gmail asks the same question in the same place: the page is
+            selected, the list is longer, so say by how much and let the person
+            decide. Selecting three hundred tasks must be something somebody
+            meant.
+
+            It used to be the last row of the table, and that is where the bulk
+            action bar lives — a dark bar pinned above the bottom edge, which
+            covered the question the moment selecting anything made it appear.
+            To read it you had to scroll a hundred rows to the end and then find
+            it under the bar. It is above the table now: the same place the
+            selection was made, in view from the first click, and nothing floats
+            over it. */}
+        {offersWholeList && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line bg-canvas px-[10px] py-[8px]">
+            <span className="text-[12px] text-muted">
+              Вибрано {activeSelectedIds.size} на цій сторінці.
+            </span>
+            <TextAction size="md" tone="ink" onClick={() => toggleIssueScope(rows.map(issue => issue.id))}>
+              Вибрати всі {rows.length}
+            </TextAction>
+          </div>
+        )}
+
         {/* Two tables, one set of column widths. The header is not inside the
             scrollport: a scroll container's bar runs its whole height, and the
             top of that bar landed beside the header as a grey band in the one
@@ -996,30 +1021,6 @@ export default function TaskTableView({
                   </tr>
                 );
               })}
-
-              {/* The second step, and the reason the header box does not take
-                  it by itself. Gmail asks the same question in the same place:
-                  the page is selected, the list is longer, so say by how much
-                  and let the person decide. Selecting three hundred tasks must
-                  be something somebody meant. */}
-              {offersWholeList && (
-                <tr>
-                  <td colSpan={visibleColumns.length + 2} className="p-0">
-                    <div className="sticky left-0 flex w-[max-content] max-w-[100vw] items-center gap-2 border-y border-line bg-canvas px-[10px] py-[8px]">
-                      <span className="text-[12px] text-muted">
-                        Вибрано {activeSelectedIds.size} на цій сторінці.
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleIssueScope(rows.map(issue => issue.id))}
-                        className="text-[12px] font-semibold text-ink underline underline-offset-2 transition-colors hover:text-muted"
-                      >
-                        Вибрати всі {rows.length}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
 
               {hiddenRowCount > 0 && (
                 <tr>

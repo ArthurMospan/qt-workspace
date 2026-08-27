@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   ChevronRight,
   Clock3,
-  DatabaseBackup,
   ScanSearch,
   ShieldCheck,
   UsersRound,
@@ -223,8 +222,17 @@ export default function DataMigrationSettings({
     <div className="space-y-8">
       <Card preset="borderless" padding="lg" className="overflow-hidden">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-ink text-white">
-            <DatabaseBackup size={22} />
+          {/* Цей блок малюється лише для YouTrack, тож і знак на ньому —
+              YouTrack, а не родова іконка бази даних. Той самий квадрат із
+              логотипом, що й на картці джерела нижче. */}
+          <div data-ui-surface="local" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border border-line bg-white">
+            <Image
+              src="/integrations/youtrack.svg"
+              alt="YouTrack"
+              width={30}
+              height={30}
+              className="h-[30px] w-[30px] object-contain"
+            />
           </div>
           <div className="min-w-0">
             <p className="text-[15px] font-bold text-ink">Перехід у QuickTeam без ручного відтворення роботи</p>
@@ -238,7 +246,9 @@ export default function DataMigrationSettings({
         <div className="mt-5 grid gap-3 border-t border-line pt-5 md:grid-cols-3">
           {SAFEGUARDS.map(({ icon: Icon, title, description }) => (
             <div key={title} className="flex gap-2.5">
-              <Icon size={16} className="mt-0.5 shrink-0 text-success" />
+              {/* Сірим, не зеленим: це перелік того, як влаштований імпорт,
+                  а не три успіхи. Зелене в продукті означає «вийшло». */}
+              <Icon size={16} className="mt-0.5 shrink-0 text-muted" />
               <div>
                 <p className="text-[11px] font-bold text-ink">{title}</p>
                 <p className="mt-0.5 text-[10px] leading-relaxed text-muted">{description}</p>
@@ -248,16 +258,15 @@ export default function DataMigrationSettings({
         </div>
       </Card>
 
+      {/* QUI-106. There was a green «1 джерело готове» pill here. The one
+          source is on the screen directly below it, with its own «Готово до
+          імпорту» badge — the pill counted what the reader could already see,
+          in the loudest colour on the page.
+          QUI-30. Далі пішов і заголовок «Доступно зараз» із підписом: на екрані
+          рівно одне джерело, і воно назване, підписане й позначене власним
+          бейджем. Заголовок над однією карткою — це рядок, який нічого не
+          повідомляє, але коштує читачеві уваги. */}
       <section>
-        {/* QUI-106. There was a green «1 джерело готове» pill here. The one
-            source is on the screen directly below it, with its own «Готово до
-            імпорту» badge — the pill counted what the reader could already see,
-            in the loudest colour on the page. */}
-        <div className="mb-3">
-          <h3 className="ui-type-compact-title text-ink">Доступно зараз</h3>
-          <p className="mt-0.5 text-[11px] text-muted">Повний керований імпорт із попередньою перевіркою.</p>
-        </div>
-
         <YouTrackImportCard
           key={organizationId}
           organizationId={organizationId}
