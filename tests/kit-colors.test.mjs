@@ -127,10 +127,17 @@ test('a counter on a branded rail takes the rail’s own two colours', async () 
   assert.match(counter, /appearance === 'sidebar'/);
   assert.match(counter, /bg-\[var\(--sb-text,var\(--color-ink\)\)\] text-\[var\(--sb-bg,var\(--color-surface\)\)\]/);
 
+  // Крапка бере ту саму пару, і з тієї самої причини. «В іншій організації щось
+  // є» — це факт «так» або «ні»: піти туди й подивитися доведеться однаково, чи
+  // там одне повідомлення, чи сім, а число біля назви організації читалося як
+  // мітка самої організації. Одна форма на всі три місця, де це сказано.
+  assert.match(counter, /bg-\[var\(--sb-text,var\(--color-ink\)\)\]'/);
+
   const sidebar = await read('../src/components/WorkspaceSidebar.jsx');
   const mobile = await read('../src/components/MobileNav.jsx');
   for (const source of [sidebar, mobile]) {
-    assert.match(source, /<Counter value=\{otherOrgUnreadCount\} size="sm" appearance="sidebar" \/>/);
+    assert.match(source, /<Counter variant="dot" size="sm" appearance="sidebar" \/>/);
+    assert.doesNotMatch(source, /<Counter value=\{otherOrgUnreadCount\}/);
   }
   // And the row it sits in yields the name rather than the chevron: 120px of
   // name plus the counter plus the chevron is 156px in a 140px column.

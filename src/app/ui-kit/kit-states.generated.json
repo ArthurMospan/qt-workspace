@@ -15,7 +15,7 @@
   "totals": {
     "components": 120,
     "stateful": 107,
-    "hover": 71,
+    "hover": 72,
     "focus": 69,
     "disabled": 35,
     "loading": 7,
@@ -348,6 +348,7 @@
       "hover": "css"
     },
     "PlanGate": {
+      "hover": "css",
       "long-text": "children"
     },
     "PlanLimitRail": {

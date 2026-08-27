@@ -53,9 +53,16 @@ test('the actor is still excluded, and real reporters are still included', () =>
 // change on an imported task notified nobody at all.
 test('a recipient who is not a member is dropped, not fatal to the batch', async () => {
   const route = await read('../src/app/api/notifications/route.js');
-  assert.match(route, /const userIdsToNotify = audienceIds\.filter\(/);
+  assert.match(route, /const organizationMemberIds = audienceIds\.filter\(/);
   assert.doesNotMatch(route, /One or more recipients are not organization members/);
   assert.match(route, /if \(!userIdsToNotify\.length\) \{/);
+
+  // Друге сито тієї самої форми: не можна покликати людину в проєкт, до якого
+  // вона не дістає. Пікер згадок звужений, але це підказка — руками дописане
+  // «@Імʼя» обходило її, і людина отримувала сповіщення про задачу, яку не може
+  // відкрити. Двері тут, поруч із перевіркою членства, а не в браузері.
+  assert.match(route, /hasProjectAccess\(project, membership\.role, uid\)/);
+  assert.match(route, /No recipient can reach this project/);
   // Everything downstream reads the validated list, or a dropped recipient
   // would shift the settings/profile lookups out of alignment with it.
   assert.doesNotMatch(route, /db\.getAll\(\.\.\.userIds\.map/);

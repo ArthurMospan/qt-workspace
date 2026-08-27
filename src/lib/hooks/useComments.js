@@ -110,12 +110,22 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
         ),
       });
     });
-    // A `quickteam:issue-activity` event used to be announced here, so that the
-    // home screen could patch its copy of this task before Firestore delivered
-    // the write. That copy is gone: the home screen holds no tasks any more,
-    // and the three activity lines it does draw come from a three-document
-    // listener that hears the write directly. Nothing was listening, so nothing
-    // is said.
+    // Розмова в задачі — це подія проєкту.
+    //
+    // Головний екран ставить першу картку великою і сортує проєкти за
+    // `project.updatedAt`. Створення задачі, зміна статусу, архівування — усе це
+    // пише документ проєкту (лічильники веде та сама операція), тож проєкт
+    // піднімається. Коментар не чіпав нічого, окрім задачі, — і проєкт, у якому
+    // щойно відбулася вся розмова, лишався там, де стояв учора.
+    //
+    // Один запис на повідомлення, і рівно те поле, яке правила дозволяють
+    // учаснику організації торкнутися саме так: `hasOnly(['updatedAt'])`. Поза
+    // транзакцією і без `await` — стрічка задачі не має чекати на порядок
+    // карток, а невдача тут не робить надіслане повідомлення ненадісланим.
+    if (options.projectId) {
+      updateDoc(doc(db, 'projects', options.projectId), { updatedAt: serverTimestamp() })
+        .catch(error => reportLoadError('[useComments] project activity stamp', error));
+    }
     return commentRef.id;
   }, []);
 

@@ -1124,10 +1124,17 @@ export default function UnifiedTimeline({
           )));
         }));
       }
-      const mentionedUserIds = extractMentionedUserIds(draft.text, members, myId);
+      // Той самий список, що його пропонує пікер, а не вся організація.
+      // Пікер був підказкою, а не дверима: дописане руками «@Імʼя» резолвилось
+      // по повному списку й тегало людину, для якої цієї задачі не існує.
+      // Двері — на сервері (`/api/notifications` відмовляє тим, хто не дістає
+      // проєкту); тут просто нічого зайвого не резолвиться.
+      const mentionedUserIds = extractMentionedUserIds(draft.text, mentionMembers || members, myId);
       const commentId = await addComment(issueId, draft.text, currentUser, attachments, draft.replyTo, {
         mentionedUserIds,
         issueMentions: draft.issueMentions,
+        // Щоб розмова підняла проєкт на головному екрані — див. `addComment`.
+        projectId: project?.id || projectId,
       });
       // From here the message exists. The draft stays on screen until the
       // snapshot carrying it arrives — dropping it now would blink the message
@@ -1136,7 +1143,7 @@ export default function UnifiedTimeline({
       const taskChatLink = `${issuePath(issue, project || projectId)}?view=chat`;
       if (mentionedUserIds.length > 0) {
         try {
-          await sendNotification({
+          const result = await sendNotification({
             userIds: mentionedUserIds,
             type: 'mentioned',
             title: `${currentUser?.name || 'Колега'} згадав вас у завданні`,
@@ -1146,6 +1153,15 @@ export default function UnifiedTimeline({
             projectId,
             organizationId: project?.organizationId || org?.id || '',
           });
+          // Правило, а не збій: сервер не кличе в проєкт тих, хто до нього не
+          // дістає. Сказати про це має саме той, хто щойно писав повідомлення —
+          // мовчазно проковтнута згадка виглядає як доставлена.
+          if (result?.skippedNoProjectAccess > 0) {
+            showToast(
+              `Не сповіщено ${result.skippedNoProjectAccess} ${plural(result.skippedNoProjectAccess, ['учасника', 'учасників', 'учасників'])}: немає доступу до проєкту`,
+              'warning',
+            );
+          }
         } catch (notificationError) {
           console.error('[task-chat] mention notification failed:', notificationError);
           showToast('Повідомлення надіслано, але сповіщення про згадку не доставлено', 'error');
@@ -1181,7 +1197,7 @@ export default function UnifiedTimeline({
       patchDraft({ status: 'failed' });
       showToast(`Помилка надсилання: ${error.message}`, 'error');
     }
-  }, [addComment, comments, currentUser, issue, issueId, members, myId, org, project, projectId, showToast]);
+  }, [addComment, comments, currentUser, issue, issueId, members, mentionMembers, myId, org, project, projectId, showToast]);
 
   const retryPendingMessage = draft => {
     setPendingMessages(current => current.map(item => (

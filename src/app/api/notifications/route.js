@@ -8,6 +8,7 @@ import { withNotificationOrganization } from '@/lib/utils/notificationNavigation
 import { deliverTelegramNotification } from '@/lib/server/telegram';
 import { REQUESTABLE_NOTIFICATION_TYPES, shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
 import { OUTBOX_COLLECTION, nextAttemptDelayMs } from '@/lib/utils/notificationOutbox.mjs';
+import { hasProjectAccess } from '@/lib/utils/projectAccess.mjs';
 
 // What a caller holding a user's token may ask for. System-only types — the
 // birthday greeting — are deliberately absent: they are written by the sweep
@@ -82,10 +83,14 @@ export async function POST(request) {
     const projectId = cleanText(payload.projectId, 128);
     let organizationId = cleanText(payload.organizationId, 128);
     const db = getAdminDb();
+    // Тримаємо документ проєкту, а не лише його організацію: нижче він вирішує,
+    // кому це сповіщення взагалі можна надіслати.
+    let project = null;
     if (projectId) {
       const projectSnap = await db.collection('projects').doc(projectId).get();
       if (!projectSnap.exists) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-      const projectOrganizationId = projectSnap.data().organizationId || '';
+      project = { ...projectSnap.data(), id: projectSnap.id };
+      const projectOrganizationId = project.organizationId || '';
       if (organizationId && organizationId !== projectOrganizationId) {
         return NextResponse.json({ error: 'Project does not belong to organization' }, { status: 400 });
       }
@@ -122,6 +127,12 @@ export async function POST(request) {
       if (!issue || issue.organizationId !== organizationId || (projectId && issue.projectId !== projectId)) {
         return NextResponse.json({ error: 'Issue does not belong to notification scope' }, { status: 400 });
       }
+      // Сповіщення про задачу — це сповіщення про проєкт, у якому вона лежить,
+      // навіть коли викликач назвав лише задачу.
+      if (!project && issue.projectId) {
+        const projectSnap = await db.collection('projects').doc(issue.projectId).get();
+        if (projectSnap.exists) project = { ...projectSnap.data(), id: projectSnap.id };
+      }
     }
 
     // Nobody is told about their own action. Every caller already filters the
@@ -139,10 +150,34 @@ export async function POST(request) {
     // imported task carries, a person who has since left — silenced the
     // notification for everyone else on the task too.
     const membershipSnaps = await db.getAll(...audienceIds.map(uid => db.collection('orgMemberships').doc(`${organizationId}_${uid}`)));
-    const userIdsToNotify = audienceIds.filter((uid, index) => membershipSnaps[index].exists &&
+    const organizationMemberIds = audienceIds.filter((uid, index) => membershipSnaps[index].exists &&
       membershipSnaps[index].data().orgId === organizationId && membershipSnaps[index].data().userId === uid);
+
+    // Не можна покликати людину туди, куди вона не може зайти.
+    //
+    // Пікер згадок пропонує лише склад проєкту, але це підказка, а не двері:
+    // достатньо дописати «@Імʼя» руками — і повідомлення йде будь-кому з
+    // організації. Людина отримувала сповіщення про задачу, тиснула на нього й
+    // упиралась у проєкт, до якого не має доступу. Просити доступ теж нема в
+    // кого: запрошувати можуть і власник, і адміністратори, тож «надіслати
+    // запит» довелося б комусь одному з кількох рівноправних.
+    //
+    // Тому двері закриваються тут — там само, де вже перевіряється членство в
+    // організації, і там, куди браузер не дотягнеться. Доступ — це `project.team`
+    // або роль власника/адміністратора, рівно як його розуміє решта продукту.
+    const projectAccessDenied = [];
+    const userIdsToNotify = !project ? organizationMemberIds : organizationMemberIds.filter(uid => {
+      const membership = membershipSnaps[audienceIds.indexOf(uid)]?.data() || {};
+      const allowed = hasProjectAccess(project, membership.role, uid);
+      if (!allowed) projectAccessDenied.push(uid);
+      return allowed;
+    });
     if (!userIdsToNotify.length) {
-      return NextResponse.json({ error: 'No recipient is an organization member' }, { status: 403 });
+      return NextResponse.json({
+        error: organizationMemberIds.length
+          ? 'No recipient can reach this project'
+          : 'No recipient is an organization member',
+      }, { status: 403 });
     }
 
     const [settingsSnaps, profileSnaps, senderSnap] = await Promise.all([
@@ -259,7 +294,13 @@ export async function POST(request) {
       actor: { id: authorization.user.uid, name: sender.name || authorization.user.name || '' },
     });
 
-    return NextResponse.json({ delivered: delivered.size });
+    // Скільки адресатів відпало, бо не мають доступу до проєкту. Викликач має
+    // право це знати: інакше «згадка не дійшла» виглядає як збій, а не як
+    // правило.
+    return NextResponse.json({
+      delivered: delivered.size,
+      ...(projectAccessDenied.length ? { skippedNoProjectAccess: projectAccessDenied.length } : {}),
+    });
   } catch (error) {
     return routeErrorResponse(error, { context: 'notifications', fallbackMessage: 'Failed to send notification' });
   }

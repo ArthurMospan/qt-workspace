@@ -51,9 +51,18 @@ export default function Counter({
       muted: 'bg-muted',
     };
 
+    // Той самий аргумент, що вже стоїть під `appearance="sidebar"` нижче: рейка
+    // фарбується організацією, а `computeSidebarTheme` гарантує 4.5:1 між
+    // `--sb-text` і `--sb-bg` на будь-якому фоні, який можна обрати. Тому крапка
+    // на рейці бере ту саму пару, а не булеве `dark`, яке хтось має обчислити —
+    // і яке нижня панель, наприклад, не обчислює взагалі.
+    const dotStyle = appearance === 'sidebar'
+      ? 'bg-[var(--sb-text,var(--color-ink))]'
+      : dotColors[status];
+
     return (
       <span
-        className={`inline-block rounded-full shrink-0 ${dotSizes[size]} ${dotColors[status]} ${className}`}
+        className={`inline-block rounded-full shrink-0 ${dotSizes[size]} ${dotStyle} ${className}`}
       />
     );
   }

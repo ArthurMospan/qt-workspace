@@ -280,7 +280,7 @@ export default function WorkspaceSidebar() {
                         style={{ fontSize: isBranded ? 16 : 12, lineHeight: isBranded ? '21px' : '17px', fontWeight: isBranded ? 700 : 500 }}
                       >{activeOrg?.name || 'Company name'}</span>
                       {otherOrgUnreadCount > 0 && (
-                        <Counter value={otherOrgUnreadCount} size="sm" appearance="sidebar" />
+                        <Counter variant="dot" size="sm" appearance="sidebar" />
                       )}
                       <ChevronsUpDown size={12} className="shrink-0" style={{ color: theme.muted }} />
                     </div>
