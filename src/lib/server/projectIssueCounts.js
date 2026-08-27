@@ -106,9 +106,15 @@ export async function projectIssueCountDeltasFor(db, organizationId) {
  *
  * Most routes that change a task already write the project document in the same
  * transaction — `issueCounter` on create, `issueStatusVersion` on a status
- * change, `issueHierarchyVersion` on a delete — and Firestore refuses a commit
- * that writes the same document twice. So the counters join that update rather
- * than making a second one, which is also one fewer mutation per task.
+ * change, `issueHierarchyVersion` on a delete. Firestore does allow a second
+ * write to the same document in one commit (checked against the emulator, not
+ * assumed), so this is not a restriction; it is one mutation instead of two,
+ * and it keeps the counter change attached to the write it belongs to rather
+ * than sitting somewhere else in the same transaction.
+ *
+ * Increments are written as dotted paths, so a delta never has to read, rewrite
+ * or even know about the rest of the block — `countedAt` and `countedDay` in
+ * particular, which only a full recount is allowed to touch.
  */
 export function projectIssueCountIncrements(deltas, projectId) {
   const changed = Array.isArray(deltas) ? deltas : deltas.changed();
