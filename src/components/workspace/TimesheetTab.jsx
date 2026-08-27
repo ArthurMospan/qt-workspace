@@ -241,13 +241,15 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
  * @param {object} props.eventsByKey Події календаря — час фіксують і на них.
  * @param {() => void} props.onClose Закриває панель.
  */
-function DayBreakdownDialog({ cell, logs, issuesById, eventsByKey, onClose }) {
+function DayBreakdownDialog({ cell, logs, members = [], issuesById, eventsByKey, onClose }) {
   const entries = useMemo(() => {
     if (!cell) return [];
     const wanted = dayKey(cell.day);
     const byTarget = new Map();
     logs.forEach(log => {
-      if (log.userId !== cell.uid) return;
+      // `uid` порожній — питають про весь день команди, а не про одну людину:
+      // так відкривається клітинка місяця, де рядків на людину немає взагалі.
+      if (cell.uid && log.userId !== cell.uid) return;
       const d = logDate(log);
       if (!d || dayKey(d) !== wanted) return;
       const targetKey = log.issueId || calendarEventOccurrenceKey(log.eventId, log.occurrenceStartAt);
@@ -256,7 +258,9 @@ function DayBreakdownDialog({ cell, logs, issuesById, eventsByKey, onClose }) {
         sourceKey: '',
         sourceTitle: '',
         descriptions: [],
+        userIds: new Set(),
       };
+      if (log.userId) current.userIds.add(log.userId);
       byTarget.set(targetKey, {
         minutes: current.minutes + (log.spentMinutes || 0),
         sourceKey: current.sourceKey || log.sourceKey || '',
@@ -264,12 +268,18 @@ function DayBreakdownDialog({ cell, logs, issuesById, eventsByKey, onClose }) {
         descriptions: log.description
           ? [...current.descriptions, log.description]
           : current.descriptions,
+        userIds: current.userIds,
       });
     });
     return [...byTarget.entries()]
       .map(([targetKey, entry]) => ({ targetKey, ...entry }))
       .sort((a, b) => b.minutes - a.minutes);
   }, [cell, logs]);
+
+  // Чиї це години — питання лише тоді, коли їх могло бути кілька людей.
+  const contributorsOf = entry => (cell?.uid ? [] : [...entry.userIds]
+    .map(uid => members.find(candidate => (candidate.id || candidate.uid) === uid))
+    .filter(Boolean));
 
   const total = entries.reduce((sum, entry) => sum + entry.minutes, 0);
 
@@ -278,7 +288,9 @@ function DayBreakdownDialog({ cell, logs, issuesById, eventsByKey, onClose }) {
       isOpen={Boolean(cell)}
       onClose={onClose}
       size="md"
-      title={cell ? `${cell.member?.name || cell.member?.email || 'Учасник'} · ${cell.day.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}` : ''}
+      title={cell
+        ? `${cell.member ? (cell.member.name || cell.member.email) : 'Уся команда'} · ${cell.day.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}`
+        : ''}
       description={cell ? `Зафіксовано ${fmtMin(total)}` : ''}
       footer={<Button style="secondary" size="md" onClick={onClose}>Закрити</Button>}
     >
@@ -304,6 +316,13 @@ function DayBreakdownDialog({ cell, logs, issuesById, eventsByKey, onClose }) {
                 {entry.descriptions.length > 0 && (
                   <span className="mt-1 block text-[11px] leading-snug text-faint line-clamp-2">
                     {entry.descriptions.join(' · ')}
+                  </span>
+                )}
+                {contributorsOf(entry).length > 0 && (
+                  <span className="mt-1.5 flex items-center gap-1.5">
+                    {contributorsOf(entry).map(person => (
+                      <UserAvatar key={person.id || person.uid} user={person} size="xs" tooltip />
+                    ))}
                   </span>
                 )}
               </>
@@ -508,7 +527,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember, onSelectCell 
 }
 
 // ── Month view: calendar grid with day totals ────────────────────────────────
-function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
+function MonthGrid({ anchor, logs, todayKey, onSelectDay, onSelectCell, selectedMember }) {
   const weeks = useMemo(() => {
     const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
@@ -551,11 +570,16 @@ function MonthGrid({ anchor, logs, todayKey, onSelectDay }) {
             const isToday = key === todayKey;
             const isWeekend = i >= 5;
             return (
+              // День із годинами відповідає, на що вони пішли — так само, як
+              // клітинка тижня. День без годин показувати нічого; там клік
+              // лишається тим, чим був: перейти в цей тиждень.
               <CalendarDayCell
                 key={key}
                 state={!inMonth ? 'outside' : isToday ? 'today' : isWeekend ? 'weekend' : 'default'}
-                onClick={() => onSelectDay?.(d)}
-                title="Відкрити тиждень"
+                onClick={() => (cell?.minutes > 0
+                  ? onSelectCell?.({ uid: selectedMember ? (selectedMember.id || selectedMember.uid) : '', member: selectedMember || null, day: d })
+                  : onSelectDay?.(d))}
+                title={cell?.minutes > 0 ? 'Показати, на що витрачено цей час' : 'Відкрити тиждень'}
               >
                 <CalendarDayNumber state={isToday ? 'today' : inMonth ? 'default' : 'outside'}>
                   {d.getDate()}
@@ -897,7 +921,14 @@ export default function TimesheetTab({
             ? <TeamWeek days={days} logs={rangeLogs} members={members} todayKey={todayKey} onSelectMember={onSelectMember} onSelectCell={setDayBreakdown} />
             : <MemberWeek days={days} logs={rangeLogs} issuesById={issuesById} eventsByKey={eventsByKey} todayKey={todayKey} />
         ) : (
-          <MonthGrid anchor={anchor} logs={rangeLogs} todayKey={todayKey} onSelectDay={onSelectDay} />
+          <MonthGrid
+            anchor={anchor}
+            logs={rangeLogs}
+            todayKey={todayKey}
+            onSelectDay={onSelectDay}
+            onSelectCell={setDayBreakdown}
+            selectedMember={selectedMember}
+          />
         )}
 
         {mode === 'week' && !isTeam && rangeLogs.length === 0 && (
@@ -908,6 +939,7 @@ export default function TimesheetTab({
       <DayBreakdownDialog
         cell={dayBreakdown}
         logs={rangeLogs}
+        members={members}
         issuesById={issuesById}
         eventsByKey={eventsByKey}
         onClose={() => setDayBreakdown(null)}

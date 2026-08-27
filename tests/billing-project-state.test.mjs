@@ -160,8 +160,11 @@ test('the invoice cannot be saved while its figures and its currency disagree', 
   // Both the preview and the save are gated, not just one of them.
   assert.equal(billing.match(/disabled=\{checkedCount === 0 \|\| currencyChanged\}/g).length, 2);
   // The busy state is the button's own, so the label cannot shift under a
-  // spinner rendered beside it.
-  assert.match(billing, /loading=\{saving\}[\s\S]{0,260}Зберегти чернетку/);
+  // spinner rendered beside it. The label is «Створити рахунок», not «Зберегти
+  // чернетку»: pressing it takes an official number out of the organization's
+  // sequence and locks the time logs it bills, which is not what saving a draft
+  // means anywhere else.
+  assert.match(billing, /loading=\{saving\}[\s\S]{0,260}Створити рахунок/);
   assert.doesNotMatch(billing, /<LoadingSpinner size="sm" className="mr-2 inline" \/>/);
   // The per-position bulk buttons are gone; the position picker on each row is
   // the one way to apply a position's rate.

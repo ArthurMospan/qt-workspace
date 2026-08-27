@@ -10,7 +10,7 @@ import {
   collection, query, where, onSnapshot,
 } from 'firebase/firestore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { AlertTriangle, Ban, Copy, Eye, Printer, Clock, Save, Send } from 'lucide-react';
+import { AlertTriangle, Ban, ChevronRight, Copy, Eye, FileText, Printer, Clock, Save, Send } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
 import { Select } from '@/components/ui/Select';
 import {
@@ -1009,7 +1009,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
         projectId,
         organizationId: activeOrgId,
       });
-      showToast(`Чернетку ${created.number} збережено`);
+      showToast(`Рахунок ${created.number} створено — він у «Історії»`);
     } catch (err) {
       console.error(err);
       if ([
@@ -1125,7 +1125,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
             tabs={[
               { id: 'details', label: 'Деталі' },
               { id: 'issues', label: `Позиції (${checkedCount}/${billingItems.length})` },
-              { id: 'history', label: `Історія (${savedInvoices.length})` },
+              { id: 'history', label: `Рахунки (${savedInvoices.length})` },
             ]}
             activeTab={tab}
             onTabChange={setTab}
@@ -1288,7 +1288,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
           {tab === 'history' && (
             <div className="flex flex-col gap-3">
               {savedInvoices.length === 0 ? (
-                <div className="py-12 text-center text-[13px] text-faint font-semibold">Немає збережених рахунків</div>
+                <div className="py-12 text-center text-[13px] text-faint font-semibold">Рахунків ще немає</div>
               ) : (
                 // A bordered grey card at the surface radius — which is a named
                 // preset, not four utilities. It read as `#fafafa` before, one
@@ -1320,16 +1320,24 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                     title={`Відкрити рахунок ${inv.number}`}
                     className="flex cursor-pointer flex-col items-stretch justify-between gap-3 transition-colors hover:bg-canvas/50 sm:flex-row sm:items-center"
                   >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-[13px] font-bold text-ink">{inv.number}</p>
-                        {inv.status === 'void' && (
-                          <Pill tone="neutral">Анульовано</Pill>
-                        )}
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-canvas text-muted">
+                        <FileText size={16} />
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-[13px] font-bold text-ink">{inv.number}</p>
+                          {/* Стан видно, а не здогадуються. Раніше позначався
+                              лише анульований, тож чинний рахунок не мав
+                              жодної мітки й нічим не відрізнявся від нього. */}
+                          {inv.status === 'void'
+                            ? <Pill tone="neutral">Анульовано</Pill>
+                            : <Pill tone="dark" size="sm">Чинний</Pill>}
+                        </div>
+                        <p className="text-[11px] text-muted font-medium mt-1">
+                          {inv.date} · {inv.items?.length || 0} {plural(inv.items?.length || 0, ['позиція', 'позиції', 'позицій'])}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-muted font-medium mt-1">
-                        {inv.date} · {inv.items?.length || 0} {plural(inv.items?.length || 0, ['позиція', 'позиції', 'позицій'])}
-                      </p>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <span className="text-[14px] font-black text-ink">{fmtMoney(inv.total, inv.currency)}</span>
@@ -1339,11 +1347,14 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                           color="red"
                           size="icon-sm"
                           icon={Ban}
-                          title="Анулювати чернетку"
+                          title="Анулювати рахунок"
                           loading={voidingInvoiceId === inv.id}
                           onClick={() => voidInvoice(inv)}
                         />
                       )}
+                      {/* Шеврон — це те, що робить рядок читабельно натисним.
+                          Без нього номер, дата й сума виглядають як підпис. */}
+                      <ChevronRight size={16} className="shrink-0 text-faint" />
                     </div>
                   </Surface>
                 ))
@@ -1479,6 +1490,13 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                 a spinner in place. Rendering a LoadingSpinner *next to* the
                 label instead added a second glyph, so the button grew wider and
                 the text shifted the moment you pressed it. */}
+            {/* Назва по тому, що кнопка робить.
+                «Зберегти чернетку» звучить як «запамʼятати, щоб доробити
+                пізніше» — ніби чернетка це запис у блокноті. Насправді це
+                створення рахунку: сервер видає офіційний номер із послідовності
+                організації й закріплює за ним використані записи часу, щоб ту
+                саму роботу не виставили двічі. Скасувати можна, доробити —
+                вже ні. Рядок під кнопкою каже і те, і те. */}
             <Button
               onClick={saveInvoice}
               disabled={checkedCount === 0 || currencyChanged}
@@ -1488,8 +1506,11 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
               icon={Save}
               className="w-full"
             >
-              Зберегти чернетку
+              Створити рахунок
             </Button>
+            <p className="text-center text-[11px] leading-relaxed text-faint">
+              Отримає номер і закріпить за собою обраний час. Знайдете його в «Історії»; помилковий — анулюйте.
+            </p>
           </div>
         </Card>
       </div>

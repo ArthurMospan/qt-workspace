@@ -47,11 +47,19 @@ export default function Surface({
   composition,           // named size contract, resolved in globals.css
   className = '',
   children,
+  ...props
 }) {
   const semanticPreset = PRESETS[preset || variant] ?? PRESETS.panel;
 
   return (
+    // Решта пропсів іде на елемент — як у решти компонентів кіта.
+    //
+    // Цей був винятком, і мовчазним: `onClick`, `role`, `tabIndex` і `title`
+    // просто зникали дорогою. Рядок історії рахунків отримав обробник кліку й
+    // не отримав нічого — він виглядав натисним і не робив нічого, а помилки
+    // ніде не було, бо ніхто нічого не ламав: пропси нікуди не передавались.
     <div
+      {...props}
       data-ui-surface={semanticPreset}
       data-ui-padding={padding}
       data-ui-composition={composition}
