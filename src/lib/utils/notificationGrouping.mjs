@@ -51,17 +51,32 @@ function plural(count, [one, few, many]) {
 }
 
 /**
+ * «N нових повідомлень в QT-12» — рахунок і місце, з одного зразкового запису.
+ *
+ * Тим самим реченням говорять два різні місця: рядок у дзвонику, що склеїв
+ * кілька записів, і жива картка в кутку, що стоїть одна на розмову й лише
+ * переписує на собі число, поки серія триває. Одне формулювання, бо це один і
+ * той самий факт, сказаний користувачеві двічі.
+ *
+ * @param {number} count Скільки записів стоїть за цим рядком.
+ * @param {object} sample Будь-який із них — потрібен лише для ключа задачі.
+ * @param {string} key Ключ розмови з `notificationGroupKey`.
+ */
+export function notificationCountTitle(count, sample, key = '') {
+  const what = `${count} ${plural(count, ['нове повідомлення', 'нові повідомлення', 'нових повідомлень'])}`;
+  const issueKey = notificationIssueKey(sample);
+  if (issueKey) return `${what} в ${issueKey}`;
+  return String(key).startsWith('chat:') ? `${what} в розмові` : `${what} у завданні`;
+}
+
+/**
  * What a collapsed row says. A single record keeps its own title — the row is
  * unchanged for the case that was never broken.
  */
 export function notificationGroupTitle(group) {
   const { items } = group;
   if (items.length < 2) return items[0]?.title || '';
-  const count = items.length;
-  const what = `${count} ${plural(count, ['нове повідомлення', 'нові повідомлення', 'нових повідомлень'])}`;
-  const issueKey = notificationIssueKey(items[0]);
-  if (issueKey) return `${what} в ${issueKey}`;
-  return group.key.startsWith('chat:') ? `${what} в розмові` : `${what} у завданні`;
+  return notificationCountTitle(items.length, items[0], group.key);
 }
 
 /**

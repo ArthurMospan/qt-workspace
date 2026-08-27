@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   groupNotifications,
+  notificationCountTitle,
   notificationGroupKey,
   notificationIssueKey,
 } from '../src/lib/utils/notificationGrouping.mjs';
@@ -112,4 +113,57 @@ test('the bell draws rows, not records', async () => {
   assert.match(header, /row\.items\.map\(item => action\?\.\(item\.id\)\)/);
   assert.match(header, /row\.items\.map\(item => removeNotification\?\.\(item\.id\)\)/);
   assert.match(header, /row\.items\.filter\(item => !item\.read\)/);
+});
+
+// Живий кут кутка говорить те саме речення, що й рядок у дзвонику.
+test('the corner card counts a burst instead of stacking it', async () => {
+  assert.equal(
+    notificationCountTitle(4, comment('n1', 'issue-a'), 'issue:issue-a'),
+    '4 нові повідомлення в QT-12',
+  );
+  // Розмова робочого чату не має ключа задачі й називає себе розмовою.
+  assert.equal(
+    notificationCountTitle(2, { type: 'chat_message', link: '/chat?channel=design' }, 'chat:design'),
+    '2 нові повідомлення в розмові',
+  );
+
+  const store = await readFile(new URL('../src/store/useWorkspaceStore.js', import.meta.url), 'utf8');
+  // Одна картка на розмову: стек тримає розмови, а не повідомлення.
+  assert.match(store, /const existing = state\.liveNotifs\.find\(card => card\.groupKey === groupKey\);/);
+  assert.match(store, /const kept = state\.liveNotifs\.filter\(item => item\.groupKey !== groupKey\);/);
+  // Подія, що не повторюється — призначення, дедлайн — групується сама з собою.
+  assert.match(store, /const groupKey = conversationKey \|\| `id:\$\{notif\.id\}`;/);
+  // Той самий запис, доставлений двічі, не є другим повідомленням.
+  assert.match(store, /existing\.id === notif\.id \? existing\.count : existing\.count \+ 1/);
+  // Шість секунд починаються з кожним повідомленням, тож картка стоїть, поки
+  // серія триває, і зникає через шість секунд після останнього.
+  assert.match(store, /if \(supersededId\) stopLiveNotifTimer\(supersededId\);/);
+});
+
+// Звук позначає початок серії, а не кожен її елемент.
+test('a burst in one conversation chimes once, not once a message', async () => {
+  const hook = await readFile(new URL('../src/lib/hooks/useNotifications.js', import.meta.url), 'utf8');
+
+  assert.match(hook, /const CHIME_CONVERSATION_MS = 10_000;/);
+  assert.match(hook, /const CHIME_MIN_GAP_MS = 1_500;/);
+  // Спершу спільне вікно — інакше десять різних розмов в одну секунду
+  // прозвучали б десять разів, кожна у своєму праві.
+  const gap = hook.indexOf('now - lastChimeAtRef.current < CHIME_MIN_GAP_MS');
+  const perConversation = hook.indexOf('CHIME_CONVERSATION_MS) return false');
+  assert.ok(gap > 0 && perConversation > gap);
+  // Мапа розмов не росте безмежно.
+  assert.match(hook, /if \(now - at >= CHIME_CONVERSATION_MS\) seen\.delete\(staleKey\);/);
+  // Заглушується сам дзвіночок, а не запис: у дзвонику подія лишається.
+  assert.match(hook, /n\.type !== 'emergency' && chimeAllowed\(n\)\) playChime\(\);/);
+});
+
+// Серія повідомлень коштує один перерахунок, а не один на повідомлення.
+test('a burst costs one recount of the unread totals', async () => {
+  const counts = await readFile(new URL('../src/lib/hooks/useOrganizationUnreadCounts.js', import.meta.url), 'utf8');
+
+  assert.match(counts, /const INVALIDATION_COALESCE_MS = 800;/);
+  assert.match(counts, /window\.addEventListener\('qt:notification-counts-invalidated', refreshAfterBurst\);/);
+  // Фокус, мережа і повернення на вкладку рахують одразу: там подія одна.
+  assert.match(counts, /window\.addEventListener\('focus', refresh\);/);
+  assert.match(counts, /if \(coalesceTimer\) window\.clearTimeout\(coalesceTimer\);/);
 });

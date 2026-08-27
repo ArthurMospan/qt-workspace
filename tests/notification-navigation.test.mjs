@@ -133,7 +133,9 @@ test('live notification cards stand in a stack, one countdown each', async () =>
   assert.match(store, /const LIVE_NOTIF_LIMIT = 3;/);
   assert.match(store, /liveNotifs: \[\]/);
   assert.doesNotMatch(store, /_liveNotifTimer:/);
-  assert.match(store, /const next = \[\.\.\.kept, notif\]\.slice\(-LIVE_NOTIF_LIMIT\);/);
+  // Bounded at three conversations, not three messages: what the stack holds is
+  // one card per conversation, and the card carries the count.
+  assert.match(store, /const next = \[\.\.\.kept, card\]\.slice\(-LIVE_NOTIF_LIMIT\);/);
   // One countdown per card, so an arrival cannot cut the card before it short.
   assert.match(store, /const liveNotifTimers = new Map\(\);/);
   assert.match(store, /dismissLiveNotif: \(id\) => \{/);

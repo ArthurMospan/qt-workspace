@@ -10,6 +10,10 @@ import {
   timerElapsedSeconds,
   timerNowMillis,
 } from '@/lib/utils/timerState.mjs';
+import {
+  notificationCountTitle,
+  notificationGroupKey,
+} from '@/lib/utils/notificationGrouping.mjs';
 
 function formatElapsed(seconds) {
   const s   = Math.max(0, Math.floor(seconds));
@@ -372,21 +376,50 @@ const useWorkspaceStore = create((set, get) => ({
   // LIVE_NOTIF_LIMIT stand at once — oldest first, newest nearest the corner —
   // and each burns its own six seconds, paused while the tab is in the
   // background.
-  liveNotifs: [],   // [{ id, title, body, type, link }], oldest first
+  // Одна розмова — одна картка, скільки б у ній не написали.
+  //
+  // Стек виправив «одна картка на все» і приніс протилежну крайність: жвава
+  // розмова, у якій ти зараз не сидиш, займала весь стек собою — три однакові
+  // «Х написав у завданні», що виштовхували одне одного, поки людина друкує.
+  // Розмова, у якій щойно з'явилось восьме повідомлення, — це не вісім новин, а
+  // одна новина з числом; так її вже показує дзвоник, і тим самим реченням.
+  // Картка стоїть на місці, переписує на собі лічильник і починає свої шість
+  // секунд наново з кожним повідомленням — тобто зникає через шість секунд
+  // після останнього, а не після першого.
+  liveNotifs: [],   // [{ id, groupKey, count, title, body, type, link }], oldest first
   showLiveNotif: (notif) => {
     if (!notif?.id) return;
     const expire = get().dismissLiveNotif;
+    // Порожній ключ означає «ця подія не повторюється» — призначення, дедлайн,
+    // подія календаря. Така картка групується сама з собою, тобто ні з чим.
+    const conversationKey = notificationGroupKey(notif);
+    const groupKey = conversationKey || `id:${notif.id}`;
+    let supersededId = null;
     set(state => {
-      // The same notification twice is one card: the record is re-announced
-      // whenever the stream re-delivers it, and a stack would hold both.
-      const kept = state.liveNotifs.filter(card => card.id !== notif.id);
-      const next = [...kept, notif].slice(-LIVE_NOTIF_LIMIT);
+      const existing = state.liveNotifs.find(card => card.groupKey === groupKey);
+      // The same notification twice is one card and not a second message: the
+      // record is re-announced whenever the stream re-delivers it.
+      const count = !existing ? 1 : existing.id === notif.id ? existing.count : existing.count + 1;
+      if (existing && existing.id !== notif.id) supersededId = existing.id;
+      const card = {
+        ...notif,
+        groupKey,
+        count,
+        title: conversationKey && count > 1
+          ? notificationCountTitle(count, notif, conversationKey)
+          : notif.title,
+      };
+      const kept = state.liveNotifs.filter(item => item.groupKey !== groupKey);
+      const next = [...kept, card].slice(-LIVE_NOTIF_LIMIT);
       // A card pushed off the bottom of the stack takes its countdown with it.
       state.liveNotifs
-        .filter(card => !next.some(item => item.id === card.id))
-        .forEach(card => stopLiveNotifTimer(card.id));
+        .filter(item => !next.some(candidate => candidate.id === item.id))
+        .forEach(item => stopLiveNotifTimer(item.id));
       return { liveNotifs: next };
     });
+    // Картка лишилась та сама, запис під нею — новіший, тож відлік старого
+    // запису більше нічому не належить.
+    if (supersededId) stopLiveNotifTimer(supersededId);
     stopLiveNotifTimer(notif.id);
     liveNotifTimers.set(notif.id, { handle: null, remaining: LIVE_NOTIF_MS, startedAt: 0 });
     if (tabIsVisible()) runLiveNotifTimer(notif.id, expire);

@@ -7,6 +7,15 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 
 const inFlightRequests = new Map();
 
+// Скільки чекати, перш ніж перерахувати непрочитане після зміни в потоці.
+//
+// Кожен новий запис у стрічці сповіщень оголошував «перерахуй». Поки в чаті
+// пишуть, це один запит на секунду — за серію на десять повідомлень десять
+// однакових перерахунків, з яких дев'ять уже застаріли, поки летіли. Серія
+// коштує один. Фокус вікна, повернення в мережу і повернення на вкладку
+// рахують одразу: там подія одна й людина її чекає.
+const INVALIDATION_COALESCE_MS = 800;
+
 function loadUnreadCounts(userId) {
   if (!inFlightRequests.has(userId)) {
     const request = authenticatedRequest(
@@ -63,15 +72,24 @@ export function useOrganizationUnreadCounts({ enabled = true } = {}) {
     const refreshVisible = () => {
       if (document.visibilityState === 'visible') refresh();
     };
+    let coalesceTimer = null;
+    const refreshAfterBurst = () => {
+      if (coalesceTimer) return;
+      coalesceTimer = window.setTimeout(() => {
+        coalesceTimer = null;
+        refresh();
+      }, INVALIDATION_COALESCE_MS);
+    };
     window.addEventListener('focus', refresh);
     window.addEventListener('online', refresh);
-    window.addEventListener('qt:notification-counts-invalidated', refresh);
+    window.addEventListener('qt:notification-counts-invalidated', refreshAfterBurst);
     document.addEventListener('visibilitychange', refreshVisible);
     return () => {
       requestGeneration.current += 1;
+      if (coalesceTimer) window.clearTimeout(coalesceTimer);
       window.removeEventListener('focus', refresh);
       window.removeEventListener('online', refresh);
-      window.removeEventListener('qt:notification-counts-invalidated', refresh);
+      window.removeEventListener('qt:notification-counts-invalidated', refreshAfterBurst);
       document.removeEventListener('visibilitychange', refreshVisible);
     };
   }, [clearCounts, enabled, refresh, userId]);

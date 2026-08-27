@@ -12,12 +12,26 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { CHANNEL_DEFAULTS } from '@/lib/utils/notificationChannels.mjs';
+import { notificationGroupKey } from '@/lib/utils/notificationGrouping.mjs';
 import { invalidateOrganizationUnreadCounts } from '@/lib/hooks/useOrganizationUnreadCounts';
 
 // Live window kept in memory for the notification centre.
 const PAGE_SIZE = 50;
 // Firestore caps a batched write at 500 operations.
 const WRITE_BATCH_LIMIT = 400;
+
+// Скільки одна розмова мовчить після власного дзвіночка, і скільки мовчать усі
+// разом.
+//
+// Дзвінок казав «у цій розмові щось нове». Восьме повідомлення за пів хвилини
+// не каже нічого, чого не сказало перше, — а звучало воно рівно так само гучно,
+// тож жвава розмова перетворювалась на кулемет. Так не робить жоден месенджер:
+// звук позначає початок серії, а не кожен її елемент.
+//
+// Два вікна, бо це два різні надокучання. Одне — та сама розмова, що триває.
+// Друге — кілька різних розмов, які збіглися в одну секунду.
+const CHIME_CONVERSATION_MS = 10_000;
+const CHIME_MIN_GAP_MS = 1_500;
 
 // Soft two-tone chime via WebAudio — no external audio asset needed
 function playChime() {
@@ -81,6 +95,9 @@ export function useNotifications(userId, {
   // перебудовуватись щоразу, коли читач перемкнув панель.
   const onNewRef = useRef(onNew);
   const shouldAnnounceRef = useRef(shouldAnnounce);
+  // Коли востаннє дзвеніло взагалі, і коли — по кожній розмові окремо.
+  const lastChimeAtRef = useRef(0);
+  const conversationChimeAtRef = useRef(new Map());
 
   useEffect(() => {
     activeOrganizationIdRef.current = activeOrganizationId;
@@ -128,6 +145,25 @@ export function useNotifications(userId, {
         orderBy('createdAt', 'desc'),
         limit(PAGE_SIZE),
       );
+    // Живе всередині ефекту, бо читає самі лише refs: додавати його в
+    // залежності означало б ризикувати перебудовою підписки.
+    const chimeAllowed = notification => {
+      const now = Date.now();
+      if (now - lastChimeAtRef.current < CHIME_MIN_GAP_MS) return false;
+      const key = notificationGroupKey(notification);
+      if (key) {
+        const seen = conversationChimeAtRef.current;
+        if (now - (seen.get(key) || 0) < CHIME_CONVERSATION_MS) return false;
+        // Прибирання на місці: мапа не має рости на кожну розмову, яку людина
+        // бачила за сесію.
+        for (const [staleKey, at] of seen) {
+          if (now - at >= CHIME_CONVERSATION_MS) seen.delete(staleKey);
+        }
+        seen.set(key, now);
+      }
+      lastChimeAtRef.current = now;
+      return true;
+    };
     const unsub = onSnapshot(q, snap => {
       const docs = snap.docs.map(d => ({
         ...d.data(),
@@ -156,8 +192,8 @@ export function useNotifications(userId, {
             const announce = shouldAnnounceRef.current;
             if (typeof announce === 'function' && !announce(n)) return;
             const prefs = prefsRef.current;
-            // 1. Sound chime
-            if (prefs.sound !== false && n.type !== 'emergency') playChime();
+            // 1. Sound chime — раз на серію, а не раз на повідомлення.
+            if (prefs.sound !== false && n.type !== 'emergency' && chimeAllowed(n)) playChime();
             // 2. In-app popup callback (goes to store)
             if (prefs.popup !== false && onNewRef.current) onNewRef.current(n);
           }
