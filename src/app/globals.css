@@ -38,6 +38,13 @@
   --color-selected:     #f1f1f1;  /* a row or control held selected */
   --color-placeholder:  #b0b0b0;  /* placeholder text, disabled label */
   --color-ink-soft:     #6b6b6b;  /* body copy inside a dialog */
+  /* A whole zone under the pointer — a board column, a lane, a drop target.
+     Not `line`, and the difference is the whole point: `line` is what a card's
+     hover ring is drawn in, and a column that hovers to the same value paints
+     the ring out. The board did exactly that. A zone tints by one step and the
+     ring stays two steps darker, so the card is still the thing you are
+     pointing at. */
+  --color-zone-hover:   #f0f0f2;  /* a column or drop zone under the pointer */
   /* The dark shell behind login and onboarding, reached from two kit controls
      that serve those screens. Named rather than excused, because a value two
      components share is a token whatever screen it is on. */

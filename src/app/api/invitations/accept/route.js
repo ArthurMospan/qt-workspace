@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authenticateRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { restoreProjectAccess } from '@/lib/server/orgMembership';
+import { seedChatReadState } from '@/lib/server/chatReadState';
 import { MEMBERSHIP_ARCHIVE } from '@/lib/utils/orgMembership.mjs';
 import { countActiveMembers, organizationPlan } from '@/lib/server/planLimits';
 import { planLimit } from '@/lib/utils/plans.mjs';
@@ -123,6 +124,11 @@ export async function POST(request) {
     if (accepted > 0) await batch.commit();
     for (const [organizationId, projectIds] of projectsToRestore) {
       await restoreProjectAccess({ organizationId, userId: uid, projectIds });
+    }
+    // Місце в кімнаті видається разом із курсором прочитаного: без нього
+    // новачок отримує бейдж на всю історію каналу, написану до його приходу.
+    for (const organizationId of acceptedOrganizationIds) {
+      await seedChatReadState(db, organizationId, uid);
     }
     return NextResponse.json({ accepted, refusedSeats });
   } catch (error) {

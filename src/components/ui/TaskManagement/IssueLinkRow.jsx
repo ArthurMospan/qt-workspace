@@ -47,7 +47,11 @@ export default function IssueLinkRow({
     <div
       data-ui-surface="nested-card"
       data-ui-padding="row"
-      className="ui-surface group flex items-center justify-between gap-3 border border-line transition-all duration-200 hover:bg-canvas hover:ring-4 hover:ring-line"
+      // Обводка, і тільки обводка — так само, як у рядку завдання. Заливка
+      // була #fcfcfc і стала `bg-canvas` під час переїзду на токени; це три
+      // одиниці від білого проти одинадцяти, тож рядок почав сірішати цілком і
+      // топити в собі кільце, яке й є нашим ховером.
+      className="ui-surface group flex items-center justify-between gap-3 border border-line transition-all duration-200 hover:ring-4 hover:ring-line"
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Pill tone="neutral" size="sm" shape="badge" uppercase>

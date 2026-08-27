@@ -48,11 +48,12 @@ export default function WorkspaceSidebar() {
   const unreadChats = useWorkspaceStore(s => s.unreadChatCount);
   const userId = currentUser?.id || currentUser?.uid;
   const { unreadProjectIds, markProjectRead } = useProjectUnreadIndicators(userId, activeOrgId);
-  const notifications = useWorkspaceStore(s => s.notifications);
-  const unreadChatNotifications = notifications.filter(item =>
-    !item.read && item.type === 'chat_message' && item.organizationId === activeOrgId).length;
-  const displayedUnreadChats = unreadChatNotifications || unreadChats;
-  const showUnreadChatBadge = !pathname.startsWith('/chat') && displayedUnreadChats > 0;
+  // Число публікує `WorkspaceNotificationBridge` — і воно вже готове. Тут
+  // стояла друга копія тієї самої підміни «сповіщення або курсори», накладена
+  // поверх опублікованого числа, у якому підміна вже відбулася: та сама умова
+  // застосовувалась двічі, а дві копії одного правила рано чи пізно починають
+  // відповідати по-різному. Сайдбар читає, як і нижня панель.
+  const showUnreadChatBadge = !pathname.startsWith('/chat') && unreadChats > 0;
   const unreadByOrganization = useWorkspaceStore(s => s.notificationUnreadByOrg);
   const otherOrgUnreadCount = Object.entries(unreadByOrganization).reduce(
     (total, [organizationId, count]) => organizationId === activeOrgId ? total : total + count,
@@ -361,7 +362,7 @@ export default function WorkspaceSidebar() {
                   <Icon size={18} className="shrink-0" />
                   {!collapsed && <span className="text-[13px] font-medium">{label}</span>}
                   {!collapsed && label === 'Чат' && showUnreadChatBadge && (
-                    <Counter value={displayedUnreadChats} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
+                    <Counter value={unreadChats} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
                   )}
                 </div>
               </Tooltip>

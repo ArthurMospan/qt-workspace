@@ -75,8 +75,16 @@ export default function Counter({
     ? 'bg-[var(--sb-text,var(--color-ink))] text-[var(--sb-bg,var(--color-surface))]'
     : appearance === 'subtle'
       ? 'bg-white/60 text-muted'
+      // Кільце, а не рамка — і різниця тут не косметична.
+      //
+      // `border-[3px]` при `box-sizing: border-box` з'їдає шість пікселів із
+      // двадцяти, а разом із `px-[6px]` на вміст лишається два: цифра не
+      // вміщається, розпирає бейдж у ширину, і замість кола виходить овал —
+      // «сплюснутий», не такий, як усі інші лічильники продукту. Внутрішнє
+      // кільце малює рівно те саме, але не входить у коробку, тож бейдж
+      // лишається колом з тими самими двадцятьма пікселями.
       : appearance === 'inverse-outline'
-        ? 'border-[3px] border-ink bg-white text-ink'
+        ? 'ring-[3px] ring-inset ring-ink bg-white text-ink'
         : dark
           ? 'bg-white text-ink'
           : 'bg-ink text-white';

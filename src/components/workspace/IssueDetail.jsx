@@ -300,6 +300,34 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
   // blank-assignee bug: anyone off the team (e.g. the creator of a task in a
   // project they aren't a team member of) was unresolvable and rendered empty.
   const { members } = useOrganization();
+
+  // Кого можна покликати в цій задачі.
+  //
+  // `members` вище — це вся організація, і для розвʼязування імен так і треба.
+  // Але пікер згадок — не довідник імен, а пропозиція: «покликати цю людину
+  // сюди». Він працював з того самого списку, тож у задачі одного проєкту можна
+  // було тегнути людину, якої в цьому проєкті немає, — для неї ця задача просто
+  // не існує, і сповіщення вело б у нікуди.
+  //
+  // Склад проєкту — це `project.team`, і саме його продукт показує скрізь, де
+  // питання «хто тут» (`isOnProjectTeam`). До нього додається тільки той, хто
+  // вже в цій розмові: виконавці, автор і підписники. Вони в ній за фактом, і
+  // зникнути з пікера посеред обговорення вони не можуть, навіть якщо в
+  // складі проєкту їх ніхто не записав.
+  // Проєкт, у якому склад ніхто не записував, не може відповісти на питання
+  // «хто тут» — і мовчання тут означало б порожній пікер, а не звужений.
+  const mentionInvolved = new Set([
+    ...(Array.isArray(issue?.assigneeIds) ? issue.assigneeIds : []),
+    ...(Array.isArray(issue?.watcherIds) ? issue.watcherIds : []),
+    issue?.authorId,
+    issue?.createdBy,
+  ].filter(Boolean));
+  const mentionMembers = hasRecordedTeam(project)
+    ? members.filter(member => {
+        const uid = member.id || member.uid;
+        return Boolean(uid) && (isOnProjectTeam(project, uid) || mentionInvolved.has(uid));
+      })
+    : members;
   // A task in the archive is read-only for the same reason an archived project
   // is: it has been put aside, and the one action it offers is coming back. A
   // cancelled task is read-only on the same terms — editing work that has been
@@ -1943,6 +1971,7 @@ export default function IssueDetail({ issueId: issueLocator, projectId, isModal,
                   isArchived={isArchived}
                   org={activeOrg}
                   members={members}
+                  mentionMembers={mentionMembers}
                   sprints={sprints}
                   isActive={!isCompactTaskLayout || taskPane === 'chat'}
                   onUnreadCountChange={handleTaskChatUnreadChange}

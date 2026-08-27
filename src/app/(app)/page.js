@@ -248,6 +248,20 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
                 Тільки читання
               </Pill>
             )}
+            {/* «Вас тут згадали» — на кожній картці, а не лише на великій.
+                Це єдиний факт на картці, адресований особисто читачеві, і саме
+                його раніше було видно тільки на одній картці з чотирьох: стрічка
+                дій живе лише на великій, а лічильник згадок стояв усередині неї
+                й ішов на дно разом із нею. Число вже пораховано з того самого
+                потоку сповіщень, що його тримає layout, тож на маленькій картці
+                воно не коштує жодного читання.
+
+                Праворуч від назви, а не в кутку: назва — це те, за чим шукають
+                проєкт у сітці, і мітка, адресована тобі, має стояти там, де
+                погляд уже зупинився. */}
+            {mentionCount > 0 && !isLarge && (
+              <TaskCounters mentions={mentionCount} size="sm" />
+            )}
           </div>
           {project.description && (
             <p className={`text-muted font-medium leading-[1.5] line-clamp-2 ${
@@ -416,7 +430,10 @@ function ProjectStatsSection({ isLarge, members, project, now, currentUser, orgL
   // small to say what it was a number of, on the screen you go through rather
   // than the one you read. A project's own board answers all of it in a click.
   if (!isLarge) return null;
-  if (recentActions.length === 0) return null;
+  // Порожня стрічка дій ховала й лічильник згадок разом із собою: обидва стояли
+  // за одним `return null`, хоча це два різні факти. Проєкт, у якому ще нічого
+  // не відбувалося, але тебе вже покликали, мовчав про це.
+  if (recentActions.length === 0 && mentionCount === 0) return null;
 
   return (
     <div className="z-10 mt-auto flex w-full flex-col gap-[6px]">

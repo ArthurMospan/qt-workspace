@@ -4,6 +4,7 @@ import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { deliverEmail, invitationEmailHtml } from '@/lib/server/email';
 import { reactivateMembership } from '@/lib/server/orgMembership';
+import { seedChatReadState } from '@/lib/server/chatReadState';
 import {
   countActiveMembers,
   organizationPlan,
@@ -168,6 +169,9 @@ export async function POST(request) {
         });
       });
       await batch.commit();
+      // Місце в кімнаті видається разом із курсором прочитаного: інакше людина
+      // відкриває чат уперше й бачить бейдж на всю історію, написану до неї.
+      await seedChatReadState(db, organizationId, userId);
       const emailSent = await sendInvitationEmail(db, {
         email: normalizedEmail,
         organizationId,

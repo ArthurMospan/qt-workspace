@@ -339,7 +339,14 @@ export default function TaskRow({
         event.preventDefault();
         handleRowClick(event);
       }}
-      className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-line transition-all duration-200 flex items-center justify-between p-[12px] hover:bg-canvas ${selected ? 'ring-2 ring-ink' : 'hover:!ring-4 hover:!ring-line'} ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
+      // Обводка, і тільки обводка.
+      //
+      // Рядок під курсором ще й заливався сірим, і це була не задумка, а
+      // побічний ефект переїзду на токени: заливка була #fcfcfc — три одиниці
+      // від білого, тобто майже непомітна, — а `bg-canvas` це #f4f4f5, тобто
+      // повноцінний сірий. Рядок сірішав цілком, і кільце, яке й є нашим
+      // ховером, губилося в ньому. Кільце робить цю роботу саме.
+      className={`relative group overflow-hidden rounded-[12px] bg-white cursor-pointer select-none border border-line transition-all duration-200 flex items-center justify-between p-[12px] ${selected ? 'ring-2 ring-ink' : 'hover:!ring-4 hover:!ring-line'} ${isTimerActive ? 'ring-2 ring-ink/30' : ''}`}
     >
       {/* ── One line, from md up ───────────────────────────────────────────── */}
       <div className="hidden items-center justify-between w-full gap-[16px] min-w-0 md:flex">

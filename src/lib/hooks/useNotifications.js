@@ -237,6 +237,12 @@ export async function sendNotification({
   issueId = '',
   projectId = '',
   organizationId = '',
+  // Яку саме розмову це стосується. Маршрут читає це поле, чат передає його при
+  // кожному виклику — а сюди воно доходило й тут зупинялося: підпис його не
+  // приймав, тіло запиту його не несло. Тож у базу запис лягав без розмови, і
+  // єдиним місцем, де вона взагалі згадувалась, лишалося посилання. Розбір
+  // посилання рятував канали й не рятував нічого іншого.
+  channelId = '',
   dedupeKey = '',
 }) {
   const token = await auth.currentUser?.getIdToken();
@@ -244,7 +250,7 @@ export async function sendNotification({
   const response = await fetch('/api/notifications', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ userIds, type, title, body, link, issueId, projectId, organizationId, dedupeKey }),
+    body: JSON.stringify({ userIds, type, title, body, link, issueId, projectId, organizationId, channelId, dedupeKey }),
   });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Failed to send notification');

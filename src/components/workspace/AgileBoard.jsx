@@ -470,7 +470,7 @@ export default function AgileBoard({
                   <div
                     key={col.id}
                     data-ui-surface="local"
-                    className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-line transition-colors"
+                    className="flex flex-col items-center justify-start w-[48px] shrink-0 pt-4 pb-2 bg-canvas rounded-t-[12px] cursor-pointer hover:bg-zone-hover transition-colors"
                     onClick={() => toggleColumnCollapse(col.id)}
                     // The strip holds the chevron button, so it is not a
                     // `<button>` itself; it still answers the same two keys.
@@ -586,7 +586,7 @@ export default function AgileBoard({
                         // Its start edge lands on the gutter, so the whole
                         // 48px reads. Above md the scroller does not snap at
                         // all and this changes nothing.
-                        className={`flex flex-col w-[48px] shrink-0 snap-start bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-line transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`}
+                        className={`flex flex-col w-[48px] shrink-0 snap-start bg-canvas ${swimlanes.length === 1 ? 'rounded-[16px] cursor-pointer hover:bg-zone-hover transition-colors items-center py-4 h-full' : 'rounded-[12px]'}`}
                         style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}
                         onClick={swimlanes.length === 1 ? () => toggleColumnCollapse(col.id) : undefined}
                         // Only the single-swimlane strip is clickable at all;
@@ -622,8 +622,16 @@ export default function AgileBoard({
                     );
                   }
 
+                  // Колонка під курсором тьмяніє на один крок, а не на два.
+                  //
+                  // Вона була `#f0f0f2`, а під час переїзду на токени стала
+                  // `bg-line` — тобто рівно #e9e9e9, той самий колір, яким
+                  // намальоване кільце ховера на картці. Курсор над карткою — це
+                  // курсор і над колонкою, тож колонка зафарбовувалась у колір
+                  // кільця й з'їдала його: наш фірмовий ховер картки просто
+                  // зникав на дошці. `zone-hover` тримає крок між ними.
                   return (
-                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-canvas hover:bg-line transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px] h-full overflow-hidden' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}>
+                    <div key={col.id} className={`flex flex-col w-[82vw] max-w-[320px] md:w-[280px] md:max-w-none shrink-0 snap-center bg-canvas hover:bg-zone-hover transition-colors duration-200 ${swimlanes.length === 1 ? 'rounded-[16px] h-full overflow-hidden' : 'rounded-[12px]'}`} style={{ minHeight: swimlanes.length > 1 ? '100px' : undefined }}>
                       
                       {/* Integrated header if no swimlanes */}
                       {swimlanes.length === 1 && (

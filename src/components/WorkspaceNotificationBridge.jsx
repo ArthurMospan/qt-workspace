@@ -69,11 +69,21 @@ export default function WorkspaceNotificationBridge() {
   });
   useOrganizationUnreadCounts();
   useUserTimerState(userId);
-  const unreadChatNotifications = notificationCenter.notifications.filter(notification =>
-    notification.type === 'chat_message'
-    && !notification.read
-    && notification.organizationId === activeOrgId).length;
-  const displayedUnreadChats = unreadChatNotifications || unreadChats;
+  // Одне число, одне джерело.
+  //
+  // Тут стояло `unreadChatNotifications || unreadChats`: два незалежні
+  // підрахунки того, «скільки непрочитаного в чаті», і `||`, що обирав між ними
+  // за ознакою «яке з них не нуль». Вони рахують різні речі й розходяться
+  // постійно — сповіщення живуть у дзвонику й гаснуть, коли їх прочитали, а
+  // курсор чату гасне, коли прочитали саме повідомлення. Тому число стрибало на
+  // рівному місці: прочитав усі сповіщення в дзвонику — і біля «Чату» раптом
+  // з'явилося число, якого щойно не було, бо перший доданок став нулем і
+  // керування перехопив другий.
+  //
+  // Так це не працює ніде: у Slack, Teams і Linear лічильник біля розмови
+  // рахує непрочитані повідомлення, а дзвоник рахує сповіщення, і одне ніколи
+  // не підмінює інше. Курсори прочитаного — єдине джерело для чату.
+  const displayedUnreadChats = unreadChats;
 
   useEffect(() => {
     clearLiveNotif();

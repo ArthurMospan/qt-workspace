@@ -9,6 +9,7 @@ import {
   planLimitRefusalResponse,
 } from '@/lib/server/planLimits';
 import { restoreProjectAccess } from '@/lib/server/orgMembership';
+import { seedChatReadState } from '@/lib/server/chatReadState';
 import { MEMBERSHIP_ARCHIVE } from '@/lib/utils/orgMembership.mjs';
 
 // Accepting an invite link. The token is looked up by hash; the joiner gets
@@ -89,7 +90,9 @@ export async function POST(request) {
         tx.get(membershipRef),
         tx.get(archiveRef),
       ]);
-      if (membershipSnap.exists) return { organizationId, alreadyMember: true };
+      if (membershipSnap.exists) {
+        return { organizationId, invitedBy: invite.invitedBy || '', alreadyMember: true };
+      }
 
       // Someone who was deactivated and now walks back in through a link must
       // consume their archived seat, not sit down beside it: two records for
@@ -124,11 +127,19 @@ export async function POST(request) {
       });
       return {
         organizationId,
+        invitedBy: invite.invitedBy || '',
         restoredProjectIds: Array.isArray(archived?.projectIds) ? archived.projectIds : [],
       };
     });
 
     if (result.error) return INVALID();
+
+    // Місце в кімнаті видається разом із курсором прочитаного. Хто вже був
+    // учасником, свої курсори має — і перезаписувати їх означало б стерти
+    // непрочитане людині, яка просто повторно відкрила посилання.
+    if (!result.alreadyMember) {
+      await seedChatReadState(db, result.organizationId, uid);
+    }
 
     if (result.restoredProjectIds?.length) {
       await restoreProjectAccess({
@@ -138,10 +149,28 @@ export async function POST(request) {
       });
     }
 
-    const orgSnap = await db.collection('organizations').doc(result.organizationId).get();
+    // Хто запросив і куди — це те, що бачить людина на екрані «вітаємо».
+    // Раніше поверталася сама назва, тож сторінка могла лише повідомити факт;
+    // логотип організації та обличчя запрошувача перетворюють його на впізнання.
+    // Два читання за одне приєднання — не той обсяг, за який варто торгуватися.
+    const [orgSnap, inviterSnap] = await Promise.all([
+      db.collection('organizations').doc(result.organizationId).get(),
+      result.invitedBy
+        ? db.collection('users').doc(result.invitedBy).get()
+        : Promise.resolve(null),
+    ]);
+    const organization = orgSnap.exists ? orgSnap.data() : {};
+    const inviter = inviterSnap?.exists ? inviterSnap.data() : null;
     return NextResponse.json({
       organizationId: result.organizationId,
-      organizationName: orgSnap.exists ? orgSnap.data().name : '',
+      organizationName: organization.name || '',
+      organizationLogo: organization.logo || organization.logoUrl || '',
+      invitedBy: inviter
+        ? {
+            name: inviter.name || inviter.displayName || inviter.email || '',
+            avatar: inviter.avatar || inviter.photoURL || '',
+          }
+        : null,
       alreadyMember: Boolean(result.alreadyMember),
     });
   } catch (error) {

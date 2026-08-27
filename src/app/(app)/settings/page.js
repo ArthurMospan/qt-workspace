@@ -4515,9 +4515,22 @@ export default function SettingsPage() {
       >
         <div className="flex flex-col gap-4">
           <div data-ui-surface="compact-bordered-panel" data-ui-padding="wide" className="ui-surface flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-ink text-[13px] font-bold text-white">
-              {(freeTakenBy?.name || 'О')[0].toUpperCase()}
-            </span>
+            {/* Обличчя організації, якщо воно є. Літера — запасний варіант для
+                тих, хто логотип не завантажував, а не стан за замовчуванням:
+                логотип тут не платна можливість, а те, як людина впізнає, про
+                який зі своїх просторів іде мова. */}
+            {(freeTakenBy?.logo || freeTakenBy?.logoUrl) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={freeTakenBy.logo || freeTakenBy.logoUrl}
+                alt=""
+                className="h-9 w-9 shrink-0 rounded-[10px] border border-line bg-white object-cover"
+              />
+            ) : (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-ink text-[13px] font-bold text-white">
+                {(freeTakenBy?.name || 'О')[0].toUpperCase()}
+              </span>
+            )}
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-bold text-ink">
                 {freeTakenBy?.name || 'Інша організація'}

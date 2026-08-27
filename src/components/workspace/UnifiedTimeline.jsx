@@ -306,6 +306,15 @@ export default function UnifiedTimeline({
   isArchived,
   org,
   members = [],
+  // Кого пропонує пікер згадок — і це не той самий список, що `members`.
+  //
+  // `members` — це вся організація, і саме так і має бути: підпис під
+  // коментарем має розвʼязати ім'я автора, навіть якщо той давно не в команді
+  // проєкту. Але пікер — інше питання. Він не розвʼязує імена, він пропонує
+  // покликати людину, і пропонувати він має тих, хто в цьому проєкті справді є.
+  // Одним списком обслуговувались обидва питання, тож у чаті задачі можна було
+  // тегнути будь-кого з організації — людину, для якої цієї задачі не існує.
+  mentionMembers,
   sprints = [],
   isActive = true,
   onUnreadCountChange,
@@ -495,8 +504,8 @@ export default function UnifiedTimeline({
 
   const filteredMembers = useMemo(() => {
     if (!mentionState.active) return [];
-    return filterMentionCandidates(members, myId, mentionState.query);
-  }, [mentionState.active, mentionState.query, members, myId]);
+    return filterMentionCandidates(mentionMembers || members, myId, mentionState.query);
+  }, [mentionState.active, mentionState.query, mentionMembers, members, myId]);
 
   // «Друкує…», on the workspace chat's own mechanism. A flag is only worth
   // anything while it is fresh, so the list is recomputed on a clock of its own
@@ -1389,14 +1398,28 @@ export default function UnifiedTimeline({
                     />
                   </div>
                 </div>
-                <div className={`row-start-2 mt-1 flex items-center gap-1 ${isMe ? 'col-start-1 justify-self-end flex-row-reverse' : 'col-start-2 justify-self-start'}`}>
+                <div
+                  // Точна хвилина, коли годинника в рядку немає: вона нікуди не
+                  // поділася, просто більше не коштує порожнього місця.
+                  title={endsRun || item.editedAt ? undefined : fmtClock(item.createdAt)}
+                  className={`row-start-2 mt-1 flex items-center gap-1 ${isMe ? 'col-start-1 justify-self-end flex-row-reverse' : 'col-start-2 justify-self-start'}`}
+                >
                     {/* The clock belongs to the run, not to every line of it:
                         four messages a minute apart used to stamp «20:47» four
-                        times. Inside a run it is there on hover, for the one
-                        time somebody wants the exact minute. */}
-                    <span className={`px-1 text-[10px] font-medium text-muted transition-opacity ${endsRun || item.editedAt ? '' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}`}>
-                      {fmtClock(item.createdAt)}{item.editedAt ? ' · змінено' : ''}
-                    </span>
+                        times.
+
+                        Усередині серії його не було видно — але місце він
+                        тримав. `opacity-0` ховає напис і лишає коробку, тож під
+                        кожним повідомленням серії зяяла дірка рівно завширшки з
+                        «16:09», просто перед галочками. Порожнє місце читається
+                        як зламана верстка, а не як «тут навмисно нічого немає».
+                        Тому всередині серії годинника немає зовсім, а точна
+                        хвилина лишається за наведенням на рядок. */}
+                    {(endsRun || item.editedAt) && (
+                      <span className="px-1 text-[10px] font-medium text-muted">
+                        {fmtClock(item.createdAt)}{item.editedAt ? ' · змінено' : ''}
+                      </span>
+                    )}
                     {/* Read receipt на своїх повідомленнях: ✓ надіслано / ✓✓ прочитано іншими.
                         «Прочитано» alone answers whether, never when, and when is
                         the half a sender is actually asking about — so pointing

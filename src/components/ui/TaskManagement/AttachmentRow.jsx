@@ -95,7 +95,10 @@ export default function AttachmentRow({
     <div
       data-ui-surface="nested-card"
       data-ui-padding="compact-row"
-      className="ui-surface flex min-w-0 items-center gap-3 border border-line transition-all duration-200 hover:bg-canvas hover:ring-4 hover:ring-line"
+      // Обводка, і тільки обводка. Це той самий рядок, що й вкладення та
+      // звʼязки поруч на одному екрані: якби сусіди перестали сіріти, а цей
+      // лишився, екран сперечався б сам із собою.
+      className="ui-surface flex min-w-0 items-center gap-3 border border-line transition-all duration-200 hover:ring-4 hover:ring-line"
     >
       {kind === 'audio' ? (
         // The row *is* the player. Nothing here opens a viewer: the file is
