@@ -135,12 +135,14 @@ test('nothing on the dashboard ranks tasks by when their document was written', 
     // by it any more.
     assert.doesNotMatch(source, /issue\.updatedAt|issue\.createdAt/, name);
   }
-  // The one list of tasks the dashboard still ranks: the activity lines on the
-  // featured project card. This used to pin a second sort as well — a
-  // `recentIssues` memo that ordered every task in the workspace and was
-  // rendered nowhere, so the assertion was holding dead code in place. The rule
-  // is the two lines above; this is the live expression that obeys it.
-  assert.match(home, /\.sort\(\(a, b\) => b\.activity\.millis - a\.activity\.millis\)/);
+  // The one list of tasks the dashboard still ranks is the activity lines on
+  // the featured project card, and the ranking is Firestore's now: the card
+  // asks for three documents of one project in activity order rather than
+  // sorting every task in the workspace in the browser. So the rule is enforced
+  // where the order is actually decided.
+  const activity = await read('../src/lib/hooks/useProjectActivity.js');
+  assert.match(activity, /orderBy\('lastActivityAt', 'desc'\)/);
+  assert.doesNotMatch(activity, /orderBy\('(updatedAt|createdAt)'/);
   assert.doesNotMatch(home, /newestIssue\.lastActivityType/);
 });
 

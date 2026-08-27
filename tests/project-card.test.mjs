@@ -32,12 +32,15 @@ test('a small card carries nothing under its description', () => {
 
 test('the featured card shows the last three actions, not one', () => {
   assert.match(projectPage, /const RECENT_ACTIONS = 3;/);
-  assert.match(projectPage, /\.slice\(0, RECENT_ACTIONS\)/);
-  // Sorted by what the activity record says, never `updatedAt`: a card whose
+  // Three is now the query's limit rather than a slice after the fact: the card
+  // asks Firestore for three documents of this project instead of filtering
+  // them out of every task in the workspace. A small card asks for none.
+  assert.match(projectPage, /isLarge \? RECENT_ACTIONS : 0/);
+  assert.match(projectPage, /useProjectActivity\(/);
+  // Ordered by what the activity record says, never `updatedAt`: a card whose
   // position was renumbered by somebody else's drag had its document written
   // and nothing else.
   assert.match(projectPage, /issueActivity\(issue\)/);
-  assert.match(projectPage, /b\.activity\.millis - a\.activity\.millis/);
   assert.match(projectPage, /recentActions\.map\(action =>/);
   // Being named is still on the card, above the actions — those are things
   // other people did, this is a thing addressed to you.

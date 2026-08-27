@@ -370,10 +370,15 @@ test('nothing decides completion or «в роботі» by a status’s position
   // The comment that records the old rule may name it; the code may not run it.
   assert.doesNotMatch(dashboard, /statuses\.slice\(1\)\.filter/);
   // The project card counts nothing at all any more — its last line is what
-  // just happened, not how much is left. What the screen still derives from the
-  // workflow is a project's progress, and that reads the delivered set, never a
-  // position in the list.
-  assert.match(dashboard, /const deliveredSet = new Set\(deliveredStatusIds\)/);
+  // just happened, not how much is left. A project's progress is still the
+  // delivered set and never a position in the list, but the screen reads it off
+  // the project document instead of deriving it: the derivation moved to the
+  // server, where `projectIssueCounts` is written.
+  assert.match(dashboard, /projectIssueCounts\(project\)/);
+  assert.doesNotMatch(dashboard, /new Set\(deliveredStatusIds\)/);
+  const counts = await read('../src/lib/server/projectIssueCounts.js');
+  assert.match(counts, /resolveDeliveredStatusIds/);
+  assert.doesNotMatch(counts, /'done'|\[1\]|slice\(1\)/);
   for (const [name, source] of [
     ['analytics', analytics],
     ['AnalyticsTab', analyticsTab],
@@ -401,8 +406,13 @@ test('what measures output reads delivered; what asks "is there work left" reads
     read('../src/components/workspace/BillingTab.jsx'),
   ]);
 
-  // Every percentage, every throughput number, and the invoice preset.
-  assert.match(dashboard, /const deliveredSet = new Set\(deliveredStatusIds\)/);
+  // Every percentage, every throughput number, and the invoice preset. The
+  // dashboard's percentage is the one that no longer computes itself — it reads
+  // a counter, and the counter is built from the delivered set on the server,
+  // which is the same rule stated one layer down.
+  assert.match(dashboard, /deliveredPercent\(counts\)/);
+  const projectCounts = await read('../src/lib/utils/projectIssueCounts.mjs');
+  assert.match(projectCounts, /statusSet\(deliveredStatusIds\)\.has\(statusId\)/);
   // The workspace overview no longer carries an all-time «виконано»: a
   // completion rate over the whole life of a workspace only ever climbs, and it
   // sat in a row of period figures. What it does still measure as output —

@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import { collection, getCountFromServer, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import {
   Button,
@@ -23,9 +25,33 @@ import {
 } from '@/lib/utils/inviteEmails';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 
+// How many tasks are sitting in the columns about to be hidden.
+//
+// This is a count, so it is asked as a count. It used to be `issues.filter(…)`
+// over a prop, which meant every screen that could open this dialog had to be
+// holding every task of the project before the dialog existed — and on the home
+// screen that was every task of every project, subscribed to permanently, so
+// that one confirmation sentence could say a number.
+//
+// `count()` costs one read per thousand documents and is asked once, when
+// somebody presses Save with a column hidden. The set it counts is the set the
+// server actually moves (`/api/projects/[projectId]`): everything in those
+// columns, archived and cancelled included, because hiding a column moves them
+// too.
+async function countIssuesInColumns(project, statusIds) {
+  if (!project?.id || !project?.organizationId || !statusIds.length) return 0;
+  const columns = statusIds.slice(0, 30);
+  const snapshot = await getCountFromServer(query(
+    collection(db, 'issues'),
+    where('organizationId', '==', project.organizationId),
+    where('projectId', '==', project.id),
+    where('columnId', 'in', columns),
+  ));
+  return snapshot.data().count || 0;
+}
+
 export default function BoardConfigModal({
   project,
-  issues = [],
   organizationMembers = [],
   canManageTeam = false,
   canInvite = false,
@@ -65,11 +91,6 @@ export default function BoardConfigModal({
     () => hiddenColumns.filter(statusId => statusId !== backlogStatusId),
     [backlogStatusId, hiddenColumns],
   );
-  const affectedIssues = useMemo(
-    () => issues.filter(issue => statusesToHide.includes(issue.columnId || issue.status)),
-    [issues, statusesToHide],
-  );
-
   const handleSave = async () => {
     if (!name.trim()) {
       setNameError('Вкажіть назву проєкту');
@@ -89,17 +110,26 @@ export default function BoardConfigModal({
     const newlyHidden = statusesToHide.filter(
       statusId => !(project?.hiddenColumns || []).includes(statusId),
     );
-    if (newlyHidden.length > 0 || affectedIssues.length > 0) {
+    // Asked here and nowhere else: this is the only moment the number is needed,
+    // and asking earlier would mean asking on every checkbox somebody ticks.
+    // A failure is not a reason to refuse the save — the sentence loses its
+    // number, the confirmation still asks the question.
+    let affectedCount = 0;
+    if (statusesToHide.length > 0) {
+      affectedCount = await countIssuesInColumns(project, statusesToHide)
+        .catch(() => 0);
+    }
+    if (newlyHidden.length > 0 || affectedCount > 0) {
       const hiddenLabels = statuses
         .filter(status => newlyHidden.includes(status.id))
         .map(status => status.label)
         .join(', ');
       const accepted = await confirm({
         title: 'Приховати колонки проєкту?',
-        message: affectedIssues.length > 0
-          ? `${affectedIssues.length} завд. із прихованих колонок буде перенесено в Беклог. ${hiddenLabels ? `Колонки: ${hiddenLabels}.` : ''}`
+        message: affectedCount > 0
+          ? `${affectedCount} завд. із прихованих колонок буде перенесено в Беклог. ${hiddenLabels ? `Колонки: ${hiddenLabels}.` : ''}`
           : `Колонки ${hiddenLabels || 'буде приховано'}. Нові завдання з них не залишатимуться поза дошкою.`,
-        confirmText: affectedIssues.length > 0 ? 'Приховати й перенести' : 'Приховати',
+        confirmText: affectedCount > 0 ? 'Приховати й перенести' : 'Приховати',
       });
       if (!accepted) return;
     }

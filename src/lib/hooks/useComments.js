@@ -110,24 +110,12 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
         ),
       });
     });
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('quickteam:issue-activity', {
-        detail: {
-          issueId,
-          updatedAt: new Date(),
-          lastActivityAt: new Date(),
-          lastActivityType: 'comment',
-          lastActivityActorId: authorId,
-          lastActivityActorName: user.name || user.displayName || user.email?.split('@')[0] || 'Невідомо',
-          lastActivityActorAvatar: user.avatar || user.photoURL || null,
-          lastActivityText: text?.trim().slice(0, 240) || 'Вкладення',
-          lastCommentAt: new Date(),
-          lastCommentAuthorId: authorId,
-          lastCommentMentionIds: options.mentionedUserIds || [],
-          lastCommentReadBy: authorId ? [authorId] : [],
-        },
-      }));
-    }
+    // A `quickteam:issue-activity` event used to be announced here, so that the
+    // home screen could patch its copy of this task before Firestore delivered
+    // the write. That copy is gone: the home screen holds no tasks any more,
+    // and the three activity lines it does draw come from a three-document
+    // listener that hears the write directly. Nothing was listening, so nothing
+    // is said.
     return commentRef.id;
   }, []);
 

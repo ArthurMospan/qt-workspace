@@ -143,17 +143,43 @@ test('the listeners that carry a limit keep carrying it', () => {
 // This test is what stops the next convenient exception, because a second
 // listener over this collection does not look expensive at the call site: it
 // looks like one more `onSnapshot`.
+// A listener over `issues` that is not the shared subscription, with the reason
+// it is allowed to exist. There is exactly one, and the bar for a second is the
+// same as this one cleared: it must be bounded by `limit()`, it must answer a
+// question the shared set cannot answer more cheaply, and it must be on a
+// screen that would otherwise have to open the shared set for nothing.
+const TASK_READERS_BESIDE_THE_SHARED_ONE = new Map([
+  [
+    'lib/hooks/useProjectActivity.js',
+    'three documents of one project, ordered and limited by Firestore, so the '
+    + 'home screen can draw three activity lines without subscribing to every '
+    + 'task in the workspace to find them',
+  ],
+]);
+
 test('only the shared subscription reads tasks and the links between them', () => {
   const readers = listeners().filter(entry => (
     entry.rootCollections.includes('issues') || entry.rootCollections.includes('issueLinks')
   ));
+  const files = [...new Set(readers.map(entry => entry.file))];
   assert.deepEqual(
-    [...new Set(readers.map(entry => entry.file))],
+    files.filter(file => !TASK_READERS_BESIDE_THE_SHARED_ONE.has(file)),
     ['lib/hooks/useOrganizationIssues.js'],
     'Tasks are read once, by useOrganizationIssues, and filtered in memory by '
     + 'whoever needs a narrower view. A second listener over the same documents '
-    + 'is a second delivery charge for the same write.',
+    + 'is a second delivery charge for the same write — unless it is bounded and '
+    + 'named in TASK_READERS_BESIDE_THE_SHARED_ONE with the reason.',
   );
+
+  // An exception that stopped being bounded is not an exception any more.
+  for (const entry of readers) {
+    if (!TASK_READERS_BESIDE_THE_SHARED_ONE.has(entry.file)) continue;
+    assert.equal(
+      entry.bounded,
+      true,
+      `${entry.file} reads tasks outside the shared subscription and must keep its limit()`,
+    );
+  }
 
   // …and the screens that used to own one take the shared set instead.
   for (const file of [

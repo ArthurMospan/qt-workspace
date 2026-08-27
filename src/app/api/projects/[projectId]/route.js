@@ -4,6 +4,10 @@ import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { deleteProjectAnalyticsRollups } from '@/lib/server/analyticsRollups';
 import {
+  projectIssueCountDeltasFor,
+  projectIssueCountIncrements,
+} from '@/lib/server/projectIssueCounts';
+import {
   organizationPlan,
   recordPlanUsage,
   resyncProjectsOverPlanLimit,
@@ -118,7 +122,12 @@ export async function PATCH(request, context) {
       const requestedHidden = Array.isArray(body.hiddenColumns)
         ? [...new Set(body.hiddenColumns.filter(value => typeof value === 'string'))]
         : [];
+      const countDeltas = await projectIssueCountDeltasFor(db, project.organizationId);
       const settingsResult = await db.runTransaction(async transaction => {
+        // Firestore re-runs this body on contention; the counter accumulator
+        // lives outside it and would otherwise count the same move once per
+        // attempt.
+        countDeltas.reset();
         const freshProject = await transaction.get(ref);
         const workflowSnap = await transaction.get(workflowRef);
         if (
@@ -264,10 +273,20 @@ export async function PATCH(request, context) {
 
         const closedSet = new Set(closedStatusIds);
         const now = FieldValue.serverTimestamp();
+        countDeltas.observeProject(projectId, freshProject.data());
         for (const issue of currentIssues.filter(item => issueIdsToMove.has(item.id))) {
           const issueRef = db.collection('issues').doc(issue.id);
           const wasClosed = closedSet.has(issue.columnId || issue.status);
           const willBeClosed = closedSet.has(backlogStatusId);
+          // Hiding a column moves every task out of it, which is a status change
+          // like any other — a delivered task landing in the backlog stops being
+          // delivered, and one that had slipped its deadline becomes late again.
+          // The counters have to move with it, or the home screen keeps drawing
+          // the board that was here before.
+          countDeltas.change(
+            issue,
+            { ...issue, columnId: backlogStatusId, status: backlogStatusId },
+          );
           transaction.update(issueRef, {
             columnId: backlogStatusId,
             status: backlogStatusId,
@@ -299,6 +318,7 @@ export async function PATCH(request, context) {
           hiddenColumns: requestedHidden,
           team: resolvedTeam,
           issueStatusVersion: FieldValue.increment(1),
+          ...projectIssueCountIncrements(countDeltas, projectId),
           updatedAt: now,
         });
         return {

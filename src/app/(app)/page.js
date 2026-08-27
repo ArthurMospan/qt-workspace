@@ -5,7 +5,11 @@ import { auth } from '@/lib/firebase';
 import { userFacingErrorMessage } from '@/lib/utils/errors';
 import { organizationLoadErrorKind } from '@/lib/utils/organizationLoadErrors.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
-import { useOrganizationIssues } from '@/lib/hooks/useOrganizationIssues';
+import { useProjectActivity } from '@/lib/hooks/useProjectActivity';
+import {
+  deliveredPercent,
+  projectIssueCounts,
+} from '@/lib/utils/projectIssueCounts.mjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Archive, ArchiveRestore, Plus, Folder, Clock, Users, TrendingUp, Target, ArrowRight, MoreVertical, Trash2, User, Settings2 } from 'lucide-react';
@@ -55,7 +59,7 @@ import { PlanCrownIcon } from '@/lib/design/icons';
 
 
 // ── Project Card ─────────────────────────────────────────────────────────────
-const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], issues = [], isLarge = false, orgLoading, now }) => {
+const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOrgMembers = [], isLarge = false, orgLoading, now }) => {
   const router = useRouter();
   const { currentUser, activeOrgId, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(state => state.showToast);
@@ -258,7 +262,7 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
         <ProjectStatsSection
           isLarge={isLarge}
           members={members}
-          issues={issues}
+          project={project}
           now={now}
           currentUser={currentUser}
           orgLoading={orgLoading}
@@ -270,7 +274,6 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
       {showBoardConfig && (
         <BoardConfigModal
           project={project}
-          issues={issues}
           organizationMembers={allOrgMembers}
           canManageTeam={can(orgRole, 'manage:team')}
           canInvite={can(orgRole, 'manage:team')}
@@ -315,9 +318,20 @@ const RECENT_ACTIONS = 3;
 /**
  * The last few things that happened in a project, on the featured card only.
  *
+ * The three documents behind these three lines are read by this component, from
+ * this project, in this order — not filtered out of every task in the
+ * workspace. A small card asks for none: `useProjectActivity` reads nothing at
+ * a count of zero, which is why the hook can be called unconditionally the way
+ * a hook must be.
+ *
  * @param {boolean} props.isLarge Whether this is the 2×2 card. A small one draws nothing at all.
  */
-function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, mentionCount = 0 }) {
+function ProjectStatsSection({ isLarge, members, project, now, currentUser, orgLoading, mentionCount = 0 }) {
+  const issues = useProjectActivity(
+    project?.organizationId,
+    project?.id,
+    isLarge ? RECENT_ACTIONS : 0,
+  );
   // Who *acted*, which is only ever what the activity record says. This used to
   // fall through to `reporterId` and then `reporterName`, so a task with no
   // recorded activity was attributed to whoever originally filed it. On
@@ -376,11 +390,13 @@ function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, 
     // `issueActivity`. A card whose position was renumbered because somebody
     // dropped another card into its column had its document written and
     // nothing else, and it used to take this whole line with it.
+    //
+    // The order and the limit are the query's now, so this no longer sorts;
+    // what it still does is drop a document the query could not have known was
+    // unusable — a task whose activity stamp is there but empty.
     return issues
       .map(issue => ({ issue, activity: issueActivity(issue) }))
       .filter(entry => entry.activity.millis > 0)
-      .sort((a, b) => b.activity.millis - a.activity.millis)
-      .slice(0, RECENT_ACTIONS)
       .map(entry => describeAction(entry.issue, entry.activity))
       .filter(Boolean);
   }, [describeAction, isLarge, issues]);
@@ -638,7 +654,7 @@ export default function WorkspacePage() {
   const { projects, projectsLoading, projectsError, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const { members, loading: orgLoading } = useOrganization();
-  const { deliveredStatusIds, statuses } = useWorkflowConfig();
+  const { statuses } = useWorkflowConfig();
   const isMobile = useIsMobile() === true;
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -671,78 +687,37 @@ export default function WorkspacePage() {
     }
   }, [searchParams, router]);
 
-  // Every task of every project this account can open — read through the
-  // shared subscription in `useOrganizationIssues`, not a listener of this
-  // screen's own. This is the widest read in the product and this is the screen
-  // people come back to most, and a listener rebuilt on the way back in is a
-  // fresh query against a daily quota. See that module for the whole argument.
-  const projectIds = useMemo(
-    () => (projects || []).map(project => project.id).filter(Boolean),
-    [projects],
-  );
-  const { issues: subscribedIssues, error: issuesError } = useOrganizationIssues(
-    activeOrgId,
-    projectIds,
-  );
+  // This screen no longer reads tasks at all.
+  //
+  // It used to subscribe to every task of every project the account can open —
+  // the widest read in the product, on the screen a sign-in lands on and the
+  // one people come back to between every other screen — and it did that for
+  // three things: a progress percentage used only to sort the list, three
+  // activity lines on the featured card, and a count in one confirmation
+  // sentence. Seven hundred documents for a sort, a caption and a number.
+  //
+  // All three now ask for what they actually need. The percentage comes off the
+  // project document (`projectIssueCounts`, kept by the routes that write the
+  // tasks); the three lines are a query with `limit(3)` in
+  // `ProjectStatsSection`; the count is `count()` inside the dialog that shows
+  // it. See docs/ARCHITECTURE.md → «Вартість читання».
+  //
+  // Nothing here is a filter over a task set any more, so there is no task set,
+  // and `useOrganizationIssues` is not started by this screen. A board or «Мої
+  // завдання» still opens it — those screens draw the tasks — but the front
+  // door does not.
 
-  // A task edited on another screen announces itself before Firestore has
-  // delivered the change here, so the card does not sit on a stale last-action
-  // line for a round trip. The patch is an overlay rather than a write into the
-  // set, because the set is now shared: one screen must not be able to edit
-  // what another screen is reading. It lasts exactly until the snapshot that
-  // makes it unnecessary.
-  const [activityPatches, setActivityPatches] = useState({});
-  useEffect(() => {
-    const handleIssueActivity = event => {
-      const detail = event.detail;
-      if (!detail?.issueId) return;
-      setActivityPatches(previous => ({ ...previous, [detail.issueId]: detail }));
-    };
-    window.addEventListener('quickteam:issue-activity', handleIssueActivity);
-    return () => window.removeEventListener('quickteam:issue-activity', handleIssueActivity);
-  }, []);
-  useEffect(() => {
-    queueMicrotask(() => setActivityPatches(
-      current => (Object.keys(current).length ? {} : current),
-    ));
-  }, [subscribedIssues]);
-
-  const allIssues = useMemo(() => {
-    const patched = Object.keys(activityPatches);
-    if (patched.length === 0) return subscribedIssues;
-    return subscribedIssues.map(issue => (
-      activityPatches[issue.id] ? { ...issue, ...activityPatches[issue.id] } : issue
-    ));
-  }, [activityPatches, subscribedIssues]);
-
-  // Real progress per project: % of issues actually delivered (the stored
-  // `progress` field is never updated). Cancelled tasks are not in `allIssues`
-  // at all, so a plan that changed leaves no dent here in the shape of work
-  // nobody was ever going to do.
+  // The percentage the sort options order by. Read, not computed: a project
+  // whose counters no full recount has established yet returns `null` and sorts
+  // as zero rather than as a number nobody stood behind.
   const progressByProject = useMemo(() => {
-    const deliveredSet = new Set(deliveredStatusIds);
-    const counts = {};
-    for (const issue of allIssues) {
-      if (!issue.projectId) continue;
-      const entry = counts[issue.projectId] || (counts[issue.projectId] = { total: 0, done: 0 });
-      entry.total++;
-      if (deliveredSet.has(issue.columnId || issue.status)) entry.done++;
-    }
     const pct = {};
-    for (const [pid, { total, done }] of Object.entries(counts)) {
-      pct[pid] = total > 0 ? Math.round((done / total) * 100) : 0;
+    for (const project of projects || []) {
+      const counts = projectIssueCounts(project);
+      if (counts) pct[project.id] = deliveredPercent(counts);
     }
     return pct;
-  }, [allIssues, deliveredStatusIds]);
-
-  const issuesByProject = useMemo(() => {
-    const grouped = {};
-    for (const issue of allIssues) {
-      if (!issue.projectId) continue;
-      (grouped[issue.projectId] ||= []).push(issue);
-    }
-    return grouped;
-  }, [allIssues]);
+  }, [projects]);
 
   // Filter & sort visible projects
   const filteredProjects = useMemo(() => {
@@ -844,7 +819,7 @@ export default function WorkspacePage() {
     { value: 'progress-asc', label: 'Прогрес (за зростанням)' }
   ];
 
-  const workspaceLoadError = projectsError || issuesError;
+  const workspaceLoadError = projectsError;
   const workspaceLoadErrorKind = organizationLoadErrorKind(workspaceLoadError);
   // Project/issue streams are narrower than organization membership. One of
   // them failing can mean a stale project team snapshot or a transient rules
@@ -949,7 +924,6 @@ export default function WorkspacePage() {
                     unarchive={unarchive}
                     members={members}
                     allOrgMembers={members}
-                    issues={issuesByProject[p.id] || []}
                     // The featured card is a desktop arrangement: it earns its
                     // extra weight by spanning two columns of a grid, and below
                     // md the grid is one column wide. All it did on a phone was
