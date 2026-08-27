@@ -63,7 +63,7 @@ jobs:
       group: scheduled-notifications-dispatch
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Send what is due, every minute, until the next scheduled run takes over
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
@@ -80,7 +80,7 @@ jobs:
     concurrency:
       group: scheduled-notifications-maintenance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Empty the undo window and expire read records
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
@@ -97,7 +97,7 @@ jobs:
     concurrency:
       group: scheduled-notifications-materialise
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Restock the outbox from the source data, and greet the birthdays
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run one pass by hand
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}

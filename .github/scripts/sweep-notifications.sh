@@ -16,9 +16,16 @@
 # it missed.
 set -uo pipefail
 
-if [ -z "${CRON_SECRET}" ]; then
-  echo "CRON_SECRET repository secret is not set — the endpoint would answer 401." >&2
+# Whatever goes wrong here has to be readable without opening the job log.
+# GitHub renders `::error::` on the run's own summary page, next to the red
+# cross, which is the one screen somebody actually looks at.
+fail() {
+  echo "::error title=Sweep failed::$1"
   exit 1
+}
+
+if [ -z "${CRON_SECRET}" ]; then
+  fail "CRON_SECRET repository secret is not set — the endpoint would answer 401."
 fi
 
 deadline=$(( $(date +%s) + SWEEP_MINUTES * 60 ))
@@ -34,23 +41,25 @@ while : ; do
     "${APP_URL}/api/cron/notifications?mode=${MODE}") || status="000"
 
   passes=$(( passes + 1 ))
-  echo "[$(date -u +%H:%M:%SZ)] ${MODE} HTTP ${status} $(head -c 400 response.json)"
+  body=$(head -c 600 response.json)
+  echo "[$(date -u +%H:%M:%SZ)] ${MODE} HTTP ${status} ${body}"
 
   if [ "${status}" = "401" ] || [ "${status}" = "403" ]; then
-    echo "The endpoint rejected the bearer token — CRON_SECRET mismatch." >&2
-    exit 1
+    fail "HTTP ${status} — the endpoint rejected the bearer token. The CRON_SECRET repository secret and the CRON_SECRET environment variable in the Vercel production deployment are not the same value. Response: ${body}"
+  fi
+
+  if [ "${status}" = "000" ]; then
+    fail "The request to ${APP_URL}/api/cron/notifications?mode=${MODE} did not complete at all — the host is unreachable or timed out."
   fi
 
   if [ "${status}" != "200" ]; then
     failures=$(( failures + 1 ))
     if [ "${failures}" -ge 5 ]; then
-      echo "Five consecutive failed sweeps — failing the run." >&2
-      exit 1
+      fail "Five consecutive failed ${MODE} sweeps. Last response: HTTP ${status} ${body}"
     fi
     # A single pass has no next attempt to recover in, so it fails loudly.
     if [ "${SWEEP_MINUTES}" = "0" ]; then
-      echo "The ${MODE} pass did not succeed." >&2
-      exit 1
+      fail "The ${MODE} pass answered HTTP ${status}: ${body}"
     fi
   else
     failures=0
