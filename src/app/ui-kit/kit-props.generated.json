@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 120,
-    "props": 887,
-    "documentedProps": 887,
+    "props": 889,
+    "documentedProps": 889,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -2315,6 +2315,13 @@
           "type": "React.ReactNode",
           "values": [],
           "description": "A control belonging to the heading rather than to the content."
+        },
+        {
+          "name": "back",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The way out of a drilled-in view. It leads the heading, because that is where a way back is looked for."
         },
         {
           "name": "className",
@@ -6139,6 +6146,13 @@
           "type": "object[]",
           "values": [],
           "description": "Every task in scope, for parents and blockers."
+        },
+        {
+          "name": "back",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "The way out of a drilled-in list; it leads the caption."
         },
         {
           "name": "className",

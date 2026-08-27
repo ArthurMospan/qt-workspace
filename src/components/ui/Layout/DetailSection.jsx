@@ -33,6 +33,7 @@ export const DENSITIES = {
  * @param {number} props.count How many things are in it; drawn only when there are any.
  * @param {React.ReactNode} props.meta A quiet clause after the count — progress, a ratio, a warning.
  * @param {React.ReactNode} props.action A control belonging to the heading rather than to the content.
+ * @param {React.ReactNode} props.back The way out of a drilled-in view. It leads the heading, because that is where a way back is looked for.
  * @param {'section'|'group'} props.density Which of the page's two heading levels this is.
  * @param {string} props.className Placement in the parent only.
  */
@@ -42,6 +43,7 @@ export default function DetailSection({
   count,
   meta,
   action,
+  back,
   density = 'section',
   children,
   className = '',
@@ -52,6 +54,12 @@ export default function DetailSection({
   return (
     <section className={`flex min-w-0 flex-col ${level.gap} ${className}`}>
       <div className="flex items-center gap-2">
+        {/* Вихід веде заголовок, а не замикає рядок.
+            «Усі знахідки» стояло `ml-auto` в дальньому правому кінці шапки —
+            за тисячу з гаком пікселів від назви, найтихішим стилем на екрані, —
+            і це був єдиний спосіб вийти зі списку однієї знахідки. Назад
+            шукають ліворуч від заголовка, і продукт скрізь так і робить. */}
+        {back}
         {Icon && <Icon size={level.icon} className="shrink-0 text-muted" />}
         <Heading className={`${level.title} text-ink`}>{title}</Heading>
         {count > 0 && <Pill tone="ink-subtle" size="sm">{count}</Pill>}

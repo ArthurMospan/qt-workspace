@@ -11,6 +11,8 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import AgileBoard from '@/components/workspace/AgileBoard';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { Alert, PageHeader, StatusTransitionPicker, StatusVisibilityPicker, TaskListView } from '@/components/ui';
+import { workspaceDataFailureCopy } from '@/lib/utils/organizationLoadErrors.mjs';
+import { isQuotaRefused } from '@/lib/utils/quotaState.mjs';
 import { Plus, Settings2, List, Kanban } from 'lucide-react';
 import { Select, MultiSelect } from '@/components/ui/Select';
 import Tabs from '@/components/ui/Tabs';
@@ -255,6 +257,10 @@ export default function MyTasksPage() {
   ].join('|');
   usePublishLocalSearchResults(myTaskSearch, filtered.length);
 
+
+  // Одне питання на три екрани: відмова в доступі, вичерпана квота й обрив
+  // мережі — це три різні речі, і всі три казали «перевірте зʼєднання».
+  const dataFailure = workspaceDataFailureCopy(tasksError || sprintsError, isQuotaRefused());
   return (
     <div className={`flex-1 h-full bg-transparent ${viewMode === 'kanban' ? 'overflow-hidden' : 'qt-nav-scroll overflow-y-auto overflow-x-hidden hide-scrollbar'}`}>
       <div className={`workspace-page-layout ${viewMode === 'kanban' ? 'h-full pb-0' : 'min-h-full pb-[120px]'}`}>
@@ -371,8 +377,8 @@ export default function MyTasksPage() {
             <div className="flex w-full max-w-[480px] flex-col gap-3">
               <Alert
                 variant="error"
-                title="Не вдалося оновити ваші завдання"
-                description="Попередні дані не видалені. Перевірте зʼєднання та спробуйте ще раз."
+                title={dataFailure.title}
+                description={dataFailure.description}
               />
               <Button onClick={() => window.location.reload()} style="secondary" size="sm">
                 Спробувати ще раз

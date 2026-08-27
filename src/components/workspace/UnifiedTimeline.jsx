@@ -1134,7 +1134,10 @@ export default function UnifiedTimeline({
         mentionedUserIds,
         issueMentions: draft.issueMentions,
         // Щоб розмова підняла проєкт на головному екрані — див. `addComment`.
+        // Разом зі штампом, який там уже стоїть: свіжий штамп означає, що
+        // писати вдруге нема потреби.
         projectId: project?.id || projectId,
+        projectAt: project?.updatedAt,
       });
       // From here the message exists. The draft stays on screen until the
       // snapshot carrying it arrives — dropping it now would blink the message

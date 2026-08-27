@@ -16,6 +16,8 @@ import TaskRow from '@/components/ui/TaskManagement/TaskRow';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import IssueModal from '@/components/workspace/IssueModal';
 import { Alert, BulkActionBar, ContextMenu, DatePicker, FormGroup, PageHeader, Pill, useConfirm, Dialog, Input, Textarea, StatusPill } from '@/components/ui';
+import { workspaceDataFailureCopy } from '@/lib/utils/organizationLoadErrors.mjs';
+import { isQuotaRefused } from '@/lib/utils/quotaState.mjs';
 import { can, canWhileRoleLoads } from '@/lib/utils/can';
 import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { createIssueViaApi } from '@/lib/services/issues';
@@ -760,6 +762,10 @@ export default function GlobalSprintsPage() {
     );
   };
 
+
+  // Одне питання на три екрани: відмова в доступі, вичерпана квота й обрив
+  // мережі — це три різні речі, і всі три казали «перевірте зʼєднання».
+  const dataFailure = workspaceDataFailureCopy(issuesError || sprintsError, isQuotaRefused());
   return (
     // Below lg the two columns become one stack, and a stack is taller than the
     // viewport — so the page itself has to scroll. It did not: the shell was
@@ -844,8 +850,8 @@ export default function GlobalSprintsPage() {
           <div className="flex w-full max-w-[480px] flex-col gap-3">
             <Alert
               variant="error"
-              title="Не вдалося оновити планування"
-              description="Попередні дані не видалені. Перевірте зʼєднання та спробуйте ще раз."
+              title={dataFailure.title}
+              description={dataFailure.description}
             />
             <Button onClick={() => window.location.reload()} style="secondary" size="sm">
               Спробувати ще раз

@@ -43,6 +43,7 @@ const MORE_ROWS = 20;
  * @param {boolean} props.showProjectName Whether each row names its project — true on cross-project lists.
  * @param {string} props.emptyText Sentence shown when there is nothing to list.
  * @param {React.ReactNode} props.action Optional control on the right of the caption.
+ * @param {React.ReactNode} props.back The way out of a drilled-in list; it leads the caption.
  * @param {string} props.className Placement in the parent only.
  */
 export default function TaskListCard({
@@ -60,6 +61,7 @@ export default function TaskListCard({
   showProjectName = true,
   emptyText = 'Завдань немає',
   action,
+  back,
   className = '',
 }) {
   const openIssueQuickView = useWorkspaceStore(state => state.openIssueQuickView);
@@ -91,6 +93,7 @@ export default function TaskListCard({
         title={title}
         count={total}
         action={action ? <span className="ml-auto shrink-0">{action}</span> : null}
+        back={back}
       >
         {issues.length === 0 ? (
           <p className="py-6 text-center text-[12px] text-faint">{emptyText}</p>

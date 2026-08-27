@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 385,
-    "elements": 4470,
+    "elements": 4471,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -43,7 +43,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/sprints/page.js:902",
+      "location": "src/app/(app)/sprints/page.js:908",
       "attributes": [
         "title",
         "aria-label"
@@ -51,7 +51,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/team/page.js:118",
+      "location": "src/app/(app)/team/page.js:124",
       "attributes": [
         "title"
       ]
@@ -338,14 +338,14 @@
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:1358",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1361",
       "attributes": [
         "label"
       ]
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:1378",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1381",
       "attributes": [
         "label"
       ]

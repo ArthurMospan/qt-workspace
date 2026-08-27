@@ -492,14 +492,6 @@ export function validateSourceLessInvoiceIssue({
       { sourceItemIds: item?.itemId ? [item.itemId] : [] },
     );
   }
-  if (hasLiveChildren) {
-    reject(
-      'INVOICE_SUMMARY_ESTIMATE_CONFLICT',
-      'Оцінку основної задачі з підзавданнями не можна виставляти окремо',
-      409,
-      { sourceItemIds: [item.itemId] },
-    );
-  }
   if (hasAnyTimeLogs) {
     reject(
       'INVOICE_ESTIMATE_HAS_ACTUAL_TIME',
@@ -508,14 +500,50 @@ export function validateSourceLessInvoiceIssue({
       { sourceItemIds: [item.itemId] },
     );
   }
-  const rawEstimate = Number(issue.estimateMinutes || 0);
-  const estimateMinutes = Number.isFinite(rawEstimate) && rawEstimate >= 0
-    ? rawEstimate
-    : 0;
-  if (item.minutes !== estimateMinutes) {
+
+  // Дві різні позиції без логів, і до цього вони перевірялись як одна.
+  //
+  // `estimate` — це стара модель, коли оцінка ставала грошима. Її більше немає:
+  // «оцінка ніколи не стає грошима, а робота без зафіксованого часу отримує суму
+  // вручну» (docs/ARCHITECTURE.md → «Рахунки»), і джерело `estimate` лишилося
+  // тільки на вже виставлених рахунках. Екран рахунку так і працює: позиція без
+  // логів має нуль хвилин, а ціну їй вписують руками.
+  //
+  // Перевірка ж вимагала від КОЖНОЇ позиції без логів, щоб її хвилини дорівнювали
+  // оцінці задачі, а браузер для таких позицій завжди шле нуль. Наслідок: варто
+  // було вибрати задачу, якій колись поставили оцінку, — і «Зберегти чернетку»
+  // відмовляло назавжди, з текстом про те, що оцінка «змінилася». Вона не
+  // змінювалася; її просто ніхто не збирався виставляти.
+  if (item.sourceKind === 'estimate') {
+    if (hasLiveChildren) {
+      reject(
+        'INVOICE_SUMMARY_ESTIMATE_CONFLICT',
+        'Оцінку основної задачі з підзавданнями не можна виставляти окремо',
+        409,
+        { sourceItemIds: [item.itemId] },
+      );
+    }
+    const rawEstimate = Number(issue.estimateMinutes || 0);
+    const estimateMinutes = Number.isFinite(rawEstimate) && rawEstimate >= 0
+      ? rawEstimate
+      : 0;
+    if (item.minutes !== estimateMinutes) {
+      reject(
+        'INVOICE_ESTIMATE_CHANGED',
+        'Оцінка завдання змінилася. Оновіть рахунок і перевірте позицію',
+        409,
+        { sourceItemIds: [item.itemId] },
+      );
+    }
+    return true;
+  }
+
+  // Позиція без логів не виставляє часу. Нуль — не «нічого не заповнили», а те
+  // саме, що показує екран: годин немає, сума вписана рукою.
+  if (item.minutes !== 0) {
     reject(
-      'INVOICE_ESTIMATE_CHANGED',
-      'Оцінка завдання змінилася. Оновіть рахунок і перевірте позицію',
+      'INVOICE_SOURCELESS_MINUTES',
+      'Позиція без зафіксованого часу не може виставляти години — вкажіть суму вручну',
       409,
       { sourceItemIds: [item.itemId] },
     );

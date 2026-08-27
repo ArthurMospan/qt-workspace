@@ -557,17 +557,17 @@
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:1032",
+      "location": "src/app/(app)/sprints/page.js:1038",
       "tag": "div",
       "className": "py-12 text-center text-[13px] text-faint bg-canvas rounded-[16px]"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:1046",
+      "location": "src/app/(app)/sprints/page.js:1052",
       "tag": "div",
       "className": "flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-line"
     },
     {
-      "location": "src/app/(app)/sprints/page.js:877",
+      "location": "src/app/(app)/sprints/page.js:883",
       "tag": "div",
       "className": "bg-canvas rounded-[16px] border border-transparent shadow-none overflow-hidden shrink-0"
     },
@@ -642,7 +642,7 @@
       "className": "sticky left-0 flex items-center bg-canvas rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]"
     },
     {
-      "location": "src/components/workspace/BillingTab.jsx:494",
+      "location": "src/components/workspace/BillingTab.jsx:502",
       "tag": "div",
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
@@ -712,12 +712,12 @@
       "className": "rounded-[16px] rounded-bl-none bg-white p-3 text-ink"
     },
     {
-      "location": "src/components/workspace/TimesheetTab.jsx:702",
+      "location": "src/components/workspace/TimesheetTab.jsx:718",
       "tag": "div",
-      "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]"
+      "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[6px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:1582",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1585",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },

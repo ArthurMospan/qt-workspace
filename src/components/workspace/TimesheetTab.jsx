@@ -6,7 +6,7 @@
 // this component only renders the grid for the state it receives via props.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Clock } from 'lucide-react';
+import { Clock, X } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -312,9 +312,19 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
         </thead>
         <tbody className="divide-y divide-line">
           {rows.map(({ m, uid, byDay, total }) => (
+            // Ховер на весь рядок, а не на дві крайні колонки.
+            //
+            // Підсвітка стояла на `<tr>`, а кожна денна клітинка мала власний
+            // `bg-white` — і перемальовувала її поверх. Виходило, що під
+            // курсором сіріли тільки «Учасник» і «Всього», а сім колонок між
+            // ними лишалися білими: рядок ніби розривався навпіл.
+            //
+            // Підпис теж інший. «Відкрити табель учасника» звучить як перехід
+            // на чужу сторінку; насправді це і є відповідь на питання «на що
+            // пішли ці години» — тиждень цієї людини розкладається по задачах.
             <tr key={uid} onClick={() => onSelectMember?.(uid)}
-              className="bg-white hover:bg-canvas transition-colors cursor-pointer" title="Відкрити табель учасника">
-              <td className="px-5 py-3">
+              className="group bg-white transition-colors cursor-pointer" title="Показати, на що витрачено цей час">
+              <td className="px-5 py-3 transition-colors group-hover:bg-canvas">
                 <div className="flex items-center gap-2 min-w-0">
                   <UserAvatar user={m} size="sm" />
                   <span className="text-[13px] font-semibold text-ink truncate">{m.name || m.email}</span>
@@ -323,14 +333,14 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               {days.map((d, i) => {
                 const min = byDay[dayKey(d)] || 0;
                 return (
-                  <td key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center">
+                  <td key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center transition-colors group-hover:bg-canvas">
                     {min > 0
                       ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
                       : <span className="text-[12px] text-faint">—</span>}
                   </td>
                 );
               })}
-              <td className="px-4 py-3 text-center">
+              <td className="px-4 py-3 text-center transition-colors group-hover:bg-canvas">
                 <span className="text-[13px] font-bold text-ink">{total > 0 ? fmtMin(total) : '—'}</span>
               </td>
             </tr>
@@ -698,10 +708,26 @@ export default function TimesheetTab({
         {/* Range heading + spent summary */}
         <div className="flex items-end justify-between gap-4 flex-wrap mb-5 pt-1">
           <div className="flex items-center gap-3 min-w-0">
+            {/* Куди ви потрапили — і як звідси вийти.
+                Вибір учасника мовчки підміняв сітку команди тижнем однієї
+                людини, і фішка з обличчям читалась як заголовок чужої
+                сторінки — «якогось хуя відкрився профіль». Це не профіль, це
+                той самий табель, звужений до одного учасника; тепер фішка про
+                це каже й має вихід назад до всієї команди. */}
             {selectedMember && (
-              <div data-ui-surface="local" className="flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[12px] py-[4px]">
+              <div data-ui-surface="local" className="flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[6px] py-[4px]">
                 <UserAvatar user={selectedMember} size="sm" />
                 <span className="text-[13px] font-bold text-ink truncate">{selectedMember.name || selectedMember.email}</span>
+                {onSelectMember && (
+                  <Button
+                    style="ghost"
+                    size="icon-sm"
+                    icon={X}
+                    onClick={() => onSelectMember('all')}
+                    aria-label="Показати всю команду"
+                    title="Показати всю команду"
+                  />
+                )}
               </div>
             )}
             <h2 className="ui-type-detail-title text-ink tracking-tight">{rangeLabel}</h2>

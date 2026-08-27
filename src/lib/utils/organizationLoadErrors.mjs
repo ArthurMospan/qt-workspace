@@ -1,3 +1,5 @@
+import { QUOTA_FAILURE_COPY } from './quotaState.mjs';
+
 export function organizationLoadErrorKind(error) {
   const code = String(error?.code || '').toLowerCase();
   const message = String(error?.message || '').toLowerCase();
@@ -43,3 +45,39 @@ export function shouldRetryOrganizationLoad(error) {
 export function organizationLoadRetryDelay(attempt) {
   return [250, 750, 1_500][Math.max(0, Math.min(2, attempt - 1))];
 }
+
+/**
+ * Що сказати на екрані, коли слухач даних відмовив.
+ *
+ * Три екрани — «Мої завдання», «Спринти» і «Команда» — говорили одне речення на
+ * всі випадки: «Перевірте зʼєднання та спробуйте ще раз». Для обриву мережі це
+ * правда. Для відмови в доступі це неправда, яка ще й веде не туди: людина
+ * перевіряє вайфай, поки насправді протух токен сесії. А для вичерпаної денної
+ * квоти безкоштовного плану — це вже втретє інша річ, і про неї продукт уміє
+ * говорити нормально (`QUOTA_FAILURE_COPY`), просто не тут.
+ *
+ * Оболонка робочого простору класифікує це давно; ці три екрани — ні. Тепер
+ * питання одне на всіх.
+ *
+ * @param {unknown} error що впало
+ * @param {boolean} quotaRefused чи бачив цей браузер щойно відмову за квотою
+ * @returns {{title: string, description: string}}
+ */
+export function workspaceDataFailureCopy(error, quotaRefused = false) {
+  const kind = organizationLoadErrorKind(error);
+  if (kind === 'permission-denied') {
+    return {
+      title: 'Немає доступу до цих даних',
+      description: 'Сесія могла завершитися або доступ змінився. Перезавантажте сторінку; '
+        + 'якщо не допоможе — вийдіть і зайдіть знову. Дані на місці й нічого не втрачено.',
+    };
+  }
+  if (quotaRefused) {
+    return { title: QUOTA_FAILURE_COPY.title, description: QUOTA_FAILURE_COPY.description };
+  }
+  return {
+    title: 'Не вдалося оновити дані',
+    description: 'Попередні дані не видалені. Перевірте зʼєднання та спробуйте ще раз.',
+  };
+}
+

@@ -187,9 +187,15 @@ function IssueRow({
     .filter(Boolean);
   // An estimate is deliberately not shown here. It used to be, and a row that
   // reads «Оцінка 20 год» next to a sum of zero is a row nobody can act on.
+  //
+  // Порожньо — значить порожньо. «Без зафіксованого часу — ціна вручну» стояло
+  // під кожним другим рядком і не повідомляло нічого: перемикач «Авто / Вручну»
+  // праворуч у тому ж рядку вже показує, звідки береться сума, а годинник із
+  // запереченням поруч із ним — це підпис до порожнього місця. Рядок каже, коли
+  // час є; коли його немає, він мовчить.
   const effortLabel = issueLogs.totalMinutes > 0
     ? `Зафіксовано ${fmtMin(issueLogs.totalMinutes)}`
-    : 'Без зафіксованого часу — ціна вручну';
+    : '';
   const contributorSummary = Object.entries(issueLogs.byUser)
     .map(([uid, minutes]) => {
       const member = members.find(candidate => (candidate.id || candidate.uid) === uid);
@@ -249,10 +255,12 @@ function IssueRow({
 
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-muted">
-            <Clock size={12} />
-            {effortLabel}
-          </span>
+          {effortLabel && (
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-muted">
+              <Clock size={12} />
+              {effortLabel}
+            </span>
+          )}
           {contributors.length > 0 ? (
             <div className="flex -space-x-1.5">
               {contributors.slice(0, 3).map(member => (

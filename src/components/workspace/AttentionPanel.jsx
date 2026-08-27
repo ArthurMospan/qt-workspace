@@ -20,7 +20,7 @@
 
 import { useState } from 'react';
 import { AlertTriangle, ArrowLeft, Info, OctagonAlert } from 'lucide-react';
-import { ChartCard, SignalList, TaskListCard, TextAction } from '@/components/ui';
+import { ChartCard, IconAction, SignalList, TaskListCard } from '@/components/ui';
 
 // The glyph the opened finding keeps, so the panel does not change species
 // between the row and the list behind it.
@@ -70,10 +70,15 @@ export default function AttentionPanel({
         issueLinks={issueLinks}
         emptyText={open.description}
         className={className}
-        action={(
-          <TextAction tone="muted" icon={ArrowLeft} onClick={() => setOpenId(null)}>
-            Усі знахідки
-          </TextAction>
+        back={(
+          <IconAction
+            label="Усі знахідки"
+            tooltip
+            icon={ArrowLeft}
+            size="sm"
+            appearance="soft"
+            onClick={() => setOpenId(null)}
+          />
         )}
       />
     );

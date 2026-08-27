@@ -8,6 +8,8 @@ import { activeMembers } from '@/lib/utils/orgMembership.mjs';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { useMobilePaneBack } from '@/lib/hooks/useMobilePaneBack';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
+import { workspaceDataFailureCopy } from '@/lib/utils/organizationLoadErrors.mjs';
+import { isQuotaRefused } from '@/lib/utils/quotaState.mjs';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { Plus, User } from 'lucide-react';
 import { 
@@ -104,6 +106,10 @@ export default function TeamPage() {
 
   const selectedMember = membersWithPresence.find(m => (m.id || m.uid) === selectedUid);
 
+
+  // Одне питання на три екрани: відмова в доступі, вичерпана квота й обрив
+  // мережі — це три різні речі, і всі три казали «перевірте зʼєднання».
+  const dataFailure = workspaceDataFailureCopy(membersError, isQuotaRefused());
   return (
     <SidebarLayout
       context="team"
@@ -146,8 +152,8 @@ export default function TeamPage() {
               <div className="flex w-full max-w-[460px] flex-col gap-3">
                 <Alert
                   variant="error"
-                  title="Не вдалося оновити список команди"
-                  description="Попередні дані не видалені. Перевірте зʼєднання та спробуйте ще раз."
+                  title={dataFailure.title}
+                  description={dataFailure.description}
                 />
                 <Button onClick={() => window.location.reload()} style="secondary" size="sm">
                   Спробувати ще раз

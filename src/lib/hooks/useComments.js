@@ -10,6 +10,26 @@ import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
 // channel: the newest page is what a reader arrives for, and the rest is loaded
 // when they ask for it — a task discussed for a year must not cost its whole
 // year every time somebody opens it.
+// Як довго штамп активності проєкту вважається свіжим.
+//
+// Картку проєкту піднімає `project.updatedAt`, і питання, на яке вона
+// відповідає, — «коли тут востаннє щось відбувалося». Хвилина туди-сюди на це
+// питання не впливає, а один запис на кожну репліку в чаті впливає на щоденну
+// стелю записів безкоштовного плану. Вікно перетворює сплеск розмови на один
+// запис.
+const PROJECT_ACTIVITY_STAMP_WINDOW_MS = 5 * 60 * 1000;
+
+function projectActivityStampIsStale(stampedAt) {
+  if (!stampedAt) return true;
+  const millis = typeof stampedAt?.toMillis === 'function'
+    ? stampedAt.toMillis()
+    : typeof stampedAt?.seconds === 'number'
+      ? stampedAt.seconds * 1000
+      : Date.parse(stampedAt);
+  if (!Number.isFinite(millis)) return true;
+  return Date.now() - millis > PROJECT_ACTIVITY_STAMP_WINDOW_MS;
+}
+
 export const COMMENT_WINDOW = 60;
 
 /**
@@ -122,7 +142,14 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
     // учаснику організації торкнутися саме так: `hasOnly(['updatedAt'])`. Поза
     // транзакцією і без `await` — стрічка задачі не має чекати на порядок
     // карток, а невдача тут не робить надіслане повідомлення ненадісланим.
-    if (options.projectId) {
+    //
+    // І не частіше, ніж раз на кілька хвилин на проєкт. Порядок карток на
+    // головному екрані — це «коли тут востаннє щось відбувалося», а не «о котрій
+    // саме»: жвава розмова на сорок повідомлень і одна позначка дають ту саму
+    // картку на тому самому місці. Свіжість штампа звіряється з копією проєкту,
+    // яка вже лежить у памʼяті екрана, тож перевірка не коштує жодного читання —
+    // а запис із неї виходить один на проєкт на вікно замість одного на репліку.
+    if (options.projectId && projectActivityStampIsStale(options.projectAt)) {
       updateDoc(doc(db, 'projects', options.projectId), { updatedAt: serverTimestamp() })
         .catch(error => reportLoadError('[useComments] project activity stamp', error));
     }

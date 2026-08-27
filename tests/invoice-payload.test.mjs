@@ -448,6 +448,46 @@ test('invoice item minutes must equal the immutable raw source sum', () => {
   );
 });
 
+// Позиція без логів — це не «оцінка». Екран рахунку шле для неї нуль хвилин і
+// суму вручну, бо оцінка ніколи не стає грошима (docs/ARCHITECTURE.md →
+// «Рахунки»). Перевірка ж вимагала рівності оцінці від усіх позицій без логів,
+// тож задача, якій колись поставили оцінку, робила збереження неможливим:
+// «Оцінка завдання змінилася» на першому ж натисканні, щоразу.
+test('a line with no time logs bills no time, and says so when it tries to', () => {
+  const item = {
+    itemId: 'issue-1',
+    issueId: 'issue-1',
+    minutes: 0,
+    sourceKind: 'none',
+    sourceTimeLogIds: [],
+  };
+  const issue = { id: 'issue-1', estimateMinutes: 120 };
+  // Оцінка задачі жодної ролі не грає: позиція виставляє нуль годин.
+  assert.equal(validateSourceLessInvoiceIssue({ item, issue }), true);
+  // Так само для позиції з ручною ціною, і так само з підзавданнями: ієрархія
+  // на рахунок не впливає, коли ніхто не виставляє оцінку.
+  assert.equal(
+    validateSourceLessInvoiceIssue({
+      item: { ...item, sourceKind: 'manual' },
+      issue,
+      hasLiveChildren: true,
+    }),
+    true,
+  );
+  // Але години з нізвідки — це розходження, і воно називається.
+  assert.throws(
+    () => validateSourceLessInvoiceIssue({ item: { ...item, minutes: 120 }, issue }),
+    error => error.code === 'INVOICE_SOURCELESS_MINUTES',
+  );
+  // Задача з фактичним часом не може приїхати як позиція без джерел.
+  assert.throws(
+    () => validateSourceLessInvoiceIssue({ item, issue, hasAnyTimeLogs: true }),
+    error => error.code === 'INVOICE_ESTIMATE_HAS_ACTUAL_TIME',
+  );
+});
+
+// Стара модель лишилася тільки на вже виставлених рахунках, і поки вона там є,
+// її перевірки лишаються теж.
 test('source-less task billing revalidates estimate, hierarchy and actual time', () => {
   const item = {
     itemId: 'issue-1',
