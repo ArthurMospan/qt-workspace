@@ -273,14 +273,14 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:467",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:470",
       "attributes": [
         "title"
       ]
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:738",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:741",
       "attributes": [
         "title",
         "aria-label"
@@ -288,7 +288,7 @@
     },
     {
       "element": "button",
-      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:918",
+      "location": "src/components/ui/TaskManagement/TaskTableView.jsx:921",
       "attributes": [
         "title"
       ]
