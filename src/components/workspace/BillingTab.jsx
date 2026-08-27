@@ -10,7 +10,7 @@ import {
   collection, query, where, onSnapshot,
 } from 'firebase/firestore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { AlertTriangle, Ban, Copy, Printer, Clock, Save, Eye } from 'lucide-react';
+import { AlertTriangle, Ban, Copy, Eye, Printer, Clock, Save, Send } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
 import { Select } from '@/components/ui/Select';
 import {
@@ -432,10 +432,19 @@ function InvoicePreview({
       isOpen
       onClose={onClose}
       title={dialogTitle}
-      size="md"
+      // Збережений рахунок — це документ, а не картка. У вузькому діалозі
+      // сторінка, яку зараз надрукують, читалася смужкою; чернетка лишається
+      // вузькою, бо це ще не документ, а перевірка складу.
+      size={isSaved ? 'lg' : 'md'}
       footer={
         canExport ? (
           <>
+            {/* «Надіслати в OneB Invoice» стоїть тут вимкненим навмисно: це
+                контракт між двома застосунками, якого ще немає, і кнопка, що
+                зникає до релізу, — це фіча, про яку ніхто не дізнається. */}
+            <Button style="ghost" size="md" icon={Send} disabled title="Інтеграція в розробці">
+              OneB Invoice · в розробці
+            </Button>
             <Button onClick={handleCopy} style="secondary" size="md" icon={Copy}>Копіювати</Button>
             {/* PDF is not in this menu: «Друкувати» already produces one, from
                 the designed invoice on screen rather than from a bare table. */}
@@ -1285,7 +1294,32 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                 // preset, not four utilities. It read as `#fafafa` before, one
                 // of six near-whites the product had invented for the same fill.
                 savedInvoices.map(inv => (
-                  <Surface key={inv.id} preset="bordered-panel" padding="md" className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                  // Клікає весь рядок, а не одна кнопка в його кінці.
+                  //
+                  // «Переглянути рахунок» ховалося серед двох інших контролів
+                  // праворуч, а сам рядок — номер, дата, сума — не робив нічого,
+                  // хоча це єдине, заради чого в історію заходять. Рядок і є
+                  // рахунок; кнопки поруч лишаються для того, що рядком не є
+                  // (анулювати).
+                  <Surface
+                    key={inv.id}
+                    preset="bordered-panel"
+                    padding="md"
+                    role="button"
+                    tabIndex={0}
+                    onClick={event => {
+                      if (event.target.closest('button')) return;
+                      showSavedInvoice(inv);
+                    }}
+                    onKeyDown={event => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      showSavedInvoice(inv);
+                    }}
+                    title={`Відкрити рахунок ${inv.number}`}
+                    className="flex cursor-pointer flex-col items-stretch justify-between gap-3 transition-colors hover:bg-canvas/50 sm:flex-row sm:items-center"
+                  >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-[13px] font-bold text-ink">{inv.number}</p>
@@ -1298,15 +1332,6 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                      <Button
-                        style="ghost"
-                        size="icon-sm"
-                        icon={Eye}
-                        title="Переглянути збережений рахунок"
-                        onClick={() => showSavedInvoice(inv)}
-                      >
-                        Переглянути рахунок
-                      </Button>
                       <span className="text-[14px] font-black text-ink">{fmtMoney(inv.total, inv.currency)}</span>
                       {inv.status === 'draft' && (
                         <Button

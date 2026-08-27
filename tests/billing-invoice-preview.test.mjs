@@ -56,15 +56,20 @@ test('saved history opens the persisted snapshot and exports its server number',
     billing,
     /const showSavedInvoice = invoice => \{[\s\S]{0,180}setInvoicePreviewState\(\{[\s\S]{0,100}projectKey: billingProjectKey,[\s\S]{0,100}kind: 'saved',[\s\S]{0,100}invoice,/,
   );
-  assert.match(history, /title="Переглянути збережений рахунок"/);
-  assert.match(history, /onClick=\{\(\) => showSavedInvoice\(inv\)\}/);
+  // Відкриває весь рядок, а не одна кнопка в його кінці: номер, дата й сума —
+  // це і є рахунок, і в історію заходять саме по нього.
+  assert.match(history, /title=\{`Відкрити рахунок \$\{inv\.number\}`\}/);
+  assert.match(history, /showSavedInvoice\(inv\);/);
+  assert.doesNotMatch(history, /title="Переглянути збережений рахунок"/);
   assert.match(billing, /invoice=\{invoicePreview\.invoice\}/);
   assert.match(billing, /isSaved=\{invoicePreview\.kind === 'saved'\}/);
   assert.doesNotMatch(billing, /invoice=\{buildInvoice\(\)\}/);
-  // The window spans the footer, which now carries a third control.
+  // The window spans the footer, which now carries four controls — the fourth
+  // is «OneB Invoice · в розробці», disabled on purpose until the contract
+  // between the two applications exists.
   assert.match(
     billing,
-    /title=\{dialogTitle\}[\s\S]{0,2000}\{canExport \? \([\s\S]{0,200}\{officialNumber\}/,
+    /title=\{dialogTitle\}[\s\S]{0,3000}\{canExport \? \([\s\S]{0,900}\{officialNumber\}/,
   );
   assert.match(billing, /`РАХУНОК \$\{officialNumber\}`/);
   assert.match(billing, /<title>\$\{officialNumber\}<\/title>/);

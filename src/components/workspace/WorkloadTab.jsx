@@ -498,7 +498,7 @@ function MemberWork({ stat, projects, members }) {
             { value: 'open', label: `Відкриті ${stat.open}` },
             { value: 'done', label: `Завершені ${stat.done}` },
             { value: 'overdue', label: `Прострочені ${stat.overdue}` },
-            { value: 'all', label: `Усі ${stat.issues.length}` },
+            { value: 'all', label: `Усі за весь час ${stat.issues.length}` },
           ]}
         />
       </div>

@@ -766,23 +766,26 @@ export default function WorkspaceAnalyticsPage() {
       return d;
     });
   };
+  // Фільтр, а не двері назовні.
+  //
+  // Він поводився як два різні контроли в одному: «Вся команда» звужувала
+  // екран на місці, а конкретна людина викидала зі сторінки на окремий
+  // маршрут із її обличчям, посадою й поштою в шапці — тобто на щось, що
+  // читається як профіль. Поруч у тому самому рядку стоять фільтри проєктів і
+  // періоду, і жоден із них нікуди не веде.
+  //
+  // Гірше було з адресою. Гілка «вся команда» дописувала `teamMember` у URL
+  // через `replaceState`, а Next синхронізує це з `useSearchParams`, тож ефект,
+  // який читає адресу, спрацьовував знову, бачив `teamMember` і виконував
+  // редирект для старих посилань — на ту саму сторінку учасника. Звідси й
+  // «повернувся назад, а мене знову кинуло в профіль»: у попередній адресі
+  // параметр лишався, і вихід із неї був неможливий.
+  //
+  // Сторінка учасника нікуди не поділася: у неї ведуть рядки таблиць команди,
+  // і саме там така навігація і має бути — рядок веде, фільтр фільтрує.
   const selectTeamMember = memberId => {
-    if (memberId !== 'all') {
-      router.push(memberAnalyticsHref(memberId, {
-        projectIds: projectFilters,
-        period,
-      }));
-      return;
-    }
     setTeamMemberFilter(memberId);
     setAssigneeFilter(memberId);
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      if (memberId === 'all') url.searchParams.delete('teamMember');
-      else url.searchParams.set('teamMember', memberId);
-      url.searchParams.set('tab', 'workload');
-      window.history.replaceState(null, '', `${url.pathname}${url.search}`);
-    }
   };
 
   const searchQuery = analyticsSearch.trim().toLocaleLowerCase('uk-UA');

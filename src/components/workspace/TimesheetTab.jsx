@@ -324,7 +324,7 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
             // пішли ці години» — тиждень цієї людини розкладається по задачах.
             <tr key={uid} onClick={() => onSelectMember?.(uid)}
               className="group bg-white transition-colors cursor-pointer" title="Показати, на що витрачено цей час">
-              <td className="px-5 py-3 transition-colors group-hover:bg-canvas">
+              <td className="px-5 py-3 transition-colors group-hover:bg-canvas/50">
                 <div className="flex items-center gap-2 min-w-0">
                   <UserAvatar user={m} size="sm" />
                   <span className="text-[13px] font-semibold text-ink truncate">{m.name || m.email}</span>
@@ -333,14 +333,14 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               {days.map((d, i) => {
                 const min = byDay[dayKey(d)] || 0;
                 return (
-                  <td key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center transition-colors group-hover:bg-canvas">
+                  <td key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center transition-colors group-hover:bg-canvas/50">
                     {min > 0
                       ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
                       : <span className="text-[12px] text-faint">—</span>}
                   </td>
                 );
               })}
-              <td className="px-4 py-3 text-center transition-colors group-hover:bg-canvas">
+              <td className="px-4 py-3 text-center transition-colors group-hover:bg-canvas/50">
                 <span className="text-[13px] font-bold text-ink">{total > 0 ? fmtMin(total) : '—'}</span>
               </td>
             </tr>
@@ -733,6 +733,10 @@ export default function TimesheetTab({
             <h2 className="ui-type-detail-title text-ink tracking-tight">{rangeLabel}</h2>
           </div>
           <p className="text-[13px] text-muted font-medium">
+            {/* Коли на екрані одна людина, тиждень розкладено по задачах — і про
+                це варто сказати, бо клік по рядку команди виглядав як «кудись
+                перекинуло», а не як «ось на що пішли ці години». */}
+            {selectedMember && <span className="mr-2 text-faint">На що витрачено ·</span>}
             Витрачений час{' '}
             <span className="text-ink font-bold">{fmtWork(totalMin)}</span>
             {' '}з <span className="font-semibold">{fmtWork(teamCapacity)}</span>
