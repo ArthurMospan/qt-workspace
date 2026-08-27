@@ -135,7 +135,12 @@ test('nothing on the dashboard ranks tasks by when their document was written', 
     // by it any more.
     assert.doesNotMatch(source, /issue\.updatedAt|issue\.createdAt/, name);
   }
-  assert.match(home, /const sorted = \[\.\.\.allIssues\]\.sort\(\s*\r?\n?\s*\(a, b\) => issueActivity\(b\)\.millis - issueActivity\(a\)\.millis,?\s*\r?\n?\s*\)/);
+  // The one list of tasks the dashboard still ranks: the activity lines on the
+  // featured project card. This used to pin a second sort as well — a
+  // `recentIssues` memo that ordered every task in the workspace and was
+  // rendered nowhere, so the assertion was holding dead code in place. The rule
+  // is the two lines above; this is the live expression that obeys it.
+  assert.match(home, /\.sort\(\(a, b\) => b\.activity\.millis - a\.activity\.millis\)/);
   assert.doesNotMatch(home, /newestIssue\.lastActivityType/);
 });
 

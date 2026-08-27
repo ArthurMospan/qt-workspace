@@ -37,8 +37,6 @@ import FilterBar from '@/components/ui/FilterBar';
 import Surface from '@/components/ui/Surface';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
-import { organizationTimeZone } from '@/lib/utils/timeZone.mjs';
-import { useSprints } from '@/lib/hooks/useSprints';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { createIssueViaApi } from '@/lib/services/issues';
 import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
@@ -320,9 +318,6 @@ const RECENT_ACTIONS = 3;
  * @param {boolean} props.isLarge Whether this is the 2×2 card. A small one draws nothing at all.
  */
 function ProjectStatsSection({ isLarge, members, issues = [], now, currentUser, orgLoading, mentionCount = 0 }) {
-  const { activeOrg } = useAppContext();
-  const timeZone = organizationTimeZone(activeOrg);
-
   // Who *acted*, which is only ever what the activity record says. This used to
   // fall through to `reporterId` and then `reporterName`, so a task with no
   // recorded activity was attributed to whoever originally filed it. On
@@ -643,8 +638,7 @@ export default function WorkspacePage() {
   const { projects, projectsLoading, projectsError, currentUser, activeOrgId, activeOrg, orgRole } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const { members, loading: orgLoading } = useOrganization();
-  const { labels, deliveredStatusIds, statuses } = useWorkflowConfig();
-  const { sprints } = useSprints();
+  const { deliveredStatusIds, statuses } = useWorkflowConfig();
   const isMobile = useIsMobile() === true;
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -793,17 +787,6 @@ export default function WorkspacePage() {
   }, [projects, searchQuery, selectedMember, dateFilter, sortOption, progressByProject, now]);
   usePublishLocalSearchResults(searchQuery, filteredProjects.length);
 
-  // Sliced recent issues list (limit to 6)
-  const recentIssues = useMemo(() => {
-    // "Recent" means recently acted on, not recently written to. Sorted by
-    // `updatedAt`, this list filled with the neighbours of whatever card was
-    // dragged last.
-    const sorted = [...allIssues].sort(
-      (a, b) => issueActivity(b).millis - issueActivity(a).millis,
-    );
-    return sorted.slice(0, 6);
-  }, [allIssues]);
-
   const archive = async (id) => {
     try {
       await archiveProject(id);
@@ -860,36 +843,6 @@ export default function WorkspacePage() {
     { value: 'progress-desc', label: 'Прогрес (за спаданням)' },
     { value: 'progress-asc', label: 'Прогрес (за зростанням)' }
   ];
-
-  const getPriorityColor = (priority) => {
-    switch (String(priority).toLowerCase()) {
-      case 'critical': return '#ef4444';
-      case 'high': return '#f97316';
-      case 'medium': return '#eab308';
-      case 'low': return '#3b82f6';
-      default: return '#9a9a9a';
-    }
-  };
-
-  const getPriorityDetails = (priority) => {
-    switch (String(priority).toLowerCase()) {
-      case 'critical': return { bg: '#fee2e2', dot: '#ef4444', label: 'Критичний' };
-      case 'high': return { bg: '#ffedd5', dot: '#f97316', label: 'Високий' };
-      case 'medium': return { bg: '#fef9c3', dot: '#eab308', label: 'Середній' };
-      case 'low': return { bg: '#dbeafe', dot: '#3b82f6', label: 'Низький' };
-      default: return { bg: '#f4f4f5', dot: '#9a9a9a', label: 'Низький' };
-    }
-  };
-
-  const timeAgo = (ts) => {
-    if (!ts) return '';
-    const d = ts?.toDate ? ts.toDate() : new Date(ts);
-    const diff = Date.now() - d.getTime();
-    if (diff < 60000) return 'щойно';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)} хв тому`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)} год тому`;
-    return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
-  };
 
   const workspaceLoadError = projectsError || issuesError;
   const workspaceLoadErrorKind = organizationLoadErrorKind(workspaceLoadError);
