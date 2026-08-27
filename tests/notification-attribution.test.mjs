@@ -142,7 +142,10 @@ test('nothing on the dashboard ranks tasks by when their document was written', 
   // where the order is actually decided.
   const activity = await read('../src/lib/hooks/useProjectActivity.js');
   assert.match(activity, /orderBy\('lastActivityAt', 'desc'\)/);
-  assert.doesNotMatch(activity, /orderBy\('(updatedAt|createdAt)'/);
+  // `createdAt` is allowed and `updatedAt` is not, which is exactly the
+  // distinction `issueActivity` makes: a task with no activity stamp was still
+  // certainly created, while «the document was written» is not an event.
+  assert.doesNotMatch(activity, /orderBy\('updatedAt'/);
   assert.doesNotMatch(home, /newestIssue\.lastActivityType/);
 });
 

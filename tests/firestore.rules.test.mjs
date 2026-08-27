@@ -6,7 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { arrayUnion, doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { arrayUnion, doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, query, where, getDocs, getCountFromServer, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 let environment;
 
@@ -1050,6 +1050,38 @@ test('issues and project lifecycle mutations cannot bypass server APIs', async (
   await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { invoiceMutationVersion: 99 }));
   await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { timeLogImportVersion: 99 }));
   await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { deletionPending: true }));
+});
+
+test('the two reads the dashboard has left are allowed, and stay scoped', async () => {
+  const memberDb = environment.authenticatedContext('member-a').firestore();
+  const offTeamDb = environment.authenticatedContext('member-offteam').firestore();
+  const issues = collection(memberDb, 'issues');
+
+  // The featured card's activity query: one project, ordered, limited. Rules
+  // are not filters, so it has to carry the same scope the read rule checks.
+  await assertSucceeds(getDocs(query(
+    issues,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', 'project-a'),
+  )));
+
+  // The hidden-column count inside BoardConfigModal. An aggregate is a read:
+  // it is refused exactly where reading the documents would be, which is what
+  // stops a count being a way to measure a project you cannot open.
+  await assertSucceeds(getCountFromServer(query(
+    issues,
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', 'project-a'),
+    where('columnId', 'in', ['done', 'review']),
+  )));
+  await assertFails(getCountFromServer(query(
+    collection(offTeamDb, 'issues'),
+    where('organizationId', '==', 'org-a'),
+    where('projectId', '==', 'project-a'),
+    where('columnId', 'in', ['done', 'review']),
+  )));
+  // And an unscoped count is refused for everybody, member or not.
+  await assertFails(getCountFromServer(issues));
 });
 
 test('deletion markers freeze nested writes before non-atomic cascades', async () => {
