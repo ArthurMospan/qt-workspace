@@ -59,7 +59,16 @@ export { CHANNEL_DEFAULTS };
 
 export function useNotifications(userId, {
   activeOrganizationId,
-  onNew
+  onNew,
+  // Чи взагалі оголошувати цей запис — одна відповідь на всі канали оголошення
+  // одразу. Раніше «не турбувати за розмову, яку я зараз читаю» знало лише
+  // спливаюче вікно: перевірка жила в `onNew`, а дзвіночок стояв рядком вище й
+  // до неї не доходив. Тому картки не було, а звук був — саме те, що чути на
+  // сторінці завдання, поки в його чаті хтось пише.
+  //
+  // Запис у дзвоник це не скасовує: дзвоник — журнал, і в ньому подія має
+  // лишитись. Мовчить тільки те, що перебиває.
+  shouldAnnounce,
 } = {}) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -68,10 +77,19 @@ export function useNotifications(userId, {
   const isFirstLoad = useRef(true);
   const prefsRef = useRef(CHANNEL_DEFAULTS);
   const activeOrganizationIdRef = useRef(activeOrganizationId);
+  // Через ref, а не через залежності: підписка на сповіщення не має
+  // перебудовуватись щоразу, коли читач перемкнув панель.
+  const onNewRef = useRef(onNew);
+  const shouldAnnounceRef = useRef(shouldAnnounce);
 
   useEffect(() => {
     activeOrganizationIdRef.current = activeOrganizationId;
   }, [activeOrganizationId]);
+
+  useEffect(() => {
+    onNewRef.current = onNew;
+    shouldAnnounceRef.current = shouldAnnounce;
+  }, [onNew, shouldAnnounce]);
 
   // Live-follow the user's channel preferences so toggles apply instantly
   useEffect(() => {
@@ -132,11 +150,16 @@ export function useNotifications(userId, {
           if (!seenIds.current.has(n.id)) {
             seenIds.current.add(n.id);
             if (n.organizationId !== activeOrganizationIdRef.current) return;
+            // 0. Чи є про що оголошувати. Стоїть перед звуком, а не між звуком
+            //    і карткою: подія, яку читач бачить на екрані просто зараз, не
+            //    має ні дзвеніти, ні спливати.
+            const announce = shouldAnnounceRef.current;
+            if (typeof announce === 'function' && !announce(n)) return;
             const prefs = prefsRef.current;
             // 1. Sound chime
             if (prefs.sound !== false && n.type !== 'emergency') playChime();
             // 2. In-app popup callback (goes to store)
-            if (prefs.popup !== false && onNew) onNew(n);
+            if (prefs.popup !== false && onNewRef.current) onNewRef.current(n);
           }
         });
       }
@@ -146,7 +169,10 @@ export function useNotifications(userId, {
       invalidateOrganizationUnreadCounts();
     }, () => setLoading(false));
     return () => unsub();
-  }, [userId, activeOrganizationId]); // eslint-disable-line
+    // `onNew` and `shouldAnnounce` are read through refs on purpose: the
+    // subscription's identity is account + organization, and nothing else may
+    // tear it down and rebuild it.
+  }, [userId, activeOrganizationId]);
 
   // "Mark all read" / "clear read" used to operate on the loaded page only, so
   // with more unread items than the page size the button appeared to do

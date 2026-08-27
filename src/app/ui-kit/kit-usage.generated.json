@@ -2896,7 +2896,7 @@
             "src/components/workspace/IssueDetail.jsx:2398",
             "src/components/workspace/IssueDetail.jsx:2426",
             "src/components/workspace/IssueDetail.jsx:2436",
-            "src/components/workspace/UnifiedTimeline.jsx:1550",
+            "src/components/workspace/UnifiedTimeline.jsx:1596",
             "src/components/workspace/WorkloadTab.jsx:553",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:387",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1135",
@@ -2934,7 +2934,7 @@
             "src/components/profile/ProfileView.jsx:226",
             "src/components/workspace/IssueDetail.jsx:1424",
             "src/components/workspace/IssueDetail.jsx:1435",
-            "src/components/workspace/UnifiedTimeline.jsx:1660"
+            "src/components/workspace/UnifiedTimeline.jsx:1706"
           ]
         },
         "(default)": {
@@ -2964,8 +2964,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1228",
-            "src/app/(app)/chat/page.js:1236",
+            "src/app/(app)/chat/page.js:1233",
+            "src/app/(app)/chat/page.js:1241",
             "src/app/(app)/error.js:51",
             "src/app/(app)/my/page.js:491",
             "src/app/(app)/page.js:639",
@@ -3031,7 +3031,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1305",
+            "src/app/(app)/chat/page.js:1310",
             "src/app/(app)/sprints/page.js:1066",
             "src/app/(app)/sprints/page.js:1095",
             "src/app/(app)/sprints/page.js:1110",
@@ -3066,7 +3066,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:356",
             "src/app/(app)/calendar/page.js:731",
-            "src/app/(app)/chat/page.js:1236",
+            "src/app/(app)/chat/page.js:1241",
             "src/app/(app)/layout.js:113",
             "src/app/(app)/layout.js:117",
             "src/components/UserStatusDialog.jsx:114",
@@ -3108,7 +3108,7 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1228",
+            "src/app/(app)/chat/page.js:1233",
             "src/app/(app)/my/page.js:333",
             "src/app/(app)/my/page.js:355",
             "src/app/(app)/my/page.js:383",
@@ -3220,7 +3220,7 @@
             "src/components/workspace/IssueDetail.jsx:2365",
             "src/components/workspace/QtPlusProjectTab.jsx:294",
             "src/components/workspace/TimesheetTab.jsx:705",
-            "src/components/workspace/UnifiedTimeline.jsx:1550"
+            "src/components/workspace/UnifiedTimeline.jsx:1596"
           ]
         },
         "ghost": {
@@ -3245,7 +3245,7 @@
             "src/app/(app)/calendar/page.js:753",
             "src/app/(app)/calendar/page.js:754",
             "src/app/(app)/calendar/page.js:755",
-            "src/app/(app)/chat/page.js:1305",
+            "src/app/(app)/chat/page.js:1310",
             "src/app/(app)/settings/page.js:202",
             "src/app/(app)/settings/page.js:2730",
             "src/app/(app)/settings/page.js:3485",
@@ -3302,7 +3302,7 @@
             "src/components/workspace/IssueDetail.jsx:2259",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/TimesheetTab.jsx:891",
-            "src/components/workspace/UnifiedTimeline.jsx:1660",
+            "src/components/workspace/UnifiedTimeline.jsx:1706",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -3358,9 +3358,9 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1228",
-            "src/app/(app)/chat/page.js:1236",
-            "src/app/(app)/chat/page.js:1305",
+            "src/app/(app)/chat/page.js:1233",
+            "src/app/(app)/chat/page.js:1241",
+            "src/app/(app)/chat/page.js:1310",
             "src/app/(app)/error.js:51",
             "src/app/(app)/layout.js:113",
             "src/app/(app)/layout.js:117",
@@ -3506,7 +3506,7 @@
             "src/components/workspace/TimesheetTab.jsx:704",
             "src/components/workspace/TimesheetTab.jsx:705",
             "src/components/workspace/TimesheetTab.jsx:891",
-            "src/components/workspace/UnifiedTimeline.jsx:1550",
+            "src/components/workspace/UnifiedTimeline.jsx:1596",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -3546,7 +3546,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:138",
-            "src/components/workspace/UnifiedTimeline.jsx:1660"
+            "src/components/workspace/UnifiedTimeline.jsx:1706"
           ]
         }
       },
@@ -3587,9 +3587,9 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1228",
-            "src/app/(app)/chat/page.js:1236",
-            "src/app/(app)/chat/page.js:1305",
+            "src/app/(app)/chat/page.js:1233",
+            "src/app/(app)/chat/page.js:1241",
+            "src/app/(app)/chat/page.js:1310",
             "src/app/(app)/error.js:51",
             "src/app/(app)/layout.js:113",
             "src/app/(app)/layout.js:117",
@@ -3736,8 +3736,8 @@
             "src/components/workspace/TimesheetTab.jsx:704",
             "src/components/workspace/TimesheetTab.jsx:705",
             "src/components/workspace/TimesheetTab.jsx:891",
-            "src/components/workspace/UnifiedTimeline.jsx:1550",
-            "src/components/workspace/UnifiedTimeline.jsx:1660",
+            "src/components/workspace/UnifiedTimeline.jsx:1596",
+            "src/components/workspace/UnifiedTimeline.jsx:1706",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -3807,9 +3807,9 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1228",
-            "src/app/(app)/chat/page.js:1236",
-            "src/app/(app)/chat/page.js:1305",
+            "src/app/(app)/chat/page.js:1233",
+            "src/app/(app)/chat/page.js:1241",
+            "src/app/(app)/chat/page.js:1310",
             "src/app/(app)/error.js:51",
             "src/app/(app)/layout.js:113",
             "src/app/(app)/layout.js:117",
@@ -3942,8 +3942,8 @@
             "src/components/workspace/TimesheetTab.jsx:704",
             "src/components/workspace/TimesheetTab.jsx:705",
             "src/components/workspace/TimesheetTab.jsx:891",
-            "src/components/workspace/UnifiedTimeline.jsx:1550",
-            "src/components/workspace/UnifiedTimeline.jsx:1660",
+            "src/components/workspace/UnifiedTimeline.jsx:1596",
+            "src/components/workspace/UnifiedTimeline.jsx:1706",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -4056,9 +4056,9 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1228",
-            "src/app/(app)/chat/page.js:1236",
-            "src/app/(app)/chat/page.js:1305",
+            "src/app/(app)/chat/page.js:1233",
+            "src/app/(app)/chat/page.js:1241",
+            "src/app/(app)/chat/page.js:1310",
             "src/app/(app)/error.js:51",
             "src/app/(app)/my/page.js:271",
             "src/app/(app)/my/page.js:333",
@@ -4191,7 +4191,7 @@
             "src/components/workspace/TimesheetTab.jsx:704",
             "src/components/workspace/TimesheetTab.jsx:705",
             "src/components/workspace/TimesheetTab.jsx:891",
-            "src/components/workspace/UnifiedTimeline.jsx:1550",
+            "src/components/workspace/UnifiedTimeline.jsx:1596",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
             "src/components/workspace/WorkloadTab.jsx:553",
@@ -4276,7 +4276,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1660"
+            "src/components/workspace/UnifiedTimeline.jsx:1706"
           ]
         }
       }
@@ -4386,10 +4386,10 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1459",
-            "src/components/workspace/UnifiedTimeline.jsx:1460",
-            "src/components/workspace/UnifiedTimeline.jsx:1461",
-            "src/components/workspace/UnifiedTimeline.jsx:1590",
+            "src/components/workspace/UnifiedTimeline.jsx:1505",
+            "src/components/workspace/UnifiedTimeline.jsx:1506",
+            "src/components/workspace/UnifiedTimeline.jsx:1507",
+            "src/components/workspace/UnifiedTimeline.jsx:1636",
             "src/components/workspace/UnifiedTimeline.jsx:288",
             "src/components/workspace/UnifiedTimeline.jsx:289"
           ]
@@ -4411,9 +4411,9 @@
             "src/app/(app)/page.js:224",
             "src/components/MobileNav.jsx:310",
             "src/components/MobileNav.jsx:345",
-            "src/components/workspace/UnifiedTimeline.jsx:1459",
-            "src/components/workspace/UnifiedTimeline.jsx:1460",
-            "src/components/workspace/UnifiedTimeline.jsx:1590",
+            "src/components/workspace/UnifiedTimeline.jsx:1505",
+            "src/components/workspace/UnifiedTimeline.jsx:1506",
+            "src/components/workspace/UnifiedTimeline.jsx:1636",
             "src/components/workspace/UnifiedTimeline.jsx:288"
           ]
         },
@@ -4439,7 +4439,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:468",
-            "src/components/workspace/UnifiedTimeline.jsx:1461",
+            "src/components/workspace/UnifiedTimeline.jsx:1507",
             "src/components/workspace/UnifiedTimeline.jsx:289"
           ]
         },
@@ -4613,10 +4613,10 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1459",
-            "src/components/workspace/UnifiedTimeline.jsx:1460",
-            "src/components/workspace/UnifiedTimeline.jsx:1461",
-            "src/components/workspace/UnifiedTimeline.jsx:1590",
+            "src/components/workspace/UnifiedTimeline.jsx:1505",
+            "src/components/workspace/UnifiedTimeline.jsx:1506",
+            "src/components/workspace/UnifiedTimeline.jsx:1507",
+            "src/components/workspace/UnifiedTimeline.jsx:1636",
             "src/components/workspace/UnifiedTimeline.jsx:288",
             "src/components/workspace/UnifiedTimeline.jsx:289"
           ]
@@ -4692,9 +4692,9 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:468",
-            "src/components/workspace/UnifiedTimeline.jsx:1459",
-            "src/components/workspace/UnifiedTimeline.jsx:1460",
-            "src/components/workspace/UnifiedTimeline.jsx:1461",
+            "src/components/workspace/UnifiedTimeline.jsx:1505",
+            "src/components/workspace/UnifiedTimeline.jsx:1506",
+            "src/components/workspace/UnifiedTimeline.jsx:1507",
             "src/components/workspace/UnifiedTimeline.jsx:288",
             "src/components/workspace/UnifiedTimeline.jsx:289"
           ]
@@ -4713,7 +4713,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1590"
+            "src/components/workspace/UnifiedTimeline.jsx:1636"
           ]
         }
       }
@@ -4736,7 +4736,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1249",
+            "src/app/(app)/chat/page.js:1254",
             "src/app/(app)/settings/page.js:366",
             "src/app/(app)/sprints/page.js:152",
             "src/app/(app)/sprints/page.js:295",
@@ -4840,7 +4840,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1249",
+            "src/app/(app)/chat/page.js:1254",
             "src/app/(app)/settings/page.js:366",
             "src/app/(app)/settings/page.js:582",
             "src/app/(app)/settings/page.js:723",
@@ -4960,7 +4960,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1249",
+            "src/app/(app)/chat/page.js:1254",
             "src/app/(app)/settings/page.js:3219",
             "src/app/(app)/settings/page.js:366",
             "src/app/(app)/settings/page.js:582",
@@ -5037,7 +5037,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1265",
+            "src/app/(app)/chat/page.js:1270",
             "src/app/(app)/sprints/page.js:100",
             "src/app/(app)/sprints/page.js:161",
             "src/components/AudioTaskPanel.jsx:304",
@@ -5095,7 +5095,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1265",
+            "src/app/(app)/chat/page.js:1270",
             "src/app/(app)/settings/page.js:2806",
             "src/app/(app)/sprints/page.js:100",
             "src/app/(app)/sprints/page.js:161",
@@ -5495,7 +5495,7 @@
             "src/app/(app)/analytics/page.js:1071",
             "src/app/(app)/analytics/team/[memberId]/page.js:271",
             "src/app/(app)/calendar/page.js:736",
-            "src/app/(app)/chat/page.js:1277",
+            "src/app/(app)/chat/page.js:1282",
             "src/app/(app)/my/page.js:287",
             "src/app/(app)/sprints/page.js:799",
             "src/components/workspace/IssueDetail.jsx:1736",
@@ -5536,7 +5536,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1277",
+            "src/app/(app)/chat/page.js:1282",
             "src/components/workspace/IssueDetail.jsx:1736",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:759",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:857",
@@ -5575,7 +5575,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1277",
+            "src/app/(app)/chat/page.js:1282",
             "src/components/workspace/IssueDetail.jsx:1736",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:759",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:857",
@@ -6631,8 +6631,8 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1361",
-            "src/components/workspace/UnifiedTimeline.jsx:1381"
+            "src/components/workspace/UnifiedTimeline.jsx:1407",
+            "src/components/workspace/UnifiedTimeline.jsx:1427"
           ]
         }
       }
@@ -6805,7 +6805,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1570"
+            "src/components/workspace/UnifiedTimeline.jsx:1616"
           ]
         }
       }
@@ -6958,7 +6958,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1221",
+            "src/app/(app)/chat/page.js:1226",
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/workspace/IssueDetail.jsx:1987",
             "src/components/workspace/TimesheetTab.jsx:287",
@@ -7045,7 +7045,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1221",
+            "src/app/(app)/chat/page.js:1226",
             "src/app/(app)/page.js:633",
             "src/app/(app)/settings/page.js:4504",
             "src/app/(app)/sprints/page.js:138",
@@ -7136,7 +7136,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1221",
+            "src/app/(app)/chat/page.js:1226",
             "src/app/(app)/page.js:633",
             "src/app/(app)/settings/page.js:4504",
             "src/app/(app)/sprints/page.js:138",
@@ -7200,7 +7200,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1221",
+            "src/app/(app)/chat/page.js:1226",
             "src/app/(app)/page.js:633",
             "src/app/(app)/settings/page.js:4504",
             "src/app/(app)/sprints/page.js:138",
@@ -7385,7 +7385,7 @@
           ],
           "files": [
             "src/components/workspace/QtPlusProjectTab.jsx:278",
-            "src/components/workspace/UnifiedTimeline.jsx:1291"
+            "src/components/workspace/UnifiedTimeline.jsx:1337"
           ]
         },
         "centered": {
@@ -7435,7 +7435,7 @@
             "src/components/workspace/QtPlusProjectTab.jsx:270",
             "src/components/workspace/QtPlusProjectTab.jsx:278",
             "src/components/workspace/TimesheetTab.jsx:918",
-            "src/components/workspace/UnifiedTimeline.jsx:1291",
+            "src/components/workspace/UnifiedTimeline.jsx:1337",
             "src/components/workspace/VelocityTab.jsx:185",
             "src/components/workspace/WorkloadTab.jsx:864",
             "src/components/workspace/WorkloadTab.jsx:876",
@@ -7484,7 +7484,7 @@
             "src/components/profile/ProfileView.jsx:529",
             "src/components/workspace/BillingTab.jsx:1183",
             "src/components/workspace/TimesheetTab.jsx:918",
-            "src/components/workspace/UnifiedTimeline.jsx:1291",
+            "src/components/workspace/UnifiedTimeline.jsx:1337",
             "src/components/workspace/VelocityTab.jsx:185",
             "src/components/workspace/WorkloadTab.jsx:864",
             "src/components/workspace/WorkloadTab.jsx:876",
@@ -8091,7 +8091,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1248",
+            "src/app/(app)/chat/page.js:1253",
             "src/app/(app)/sprints/page.js:103",
             "src/app/(app)/sprints/page.js:106",
             "src/app/(app)/sprints/page.js:151",
@@ -8231,8 +8231,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1264",
-            "src/app/(app)/chat/page.js:1276",
+            "src/app/(app)/chat/page.js:1269",
+            "src/app/(app)/chat/page.js:1281",
             "src/components/CreateTaskModal.jsx:535",
             "src/components/CreateTaskModal.jsx:550",
             "src/components/CreateTaskModal.jsx:559",
@@ -8329,7 +8329,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1595"
+            "src/components/workspace/UnifiedTimeline.jsx:1641"
           ]
         },
         "qtplus": {
@@ -8353,7 +8353,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1434",
+            "src/app/(app)/chat/page.js:1439",
             "src/app/(app)/chat/page.js:495"
           ]
         },
@@ -8365,7 +8365,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/workspace/UnifiedTimeline.jsx:1541",
+            "src/components/workspace/UnifiedTimeline.jsx:1587",
             "src/components/workspace/qtplus/chat/ChatComposer.jsx:63"
           ]
         }
@@ -8402,7 +8402,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1293"
+            "src/app/(app)/chat/page.js:1298"
           ]
         },
         "settings": {
@@ -8616,7 +8616,7 @@
           "files": [
             "src/app/(app)/settings/page.js:3201",
             "src/components/workspace/IssueDetail.jsx:1824",
-            "src/components/workspace/UnifiedTimeline.jsx:1356",
+            "src/components/workspace/UnifiedTimeline.jsx:1402",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1056",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1154",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1227"
@@ -8645,7 +8645,7 @@
           "files": [
             "src/app/(app)/settings/page.js:3201",
             "src/components/workspace/IssueDetail.jsx:1824",
-            "src/components/workspace/UnifiedTimeline.jsx:1356",
+            "src/components/workspace/UnifiedTimeline.jsx:1402",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1056",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1154",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1227"

@@ -455,7 +455,7 @@ test('sending a message reads the conversation and takes the line down', async (
   // Including the records in the bell, which existed only to bring the reader
   // to the conversation they are now standing in.
   assert.match(timeline, /notification\.issueId === issueId/);
-  assert.match(timeline, /notification\.type === 'commented' \|\| notification\.type === 'mentioned'/);
+  assert.match(timeline, /notification\.type === 'commented'\s*\|\| notification\.type === 'mentioned'/);
 });
 
 // One person speaking without interruption is drawn as one run.
@@ -593,7 +593,76 @@ test('the panes showing a conversation say so, and the popup asks before it fire
   // Registered only while the pane is actually on screen: below lg the task
   // page keeps the timeline mounted behind the task pane.
   assert.match(timeline, /if \(!isActive \|\| !issueId\) return undefined;/);
-  assert.match(bridge, /if \(isConversationOnScreen\(notification, useWorkspaceStore\.getState\(\)\.visibleConversation\)\) return;/);
+  assert.match(bridge, /isConversationOnScreen\(notification, useWorkspaceStore\.getState\(\)\.visibleConversation\)/);
+  // And only while the tab is in front. A conversation left open in a
+  // background tab is not a conversation somebody is reading, and treating it
+  // as one swallowed the card that should have been waiting on return.
+  assert.match(bridge, /document\.visibilityState === 'visible'/);
+});
+
+// The check that suppresses the card has to suppress the chime as well.
+test('nothing announces a message arriving in the conversation on screen', async () => {
+  const [hook, bridge] = await Promise.all([
+    readFile(new URL('../src/lib/hooks/useNotifications.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/WorkspaceNotificationBridge.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  // The gate stands before the chime, not between the chime and the popup —
+  // which is where it used to stand, so the card was suppressed and the sound
+  // played anyway on the very task page the message had landed on.
+  const announceGate = hook.indexOf('!announce(n)');
+  const chime = hook.indexOf('playChime()', hook.indexOf('const prefs = prefsRef.current'));
+  assert.ok(announceGate > 0, 'the hook asks whether to announce at all');
+  assert.ok(announceGate < chime, 'and asks before it plays anything');
+  // The bell keeps the record either way: the gate returns before the channels,
+  // never before the list the panel draws.
+  assert.match(hook, /setNotifications\(docs\);/);
+  // One decision, passed in by the only component that knows what is on screen.
+  assert.match(bridge, /shouldAnnounce,\s*\}\);/);
+});
+
+// A badge for something you are looking at is not information.
+test('the task chat clears its own bell records while it is open', async () => {
+  const [timeline, chatPage] = await Promise.all([
+    readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
+  ]);
+
+  // Not on the intersection observer's schedule: that consumed the record about
+  // half a second after it arrived, so every message lit «(1)» and put it out
+  // again while the reader watched.
+  assert.match(timeline, /if \(!isActive \|\| !tabVisible\) return;\s*dismissIssueNotifications\(\);/);
+  // The reply record is one of the task's own, so it is dismissed with them.
+  assert.match(timeline, /notification\.type === 'chat_message'\)\s*\)\);/);
+  // The workspace chat has always done this for an open channel; the task chat
+  // is the same rule on the other screen.
+  assert.match(chatPage, /if \(unreadForConversation\.length === 0\) return;/);
+});
+
+// Answering a person is addressed to that person.
+test('a reply in a task chat reaches the person answered', async () => {
+  const timeline = await readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8');
+
+  // `replyTo` carries a name for the quote and no id, so the author is read off
+  // the feed that is already open — no extra document.
+  assert.match(timeline, /comments\.find\(item => item\.id === draft\.replyTo\.id\)\?\.authorId/);
+  assert.match(timeline, /відповів вам у завданні/);
+  // And is not told twice: the broad «написав у завданні» excludes both the
+  // people mentioned and the person answered.
+  assert.match(timeline, /exclude: \[\.\.\.mentionedUserIds, \.\.\.replyRecipients\]/);
+});
+
+// A task's reply record is a `chat_message` too, and it belongs to the task.
+test('a reply inside a task is never mistaken for a direct message', async () => {
+  const chatPage = await readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8');
+
+  const reply = { type: 'chat_message', actorId: 'user-7', issueId: 'issue-1' };
+  // Having a direct conversation with the answerer open must not silence it…
+  assert.equal(isConversationOnScreen(reply, { kind: 'dm', id: 'user-7' }), false);
+  // …and the task it belongs to must.
+  assert.equal(isConversationOnScreen(reply, { kind: 'issue', id: 'issue-1' }), true);
+  // The DM badge in the chat sidebar counts direct messages, not task replies.
+  assert.match(chatPage, /\|\| notification\.issueId\s*\) return;/);
 });
 
 // Reading a message is not only crossing the line that says where you stopped.

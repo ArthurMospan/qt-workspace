@@ -778,7 +778,9 @@ export default function ChatPage() {
         notificationConversationId(notification) === activeChannel.id
         // A direct message from before the field existed, whose link named the
         // sender and whose sender is exactly what this pane calls the room.
-        || (activeChannel.type === 'dm' && notification.type === 'chat_message' && notification.actorId === activeChannel.id)
+        // `!issueId` for the same reason the presence rule has it: a task chat
+        // also writes `chat_message` records, and they belong to the task.
+        || (activeChannel.type === 'dm' && notification.type === 'chat_message' && !notification.issueId && notification.actorId === activeChannel.id)
       )
     ));
     if (unreadForConversation.length === 0) return;
@@ -805,6 +807,9 @@ export default function ChatPage() {
         || notification.read
         || notification.organizationId !== activeOrgId
         || !notification.actorId
+        // A reply inside a task is a `chat_message` from that person too, and it
+        // belongs to the task, not to a direct conversation with them.
+        || notification.issueId
       ) return;
       counts.set(notification.actorId, (counts.get(notification.actorId) || 0) + 1);
     });

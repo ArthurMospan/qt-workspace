@@ -59,13 +59,27 @@ export default function WorkspaceNotificationBridge() {
   // matters only at the instant a notification arrives, and re-subscribing this
   // callback to it would rebuild the whole notification stream every time the
   // reader switched panes.
-  const handleNew = useCallback(notification => {
-    if (isConversationOnScreen(notification, useWorkspaceStore.getState().visibleConversation)) return;
-    showLiveNotif(notification);
-  }, [showLiveNotif]);
+  //
+  // «Читач це бачить» — це відкрита розмова І вкладка попереду. Розмова,
+  // відкрита в тлі, не є побаченою: так само в Slack повідомлення з каналу, що
+  // в тебе відкритий, доходить, поки вікно неактивне, і мовчить, щойно ти в
+  // ньому. Раніше умови вкладки тут не було, тож повідомлення, що прийшло, поки
+  // ти в іншій вкладці, тихо зникало разом із карткою.
+  const readerIsWatching = useCallback(notification => (
+    typeof document !== 'undefined'
+    && document.visibilityState === 'visible'
+    && isConversationOnScreen(notification, useWorkspaceStore.getState().visibleConversation)
+  ), []);
+  // Одна відповідь на обидва канали оголошення. Доти перевірка стояла всередині
+  // `onNew`, тобто після дзвіночка: картку вона знімала, звук — ні.
+  const shouldAnnounce = useCallback(
+    notification => !readerIsWatching(notification),
+    [readerIsWatching],
+  );
   const notificationCenter = useNotifications(userId, {
     activeOrganizationId: activeOrgId,
-    onNew: handleNew,
+    onNew: showLiveNotif,
+    shouldAnnounce,
   });
   useOrganizationUnreadCounts();
   useUserTimerState(userId);

@@ -33,8 +33,13 @@ export function isConversationOnScreen(notification, visibleConversation) {
   // A direct conversation is identified by the person on the other side of it,
   // which is exactly what `actorId` holds — and, on records written since, by
   // the conversation the record names outright.
+  // `issueId` disqualifies the legacy shape: a task chat writes a
+  // `chat_message` too — the record for «відповів вам у завданні» — and it
+  // carries the answerer as its actor. Without this, having a direct
+  // conversation with that person open would silence a record belonging to a
+  // task, which is a different screen entirely.
   if (kind === 'dm') {
-    return (notification.type === 'chat_message' && notification.actorId === id)
+    return (notification.type === 'chat_message' && !notification.issueId && notification.actorId === id)
       || notificationConversationId(notification) === id;
   }
   // A channel names itself. Slack does not push about a mention in the channel

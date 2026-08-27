@@ -965,11 +965,28 @@ export default function UnifiedTimeline({
     const answered = notifications.filter(notification => (
       !notification.read
       && notification.issueId === issueId
-      && (notification.type === 'commented' || notification.type === 'mentioned')
+      && (notification.type === 'commented'
+        || notification.type === 'mentioned'
+        || notification.type === 'chat_message')
     ));
     if (answered.length === 0) return;
     Promise.allSettled(answered.map(notification => markNotificationRead(notification.id)));
   }, [issueId, markNotificationRead, notifications]);
+
+  // Знято щойно воно з'явилось, а не тоді, коли межа непрочитаного втрапить у
+  // видиму частину списку. Це те саме, що робочий чат робить для відкритого
+  // каналу, і завданню бракувало саме цього: запис приходив, дзвоник спалахував
+  // «(1)», а за півсекунди спостерігач кінця стрічки гасив його — і так на
+  // кожне повідомлення. Лічильник, який блимає над розмовою, що ти її читаєш, —
+  // це не інформація.
+  //
+  // Курсор прочитаного цього не стосується: він і далі живе за суворішим
+  // правилом (`consumeConversation`), бо позначка «прочитано» на повідомленні —
+  // обіцянка іншій людині, а запис у дзвонику — лише спосіб тебе сюди привести.
+  useEffect(() => {
+    if (!isActive || !tabVisible) return;
+    dismissIssueNotifications();
+  }, [dismissIssueNotifications, isActive, tabVisible]);
 
   // Reading the conversation, in every sense this product keeps one: the
   // messages, the changes, the line that says where you stopped, and the
@@ -1171,15 +1188,44 @@ export default function UnifiedTimeline({
         }
       }
 
+      // Відповідь адресована конкретній людині, і досі вона нічим не
+      // відрізнялась від будь-якого іншого повідомлення в стрічці: той, кому
+      // відповіли, дізнавався про це тим самим загальним «написав у завданні»,
+      // що й решта учасників, або не дізнавався зовсім, якщо вимкнув коментарі.
+      // Гілка в робочому чаті так не робить — вона сповіщає саме тих, до кого
+      // звернулись. Автора беремо зі стрічки, що вже відкрита: `replyTo` несе
+      // лише ім'я для цитати, а не id.
+      const repliedToAuthorId = draft.replyTo?.id
+        ? comments.find(item => item.id === draft.replyTo.id)?.authorId || ''
+        : '';
+      const replyRecipients = repliedToAuthorId
+        && repliedToAuthorId !== myId
+        && !mentionedUserIds.includes(repliedToAuthorId)
+        ? [repliedToAuthorId]
+        : [];
+      if (replyRecipients.length > 0) {
+        sendNotification({
+          userIds: replyRecipients,
+          type: 'chat_message',
+          title: `${currentUser?.name || 'Колега'} відповів вам у завданні`,
+          body: draft.text.slice(0, 500) || 'Вкладення',
+          link: taskChatLink,
+          issueId,
+          projectId,
+          organizationId: project?.organizationId || org?.id || '',
+        }).catch(error => console.error('[task-chat] reply notification failed:', error));
+      }
+
       // Everyone with a stake in the task hears about a new comment. Nothing
       // sent this type before — «Новий коментар» sat in Settings as a switch
       // wired to no sender at all, so it silently did nothing. Mentioned
       // people are excluded: they already get the mention, which says the
-      // same thing more precisely.
+      // same thing more precisely — and so is the person answered directly,
+      // whose reply record is more precise still.
       const commentRecipients = issueParticipants(issue, {
         actorId: myId,
         commentAuthorIds: comments.map(item => item.authorId),
-        exclude: mentionedUserIds,
+        exclude: [...mentionedUserIds, ...replyRecipients],
       });
       if (commentRecipients.length > 0) {
         sendNotification({

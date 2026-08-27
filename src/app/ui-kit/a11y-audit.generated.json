@@ -338,14 +338,14 @@
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:1361",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1407",
       "attributes": [
         "label"
       ]
     },
     {
       "element": "AvatarButton",
-      "location": "src/components/workspace/UnifiedTimeline.jsx:1381",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1427",
       "attributes": [
         "label"
       ]
