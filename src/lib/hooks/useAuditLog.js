@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import { liveDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 
 export const AUDIT_WINDOW = 50;
 
@@ -37,10 +38,8 @@ export function useAuditLog(issueId, windowSize = AUDIT_WINDOW) {
       orderBy('createdAt', 'desc'),
       limit(windowSize),
     );
-    const unsub = onSnapshot(historyQuery, {
-      serverTimestamps: 'estimate',
-    }, snap => {
-      setEntries(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+    const unsub = onSnapshot(historyQuery, snap => {
+      setEntries(snap.docs.map(liveDocumentData));
       setHasMore(snap.size >= windowSize);
       setLoading(false);
     }, err => {

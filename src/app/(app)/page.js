@@ -19,6 +19,7 @@ import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { can } from '@/lib/utils/can';
 import { isExternalActorId } from '@/lib/utils/issueParticipants.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
+import { ISSUE_BULK_ACTION_BY_ID } from '@/lib/bulk/issueBulkActions.mjs';
 import BoardConfigModal from '@/components/workspace/BoardConfigModal';
 import {
   EmptyState,
@@ -304,11 +305,27 @@ const WorkspaceProjectCard = ({ project, archive, unarchive, members = [], allOr
 // Helper Component for Real-time project statistics and details
 // What the activity record says happened, said two ways: with a person in front
 // of it, and without one when nothing recorded who acted.
+//
+// Every `lastActivityType` the product writes has a line here. The ones that
+// were missing did not read as missing: they fell through to «оновив завдання»,
+// so unarchiving a task, restoring one from «Нещодавно видалене» and every bulk
+// action in the product all announced themselves as a generic edit. The list of
+// writers is short and greppable — `lastActivityType:` across `src/app/api` and
+// `src/lib` — and anything new belongs here in the same change.
+//
+// Cancelling and archiving are written too, and they are deliberately still
+// listed even though `useProjectActivity` now filters both out of the feed: the
+// task is gone from the card, not the vocabulary, and an entry with no verb is
+// how this drifted the first time.
 const ISSUE_ACTIVITY_VERBS = {
   comment: 'написав у чаті завдання',
   created: 'створив завдання',
   status: 'змінив статус завдання',
   restored: 'відновив завдання',
+  archived: 'заархівував завдання',
+  unarchived: 'розархівував завдання',
+  cancelled: 'скасував завдання',
+  uncancelled: 'повернув завдання в роботу',
   updated: 'оновив завдання',
 };
 const ISSUE_ACTIVITY_EVENTS = {
@@ -316,8 +333,34 @@ const ISSUE_ACTIVITY_EVENTS = {
   created: 'Створено завдання',
   status: 'Змінено статус завдання',
   restored: 'Відновлено завдання',
+  archived: 'Заархівовано завдання',
+  unarchived: 'Розархівовано завдання',
+  cancelled: 'Скасовано завдання',
+  uncancelled: 'Завдання повернуто в роботу',
   updated: 'Оновлено завдання',
 };
+
+/**
+ * The sentence for one recorded event, with a person in front of it or without.
+ *
+ * A bulk action writes `bulk_<actionId>`, and there are twenty-two of those. The
+ * registry that already names every one of them for the menu and the help
+ * article names them here too — a second list would be a second place for
+ * «Скасувати» to be called something else.
+ */
+function activityPhrase(type, hasActor) {
+  const known = (hasActor ? ISSUE_ACTIVITY_VERBS : ISSUE_ACTIVITY_EVENTS)[type];
+  if (known) return known;
+  if (typeof type === 'string' && type.startsWith('bulk_')) {
+    const action = ISSUE_BULK_ACTION_BY_ID.get(type.slice('bulk_'.length));
+    if (action) {
+      return hasActor
+        ? `виконав масову дію «${action.label}»`
+        : `Масова дія «${action.label}»`;
+    }
+  }
+  return hasActor ? 'оновив завдання' : 'Оновлено завдання';
+}
 
 // How many recent actions the featured card carries.
 //
@@ -390,8 +433,7 @@ function ProjectStatsSection({ isLarge, members, project, now, currentUser, orgL
       actorUser: actorUser || (actorName ? { id: actorId || undefined, name: actorName, avatar: actorAvatar } : null),
       // Every type that was not a comment used to read «оновив завдання», so a
       // task that had just been created announced itself as updated.
-      action: (actorName ? ISSUE_ACTIVITY_VERBS : ISSUE_ACTIVITY_EVENTS)[activity.type]
-        || (actorName ? 'оновив завдання' : 'Оновлено завдання'),
+      action: activityPhrase(activity.type, Boolean(actorName)),
       time: activity.at,
       projectId: issue.projectId,
       id: issue.id,

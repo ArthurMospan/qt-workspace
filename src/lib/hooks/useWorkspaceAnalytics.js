@@ -17,6 +17,7 @@ import {
   useOrganizationIssues,
 } from '@/lib/hooks/useOrganizationIssues';
 import { reportLoadError } from '@/lib/utils/errors';
+import { liveDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 import {
   isTimeLogWindow,
   timeLogWindowKey,
@@ -328,7 +329,7 @@ function readBucket({
     if (readyStreams.size >= expectedStreamCount) onReady();
   };
   const deliver = docs => {
-    buckets.set(key, docs.map(document => ({ ...document.data(), id: document.id })));
+    buckets.set(key, docs.map(liveDocumentData));
     publish(flattenDocumentBuckets(buckets));
     markReady();
   };
@@ -343,7 +344,6 @@ function readBucket({
   if (live) {
     return onSnapshot(
       sourceQuery,
-      { serverTimestamps: 'estimate' },
       snapshot => {
         deliver(snapshot.docs);
       },

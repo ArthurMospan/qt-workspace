@@ -697,8 +697,9 @@ passes cost three different amounts:
   due, sent, then recorded as `sent`, `failed` or a backed-off retry. It reads
   no watermark and writes no state, so an idle pass costs one Firestore read.
   This is the only mode that decides how late a reminder is.
-- `maintenance` — hourly. Two bounded indexed queries: finalising soft-deleted
-  tasks past their undo window, and expiring read records. Hourly rather than
+- `maintenance` — hourly. Three bounded indexed queries: finalising soft-deleted
+  tasks past their undo window, expiring read records, and closing outbox rows
+  that are more than seven days past their delivery time. Hourly rather than
   nightly because «Нещодавно видалене» promises twenty-four hours, and a nightly
   pass would stretch that to forty-eight.
 - `materialise` — nightly, and now a safety net rather than the mechanism. It
@@ -706,7 +707,42 @@ passes cost three different amounts:
   outbox 48 hours ahead, corrects moved reminders and cancels pending rows whose
   source is no longer valid. It is what catches a write-time sync that failed,
   or a change made directly in the database.
-- `full` runs all three; materialisation is internally throttled to twelve hours.
+- `health` — reads the watermark and answers whether anything has run the sweep
+  inside `SWEEP_SILENCE_LIMIT_MS` (12 hours). It sweeps nothing and writes
+  nothing; a silent sweep is a 503. See «Хто помічає, що розсилка стала» below.
+- `full` runs all three working modes; materialisation is internally throttled to
+  eleven hours, deliberately below the twelve that separate its two schedules.
+  At exactly twelve there is no tolerance at all, and one late delivery from
+  GitHub makes the second pass cancel itself — which happened on 27.08.2026 and
+  took that day's `recountProjectIssueCounts` with it.
+
+Rows the window can no longer see are closed rather than left pending.
+Reconciliation only looks ten minutes back (`REMINDER_LOOKBACK_MS`), so a row
+whose moment passed while delivery was down is invisible to it and, once out of
+the retry query, to dispatch as well: pending forever, never sent, never
+cancelled. `cancelStaleOutboxRows` closes anything more than seven days late.
+Seven days rather than the reconciliation window because the two ask different
+questions — ten minutes late is a slow scheduler and the reminder is still
+wanted; a week late is a reminder about something that is over.
+
+### Хто помічає, що розсилка стала
+
+Between 3 and 27 August 2026 the sweep did not run once: the schedule that
+drives it was switched off, and nothing said so. No deadline reminders, no
+calendar reminders, no birthday greetings, no emptying of «Нещодавно видалене»,
+for twenty-four days. Every part of the system behaved correctly — the watermark
+in `system/notificationSweep` was accurate the whole time. It had no reader.
+
+`readSweepHealth` is the reader, and `.github/workflows/sweep-watchdog.yml` is
+what asks it, four times a day, on `?mode=health`. A silent sweep answers 503 and
+the run goes red, which is a GitHub notification to the repository owner and
+needs nothing configured beyond the `CRON_SECRET` the sweep already uses.
+
+It is a separate workflow file on purpose. What happened was that the sweep's own
+workflow was disabled; a check living inside it would have been disabled with it.
+Twelve hours of silence rather than three, because the watermark is written by
+the hourly and nightly passes (dispatch deliberately writes nothing), and an
+hourly GitHub `cron` is hourly on a quiet day and three-hourly on a loaded one.
 
 The scan that remains is bounded on both sides. Deadlines are read back one week
 (`DEADLINE_FLOOR_MS`), because that is as far as an overdue nag can still reach.
@@ -720,6 +756,15 @@ Email and Telegram outcomes are tracked separately. If email succeeds and
 Telegram fails, only Telegram is retried; a successful channel is not sent a
 second time. Telegram failures are recorded per recipient, so one successful
 digest cannot hide another recipient's blocked bot.
+
+A channel the deployment does not have is not a channel that failed. With
+neither `RESEND_API_KEY` nor `BREVO_API_KEY` set, `deliverEmail` is a soft no-op
+by design — features degrade rather than fall over — and dispatch used to read
+that as a failed attempt: the reminder reached the bell, and the row still went
+back to `pending` with an error, waited out a backoff, asked the same absent
+provider again, and filed itself as `failed` after five rounds. Production held
+ten such rows on 27.08.2026, every one already delivered in-app. `emailConfigured()`
+is therefore asked once per pass, before any row decides which channels it wants.
 
 The dispatch and materialisation watermarks are also separate. A frequent
 dispatch pass therefore cannot shorten the recovery window after the
@@ -761,7 +806,7 @@ newer one.
 ### Trigger during hosted testing
 
 `GET /api/cron/notifications` validates `Authorization: Bearer $CRON_SECRET` and
-accepts `?mode=full|dispatch|materialise`.
+accepts `?mode=full|dispatch|maintenance|materialise|health`.
 
 The free external scheduler is an accepted temporary dependency while QuickTeam
 is hosted on test infrastructure. Configure either:

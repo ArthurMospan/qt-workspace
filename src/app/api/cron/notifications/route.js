@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
-import { runScheduledNotificationSweep } from '@/lib/server/reminderJobs';
+import { readSweepHealth, runScheduledNotificationSweep } from '@/lib/server/reminderJobs';
 import { isQuotaExceededError } from '@/lib/utils/errors';
 import { QUOTA_FAILURE_COPY } from '@/lib/utils/quotaState.mjs';
 
@@ -25,10 +25,15 @@ function presentedSecretMatches(header, expected) {
 //   ?mode=materialise   — restock the outbox from the source data and post
 //                         birthday greetings. Nightly; a safety net, because the
 //                         rows are written when the deadline is set.
+//   ?mode=health        — read the watermark and say whether anything has come
+//                         to run the sweep lately. Sweeps nothing, writes
+//                         nothing, costs one read; answers 503 when the sweep
+//                         has been silent, so a caller outside its schedule can
+//                         go red without parsing a body.
 //   (default) full      — all three, with materialising self-throttled internally.
 //
 // See docs/ARCHITECTURE.md.
-const MODES = new Set(['full', 'dispatch', 'maintenance', 'materialise']);
+const MODES = new Set(['full', 'dispatch', 'maintenance', 'materialise', 'health']);
 
 export async function GET(request) {
   const cronSecret = process.env.CRON_SECRET?.trim() || '';
@@ -42,6 +47,26 @@ export async function GET(request) {
   }
 
   try {
+    // Health is a question about the sweep, not a pass of it, so it answers
+    // before anything is swept. A watchdog that had to run a sweep in order to
+    // check on one would be the thing it is watching.
+    if (requested === 'health') {
+      const health = await readSweepHealth();
+      return NextResponse.json(
+        {
+          ok: health.healthy,
+          mode: 'health',
+          ...health,
+          ...(health.healthy ? {} : {
+            error: health.silentForMs === null
+              ? 'Розсилка сповіщень не запускалась жодного разу'
+              : `Розсилка сповіщень мовчить ${Math.round(health.silentForMs / 3600000)} год`,
+          }),
+        },
+        { status: health.healthy ? 200 : 503, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+
     const result = await runScheduledNotificationSweep({ mode: requested });
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {

@@ -2,7 +2,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
-import { deliverEmail } from '@/lib/server/email';
+import { deliverEmail, emailConfigured } from '@/lib/server/email';
 import { deliverTelegramNotification } from '@/lib/server/telegram';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 import { BIRTHDAY_NOTIFICATION_TYPE, shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
@@ -751,7 +751,22 @@ export async function readSweepState(nowMs) {
 // that runs seventy-two times a day is not a safety net, it is the cost it was
 // supposed to replace. Once a night, with this as the guard against a second
 // call in the same window.
-export const MATERIALISE_INTERVAL_MS = 12 * 60 * 60 * 1000;
+//
+// Eleven hours rather than twelve, and the missing hour is the whole point.
+// The two schedules stand exactly twelve hours apart, so a guard of exactly
+// twelve leaves no tolerance at all — and GitHub delivers a scheduled event
+// late as a matter of course, by five minutes or by ten hours. The moment the
+// first pass runs late, the second arrives «too early» and cancels itself,
+// which is what happened on 27.08: a materialise pass started at 14:05 and did
+// nothing, because the previous one had been at 09:56.
+//
+// That is not a missed sweep, it is a missed *day*: this pass is the only thing
+// that makes `overdue` true again and moves `countedDay`, and the argument for
+// running it twice is that one of the two has to land in the early morning of
+// whatever timezone the workspace is in. One pass a day at a drifting hour
+// cannot do that. The guard exists to stop a double call inside one window, so
+// it is set below the window rather than equal to it.
+export const MATERIALISE_INTERVAL_MS = 11 * 60 * 60 * 1000;
 
 export async function materialiseScheduledNotifications({ nowMs = Date.now(), lookBackMs } = {}) {
   const windowStartMs = nowMs - (lookBackMs ?? REMINDER_LOOKBACK_MS);
@@ -775,6 +790,66 @@ export async function materialiseScheduledNotifications({ nowMs = Date.now(), lo
 // tier's daily write budget is the smaller of the two limits this product lives
 // under — a backlog drains over days rather than spending the budget in an hour.
 const PRUNE_BATCH = 100;
+
+// How far past its delivery time a pending row has to be before this pass gives
+// up on it, and how many it may close at once.
+//
+// There is a gap between the two halves of the outbox, and it only opens when
+// delivery has been down for a while. Reconciliation works inside a window that
+// reaches ten minutes back — `REMINDER_LOOKBACK_MS` — so a row whose moment
+// passed longer ago than that is no longer something reconciliation can see,
+// and dispatch will not touch it either once it has fallen out of the retry
+// query. It is then pending forever: never sent, never cancelled.
+//
+// Production had four of them on 27.08, from 5, 6, 7 and 9 August, left behind
+// by the days the scheduler was switched off. Nothing was wrong with them; there
+// was simply nobody to tell that the meeting they were about had happened three
+// weeks ago.
+//
+// Seven days rather than the reconciliation window, because those are different
+// questions. Ten minutes late is a slow scheduler and the reminder is still
+// wanted; a week late is a reminder about something that is over, and sending it
+// is worse than dropping it. Cancelled rather than deleted: the row is the
+// record that the reminder existed, and «cancelled» is already what this outbox
+// says about a reminder nobody is owed.
+const STALE_ROW_MS = 7 * 24 * 60 * 60 * 1000;
+const STALE_ROW_BATCH = 100;
+
+/**
+ * Close pending rows whose moment passed so long ago that nothing will deliver
+ * them. One bounded indexed query, on the same hourly pass as the other tidying.
+ */
+export async function cancelStaleOutboxRows({ nowMs = Date.now(), limit = STALE_ROW_BATCH } = {}) {
+  const db = getAdminDb();
+  let snapshot;
+  try {
+    snapshot = await db.collection(OUTBOX_COLLECTION)
+      .where('status', '==', 'pending')
+      .where('deliverAtMs', '<=', nowMs - STALE_ROW_MS)
+      .orderBy('deliverAtMs')
+      .limit(limit)
+      .select('deliverAtMs')
+      .get();
+  } catch (error) {
+    // Deployments are not atomic with Firestore index creation, and tidying is
+    // never worth failing a pass that still has reminders to send.
+    if (error?.code !== 9 && error?.code !== 'failed-precondition') throw error;
+    console.warn('[reminder-job] Stale-row index is not ready; nothing cancelled this pass');
+    return { scanned: 0, cancelled: 0, skipped: true };
+  }
+  if (snapshot.empty) return { scanned: 0, cancelled: 0 };
+
+  const batch = db.batch();
+  for (const document of snapshot.docs) {
+    batch.update(document.ref, {
+      status: 'cancelled',
+      cancelledAtMs: nowMs,
+      lastError: 'expired before delivery',
+    });
+  }
+  await batch.commit();
+  return { scanned: snapshot.size, cancelled: snapshot.size };
+}
 
 /**
  * Delete records that have been read and are past their date.
@@ -897,6 +972,10 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     ? await pruneReadNotifications({ nowMs })
     : { scanned: 0, deleted: 0, kept: 0, skipped: true };
 
+  const staleRows = wantsMaintenance
+    ? await cancelStaleOutboxRows({ nowMs })
+    : { scanned: 0, cancelled: 0, skipped: true };
+
   // The project task counters, rebuilt from the tasks themselves.
   //
   // It rides the materialise pass because it needs exactly what that pass
@@ -945,6 +1024,7 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
         birthdays: birthdays.created || 0,
         purgedIssues: issueTrash.purged || 0,
         prunedNotifications: prunedNotifications.deleted || 0,
+        staleRows: staleRows.cancelled || 0,
         recountedProjects: projectIssueCounts.written || 0,
       },
     }, { merge: true }).catch(error => {
@@ -961,6 +1041,54 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     birthdays,
     issueTrash,
     prunedNotifications,
+    staleRows,
     projectIssueCounts,
+  };
+}
+
+// How long the sweep may be silent before that silence is itself the problem.
+//
+// Twelve hours, and the number is set by what actually writes the watermark
+// rather than by how often reminders go out. A dispatch pass deliberately writes
+// nothing — it is the every-minute pass and a write per minute would make a hot
+// document out of a status line — so what this measures is the hourly
+// maintenance pass and the twice-daily materialise pass.
+//
+// It has to sit well above GitHub's own unreliability or it reports the
+// scheduler rather than the outage. An hourly `cron` on Actions is hourly on a
+// quiet day and three-hourly on a loaded one; measured on this repository, a
+// schedule asking for every five minutes delivered three runs in a day. Twelve
+// hours is longer than any of that and far shorter than the twenty-four days
+// nobody noticed, which is the failure this exists to catch.
+export const SWEEP_SILENCE_LIMIT_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Whether anything has come to run the sweep recently, and how long ago.
+ *
+ * The one number this reads is already written on every pass that does real
+ * work; nothing else has ever looked at it. Between 3 and 27 August 2026 not a
+ * single reminder was delivered, and what made that a twenty-four-day outage
+ * rather than an hour-long one is precisely that: the watermark was correct the
+ * whole time and had no reader.
+ *
+ * Reported rather than acted upon. This function does not send anything — a
+ * process that can tell you it is dead is not dead — so the caller is a check
+ * outside the sweep's own schedule. See `.github/workflows/sweep-watchdog.yml`.
+ */
+export async function readSweepHealth({ nowMs = Date.now() } = {}) {
+  const snapshot = await sweepStateRef().get().catch(() => null);
+  const data = snapshot?.exists ? snapshot.data() : null;
+  const lastRunAtMs = Number(data?.lastRunAtMs);
+  const lastMaterialiseAtMs = Number(data?.lastMaterialiseAtMs);
+  const silentForMs = Number.isFinite(lastRunAtMs) && lastRunAtMs <= nowMs
+    ? nowMs - lastRunAtMs
+    : null;
+  return {
+    healthy: silentForMs !== null && silentForMs < SWEEP_SILENCE_LIMIT_MS,
+    silentForMs,
+    silenceLimitMs: SWEEP_SILENCE_LIMIT_MS,
+    lastRunAtMs: Number.isFinite(lastRunAtMs) ? lastRunAtMs : null,
+    lastMaterialiseAtMs: Number.isFinite(lastMaterialiseAtMs) ? lastMaterialiseAtMs : null,
+    emailConfigured: emailConfigured(),
   };
 }

@@ -249,10 +249,16 @@ test('a wall-clock hour resolves to the right instant on both sides of DST', () 
 
 test('the expensive half and the cheap half are separately drivable', async () => {
   const route = await read('../src/app/api/cron/notifications/route.js');
-  assert.match(route, /new Set\(\['full', 'dispatch', 'maintenance', 'materialise'\]\)/);
+  assert.match(route, /new Set\(\['full', 'dispatch', 'maintenance', 'materialise', 'health'\]\)/);
   assert.match(route, /runScheduledNotificationSweep\(\{ mode: requested \}\)/);
   // An unknown mode is refused rather than silently treated as "everything".
   assert.match(route, /Unknown mode/);
+  // Health answers before any sweeping happens. A check that had to run a pass
+  // in order to report on one would be the thing it is watching.
+  assert.ok(
+    route.indexOf("if (requested === 'health')")
+      < route.indexOf('runScheduledNotificationSweep({ mode: requested })'),
+  );
 
   const jobs = await read('../src/lib/server/reminderJobs.js');
   // Dispatch runs after materialise, so a reminder that comes due inside a pass
@@ -264,7 +270,33 @@ test('the expensive half and the cheap half are separately drivable', async () =
   // Once a night. The scan is the safety net now — the rows are written by the
   // route that accepted the deadline — and a safety net that runs seventy-two
   // times a day is the cost it was supposed to replace.
-  assert.match(jobs, /MATERIALISE_INTERVAL_MS = 12 \* 60 \* 60 \* 1000/);
+  //
+  // Eleven hours, not twelve, and the hour is load-bearing: the two schedules
+  // stand exactly twelve hours apart, so a guard of exactly twelve cancels the
+  // second pass the moment GitHub delivers the first one late — which it did on
+  // 27.08, and the day's recount went with it.
+  assert.match(jobs, /MATERIALISE_INTERVAL_MS = 11 \* 60 \* 60 \* 1000/);
+  const schedules = await read('../.github/workflows/scheduled-notifications.yml');
+  const hours = [...schedules.matchAll(/cron: '(\d+) (\d+) \* \* \*'/g)].map(match => Number(match[2]));
+  assert.equal(hours.length, 2, 'materialise still runs on two daily schedules');
+  assert.equal(Math.abs(hours[0] - hours[1]), 12, 'and they are still twelve hours apart');
+});
+
+// Nothing read the sweep's watermark, so nothing could tell that the sweep had
+// stopped. It stopped for twenty-four days in August 2026 and was found by hand.
+test('the sweep can be asked whether it is still running, from outside itself', async () => {
+  const jobs = await read('../src/lib/server/reminderJobs.js');
+  assert.match(jobs, /export async function readSweepHealth/);
+  assert.match(jobs, /export const SWEEP_SILENCE_LIMIT_MS/);
+
+  // The check lives in its own workflow. What happened was that the sweep's
+  // workflow was switched off; a check inside it would have gone quiet too.
+  const watchdog = await read('../.github/workflows/sweep-watchdog.yml');
+  assert.match(watchdog, /mode=health/);
+  assert.match(watchdog, /503\)/);
+  // And it must not run the sweep's driver, which treats 503 as «quota spent,
+  // carry on» — correct there, and exactly backwards here.
+  assert.doesNotMatch(watchdog, /run: bash \.github\/scripts\/sweep-notifications\.sh/);
 });
 
 // The pass that runs every minute is the one whose cost is multiplied by

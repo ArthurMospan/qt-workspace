@@ -16,6 +16,7 @@ import {
   updateTaskTimeLogViaApi,
 } from '@/lib/services/timeLogs';
 import { reportLoadError } from '@/lib/utils/errors';
+import { liveDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 
 export function useTimeLogs(issueId, projectId) {
   const { activeOrgId } = useAppContext();
@@ -44,14 +45,9 @@ export function useTimeLogs(issueId, projectId) {
       where('projectId', '==', projectId),
       where('issueId', '==', issueId),
     );
-    const unsubscribe = onSnapshot(scopedQuery, {
-      serverTimestamps: 'estimate',
-    }, snapshot => {
+    const unsubscribe = onSnapshot(scopedQuery, snapshot => {
       if (cancelled) return;
-      const nextLogs = snapshot.docs.map(document => ({
-        ...document.data(),
-        id: document.id,
-      }));
+      const nextLogs = snapshot.docs.map(liveDocumentData);
       nextLogs.sort((left, right) => (
         (right.loggedAt?.toMillis?.() ?? 0)
         - (left.loggedAt?.toMillis?.() ?? 0)

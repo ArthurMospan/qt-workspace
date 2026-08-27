@@ -2,7 +2,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import 'server-only';
 
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
-import { deliverEmail } from '@/lib/server/email';
+import { deliverEmail, emailConfigured } from '@/lib/server/email';
 import { deliverTelegramNotification, telegramAppLink } from '@/lib/server/telegram';
 import { generateEmailTemplate } from '@/lib/utils/sendEmail';
 import { shouldDeliver } from '@/lib/utils/notificationChannels.mjs';
@@ -323,6 +323,9 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
   const telegramItems = new Map();
   const emails = [];
   const claimed = [];
+  // Asked once per pass rather than once per row: it is a fact about the
+  // deployment's environment, not about the recipient.
+  const emailsPossible = emailConfigured();
 
   for (const row of rows) {
     const membership = context.memberships.get(`${row.organizationId}_${row.userId}`);
@@ -336,7 +339,22 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
     const profile = context.profiles.get(row.userId) || {};
     const body = rowBody(row, nowMs);
     const inapp = shouldDeliver(preferences, 'inapp', row.type);
-    const wantsEmail = !row.emailSentAtMs
+    // `emailsPossible` first, because a channel that does not exist is not a
+    // channel that failed.
+    //
+    // With no provider key, `deliverEmail` returns false by design — sending is
+    // a soft no-op so that features degrade instead of falling over. Delivery
+    // read that false as a failed attempt: the reminder reached the bell, and
+    // the row still went back to «pending» with an error against it, waited out
+    // a backoff, tried the same absent provider again, and after five rounds
+    // filed itself as failed. Ten of those were sitting in production on 27.08,
+    // every one of them already delivered in-app.
+    //
+    // So the question asked here is whether email is a channel this deployment
+    // has at all. It is not a preference and not a per-row decision, which is
+    // why it is not in `shouldDeliver`.
+    const wantsEmail = emailsPossible
+      && !row.emailSentAtMs
       && row.allowEmail !== false
       && shouldDeliver(preferences, 'email', row.type)
       && Boolean(profile.email);

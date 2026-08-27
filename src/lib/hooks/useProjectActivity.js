@@ -46,9 +46,27 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import { isArchivedIssue } from '@/lib/utils/issueArchive.mjs';
+import { isCancelledIssue } from '@/lib/utils/issueCancel.mjs';
 import { issueActivity } from '@/lib/utils/issueReadState.mjs';
 
 const EMPTY = Object.freeze([]);
+
+// How many extra documents to ask for so the filter below has something to
+// drop.
+//
+// A cancelled task leaves the present and the past both, and an archived one
+// leaves the present — neither belongs in «що відбувалось у проєкті» (AGENTS.md).
+// Firestore cannot express that alongside `orderBy('lastActivityAt')` without a
+// second inequality and an index per combination, and the three lines this feeds
+// are not worth either. So the filter is in memory, and the query fetches a few
+// more rows than the card draws.
+//
+// Three is the whole margin: a project's three most recent events being *all*
+// cancellations is a project where the honest answer is a shorter list, and a
+// card with two lines is better than one that pays for twenty documents to
+// guarantee three.
+const OVERSCAN = 3;
 
 function scopedQuery(organizationId, projectId, field, count) {
   return query(
@@ -60,13 +78,27 @@ function scopedQuery(organizationId, projectId, field, count) {
   );
 }
 
+// `serverTimestamps` belongs to `data()`, not to `onSnapshot`. Passed as listen
+// options it is silently ignored — the only thing `onSnapshot` accepts there is
+// `includeMetadataChanges` — and a task this browser has just written comes back
+// with `lastActivityAt: null` until the server confirms it, which drops it to
+// its `createdAt` and out of the top of its own project's feed.
 function documentsOf(snapshot) {
-  return snapshot.docs.map(document => ({ ...document.data(), id: document.id }));
+  return snapshot.docs.map(document => ({
+    ...document.data({ serverTimestamps: 'estimate' }),
+    id: document.id,
+  }));
+}
+
+/** Work that is still work. See `OVERSCAN`. */
+function isShowableActivity(issue) {
+  return !isCancelledIssue(issue) && !isArchivedIssue(issue);
 }
 
 /** The newest by what the activity record says, however it says it. */
 function newestByActivity(issues, count) {
   return [...new Map(issues.map(issue => [issue.id, issue])).values()]
+    .filter(isShowableActivity)
     .map(issue => ({ issue, millis: issueActivity(issue).millis }))
     .filter(entry => entry.millis > 0)
     .sort((a, b) => b.millis - a.millis)
@@ -96,13 +128,15 @@ export function useProjectActivity(organizationId, projectId, count = 3) {
     // short. Held here so a later snapshot does not ask for it again.
     let fallback = null;
     let fallbackAsked = false;
+    // What is read, against `count`, which is what is drawn. See `OVERSCAN`.
+    const scanCount = count + OVERSCAN;
 
     const publish = stamped => {
       if (cancelled) return;
       setIssues(newestByActivity([...stamped, ...(fallback || [])], count));
     };
 
-    // Built here rather than behind the helper so that the `limit(count)` is
+    // Built here rather than behind the helper so that the `limit(scanCount)` is
     // visible at the listener — `tests/firestore-read-cost.test.mjs` reads the
     // lines around an `onSnapshot` to decide whether it is bounded, and a
     // listener whose bound it cannot see is one it is right to refuse.
@@ -111,17 +145,16 @@ export function useProjectActivity(organizationId, projectId, count = 3) {
       where('organizationId', '==', organizationId),
       where('projectId', '==', projectId),
       orderBy('lastActivityAt', 'desc'),
-      limit(count),
+      limit(scanCount),
     );
     const unsubscribe = onSnapshot(
       stampedQuery,
-      { serverTimestamps: 'estimate' },
       snapshot => {
         const stamped = documentsOf(snapshot);
         publish(stamped);
-        if (stamped.length >= count || fallbackAsked) return;
+        if (stamped.length >= scanCount || fallbackAsked) return;
         fallbackAsked = true;
-        getDocs(scopedQuery(organizationId, projectId, 'createdAt', count))
+        getDocs(scopedQuery(organizationId, projectId, 'createdAt', scanCount))
           .then(older => {
             if (cancelled) return;
             fallback = documentsOf(older);

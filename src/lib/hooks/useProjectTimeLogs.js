@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { isValidRawTimeLogMinutes } from '@/lib/utils/issueAccounting.mjs';
 import { reportLoadError } from '@/lib/utils/errors';
+import { liveDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 
 export function useProjectTimeLogs(projectId) {
   const { activeOrgId } = useAppContext();
@@ -55,13 +56,9 @@ export function useProjectTimeLogs(projectId) {
     };
     const subscribe = (key, sourceQuery) => onSnapshot(
       sourceQuery,
-      { serverTimestamps: 'estimate' },
       snapshot => {
         if (cancelled) return;
-        buckets[key] = snapshot.docs.map(document => ({
-          ...document.data(),
-          id: document.id,
-        }));
+        buckets[key] = snapshot.docs.map(liveDocumentData);
         ready.add(key);
         publish();
       },

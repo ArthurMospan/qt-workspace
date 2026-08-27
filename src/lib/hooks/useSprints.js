@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { reportLoadError } from '@/lib/utils/errors';
+import { liveDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 export function useSprints() {
   const {
     activeOrgId, currentUser
@@ -37,13 +38,8 @@ export function useSprints() {
       where('organizationId', '==', activeOrgId),
       orderBy('createdAt', 'desc'),
     );
-    const unsub = onSnapshot(q, {
-      serverTimestamps: 'estimate'
-    }, snap => {
-      const docs = snap.docs.map(d => ({
-        ...d.data(),
-        id: d.id,
-      }));
+    const unsub = onSnapshot(q, snap => {
+      const docs = snap.docs.map(liveDocumentData);
       // Sort by createdAt ascending (oldest first)
       docs.sort((a, b) => {
         const aTime = a.createdAt?.toMillis?.() ?? 0;

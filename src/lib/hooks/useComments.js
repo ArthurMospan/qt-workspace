@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { arrayUnion, collection, deleteField, doc, getCountFromServer, limit, onSnapshot, orderBy, query, increment, runTransaction, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { reportLoadError } from '@/lib/utils/errors';
+import { liveDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 import { deleteFileFromCloudinary } from '@/lib/services/fileUpload';
 // How much of a conversation opens with the task. The same reasoning as a chat
 // channel: the newest page is what a reader arrives for, and the rest is loaded
@@ -53,11 +54,9 @@ export function useComments(issueId, windowSize = COMMENT_WINDOW) {
       orderBy('createdAt', 'desc'),
       limit(windowSize),
     );
-    const unsub = onSnapshot(conversationQuery, {
-      serverTimestamps: 'estimate'
-    }, snap => {
+    const unsub = onSnapshot(conversationQuery, snap => {
       // Newest first out of the query, oldest first into the conversation.
-      setComments(snap.docs.map(d => ({ ...d.data(), id: d.id })).reverse());
+      setComments(snap.docs.map(liveDocumentData).reverse());
       setHasMore(snap.size >= windowSize);
       setLoading(false);
     }, err => {
