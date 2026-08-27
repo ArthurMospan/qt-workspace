@@ -6,6 +6,10 @@ import {
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  forgetCountContext,
+  recountProjectIssueCounts,
+} from '@/lib/server/projectIssueCounts';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import {
   introducedIssueExecutionViolations,
@@ -488,6 +492,22 @@ export async function PATCH(request, context) {
         updatedProjects: projectChanges.size,
       };
     });
+
+    // Editing the workflow does not move one task's counters — it changes what
+    // «delivered» and «closed» mean for every task in the workspace at once, so
+    // no delta can express it. The project counters are therefore rebuilt from
+    // scratch, which is the one operation that does not have to know what
+    // changed. This is rare (a settings save), it is the same read the
+    // transaction above just made, and the process cache of "what this
+    // organization counts by" has to be dropped first or the rebuild would
+    // recount against the workflow that was just replaced.
+    //
+    // Fire and forget: the workflow has already been saved, and a counter that
+    // failed to catch up is repaired by the twice-daily pass rather than being
+    // allowed to fail the request that changed it.
+    forgetCountContext(organizationId);
+    recountProjectIssueCounts({ organizationIds: [organizationId] })
+      .catch(error => console.warn('[workflow] project counters not rebuilt:', error.message));
 
     return NextResponse.json({
       success: true,

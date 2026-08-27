@@ -30,6 +30,7 @@ import {
 import { MATERIALISE_LEAD_MS } from '@/lib/utils/notificationOutbox.mjs';
 import { resolveClosedStatusIds } from '@/lib/utils/workflowDefaults.mjs';
 import { purgeExpiredDeletedIssues } from '@/lib/server/issueTrash';
+import { recountProjectIssueCounts } from '@/lib/server/projectIssueCounts';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 const DELIVERY_CONCURRENCY = 10;
@@ -896,6 +897,29 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     ? await pruneReadNotifications({ nowMs })
     : { scanned: 0, deleted: 0, kept: 0, skipped: true };
 
+  // The project task counters, rebuilt from the tasks themselves.
+  //
+  // It rides the materialise pass because it needs exactly what that pass
+  // already is: something that runs twice a day, twelve hours apart, so that
+  // one of the two lands in the early morning of any given workspace's own
+  // timezone. That is not a convenience here — «прострочено» flips at the
+  // workspace's midnight and at no other moment, and a counter refreshed at a
+  // fixed UTC hour would be a day stale for half the world. See
+  // `src/lib/utils/projectIssueCounts.mjs` for the whole argument, and
+  // `.github/workflows/scheduled-notifications.yml` for why there is no
+  // schedule of its own to hang it on.
+  //
+  // It is deliberately gated on `materialiseDue` rather than on
+  // `wantsMaterialise`: a manual run of the pass should not make a second full
+  // pass over every task in the database within the same twelve hours.
+  const projectIssueCounts = wantsMaterialise && materialiseDue
+    ? await recountProjectIssueCounts({ nowMs })
+      .catch(error => {
+        console.warn('[reminder-job] project counters not rebuilt:', error.message);
+        return { organizations: 0, projects: 0, written: 0, unchanged: 0, failed: true };
+      })
+    : { skipped: true, organizations: 0, projects: 0, written: 0, unchanged: 0 };
+
   // Written last and unconditionally after a successful pass: a sweep that
   // throws must not advance the watermark, or the reminders it failed to record
   // would fall into the gap the watermark exists to close.
@@ -921,6 +945,7 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
         birthdays: birthdays.created || 0,
         purgedIssues: issueTrash.purged || 0,
         prunedNotifications: prunedNotifications.deleted || 0,
+        recountedProjects: projectIssueCounts.written || 0,
       },
     }, { merge: true }).catch(error => {
       console.warn('[reminder-job] Could not record sweep state:', error.message);
@@ -936,5 +961,6 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     birthdays,
     issueTrash,
     prunedNotifications,
+    projectIssueCounts,
   };
 }

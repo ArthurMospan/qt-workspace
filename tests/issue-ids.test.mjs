@@ -43,7 +43,10 @@ test('project prefixes are automatic, unique and absent from project forms', asy
   ]);
 
   assert.match(createRoute, /const issuePrefix = suggestAvailableIssuePrefix\(/);
-  assert.match(createRoute, /transaction\.create\(projectRef, \{ \.\.\.payload, issuePrefix \}\)/);
+  // The prefix is written with the project, in the same create — not patched in
+  // afterwards by anything that could fail on its own. Other server-owned fields
+  // may join that payload; the prefix may not leave it.
+  assert.match(createRoute, /transaction\.create\(projectRef, \{\s*\.\.\.payload,\s*issuePrefix,/);
   assert.match(updateRoute, /let resolvedIssuePrefix = projectIssuePrefix\(currentProject\)/);
   assert.match(updateRoute, /resolvedIssuePrefix = suggestAvailableIssuePrefix\(/);
   assert.doesNotMatch(form, /issuePrefix|Код завдань/);

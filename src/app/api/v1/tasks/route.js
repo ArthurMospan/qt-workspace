@@ -15,6 +15,10 @@ import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
 import { NO_PRIORITY_ID } from '@/lib/utils/priorities.mjs';
 import { isValidIssuePrefix, issuePath } from '@/lib/utils/issueKeys.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
+import {
+  projectIssueCountDeltasFor,
+  projectIssueCountIncrements,
+} from '@/lib/server/projectIssueCounts';
 
 function resolveIntegrationWorkflow({ workflow, project = null, requestedPriority }) {
   const hiddenStatusIds = new Set(
@@ -149,7 +153,12 @@ export async function POST(req) {
     let payload;
     if (projectId) {
       const projectRef = db.collection('projects').doc(projectId);
+      const countDeltas = await projectIssueCountDeltasFor(db, organizationId);
       await db.runTransaction(async transaction => {
+        // Firestore re-runs this body on contention; the counter accumulator
+        // lives outside it and would otherwise count the same task once per
+        // attempt.
+        countDeltas.reset();
         const [freshProject, workflowSnapshot] = await Promise.all([
           transaction.get(projectRef),
           transaction.get(workflowRef),
@@ -214,8 +223,16 @@ export async function POST(req) {
           ...(resolved.completed ? { completedAt: now } : {}),
         };
         transaction.create(issueRef, payload);
+        // A task arriving from an integration is one of the project's tasks
+        // like any other, and the counters are what the home screen draws from.
+        // A path that created work without counting it would leave a progress
+        // bar that quietly disagreed with the board beside it.
+        countDeltas
+          .observeProject(projectId, project)
+          .change(null, { ...payload, projectId, id: issueRef.id });
         transaction.update(projectRef, {
           issueCounter: next,
+          ...projectIssueCountIncrements(countDeltas, projectId),
           ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
           updatedAt: now,
         });

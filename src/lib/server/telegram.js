@@ -9,6 +9,10 @@ import { resolveNewIssueType } from '@/lib/utils/issueCreationModel.mjs';
 import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
+  projectIssueCountDeltasFor,
+  projectIssueCountIncrements,
+} from '@/lib/server/projectIssueCounts';
+import {
   DEFAULT_TYPE_IDS,
   resolveClosedStatusIds,
   resolveEntryStatusId,
@@ -230,7 +234,11 @@ export async function createIssueFromTelegram({
     ? `QuickTeam (@${telegramUsername})`
     : `QuickTeam (${authorName})`;
 
+  const countDeltas = await projectIssueCountDeltasFor(db, organizationId);
   await db.runTransaction(async transaction => {
+    // Firestore re-runs this body on contention; the counter accumulator lives
+    // outside it and would otherwise count the same task once per attempt.
+    countDeltas.reset();
     const [freshProject, workflowSnapshot] = await Promise.all([
       transaction.get(projectRef),
       transaction.get(workflowRef),
@@ -314,8 +322,16 @@ export async function createIssueFromTelegram({
       lastActivityActorId: `telegram:${telegramUser.id || 'unknown'}`,
       ...(completed ? { completedAt: now } : {}),
     });
+    // A task dictated into Telegram is one of the project's tasks like any
+    // other. Nothing here can be overdue — it has no deadline yet — but it is
+    // one more piece of open work, and the home screen's bar is drawn from
+    // these three numbers.
+    countDeltas
+      .observeProject(projectId, project)
+      .change(null, { projectId, id: issueRef.id, columnId: status, status, dueDate: null });
     transaction.update(projectRef, {
       issueCounter: next,
+      ...projectIssueCountIncrements(countDeltas, projectId),
       ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
       updatedAt: now,
     });

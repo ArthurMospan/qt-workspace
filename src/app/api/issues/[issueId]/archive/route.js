@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  projectIssueCountDeltasFor,
+  writeProjectIssueCountDeltas,
+} from '@/lib/server/projectIssueCounts';
 import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
 import { rolesFor } from '@/lib/utils/can';
 
@@ -52,7 +56,12 @@ export async function PATCH(request, context) {
     }
 
     const projectRef = db.collection('projects').doc(issue.projectId);
+    const countDeltas = await projectIssueCountDeltasFor(db, issue.organizationId);
     const result = await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention; the counter accumulator
+      // lives outside it and would otherwise count the same task once per
+      // attempt.
+      countDeltas.reset();
       const [currentSnap, projectSnap] = await Promise.all([
         transaction.get(issueRef),
         transaction.get(projectRef),
@@ -89,6 +98,17 @@ export async function PATCH(request, context) {
         return { changed: false, issueKey: current.issueKey || issueId };
       }
 
+      // An archived task leaves the working set, so it leaves the project's
+      // counters with it — the same three exclusions every board already makes.
+      // Un-archiving puts it back, which is why this is a delta and not a
+      // decrement: the same call with the two shapes the other way round.
+      countDeltas
+        .observeProject(current.projectId, projectSnap.data())
+        .change(
+          { ...current, id: issueId },
+          { ...current, id: issueId, archivedAt: archived ? new Date() : null },
+        );
+
       const now = FieldValue.serverTimestamp();
       transaction.update(issueRef, {
         archivedAt: archived ? now : FieldValue.delete(),
@@ -106,6 +126,7 @@ export async function PATCH(request, context) {
         action: archived ? 'archived' : 'unarchived',
         createdAt: now,
       });
+      writeProjectIssueCountDeltas({ writer: transaction, db, deltas: countDeltas });
       return { changed: true, issueKey: current.issueKey || issueId };
     });
 

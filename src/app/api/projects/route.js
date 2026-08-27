@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { recordPlanUsage } from '@/lib/server/planLimits';
+import {
+  initialProjectIssueCounts,
+  organizationCountContext,
+} from '@/lib/server/projectIssueCounts';
+import { PROJECT_ISSUE_COUNTS_FIELD } from '@/lib/utils/projectIssueCounts.mjs';
 import { normalizePlan, planLimit, planLimitRefusal } from '@/lib/utils/plans.mjs';
 import { DEFAULT_STATUS_IDS, workflowIds } from '@/lib/utils/workflowDefaults.mjs';
 import {
@@ -103,6 +108,13 @@ export async function POST(req) {
     };
     
     const stageNames = ['Брифінг & Аналіз', 'Дизайн & UI/UX', 'Розробка', 'Тестування & Реліз'];
+    // The task counters a project starts life with. A project has no tasks yet,
+    // so all three are zero — and zero is a total that can be *established*
+    // without reading anything, which matters: nothing reads a project's
+    // counters until a full count has stood behind them once, and waiting for
+    // the twice-daily pass would mean every new project sent the home screen
+    // back to reading tasks for up to twelve hours.
+    const countContext = await organizationCountContext(db, organizationId);
     await db.runTransaction(async transaction => {
       const orgSnap = await transaction.get(orgRef);
       if (!orgSnap.exists) throw new Error('ORGANIZATION_NOT_FOUND');
@@ -134,7 +146,11 @@ export async function POST(req) {
       }
       activeAfterCreate = activeProjectsCount + 1;
 
-      transaction.create(projectRef, { ...payload, issuePrefix });
+      transaction.create(projectRef, {
+        ...payload,
+        issuePrefix,
+        [PROJECT_ISSUE_COUNTS_FIELD]: initialProjectIssueCounts(countContext.timeZone),
+      });
       stageNames.forEach((stageName, index) => {
         transaction.create(db.collection('stages').doc(), {
           label: `${String(index + 1).padStart(2, '0')}. ${stageName}`,

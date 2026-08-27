@@ -8,6 +8,10 @@ import { PATCH as transitionIssueStatus } from '../[issueId]/status/route';
 import { deliverBulkNotifications } from '@/lib/server/bulkNotifications';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
+import {
+  projectIssueCountDeltasFor,
+  projectIssueCountIncrements,
+} from '@/lib/server/projectIssueCounts';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   ISSUE_BULK_ACTION_BY_ID,
@@ -261,6 +265,21 @@ export async function POST(request) {
       }
     }
 
+    // The project task counters for the whole operation, accumulated across the
+    // loop and committed once at the end. Not inside each task's transaction:
+    // this route already learned that writing `projects/{id}` per task makes
+    // eight concurrent transactions fight over one row and serialises the
+    // operation behind it, which is why `updatedAt` moved out of the loop too.
+    //
+    // The delegated actions — archive, cancel, delete, status, duplicate — are
+    // real requests to the routes that own them, so their counters are written
+    // there. What is left here is attribute edits, and the only attribute a
+    // count depends on is the deadline.
+    const countDeltas = await projectIssueCountDeltasFor(db, organizationId);
+    for (const [projectId, project] of projects) {
+      if (project) countDeltas.observeProject(projectId, project);
+    }
+
     const results = await inChunks(issues, async issue => {
       try {
         if (issue.missing) throw new Error('Завдання не знайдено');
@@ -397,6 +416,14 @@ export async function POST(request) {
             createdAt: now,
           });
         });
+        // A deadline is the one attribute a counter depends on: everything else
+        // this branch can write — assignees, labels, priority, type, estimate,
+        // sprint — leaves a task exactly as countable as it was. Accumulated
+        // after the transaction rather than inside it, so a retry cannot count
+        // the same move twice.
+        if (patch && patch.dueDate !== undefined) {
+          countDeltas.change(freshIssue, { ...freshIssue, ...patch });
+        }
         // A bulk deadline or a change of assignee moves the same reminders a
         // single edit would, so it writes the same rows. The patched task is
         // handed over rather than read back — the transaction above already
@@ -432,11 +459,17 @@ export async function POST(request) {
         .map(result => issues.find(issue => issue.id === result.id)?.projectId)
         .filter(Boolean),
     )];
-    if (touchedProjectIds.length) {
+    // A project whose counters moved but whose tasks were all delegated
+    // elsewhere is already touched by the route that handled them; this only
+    // has to cover the projects this loop wrote to itself.
+    const countedProjectIds = countDeltas.changed().map(entry => entry.projectId);
+    const projectIdsToWrite = [...new Set([...touchedProjectIds, ...countedProjectIds])];
+    if (projectIdsToWrite.length) {
       const touch = db.batch();
-      for (const id of touchedProjectIds) {
+      for (const id of projectIdsToWrite) {
         touch.update(db.collection('projects').doc(id), {
           updatedAt: FieldValue.serverTimestamp(),
+          ...projectIssueCountIncrements(countDeltas, id),
         });
       }
       await touch.commit().catch(error => console.warn('[issue-bulk] project touch failed:', error.message));

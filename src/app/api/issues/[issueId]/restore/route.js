@@ -2,6 +2,10 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  projectIssueCountDeltasFor,
+  projectIssueCountIncrements,
+} from '@/lib/server/projectIssueCounts';
 import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { hasProjectAccess } from '@/lib/utils/projectAccess.mjs';
 import {
@@ -47,7 +51,12 @@ export async function POST(request, context) {
       return NextResponse.json({ error: 'Пошкоджений запис видаленої задачі', code: 'INVALID_TOMBSTONE_SCOPE' }, { status: 409 });
     }
 
+    const countDeltas = await projectIssueCountDeltasFor(db, organizationId);
     const result = await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention; the counter accumulator
+      // lives outside it and would otherwise restore the same task once per
+      // attempt.
+      countDeltas.reset();
       const tombstoneSnap = await transaction.get(tombstoneRef);
       if (!tombstoneSnap.exists) {
         throw restoreError('TOMBSTONE_NOT_FOUND', 404, 'Задачу не знайдено серед нещодавно видалених');
@@ -98,8 +107,16 @@ export async function POST(request, context) {
         lastActivityActorAvatar: authorization.user.picture || null,
       });
       transaction.delete(tombstoneRef);
+      // Back in the project exactly as it left, so it contributes exactly what
+      // it contributed before — including a deadline that may have slipped
+      // while it was in the trash. The restored shape is what is counted, not
+      // the one that was deleted.
+      countDeltas
+        .observeProject(issue.projectId, project.data())
+        .change(null, { ...issue, id: issueId, deletionPending: false });
       transaction.update(projectRef, {
         issueHierarchyVersion: FieldValue.increment(1),
+        ...projectIssueCountIncrements(countDeltas, issue.projectId),
         updatedAt: now,
       });
       transaction.create(issueRef.collection('audit').doc(), {

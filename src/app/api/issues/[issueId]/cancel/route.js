@@ -7,6 +7,10 @@ import {
   analyticsRollupDeltasFor,
   writeAnalyticsRollupDeltas,
 } from '@/lib/server/analyticsRollups';
+import {
+  projectIssueCountDeltasFor,
+  writeProjectIssueCountDeltas,
+} from '@/lib/server/projectIssueCounts';
 import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
 import { rolesFor } from '@/lib/utils/can';
 import {
@@ -67,7 +71,12 @@ export async function PATCH(request, context) {
       invoiceSourcelessReservationId(issue.organizationId, issue.projectId, issueId),
     );
     const rollupDeltas = await analyticsRollupDeltasFor(db, issue.organizationId);
+    const countDeltas = await projectIssueCountDeltasFor(db, issue.organizationId);
     const result = await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention; the counter accumulator
+      // lives outside it and would otherwise count the same task once per
+      // attempt.
+      countDeltas.reset();
       const [currentSnap, projectSnap, estimateReservationSnap] = await Promise.all([
         transaction.get(issueRef),
         transaction.get(projectRef),
@@ -159,6 +168,16 @@ export async function PATCH(request, context) {
         rollupDeltas.addCancellation(log, cancelled ? 1 : -1);
       }
 
+      // Work that is not going to happen is not one of the tasks the numbers
+      // are about, so it leaves the project's counters as well. Un-cancelling
+      // is the same call with the two shapes the other way round.
+      countDeltas
+        .observeProject(current.projectId, projectSnap.data())
+        .change(
+          { ...current, id: issueId },
+          { ...current, id: issueId, cancelledAt: cancelled ? new Date() : null },
+        );
+
       const now = FieldValue.serverTimestamp();
       transaction.update(issueRef, {
         cancelledAt: cancelled ? now : FieldValue.delete(),
@@ -177,6 +196,7 @@ export async function PATCH(request, context) {
         createdAt: now,
       });
       writeAnalyticsRollupDeltas({ writer: transaction, db, deltas: rollupDeltas });
+      writeProjectIssueCountDeltas({ writer: transaction, db, deltas: countDeltas });
       return { changed: true, issueKey: current.issueKey || issueId };
     });
 

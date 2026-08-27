@@ -6,6 +6,10 @@ import {
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  projectIssueCountDeltasFor,
+  projectIssueCountIncrements,
+} from '@/lib/server/projectIssueCounts';
 import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
@@ -136,7 +140,12 @@ export async function PATCH(request, context) {
       .collection('settings')
       .doc('workflow');
 
+    const countDeltas = await projectIssueCountDeltasFor(db, initialIssue.organizationId);
     const result = await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention; the counter accumulator
+      // lives outside it and would otherwise count the same move once per
+      // attempt.
+      countDeltas.reset();
       const currentSnap = await transaction.get(issueRef);
       const projectSnap = await transaction.get(projectRef);
       const workflowSnap = await transaction.get(workflowRef);
@@ -421,8 +430,19 @@ export async function PATCH(request, context) {
           updatedAt: now,
         });
       });
+      // A status move changes what the project has delivered, and can change
+      // what it has overdue — a task that closes stops being late. The peers
+      // reordered above are not counted: their `order` moved and nothing a
+      // counter looks at did.
+      countDeltas
+        .observeProject(current.projectId, projectSnap.data())
+        .change(
+          current,
+          { ...current, columnId: requestedStatus, status: requestedStatus },
+        );
       transaction.update(projectRef, {
         issueStatusVersion: FieldValue.increment(1),
+        ...projectIssueCountIncrements(countDeltas, current.projectId),
         updatedAt: now,
       });
       transaction.create(issueRef.collection('audit').doc(), {

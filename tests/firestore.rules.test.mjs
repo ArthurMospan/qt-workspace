@@ -1038,6 +1038,12 @@ test('issues and project lifecycle mutations cannot bypass server APIs', async (
   await assertFails(deleteDoc(doc(adminDb, 'projects', 'project-a')));
   await assertSucceeds(updateDoc(doc(adminDb, 'projects', 'project-a'), { name: 'Renamed' }));
   await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { issueCounter: 99 }));
+  // The progress bar a card draws, once it stops reading the tasks behind it.
+  // A browser that could set this could draw any number it liked.
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), {
+    issueCounts: { version: 1, total: 999, delivered: 999, overdue: 0 },
+  }));
+  await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { 'issueCounts.total': 999 }));
   await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { issueLinkVersion: 99 }));
   await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { issueHierarchyVersion: 99 }));
   await assertFails(updateDoc(doc(adminDb, 'projects', 'project-a'), { issueStatusVersion: 99 }));

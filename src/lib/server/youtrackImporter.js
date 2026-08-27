@@ -11,6 +11,7 @@ import {
 import { AnalyticsRollupDeltas } from '@/lib/utils/analyticsRollups.mjs';
 import { normalizePlan, planLimit, planLimitRefusal } from '@/lib/utils/plans.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
+import { recountProjectIssueCounts } from '@/lib/server/projectIssueCounts';
 import { youTrackClientFor } from '@/lib/server/youtrackIntegration';
 import {
   isValidIssuePrefix,
@@ -1793,6 +1794,17 @@ export async function runYouTrackImportStep({ organizationId, jobId, userId }) {
           updatedAt: FieldValue.serverTimestamp(),
         },
       });
+      // An import writes tasks one at a time, across as many steps as it takes,
+      // and each of those writes is a task the project's counters know nothing
+      // about. Counting them one by one would put a write on the project
+      // document inside every step of a job that may run for thousands of them.
+      // The counters are rebuilt once instead, at the one moment the import is
+      // over — which is also the only moment the whole result is knowable.
+      //
+      // Fire and forget: the import has finished, and the twice-daily pass
+      // repairs whatever this missed rather than failing a completed job.
+      recountProjectIssueCounts({ organizationIds: [organizationId] })
+        .catch(error => console.warn('[youtrack] project counters not rebuilt:', error.message));
     } else {
       await commitClaimedStep(jobRef, leaseId, {
         jobUpdates: {

@@ -8,6 +8,10 @@ import { rolesFor } from '@/lib/utils/can';
 import { assigneesOffProjectTeam, assigneesOutsideProject, PROJECT_OVER_PLAN_LIMIT } from '@/lib/utils/projectAccess.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import {
+  projectIssueCountDeltasFor,
+  projectIssueCountIncrements,
+} from '@/lib/server/projectIssueCounts';
+import {
   DEFAULT_LABEL_IDS,
   DEFAULT_PRIORITY_IDS,
   DEFAULT_STATUS_IDS,
@@ -255,8 +259,12 @@ export async function POST(request) {
     // Read back out of the transaction so the reminder row below can be written
     // from what was stored, without a second read of the task.
     let createdStatus;
+    const countDeltas = await projectIssueCountDeltasFor(db, organizationId);
 
     await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention; the counter accumulator
+      // lives outside it and would otherwise add the same task once per attempt.
+      countDeltas.reset();
       const freshProjectSnap = await transaction.get(projectRef);
       const freshWorkflowSnap = await transaction.get(workflowRef);
       if (!freshProjectSnap.exists || freshProjectSnap.data().organizationId !== organizationId) {
@@ -414,8 +422,16 @@ export async function POST(request) {
         ...(closedIds.includes(status) ? { completedAt: now } : {}),
       };
       transaction.create(issueRef, payload);
+      // The project's task counters, so the home screen can draw a progress bar
+      // from one document instead of from every task in the workspace. Measured
+      // against the day the stored figures answer for, which is why the project
+      // document is handed over — see `src/lib/utils/projectIssueCounts.mjs`.
+      countDeltas
+        .observeProject(projectId, project)
+        .change(null, { ...payload, projectId, id: issueRef.id });
       transaction.update(projectRef, {
         issueCounter: next,
+        ...projectIssueCountIncrements(countDeltas, projectId),
         ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
         // Only ever populated when the request explicitly asked to add these
         // people to the project — see `addAssigneesToProjectTeam` above. The

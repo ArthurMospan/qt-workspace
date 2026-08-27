@@ -245,6 +245,12 @@ service cloud.firestore {
           request.resource.data.status == resource.data.status &&
           !request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'issueCounter',
+            // How many tasks the project has, how many are delivered and how
+            // many are late. Written by the server routes that write the tasks
+            // themselves and by the twice-daily recount, and by nothing else:
+            // a browser that could set these could draw any progress bar it
+            // liked on a screen that no longer reads the tasks behind it.
+            'issueCounts',
             'issueLinkVersion',
             'issueHierarchyVersion',
             'issueStatusVersion',

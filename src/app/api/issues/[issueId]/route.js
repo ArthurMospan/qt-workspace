@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
+import {
+  projectIssueCountDeltasFor,
+  projectIssueCountIncrements,
+} from '@/lib/server/projectIssueCounts';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
 import {
@@ -74,7 +78,12 @@ export async function DELETE(request, context) {
         issueId,
       ),
     );
+    const countDeltas = await projectIssueCountDeltasFor(db, issue.organizationId);
     const deletion = await db.runTransaction(async transaction => {
+      // Firestore re-runs this body on contention; the counter accumulator
+      // lives outside it and would otherwise remove the same task once per
+      // attempt.
+      countDeltas.reset();
       const currentSnap = await transaction.get(issueRef);
       const projectSnap = await transaction.get(projectRef);
       const estimateReservationSnap = await transaction.get(estimateReservationRef);
@@ -213,9 +222,17 @@ export async function DELETE(request, context) {
         deletedAt: now,
         purgeAfter: Timestamp.fromMillis(undoExpiresAtMs),
       });
+      // The task is gone from the project, so it is gone from its counters. The
+      // promoted children stay in the same project with the same statuses, so
+      // they contribute exactly what they contributed before — only their
+      // parent moved.
+      countDeltas
+        .observeProject(current.projectId, projectSnap.data())
+        .change({ ...current, id: issueId }, null);
       transaction.delete(issueRef);
       transaction.update(projectRef, {
         issueHierarchyVersion: FieldValue.increment(1),
+        ...projectIssueCountIncrements(countDeltas, current.projectId),
         updatedAt: now,
       });
       return { childCount: children.length };
