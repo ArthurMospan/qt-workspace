@@ -565,7 +565,9 @@ export default function WorkspaceAnalyticsPage() {
       setPriorityFilter(params.get('priority') || 'all');
       setTypeFilter(params.get('type') || 'all');
       setPeriod(analyticsPeriodParam(params.get('period')));
-      setTsMember(params.get('member') || null);
+      // Читає тільки своє. Підхоплювати ще й `member` означало б відтворити ту
+      // саму колізію з іншого боку: відкритий профіль перемикав би фільтр.
+      setTsMember(params.get('timesheetMember') || null);
       setTsMode(timesheetModeParam(params.get('mode')));
       setTsAnchor(previous => (
         analyticsDateKey(previous) === analyticsDateKey(nextAnchor) ? previous : nextAnchor
@@ -589,11 +591,22 @@ export default function WorkspaceAnalyticsPage() {
     setSearchParam(params, 'q', analyticsSearch.trim());
     params.delete('teamMember');
     if (activeTab === 'timesheet') {
-      setSearchParam(params, 'member', effectiveTsMember, 'all');
+      // `timesheetMember`, а не `member`.
+      //
+      // `?member=` в цьому продукті вже має власника: `ProfileModal` змонтована
+      // в layout і відкривається від будь-якої адреси з цим параметром — так
+      // працює «показати профіль» із чату й зі списку команди. Табель писав те
+      // саме імʼя як свій фільтр, тож вибір учасника в селекторі відкривав
+      // поверх екрана його профіль: один параметр, два власники.
+      //
+      // Дзеркальна половина була не кращою: перехід на будь-яку іншу вкладку
+      // виконував `params.delete('member')` і зачиняв профіль, який людина
+      // щойно відкрила зовсім з іншого місця.
+      setSearchParam(params, 'timesheetMember', effectiveTsMember, 'all');
       setSearchParam(params, 'mode', tsMode, 'week');
       setSearchParam(params, 'anchor', analyticsDateKey(tsAnchor));
     } else {
-      params.delete('member');
+      params.delete('timesheetMember');
       params.delete('mode');
       params.delete('anchor');
     }

@@ -227,7 +227,103 @@ function MemberWeek({ days, logs, issuesById, eventsByKey, todayKey }) {
 }
 
 // ── Week view: whole team — rows per member (admin/owner) ────────────────────
-function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
+/**
+ * Один день однієї людини, розкладений по задачах.
+ *
+ * Сітка команди відповідала «скільки», і на цьому зупинялася: щоб дізнатися,
+ * на що саме пішли ці чотири години, доводилось міняти весь екран на тиждень
+ * цієї людини й шукати потрібний день очима. Питання ж майже завжди про одну
+ * клітинку — ось вона й відповідає.
+ *
+ * @param {object} props.cell Кого й за який день відкрили; `null` — нічого.
+ * @param {object[]} props.logs Записи часу вибраного діапазону.
+ * @param {object} props.issuesById Задачі, щоб назвати рядок.
+ * @param {object} props.eventsByKey Події календаря — час фіксують і на них.
+ * @param {() => void} props.onClose Закриває панель.
+ */
+function DayBreakdownDialog({ cell, logs, issuesById, eventsByKey, onClose }) {
+  const entries = useMemo(() => {
+    if (!cell) return [];
+    const wanted = dayKey(cell.day);
+    const byTarget = new Map();
+    logs.forEach(log => {
+      if (log.userId !== cell.uid) return;
+      const d = logDate(log);
+      if (!d || dayKey(d) !== wanted) return;
+      const targetKey = log.issueId || calendarEventOccurrenceKey(log.eventId, log.occurrenceStartAt);
+      const current = byTarget.get(targetKey) || {
+        minutes: 0,
+        sourceKey: '',
+        sourceTitle: '',
+        descriptions: [],
+      };
+      byTarget.set(targetKey, {
+        minutes: current.minutes + (log.spentMinutes || 0),
+        sourceKey: current.sourceKey || log.sourceKey || '',
+        sourceTitle: current.sourceTitle || log.sourceTitle || '',
+        descriptions: log.description
+          ? [...current.descriptions, log.description]
+          : current.descriptions,
+      });
+    });
+    return [...byTarget.entries()]
+      .map(([targetKey, entry]) => ({ targetKey, ...entry }))
+      .sort((a, b) => b.minutes - a.minutes);
+  }, [cell, logs]);
+
+  const total = entries.reduce((sum, entry) => sum + entry.minutes, 0);
+
+  return (
+    <Dialog
+      isOpen={Boolean(cell)}
+      onClose={onClose}
+      size="md"
+      title={cell ? `${cell.member?.name || cell.member?.email || 'Учасник'} · ${cell.day.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}` : ''}
+      description={cell ? `Зафіксовано ${fmtMin(total)}` : ''}
+      footer={<Button style="secondary" size="md" onClick={onClose}>Закрити</Button>}
+    >
+      {entries.length === 0 ? (
+        <p className="py-6 text-center text-[13px] text-faint">За цей день записів немає</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {entries.map(entry => {
+            const issue = issuesById[entry.targetKey];
+            const event = eventsByKey[entry.targetKey];
+            const href = issue ? issuePath(issue) : event ? calendarEventHref(event) : null;
+            const title = issue?.title || event?.title || entry.sourceTitle || '';
+            const label = issue?.issueKey || entry.sourceKey || (event ? 'Подія' : 'Видалено');
+            const body = (
+              <>
+                <span className="flex items-center justify-between gap-3">
+                  <span className="truncate text-[12px] font-bold uppercase text-ink">{label}</span>
+                  <span className="shrink-0 text-[13px] font-bold text-ink">{fmtMin(entry.minutes)}</span>
+                </span>
+                {title && (
+                  <span className="mt-[2px] block text-[12px] leading-snug text-muted line-clamp-2">{title}</span>
+                )}
+                {entry.descriptions.length > 0 && (
+                  <span className="mt-1 block text-[11px] leading-snug text-faint line-clamp-2">
+                    {entry.descriptions.join(' · ')}
+                  </span>
+                )}
+              </>
+            );
+            const cardClass = `block rounded-[12px] border border-line bg-white px-3 py-2.5 transition-colors ${href ? 'hover:border-faint' : ''}`;
+            return href ? (
+              <Link key={entry.targetKey} href={href} data-ui-surface="local" className={cardClass} onClick={onClose}>
+                {body}
+              </Link>
+            ) : (
+              <div key={entry.targetKey} data-ui-surface="local" className={cardClass}>{body}</div>
+            );
+          })}
+        </div>
+      )}
+    </Dialog>
+  );
+}
+
+function TeamWeek({ days, logs, members, todayKey, onSelectMember, onSelectCell }) {
   const rows = useMemo(() => {
     const perMember = {};
     logs.forEach(log => {
@@ -272,8 +368,30 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
               {days.map((day, index) => {
                 const minutes = byDay[dayKey(day)] || 0;
                 const isToday = dayKey(day) === todayKey;
+                // Те саме, що й у таблиці: день із годинами відповідає, на що
+                // вони пішли. На телефоні картка учасника лишається натисною
+                // сама по собі, тож клік по дню зупиняється тут.
+                const pressable = minutes > 0 ? {
+                  role: 'button',
+                  tabIndex: 0,
+                  'aria-label': `Показати, на що витрачено цей час — ${m.name || m.email}`,
+                  onClick: event => {
+                    event.stopPropagation();
+                    onSelectCell?.({ uid, member: m, day });
+                  },
+                  onKeyDown: event => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onSelectCell?.({ uid, member: m, day });
+                  },
+                } : {};
                 return (
-                  <div key={dayKey(day)} className={`rounded-[10px] px-1.5 py-2 text-center ${isToday ? 'border border-ink bg-white' : 'bg-canvas'}`}>
+                  <div
+                    key={dayKey(day)}
+                    {...pressable}
+                    className={`w-full rounded-[10px] px-1.5 py-2 text-center ${isToday ? 'border border-ink bg-white' : 'bg-canvas'} ${minutes > 0 ? 'cursor-pointer transition-colors hover:bg-line' : ''}`}
+                  >
                     <DayHeading label={DAY_LABELS[index]} day={day} isToday={isToday} size="sm" />
                     <p className={`mt-1 text-[10px] font-bold ${minutes > 0 ? 'text-ink' : 'text-faint'}`}>
                       {minutes > 0 ? fmtMin(minutes) : '—'}
@@ -334,9 +452,34 @@ function TeamWeek({ days, logs, members, todayKey, onSelectMember }) {
                 const min = byDay[dayKey(d)] || 0;
                 return (
                   <td key={i} className="border-l border-black/[0.04] bg-white px-2 py-3 text-center transition-colors group-hover:bg-canvas/50">
-                    {min > 0
-                      ? <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
-                      : <span className="text-[12px] text-faint">—</span>}
+                    {/* Години в клітинці — це питання «на що саме», і тепер на
+                        нього можна натиснути. Доти єдиною відповіддю був клік
+                        по рядку, який міняв увесь екран на тиждень цієї людини;
+                        а питають зазвичай про один день, а не про тиждень. */}
+                    {min > 0 ? (
+                      // Роль і клавіші на самій клітинці, а не вкладена
+                      // кнопка: рядок навколо вже натисний, і контрол
+                      // усередині контрола — це те, чого продукт скрізь
+                      // уникає (`TaskRow`, рядок рахунку роблять так само).
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Показати, на що витрачено цей час — ${m.name || m.email}`}
+                        onClick={event => {
+                          event.stopPropagation();
+                          onSelectCell?.({ uid, member: m, day: d });
+                        }}
+                        onKeyDown={event => {
+                          if (event.key !== 'Enter' && event.key !== ' ') return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onSelectCell?.({ uid, member: m, day: d });
+                        }}
+                        className="inline-flex cursor-pointer rounded-full transition-transform hover:scale-110"
+                      >
+                        <DayChip minutes={min} capacity={i >= 5 ? 0 : DAY_MIN} compact />
+                      </span>
+                    ) : <span className="text-[12px] text-faint">—</span>}
                   </td>
                 );
               })}
@@ -621,6 +764,8 @@ export default function TimesheetTab({
 }) {
   const todayKey = dayKey(new Date());
   const isTeam = member === 'all';
+  // Яку клітинку сітки зараз читають: кого й за який день. `null` — жодну.
+  const [dayBreakdown, setDayBreakdown] = useState(null);
 
   const issuesById = useMemo(() => {
     const map = {};
@@ -749,7 +894,7 @@ export default function TimesheetTab({
           <EmptyState icon={Clock} title="Даних ще немає" description="Логи часу з’являться після трекінгу завдань або подій" />
         ) : mode === 'week' ? (
           isTeam
-            ? <TeamWeek days={days} logs={rangeLogs} members={members} todayKey={todayKey} onSelectMember={onSelectMember} />
+            ? <TeamWeek days={days} logs={rangeLogs} members={members} todayKey={todayKey} onSelectMember={onSelectMember} onSelectCell={setDayBreakdown} />
             : <MemberWeek days={days} logs={rangeLogs} issuesById={issuesById} eventsByKey={eventsByKey} todayKey={todayKey} />
         ) : (
           <MonthGrid anchor={anchor} logs={rangeLogs} todayKey={todayKey} onSelectDay={onSelectDay} />
@@ -759,6 +904,14 @@ export default function TimesheetTab({
           <p className="text-center text-[13px] text-muted mt-6">Немає залогованого часу за цей тиждень</p>
         )}
       </div>
+
+      <DayBreakdownDialog
+        cell={dayBreakdown}
+        logs={rangeLogs}
+        issuesById={issuesById}
+        eventsByKey={eventsByKey}
+        onClose={() => setDayBreakdown(null)}
+      />
 
       <LogTimeModal
         isOpen={logModalOpen}
