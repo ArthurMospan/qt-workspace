@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  buildInvoiceExport,
   buildOverviewExport,
   buildTimesheetExport,
   buildVelocityExport,
@@ -293,56 +292,4 @@ test('the team file states each reading in the words the screen used', () => {
   assert.equal(block.total.minutes, 440);
   const csv = lines(toCsv(document));
   assert.ok(csv.some(line => line.includes('3 прострочено')));
-});
-
-test('an invoice exports the saved document, its sources and its totals', () => {
-  const document = buildInvoiceExport({
-    invoice: {
-      number: 'INV-2026-014',
-      date: '17.08.2026',
-      currency: 'USD',
-      clientName: 'ТОВ «Компанія»',
-      fromName: 'Агенція',
-      subtotal: 1250,
-      discountPct: 10,
-      discount: 125,
-      taxPct: 20,
-      tax: 225,
-      total: 1350,
-      items: [
-        { key: 'QT-12', title: 'Форма', status: 'Готово', minutes: 90, price: 75, sourceKind: 'actual' },
-        { key: 'QT-14', title: 'Каталог', status: 'У роботі', minutes: 0, price: 1175, sourceKind: 'manual' },
-      ],
-    },
-    project: { id: 'p1', name: 'Сайт' },
-  });
-
-  assert.equal(document.fileName, 'QuickTeam-Рахунок-INV-2026-014');
-  const items = document.blocks.find(block => block.id === 'items');
-  assert.equal(items.columns.find(column => column.id === 'price').label, 'Сума, USD');
-  assert.equal(items.total.minutes, 90);
-  assert.equal(items.total.price, 1250);
-
-  const summary = document.blocks.find(block => block.id === 'summary');
-  assert.deepEqual(summary.rows.map(row => row.label), ['Підсумок', 'Знижка (10%)', 'ПДВ (20%)']);
-  // A discount leaves the file as a negative number, so the column sums to the
-  // amount due instead of needing the reader to know which lines to subtract.
-  assert.equal(summary.rows[1].amount, -125);
-  assert.equal(summary.total.amount, 1350);
-
-  const csv = lines(toCsv(document));
-  assert.ok(csv.some(line => line.startsWith('QT-12;Форма;Готово;1г 30хв;1,50;За зафіксованим часом;75,00')));
-  // A negative amount must stay a number. The guard against formula cells sees
-  // a leading `-` and would otherwise quote the discount into text, which is
-  // how a column of money silently stops adding up.
-  assert.ok(csv.includes('Знижка (10%);-125,00'));
-});
-
-test('an invoice with no discount and no tax has neither line', () => {
-  const document = buildInvoiceExport({
-    invoice: { number: 'INV-1', currency: 'UAH', subtotal: 100, total: 100, items: [], discount: 0, tax: 0 },
-    project: null,
-  });
-  const summary = document.blocks.find(block => block.id === 'summary');
-  assert.deepEqual(summary.rows.map(row => row.label), ['Підсумок']);
 });

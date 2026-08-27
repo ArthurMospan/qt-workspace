@@ -1248,15 +1248,14 @@
     },
     "ExportMenu": {
       "file": "src/components/ui/ExportMenu.jsx",
-      "count": 2,
+      "count": 1,
       "showcased": true,
       "usedByKit": [],
       "routes": [
         "/analytics"
       ],
       "usedIn": [
-        "src/app/(app)/analytics/page.js",
-        "src/components/workspace/BillingTab.jsx"
+        "src/app/(app)/analytics/page.js"
       ]
     },
     "FileInput": {
@@ -2783,8 +2782,8 @@
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
-            "src/components/workspace/BillingTab.jsx:1479",
-            "src/components/workspace/BillingTab.jsx:1500",
+            "src/components/workspace/BillingTab.jsx:1545",
+            "src/components/workspace/BillingTab.jsx:1566",
             "src/components/workspace/QtPlusProjectTab.jsx:213",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
             "src/components/workspace/QtPlusProjectTab.jsx:294"
@@ -2813,7 +2812,7 @@
           ]
         },
         "icon-sm": {
-          "count": 14,
+          "count": 13,
           "routes": [
             "/analytics",
             "/analytics/team/[memberId]",
@@ -2830,7 +2829,6 @@
             "src/app/(app)/settings/page.js:3610",
             "src/components/WorkspaceHeader.jsx:350",
             "src/components/WorkspaceHeader.jsx:360",
-            "src/components/workspace/BillingTab.jsx:1345",
             "src/components/workspace/TimesheetTab.jsx:891",
             "src/components/workspace/WorkloadTab.jsx:282",
             "src/components/workspace/WorkloadTab.jsx:552",
@@ -2884,8 +2882,8 @@
             "src/components/integrations/YouTrackImportCard.jsx:505",
             "src/components/workspace/AgileBoard.jsx:64",
             "src/components/workspace/AgileBoard.jsx:67",
-            "src/components/workspace/BillingTab.jsx:1414",
-            "src/components/workspace/BillingTab.jsx:1417",
+            "src/components/workspace/BillingTab.jsx:1480",
+            "src/components/workspace/BillingTab.jsx:1483",
             "src/components/workspace/IssueDetail.jsx:1536",
             "src/components/workspace/IssueDetail.jsx:1560",
             "src/components/workspace/IssueDetail.jsx:1598",
@@ -2994,10 +2992,10 @@
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/integrations/YouTrackImportCard.jsx:761",
             "src/components/integrations/YouTrackImportCard.jsx:766",
-            "src/components/workspace/BillingTab.jsx:445",
-            "src/components/workspace/BillingTab.jsx:448",
-            "src/components/workspace/BillingTab.jsx:456",
-            "src/components/workspace/BillingTab.jsx:459",
+            "src/components/workspace/BillingTab.jsx:511",
+            "src/components/workspace/BillingTab.jsx:518",
+            "src/components/workspace/BillingTab.jsx:533",
+            "src/components/workspace/BillingTab.jsx:536",
             "src/components/workspace/BoardConfigModal.jsx:208",
             "src/components/workspace/BoardConfigModal.jsx:220",
             "src/components/workspace/BoardConfigModal.jsx:232",
@@ -3076,7 +3074,7 @@
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
             "src/components/integrations/IntegrationCard.jsx:106",
             "src/components/integrations/YouTrackImportCard.jsx:761",
-            "src/components/workspace/BillingTab.jsx:1414",
+            "src/components/workspace/BillingTab.jsx:1480",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:387",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:682",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1135",
@@ -3086,7 +3084,7 @@
           ]
         },
         "secondary": {
-          "count": 67,
+          "count": 66,
           "routes": [
             "/",
             "/[projectId]",
@@ -3137,9 +3135,8 @@
             "src/components/integrations/YouTrackImportCard.jsx:537",
             "src/components/integrations/YouTrackImportCard.jsx:696",
             "src/components/profile/ProfileView.jsx:226",
-            "src/components/workspace/BillingTab.jsx:1500",
-            "src/components/workspace/BillingTab.jsx:448",
-            "src/components/workspace/BillingTab.jsx:459",
+            "src/components/workspace/BillingTab.jsx:1566",
+            "src/components/workspace/BillingTab.jsx:536",
             "src/components/workspace/BoardConfigModal.jsx:208",
             "src/components/workspace/BoardConfigModal.jsx:220",
             "src/components/workspace/BoardConfigModal.jsx:232",
@@ -3211,8 +3208,8 @@
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
             "src/components/workspace/AgileBoard.jsx:67",
-            "src/components/workspace/BillingTab.jsx:1479",
-            "src/components/workspace/BillingTab.jsx:456",
+            "src/components/workspace/BillingTab.jsx:1545",
+            "src/components/workspace/BillingTab.jsx:533",
             "src/components/workspace/BoardConfigModal.jsx:252",
             "src/components/workspace/IssueDetail.jsx:1368",
             "src/components/workspace/IssueDetail.jsx:1536",
@@ -3298,9 +3295,9 @@
             "src/components/workspace/AgileBoard.jsx:64",
             "src/components/workspace/AgileBoard.jsx:640",
             "src/components/workspace/AgileBoard.jsx:655",
-            "src/components/workspace/BillingTab.jsx:1345",
-            "src/components/workspace/BillingTab.jsx:1417",
-            "src/components/workspace/BillingTab.jsx:445",
+            "src/components/workspace/BillingTab.jsx:1483",
+            "src/components/workspace/BillingTab.jsx:511",
+            "src/components/workspace/BillingTab.jsx:518",
             "src/components/workspace/IssueDetail.jsx:1498",
             "src/components/workspace/IssueDetail.jsx:2259",
             "src/components/workspace/QtPlusProjectTab.jsx:216",
@@ -3326,7 +3323,7 @@
       },
       "shape": {
         "(default)": {
-          "count": 190,
+          "count": 189,
           "routes": [
             "/",
             "/[projectId]",
@@ -3468,15 +3465,14 @@
             "src/components/workspace/AgileBoard.jsx:640",
             "src/components/workspace/AgileBoard.jsx:655",
             "src/components/workspace/AgileBoard.jsx:67",
-            "src/components/workspace/BillingTab.jsx:1345",
-            "src/components/workspace/BillingTab.jsx:1414",
-            "src/components/workspace/BillingTab.jsx:1417",
-            "src/components/workspace/BillingTab.jsx:1479",
-            "src/components/workspace/BillingTab.jsx:1500",
-            "src/components/workspace/BillingTab.jsx:445",
-            "src/components/workspace/BillingTab.jsx:448",
-            "src/components/workspace/BillingTab.jsx:456",
-            "src/components/workspace/BillingTab.jsx:459",
+            "src/components/workspace/BillingTab.jsx:1480",
+            "src/components/workspace/BillingTab.jsx:1483",
+            "src/components/workspace/BillingTab.jsx:1545",
+            "src/components/workspace/BillingTab.jsx:1566",
+            "src/components/workspace/BillingTab.jsx:511",
+            "src/components/workspace/BillingTab.jsx:518",
+            "src/components/workspace/BillingTab.jsx:533",
+            "src/components/workspace/BillingTab.jsx:536",
             "src/components/workspace/BoardConfigModal.jsx:208",
             "src/components/workspace/BoardConfigModal.jsx:220",
             "src/components/workspace/BoardConfigModal.jsx:232",
@@ -3556,7 +3552,7 @@
       },
       "surface": {
         "(default)": {
-          "count": 192,
+          "count": 191,
           "routes": [
             "/",
             "/[projectId]",
@@ -3699,15 +3695,14 @@
             "src/components/workspace/AgileBoard.jsx:640",
             "src/components/workspace/AgileBoard.jsx:655",
             "src/components/workspace/AgileBoard.jsx:67",
-            "src/components/workspace/BillingTab.jsx:1345",
-            "src/components/workspace/BillingTab.jsx:1414",
-            "src/components/workspace/BillingTab.jsx:1417",
-            "src/components/workspace/BillingTab.jsx:1479",
-            "src/components/workspace/BillingTab.jsx:1500",
-            "src/components/workspace/BillingTab.jsx:445",
-            "src/components/workspace/BillingTab.jsx:448",
-            "src/components/workspace/BillingTab.jsx:456",
-            "src/components/workspace/BillingTab.jsx:459",
+            "src/components/workspace/BillingTab.jsx:1480",
+            "src/components/workspace/BillingTab.jsx:1483",
+            "src/components/workspace/BillingTab.jsx:1545",
+            "src/components/workspace/BillingTab.jsx:1566",
+            "src/components/workspace/BillingTab.jsx:511",
+            "src/components/workspace/BillingTab.jsx:518",
+            "src/components/workspace/BillingTab.jsx:533",
+            "src/components/workspace/BillingTab.jsx:536",
             "src/components/workspace/BoardConfigModal.jsx:208",
             "src/components/workspace/BoardConfigModal.jsx:220",
             "src/components/workspace/BoardConfigModal.jsx:232",
@@ -3777,7 +3772,7 @@
       },
       "color": {
         "(default)": {
-          "count": 177,
+          "count": 176,
           "routes": [
             "/",
             "/[projectId]",
@@ -3908,14 +3903,13 @@
             "src/components/workspace/AgileBoard.jsx:640",
             "src/components/workspace/AgileBoard.jsx:655",
             "src/components/workspace/AgileBoard.jsx:67",
-            "src/components/workspace/BillingTab.jsx:1414",
-            "src/components/workspace/BillingTab.jsx:1417",
-            "src/components/workspace/BillingTab.jsx:1479",
-            "src/components/workspace/BillingTab.jsx:1500",
-            "src/components/workspace/BillingTab.jsx:445",
-            "src/components/workspace/BillingTab.jsx:448",
-            "src/components/workspace/BillingTab.jsx:456",
-            "src/components/workspace/BillingTab.jsx:459",
+            "src/components/workspace/BillingTab.jsx:1480",
+            "src/components/workspace/BillingTab.jsx:1483",
+            "src/components/workspace/BillingTab.jsx:1545",
+            "src/components/workspace/BillingTab.jsx:1566",
+            "src/components/workspace/BillingTab.jsx:511",
+            "src/components/workspace/BillingTab.jsx:533",
+            "src/components/workspace/BillingTab.jsx:536",
             "src/components/workspace/BoardConfigModal.jsx:208",
             "src/components/workspace/BoardConfigModal.jsx:220",
             "src/components/workspace/BoardConfigModal.jsx:249",
@@ -4008,7 +4002,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/UserStatusDialog.jsx:71",
             "src/components/integrations/YouTrackImportCard.jsx:766",
-            "src/components/workspace/BillingTab.jsx:1345",
+            "src/components/workspace/BillingTab.jsx:518",
             "src/components/workspace/BoardConfigModal.jsx:232",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:659"
           ]
@@ -4028,7 +4022,7 @@
           ]
         },
         "(default)": {
-          "count": 176,
+          "count": 175,
           "routes": [
             "/",
             "/[projectId]",
@@ -4159,15 +4153,14 @@
             "src/components/workspace/AgileBoard.jsx:640",
             "src/components/workspace/AgileBoard.jsx:655",
             "src/components/workspace/AgileBoard.jsx:67",
-            "src/components/workspace/BillingTab.jsx:1345",
-            "src/components/workspace/BillingTab.jsx:1414",
-            "src/components/workspace/BillingTab.jsx:1417",
-            "src/components/workspace/BillingTab.jsx:1479",
-            "src/components/workspace/BillingTab.jsx:1500",
-            "src/components/workspace/BillingTab.jsx:445",
-            "src/components/workspace/BillingTab.jsx:448",
-            "src/components/workspace/BillingTab.jsx:456",
-            "src/components/workspace/BillingTab.jsx:459",
+            "src/components/workspace/BillingTab.jsx:1480",
+            "src/components/workspace/BillingTab.jsx:1483",
+            "src/components/workspace/BillingTab.jsx:1545",
+            "src/components/workspace/BillingTab.jsx:1566",
+            "src/components/workspace/BillingTab.jsx:511",
+            "src/components/workspace/BillingTab.jsx:518",
+            "src/components/workspace/BillingTab.jsx:533",
+            "src/components/workspace/BillingTab.jsx:536",
             "src/components/workspace/BoardConfigModal.jsx:208",
             "src/components/workspace/BoardConfigModal.jsx:220",
             "src/components/workspace/BoardConfigModal.jsx:232",
@@ -4754,10 +4747,10 @@
             "src/components/UserStatusDialog.jsx:105",
             "src/components/integrations/YouTrackImportCard.jsx:481",
             "src/components/integrations/YouTrackImportCard.jsx:489",
-            "src/components/workspace/BillingTab.jsx:1138",
-            "src/components/workspace/BillingTab.jsx:1141",
-            "src/components/workspace/BillingTab.jsx:1381",
-            "src/components/workspace/BillingTab.jsx:1385",
+            "src/components/workspace/BillingTab.jsx:1215",
+            "src/components/workspace/BillingTab.jsx:1218",
+            "src/components/workspace/BillingTab.jsx:1447",
+            "src/components/workspace/BillingTab.jsx:1451",
             "src/components/workspace/TimesheetTab.jsx:757",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:385",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:386",
@@ -4788,7 +4781,7 @@
             "src/app/(app)/settings/page.js:582",
             "src/app/(app)/settings/page.js:723",
             "src/app/(app)/settings/page.js:735",
-            "src/components/workspace/BillingTab.jsx:1403"
+            "src/components/workspace/BillingTab.jsx:1469"
           ]
         },
         "md": {
@@ -4801,8 +4794,8 @@
           ],
           "files": [
             "src/app/(app)/settings/page.js:3219",
-            "src/components/workspace/BillingTab.jsx:132",
-            "src/components/workspace/BillingTab.jsx:314",
+            "src/components/workspace/BillingTab.jsx:139",
+            "src/components/workspace/BillingTab.jsx:321",
             "src/components/workspace/IssueDetail.jsx:2215"
           ]
         },
@@ -4862,13 +4855,13 @@
             "src/components/WorkspaceInfoCenter.jsx:127",
             "src/components/integrations/YouTrackImportCard.jsx:481",
             "src/components/integrations/YouTrackImportCard.jsx:489",
-            "src/components/workspace/BillingTab.jsx:1138",
-            "src/components/workspace/BillingTab.jsx:1141",
-            "src/components/workspace/BillingTab.jsx:132",
-            "src/components/workspace/BillingTab.jsx:1381",
-            "src/components/workspace/BillingTab.jsx:1385",
-            "src/components/workspace/BillingTab.jsx:1403",
-            "src/components/workspace/BillingTab.jsx:314",
+            "src/components/workspace/BillingTab.jsx:1215",
+            "src/components/workspace/BillingTab.jsx:1218",
+            "src/components/workspace/BillingTab.jsx:139",
+            "src/components/workspace/BillingTab.jsx:1447",
+            "src/components/workspace/BillingTab.jsx:1451",
+            "src/components/workspace/BillingTab.jsx:1469",
+            "src/components/workspace/BillingTab.jsx:321",
             "src/components/workspace/IssueDetail.jsx:2215",
             "src/components/workspace/TimesheetTab.jsx:757",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:385",
@@ -4984,11 +4977,11 @@
             "src/components/WorkspaceInfoCenter.jsx:127",
             "src/components/integrations/YouTrackImportCard.jsx:481",
             "src/components/integrations/YouTrackImportCard.jsx:489",
-            "src/components/workspace/BillingTab.jsx:1138",
-            "src/components/workspace/BillingTab.jsx:1141",
-            "src/components/workspace/BillingTab.jsx:1381",
-            "src/components/workspace/BillingTab.jsx:1385",
-            "src/components/workspace/BillingTab.jsx:1403",
+            "src/components/workspace/BillingTab.jsx:1215",
+            "src/components/workspace/BillingTab.jsx:1218",
+            "src/components/workspace/BillingTab.jsx:1447",
+            "src/components/workspace/BillingTab.jsx:1451",
+            "src/components/workspace/BillingTab.jsx:1469",
             "src/components/workspace/IssueDetail.jsx:2013",
             "src/components/workspace/IssueDetail.jsx:2021",
             "src/components/workspace/IssueDetail.jsx:2037",
@@ -5023,8 +5016,8 @@
             "/analytics"
           ],
           "files": [
-            "src/components/workspace/BillingTab.jsx:132",
-            "src/components/workspace/BillingTab.jsx:314"
+            "src/components/workspace/BillingTab.jsx:139",
+            "src/components/workspace/BillingTab.jsx:321"
           ]
         }
       }
@@ -5049,9 +5042,9 @@
             "src/app/(app)/sprints/page.js:161",
             "src/components/AudioTaskPanel.jsx:304",
             "src/components/workspace/AgileBoard.jsx:46",
-            "src/components/workspace/BillingTab.jsx:1144",
-            "src/components/workspace/BillingTab.jsx:1147",
-            "src/components/workspace/BillingTab.jsx:1152",
+            "src/components/workspace/BillingTab.jsx:1221",
+            "src/components/workspace/BillingTab.jsx:1224",
+            "src/components/workspace/BillingTab.jsx:1229",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:931",
             "src/components/workspace/calendar/CalendarEventPage.jsx:251"
           ]
@@ -5108,9 +5101,9 @@
             "src/app/(app)/sprints/page.js:161",
             "src/components/AudioTaskPanel.jsx:237",
             "src/components/AudioTaskPanel.jsx:304",
-            "src/components/workspace/BillingTab.jsx:1144",
-            "src/components/workspace/BillingTab.jsx:1147",
-            "src/components/workspace/BillingTab.jsx:1152",
+            "src/components/workspace/BillingTab.jsx:1221",
+            "src/components/workspace/BillingTab.jsx:1224",
+            "src/components/workspace/BillingTab.jsx:1229",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:931",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1338",
             "src/components/workspace/calendar/CalendarEventPage.jsx:251"
@@ -5186,9 +5179,9 @@
             "src/components/integrations/YouTrackImportCard.jsx:596",
             "src/components/integrations/YouTrackImportCard.jsx:636",
             "src/components/integrations/YouTrackImportCard.jsx:680",
-            "src/components/workspace/BillingTab.jsx:1222",
-            "src/components/workspace/BillingTab.jsx:1232",
-            "src/components/workspace/BillingTab.jsx:1374",
+            "src/components/workspace/BillingTab.jsx:1299",
+            "src/components/workspace/BillingTab.jsx:1309",
+            "src/components/workspace/BillingTab.jsx:1440",
             "src/components/workspace/IssueDetail.jsx:1729",
             "src/components/workspace/IssueDetail.jsx:1754",
             "src/components/workspace/IssueDetail.jsx:1855",
@@ -5218,7 +5211,7 @@
             "/analytics"
           ],
           "files": [
-            "src/components/workspace/BillingTab.jsx:110"
+            "src/components/workspace/BillingTab.jsx:117"
           ]
         }
       },
@@ -5292,10 +5285,10 @@
             "src/components/integrations/YouTrackImportCard.jsx:596",
             "src/components/integrations/YouTrackImportCard.jsx:636",
             "src/components/integrations/YouTrackImportCard.jsx:680",
-            "src/components/workspace/BillingTab.jsx:110",
-            "src/components/workspace/BillingTab.jsx:1222",
-            "src/components/workspace/BillingTab.jsx:1232",
-            "src/components/workspace/BillingTab.jsx:1374",
+            "src/components/workspace/BillingTab.jsx:117",
+            "src/components/workspace/BillingTab.jsx:1299",
+            "src/components/workspace/BillingTab.jsx:1309",
+            "src/components/workspace/BillingTab.jsx:1440",
             "src/components/workspace/IssueDetail.jsx:1729",
             "src/components/workspace/IssueDetail.jsx:1754",
             "src/components/workspace/IssueDetail.jsx:1855",
@@ -5383,7 +5376,7 @@
             "src/app/(app)/calendar/page.js:735",
             "src/app/(app)/my/page.js:306",
             "src/app/(app)/sprints/page.js:829",
-            "src/components/workspace/BillingTab.jsx:1232"
+            "src/components/workspace/BillingTab.jsx:1309"
           ]
         },
         "project": {
@@ -5446,8 +5439,8 @@
             "src/components/integrations/YouTrackImportCard.jsx:596",
             "src/components/integrations/YouTrackImportCard.jsx:636",
             "src/components/integrations/YouTrackImportCard.jsx:680",
-            "src/components/workspace/BillingTab.jsx:110",
-            "src/components/workspace/BillingTab.jsx:1374",
+            "src/components/workspace/BillingTab.jsx:117",
+            "src/components/workspace/BillingTab.jsx:1440",
             "src/components/workspace/IssueDetail.jsx:1729",
             "src/components/workspace/IssueDetail.jsx:1754",
             "src/components/workspace/IssueDetail.jsx:1855",
@@ -5477,7 +5470,7 @@
             "/analytics"
           ],
           "files": [
-            "src/components/workspace/BillingTab.jsx:1222"
+            "src/components/workspace/BillingTab.jsx:1299"
           ]
         }
       }
@@ -5637,8 +5630,8 @@
             "/analytics"
           ],
           "files": [
-            "src/components/workspace/BillingTab.jsx:1160",
-            "src/components/workspace/BillingTab.jsx:1304"
+            "src/components/workspace/BillingTab.jsx:1237",
+            "src/components/workspace/BillingTab.jsx:1381"
           ]
         },
         "compact-bordered-card": {
@@ -5675,7 +5668,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:773",
-            "src/components/workspace/BillingTab.jsx:1160"
+            "src/components/workspace/BillingTab.jsx:1237"
           ]
         },
         "md": {
@@ -5688,7 +5681,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:915",
-            "src/components/workspace/BillingTab.jsx:1304",
+            "src/components/workspace/BillingTab.jsx:1381",
             "src/components/workspace/IssueDetail.jsx:2214"
           ]
         },
@@ -5751,8 +5744,8 @@
             "src/app/(app)/page.js:930",
             "src/app/(app)/settings/page.js:3681",
             "src/app/(app)/team/page.js:148",
-            "src/components/workspace/BillingTab.jsx:1160",
-            "src/components/workspace/BillingTab.jsx:1304",
+            "src/components/workspace/BillingTab.jsx:1237",
+            "src/components/workspace/BillingTab.jsx:1381",
             "src/components/workspace/IssueDetail.jsx:2214"
           ]
         },
@@ -5792,11 +5785,11 @@
             "src/components/SearchModal.jsx:121",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:203",
-            "src/components/workspace/BillingTab.jsx:1334",
-            "src/components/workspace/BillingTab.jsx:243",
-            "src/components/workspace/BillingTab.jsx:275",
-            "src/components/workspace/BillingTab.jsx:487",
-            "src/components/workspace/BillingTab.jsx:489",
+            "src/components/workspace/BillingTab.jsx:1411",
+            "src/components/workspace/BillingTab.jsx:250",
+            "src/components/workspace/BillingTab.jsx:282",
+            "src/components/workspace/BillingTab.jsx:564",
+            "src/components/workspace/BillingTab.jsx:566",
             "src/components/workspace/IssueCard.jsx:348",
             "src/components/workspace/IssueCard.jsx:410",
             "src/components/workspace/WorkloadTab.jsx:141",
@@ -5815,7 +5808,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:392",
             "src/app/(app)/page.js:247",
-            "src/components/workspace/BillingTab.jsx:246",
+            "src/components/workspace/BillingTab.jsx:253",
             "src/components/workspace/WorkloadTab.jsx:140"
           ]
         },
@@ -5861,7 +5854,7 @@
           "files": [
             "src/app/(app)/settings/page.js:3401",
             "src/components/migrations/DataMigrationSettings.jsx:201",
-            "src/components/workspace/BillingTab.jsx:1335",
+            "src/components/workspace/BillingTab.jsx:1412",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:286"
           ]
         },
@@ -5985,7 +5978,7 @@
           ],
           "files": [
             "src/app/(app)/page.js:199",
-            "src/components/workspace/BillingTab.jsx:1334"
+            "src/components/workspace/BillingTab.jsx:1411"
           ]
         },
         "md": {
@@ -6021,7 +6014,7 @@
             "src/components/workspace/AgileBoard.jsx:559",
             "src/components/workspace/AgileBoard.jsx:615",
             "src/components/workspace/AgileBoard.jsx:650",
-            "src/components/workspace/BillingTab.jsx:275",
+            "src/components/workspace/BillingTab.jsx:282",
             "src/components/workspace/IssueCard.jsx:410",
             "src/components/workspace/WorkloadTab.jsx:139",
             "src/components/workspace/WorkloadTab.jsx:140",
@@ -6052,11 +6045,11 @@
             "src/components/WorkspaceHeader.jsx:548",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:115",
-            "src/components/workspace/BillingTab.jsx:1335",
-            "src/components/workspace/BillingTab.jsx:243",
-            "src/components/workspace/BillingTab.jsx:246",
-            "src/components/workspace/BillingTab.jsx:487",
-            "src/components/workspace/BillingTab.jsx:489",
+            "src/components/workspace/BillingTab.jsx:1412",
+            "src/components/workspace/BillingTab.jsx:250",
+            "src/components/workspace/BillingTab.jsx:253",
+            "src/components/workspace/BillingTab.jsx:564",
+            "src/components/workspace/BillingTab.jsx:566",
             "src/components/workspace/IssueCard.jsx:322",
             "src/components/workspace/IssueCard.jsx:334",
             "src/components/workspace/IssueCard.jsx:348",
@@ -6125,8 +6118,8 @@
             "src/app/(app)/settings/page.js:630",
             "src/app/(app)/settings/page.js:645",
             "src/components/WorkspaceInfoCenter.jsx:111",
-            "src/components/workspace/BillingTab.jsx:243",
-            "src/components/workspace/BillingTab.jsx:246",
+            "src/components/workspace/BillingTab.jsx:250",
+            "src/components/workspace/BillingTab.jsx:253",
             "src/components/workspace/IssueCard.jsx:322",
             "src/components/workspace/IssueCard.jsx:334",
             "src/components/workspace/IssueCard.jsx:348",
@@ -6175,11 +6168,11 @@
             "src/components/workspace/AgileBoard.jsx:559",
             "src/components/workspace/AgileBoard.jsx:615",
             "src/components/workspace/AgileBoard.jsx:650",
-            "src/components/workspace/BillingTab.jsx:1334",
-            "src/components/workspace/BillingTab.jsx:1335",
-            "src/components/workspace/BillingTab.jsx:275",
-            "src/components/workspace/BillingTab.jsx:487",
-            "src/components/workspace/BillingTab.jsx:489",
+            "src/components/workspace/BillingTab.jsx:1411",
+            "src/components/workspace/BillingTab.jsx:1412",
+            "src/components/workspace/BillingTab.jsx:282",
+            "src/components/workspace/BillingTab.jsx:564",
+            "src/components/workspace/BillingTab.jsx:566",
             "src/components/workspace/IssueCard.jsx:410",
             "src/components/workspace/IssueDetail.jsx:1701",
             "src/components/workspace/UnifiedTimeline.jsx:239",
@@ -6243,13 +6236,13 @@
             "src/components/workspace/AgileBoard.jsx:559",
             "src/components/workspace/AgileBoard.jsx:615",
             "src/components/workspace/AgileBoard.jsx:650",
-            "src/components/workspace/BillingTab.jsx:1334",
-            "src/components/workspace/BillingTab.jsx:1335",
-            "src/components/workspace/BillingTab.jsx:243",
-            "src/components/workspace/BillingTab.jsx:246",
-            "src/components/workspace/BillingTab.jsx:275",
-            "src/components/workspace/BillingTab.jsx:487",
-            "src/components/workspace/BillingTab.jsx:489",
+            "src/components/workspace/BillingTab.jsx:1411",
+            "src/components/workspace/BillingTab.jsx:1412",
+            "src/components/workspace/BillingTab.jsx:250",
+            "src/components/workspace/BillingTab.jsx:253",
+            "src/components/workspace/BillingTab.jsx:282",
+            "src/components/workspace/BillingTab.jsx:564",
+            "src/components/workspace/BillingTab.jsx:566",
             "src/components/workspace/IssueCard.jsx:322",
             "src/components/workspace/IssueCard.jsx:334",
             "src/components/workspace/IssueCard.jsx:348",
@@ -6343,12 +6336,12 @@
             "src/components/workspace/AgileBoard.jsx:559",
             "src/components/workspace/AgileBoard.jsx:615",
             "src/components/workspace/AgileBoard.jsx:650",
-            "src/components/workspace/BillingTab.jsx:1334",
-            "src/components/workspace/BillingTab.jsx:1335",
-            "src/components/workspace/BillingTab.jsx:243",
-            "src/components/workspace/BillingTab.jsx:246",
-            "src/components/workspace/BillingTab.jsx:487",
-            "src/components/workspace/BillingTab.jsx:489",
+            "src/components/workspace/BillingTab.jsx:1411",
+            "src/components/workspace/BillingTab.jsx:1412",
+            "src/components/workspace/BillingTab.jsx:250",
+            "src/components/workspace/BillingTab.jsx:253",
+            "src/components/workspace/BillingTab.jsx:564",
+            "src/components/workspace/BillingTab.jsx:566",
             "src/components/workspace/IssueCard.jsx:322",
             "src/components/workspace/IssueCard.jsx:334",
             "src/components/workspace/IssueCard.jsx:348",
@@ -6395,7 +6388,7 @@
             "/analytics"
           ],
           "files": [
-            "src/components/workspace/BillingTab.jsx:275"
+            "src/components/workspace/BillingTab.jsx:282"
           ]
         }
       },
@@ -6443,13 +6436,13 @@
             "src/components/workspace/AgileBoard.jsx:559",
             "src/components/workspace/AgileBoard.jsx:615",
             "src/components/workspace/AgileBoard.jsx:650",
-            "src/components/workspace/BillingTab.jsx:1334",
-            "src/components/workspace/BillingTab.jsx:1335",
-            "src/components/workspace/BillingTab.jsx:243",
-            "src/components/workspace/BillingTab.jsx:246",
-            "src/components/workspace/BillingTab.jsx:275",
-            "src/components/workspace/BillingTab.jsx:487",
-            "src/components/workspace/BillingTab.jsx:489",
+            "src/components/workspace/BillingTab.jsx:1411",
+            "src/components/workspace/BillingTab.jsx:1412",
+            "src/components/workspace/BillingTab.jsx:250",
+            "src/components/workspace/BillingTab.jsx:253",
+            "src/components/workspace/BillingTab.jsx:282",
+            "src/components/workspace/BillingTab.jsx:564",
+            "src/components/workspace/BillingTab.jsx:566",
             "src/components/workspace/IssueCard.jsx:410",
             "src/components/workspace/IssueDetail.jsx:1701",
             "src/components/workspace/WorkloadTab.jsx:139",
@@ -6511,7 +6504,7 @@
           "files": [
             "src/app/(app)/chat/page.js:414",
             "src/app/(app)/chat/page.js:445",
-            "src/components/workspace/BillingTab.jsx:99",
+            "src/components/workspace/BillingTab.jsx:106",
             "src/components/workspace/WorkloadTab.jsx:201",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:335"
           ]
@@ -6548,7 +6541,7 @@
           "files": [
             "src/app/(app)/page.js:466",
             "src/components/CreateTaskModal.jsx:648",
-            "src/components/workspace/BillingTab.jsx:267",
+            "src/components/workspace/BillingTab.jsx:274",
             "src/components/workspace/HoverCard.jsx:169",
             "src/components/workspace/TimesheetTab.jsx:324",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1414"
@@ -7033,7 +7026,7 @@
             "/analytics"
           ],
           "files": [
-            "src/components/workspace/BillingTab.jsx:431"
+            "src/components/workspace/BillingTab.jsx:497"
           ]
         }
       },
@@ -7060,7 +7053,7 @@
             "src/app/(app)/sprints/page.js:78",
             "src/components/SupportDialog.jsx:48",
             "src/components/TeamMemberSettingsDialog.jsx:48",
-            "src/components/workspace/BillingTab.jsx:431",
+            "src/components/workspace/BillingTab.jsx:497",
             "src/components/workspace/BoardConfigModal.jsx:242",
             "src/components/workspace/TimesheetTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:697",
@@ -7156,7 +7149,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/WorkspaceHeader.jsx:511",
             "src/components/profile/ProfileModal.jsx:28",
-            "src/components/workspace/BillingTab.jsx:431",
+            "src/components/workspace/BillingTab.jsx:497",
             "src/components/workspace/BoardConfigModal.jsx:242",
             "src/components/workspace/TimesheetTab.jsx:287",
             "src/components/workspace/TimesheetTab.jsx:697",
@@ -7218,7 +7211,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/WorkspaceHeader.jsx:511",
             "src/components/profile/ProfileModal.jsx:28",
-            "src/components/workspace/BillingTab.jsx:431",
+            "src/components/workspace/BillingTab.jsx:497",
             "src/components/workspace/BoardConfigModal.jsx:242",
             "src/components/workspace/IssueDetail.jsx:1987",
             "src/components/workspace/TimesheetTab.jsx:287",
@@ -7293,11 +7286,11 @@
             "src/components/InviteMemberDialog.jsx:162",
             "src/components/integrations/YouTrackImportCard.jsx:656",
             "src/components/integrations/YouTrackImportCard.jsx:714",
-            "src/components/workspace/BillingTab.jsx:1202",
-            "src/components/workspace/BillingTab.jsx:1396",
-            "src/components/workspace/BillingTab.jsx:1461",
-            "src/components/workspace/BillingTab.jsx:1468",
-            "src/components/workspace/BillingTab.jsx:472",
+            "src/components/workspace/BillingTab.jsx:1279",
+            "src/components/workspace/BillingTab.jsx:1462",
+            "src/components/workspace/BillingTab.jsx:1527",
+            "src/components/workspace/BillingTab.jsx:1534",
+            "src/components/workspace/BillingTab.jsx:549",
             "src/components/workspace/IssueDetail.jsx:1556",
             "src/components/workspace/IssueDetail.jsx:1586",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:873"
@@ -7313,7 +7306,7 @@
           ],
           "files": [
             "src/components/integrations/YouTrackImportCard.jsx:570",
-            "src/components/workspace/BillingTab.jsx:464",
+            "src/components/workspace/BillingTab.jsx:541",
             "src/components/workspace/IssueDetail.jsx:1532"
           ]
         },
@@ -7350,7 +7343,7 @@
             "src/app/(app)/team/page.js:167",
             "src/components/profile/ProfileView.jsx:497",
             "src/components/profile/ProfileView.jsx:529",
-            "src/components/workspace/BillingTab.jsx:1106",
+            "src/components/workspace/BillingTab.jsx:1183",
             "src/components/workspace/TimesheetTab.jsx:918",
             "src/components/workspace/VelocityTab.jsx:185",
             "src/components/workspace/WorkloadTab.jsx:864",
@@ -7436,7 +7429,7 @@
             "src/components/profile/ProfileView.jsx:529",
             "src/components/workspace/AnalyticsTab.jsx:229",
             "src/components/workspace/AnalyticsTab.jsx:247",
-            "src/components/workspace/BillingTab.jsx:1106",
+            "src/components/workspace/BillingTab.jsx:1183",
             "src/components/workspace/QtPlusProjectTab.jsx:248",
             "src/components/workspace/QtPlusProjectTab.jsx:258",
             "src/components/workspace/QtPlusProjectTab.jsx:270",
@@ -7489,7 +7482,7 @@
             "src/app/(app)/team/page.js:167",
             "src/components/profile/ProfileView.jsx:497",
             "src/components/profile/ProfileView.jsx:529",
-            "src/components/workspace/BillingTab.jsx:1106",
+            "src/components/workspace/BillingTab.jsx:1183",
             "src/components/workspace/TimesheetTab.jsx:918",
             "src/components/workspace/UnifiedTimeline.jsx:1291",
             "src/components/workspace/VelocityTab.jsx:185",
@@ -7552,7 +7545,7 @@
             "src/app/(app)/settings/page.js:4377",
             "src/components/profile/ProfileView.jsx:526",
             "src/components/workspace/AnalyticsTab.jsx:220",
-            "src/components/workspace/BillingTab.jsx:1251",
+            "src/components/workspace/BillingTab.jsx:1328",
             "src/components/workspace/calendar/CalendarEventPage.jsx:772"
           ]
         },
@@ -7693,8 +7686,8 @@
           "files": [
             "src/components/WorkspaceHeader.jsx:376",
             "src/components/WorkspaceInfoCenter.jsx:255",
-            "src/components/workspace/BillingTab.jsx:1209",
-            "src/components/workspace/BillingTab.jsx:300",
+            "src/components/workspace/BillingTab.jsx:1286",
+            "src/components/workspace/BillingTab.jsx:307",
             "src/components/workspace/IssueDetail.jsx:1996"
           ]
         }
@@ -7713,7 +7706,7 @@
             "src/app/(app)/analytics/page.js:1124",
             "src/app/(app)/analytics/team/[memberId]/page.js:281",
             "src/components/WorkspaceHeader.jsx:376",
-            "src/components/workspace/BillingTab.jsx:300",
+            "src/components/workspace/BillingTab.jsx:307",
             "src/components/workspace/WorkloadTab.jsx:494",
             "src/components/workspace/WorkloadTab.jsx:543"
           ]
@@ -7735,7 +7728,7 @@
             "/analytics"
           ],
           "files": [
-            "src/components/workspace/BillingTab.jsx:1209"
+            "src/components/workspace/BillingTab.jsx:1286"
           ]
         }
       }
@@ -7762,7 +7755,7 @@
             "src/components/integrations/IntegrationCard.jsx:93",
             "src/components/migrations/DataMigrationSettings.jsx:224",
             "src/components/migrations/DataMigrationSettings.jsx:89",
-            "src/components/workspace/BillingTab.jsx:1367"
+            "src/components/workspace/BillingTab.jsx:1433"
           ]
         },
         "md": {
@@ -7801,7 +7794,7 @@
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:79",
             "src/components/profile/ProfileView.jsx:545",
-            "src/components/workspace/BillingTab.jsx:518"
+            "src/components/workspace/BillingTab.jsx:595"
           ]
         },
         "none": {
@@ -7840,7 +7833,7 @@
             "src/components/integrations/IntegrationCard.jsx:93",
             "src/components/migrations/DataMigrationSettings.jsx:224",
             "src/components/migrations/DataMigrationSettings.jsx:89",
-            "src/components/workspace/BillingTab.jsx:1367"
+            "src/components/workspace/BillingTab.jsx:1433"
           ]
         },
         "bordered": {
@@ -7867,7 +7860,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:79",
-            "src/components/workspace/BillingTab.jsx:518",
+            "src/components/workspace/BillingTab.jsx:595",
             "src/components/workspace/TimesheetTab.jsx:424",
             "src/components/workspace/qtplus/cards/NoteCard.jsx:21"
           ]
@@ -8156,7 +8149,7 @@
             "src/app/(app)/my/page.js:342",
             "src/components/CreateTaskModal.jsx:431",
             "src/components/InviteMemberDialog.jsx:119",
-            "src/components/workspace/BillingTab.jsx:1123",
+            "src/components/workspace/BillingTab.jsx:1200",
             "src/components/workspace/IssueDetail.jsx:1461",
             "src/components/workspace/IssueDetail.jsx:1943"
           ]
@@ -8200,7 +8193,7 @@
             "src/app/(app)/settings/page.js:4290",
             "src/components/InviteMemberDialog.jsx:119",
             "src/components/profile/ProfileView.jsx:324",
-            "src/components/workspace/BillingTab.jsx:1123",
+            "src/components/workspace/BillingTab.jsx:1200",
             "src/components/workspace/IssueDetail.jsx:1943",
             "src/components/workspace/qtplus/StageStepper.jsx:44"
           ]
@@ -8249,9 +8242,9 @@
             "src/components/CreateTaskModal.jsx:623",
             "src/components/CreateTaskModal.jsx:664",
             "src/components/InviteMemberDialog.jsx:131",
-            "src/components/workspace/BillingTab.jsx:109",
-            "src/components/workspace/BillingTab.jsx:130",
-            "src/components/workspace/BillingTab.jsx:77",
+            "src/components/workspace/BillingTab.jsx:116",
+            "src/components/workspace/BillingTab.jsx:137",
+            "src/components/workspace/BillingTab.jsx:84",
             "src/components/workspace/BoardConfigModal.jsx:201",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:719",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:729",

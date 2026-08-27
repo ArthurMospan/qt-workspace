@@ -10,15 +10,14 @@ import {
   collection, query, where, onSnapshot,
 } from 'firebase/firestore';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
-import { AlertTriangle, Ban, ChevronRight, Copy, Eye, FileText, Printer, Clock, Save, Send } from 'lucide-react';
+import { AlertTriangle, Ban, ChevronRight, Eye, FileText, Printer, Clock, Save, Send } from 'lucide-react';
 import { CalendarIcon } from '@/lib/design/icons';
 import { Select } from '@/components/ui/Select';
 import {
   Button, Surface, LoadingSpinner, Input, Textarea, Tabs, Checkbox,
-  Dialog, Card, Alert, EmptyState, ExportMenu, Label, Pill, PriorityBadge, Segmented, TypeBadge,
+  Dialog, Card, Alert, EmptyState, Label, Pill, PriorityBadge, Segmented, TypeBadge,
   useConfirm,
 } from '@/components/ui';
-import { buildInvoiceExport } from '@/lib/utils/analyticsExport.mjs';
 import { printHtmlDocument } from '@/lib/utils/exportFile';
 import { useWorkflowConfig } from '@/lib/hooks/useWorkflowConfig';
 import { buildCalendarBillingItems } from '@/lib/utils/calendarBillingItems.mjs';
@@ -65,6 +64,14 @@ function fmtMoney(amount, currency) {
   if (typeof amount !== 'number') return '—';
   return new Intl.NumberFormat('uk-UA', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 }
+// Друкований аркуш складається з рядка, а в назві задачі може бути «<» —
+// тому кожне значення, що потрапляє в HTML, проходить тут.
+const escapeHtml = value => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;');
+
 function fmtDate(d = new Date()) {
   return new Intl.DateTimeFormat('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
 }
@@ -343,8 +350,8 @@ function InvoicePreview({
   isSaved = false,
   onClose,
   onPrintBlocked,
-  onCopied,
-  onCopyFailed,
+  onVoid,
+  voiding = false,
 }) {
   const printRef = useRef(null);
   const invoiceItems = Array.isArray(invoice?.items) ? invoice.items : [];
@@ -353,6 +360,7 @@ function InvoicePreview({
     : '';
   const projectLabel = project?.name || invoice?.projectId || '—';
   const canExport = isSaved && officialNumber.length > 0;
+  const canVoid = Boolean(onVoid) && isSaved && invoice?.status === 'draft';
   const dialogTitle = !isSaved
     ? 'Попередній перегляд чернетки'
     : canExport
@@ -361,70 +369,128 @@ function InvoicePreview({
 
   const handlePrint = () => {
     if (!canExport) return;
-    const content = printRef.current?.innerHTML;
-    if (!content) return;
-    // One print mechanism for the whole product: opening the window, waiting
-    // for it to load and closing it after the dialog lives in `exportFile`, and
-    // an analytics table prints through the same function. What is different
-    // here is only the document — an invoice is a designed page, not a table.
+    // Друкований аркуш будується з тих самих даних, що й екранний.
+    //
+    // Раніше сюди віддавали `innerHTML` попереднього перегляду, а поруч
+    // клали таблицю стилів, написану під зовсім іншу розмітку: селектори
+    // `.meta`, `.badge`, `.grand` у документі не зустрічались жодного разу, а
+    // все, що його справді малює, — це утиліти Tailwind, яких у вікні друку
+    // немає. Плюс усередині живуть дві версії списку позицій — картки для
+    // телефона й таблиця для екрана, — і без `hidden`/`sm:` друкувались обидві.
+    // Звідси й «піздець»: подвоєний зміст без жодного оформлення.
+    //
+    // Тому аркуш складається тут, із рахунку, і кожен його клас має правило.
+    const money = value => escapeHtml(fmtMoney(value, invoice.currency));
+    const rows = invoiceItems.map(item => `
+      <tr>
+        <td>
+          <p class="item-title">${escapeHtml(item.title || '')}</p>
+          <p class="item-meta">${escapeHtml([item.key, item.status].filter(Boolean).join(' · '))}</p>
+        </td>
+        <td class="num">${item.minutes > 0 ? escapeHtml(fmtMin(item.minutes)) : '—'}</td>
+        <td class="sum">${money(item.price)}</td>
+      </tr>`).join('');
+    const totalRow = (label, value, modifier = '') => `
+      <div class="total-line${modifier}"><span>${escapeHtml(label)}</span><span>${value}</span></div>`;
     const printed = printHtmlDocument(`
       <!DOCTYPE html>
-      <html>
+      <html lang="uk">
       <head>
         <meta charset="utf-8">
-        <title>${officialNumber}</title>
+        <title>${escapeHtml(officialNumber)}</title>
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: Inter, -apple-system, sans-serif; color: #1f1f1f; padding: 48px; max-width: 800px; margin: 0 auto; }
-          h1 { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
-          table { width: 100%; border-collapse: collapse; margin: 24px 0; }
-          th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #9a9a9a; padding: 8px 0; border-bottom: 2px solid #1f1f1f; }
-          td { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: top; }
-          .total-row td { border-bottom: none; font-weight: 700; font-size: 15px; padding-top: 16px; }
-          .meta { display: flex; justify-content: space-between; margin-bottom: 40px; }
-          .meta-block p { font-size: 13px; color: #4a4a4a; line-height: 1.6; }
-          .meta-block strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #9a9a9a; margin-bottom: 4px; }
-          .grand { font-size: 28px; font-weight: 800; text-align: right; margin-top: 16px; }
-          .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: #f0f0f0; color: #4a4a4a; }
+          body {
+            font-family: Inter, -apple-system, "Segoe UI", sans-serif;
+            color: #1f1f1f; background: #fff;
+            padding: 48px; max-width: 760px; margin: 0 auto;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+          }
+          .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+          h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+          .number { margin-top: 6px; font-size: 14px; font-weight: 600; color: #9a9a9a; }
+          .void { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; background: #f4f4f5; font-size: 10px; font-weight: 700; color: #6b6b6b; }
+          .issued { text-align: right; }
+          .issued span { display: block; font-size: 12px; color: #9a9a9a; }
+          .issued strong { font-size: 15px; font-weight: 700; }
+          .parties { display: flex; gap: 32px; margin-bottom: 28px; }
+          .parties > div { flex: 1; }
+          .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9a9a9a; margin-bottom: 4px; }
+          .party-name { font-size: 13px; font-weight: 600; }
+          .party-details { margin-top: 4px; font-size: 12px; color: #6b6b6b; white-space: pre-line; }
+          .project { background: #f4f4f5; border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; }
+          .project p { font-size: 13px; font-weight: 600; margin-top: 2px; }
+          table { width: 100%; border-collapse: collapse; }
+          th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9a9a9a; padding-bottom: 8px; border-bottom: 2px solid #1f1f1f; text-align: left; }
+          th.num, th.sum { text-align: right; }
+          td { padding: 12px 0; border-bottom: 1px solid #e9e9e9; vertical-align: top; }
+          td.num, td.sum { text-align: right; white-space: nowrap; }
+          .item-title { font-size: 13px; font-weight: 500; }
+          .item-meta { margin-top: 2px; font-size: 10px; color: #9a9a9a; }
+          td.num { font-size: 12px; color: #6b6b6b; }
+          td.sum { font-size: 13px; font-weight: 600; }
+          .totals { margin-top: 18px; margin-left: auto; width: 260px; }
+          .total-line { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
+          .total-line span:first-child { color: #6b6b6b; font-size: 12px; }
+          .total-line.grand { margin-top: 8px; padding-top: 10px; border-top: 1px solid #1f1f1f; }
+          .total-line.grand span:first-child { color: #1f1f1f; font-size: 13px; font-weight: 700; }
+          .total-line.grand span:last-child { font-size: 18px; font-weight: 800; }
+          .notes { margin-top: 32px; border-top: 1px solid #e9e9e9; padding-top: 16px; font-size: 12px; color: #6b6b6b; white-space: pre-line; }
           @media print { body { padding: 24px; } }
         </style>
       </head>
-      <body>${content}</body>
+      <body>
+        <div class="head">
+          <div>
+            <h1>РАХУНОК</h1>
+            <p class="number">${escapeHtml(officialNumber)}</p>
+            ${invoice.status === 'void' ? '<span class="void">Анульовано</span>' : ''}
+          </div>
+          <div class="issued">
+            <span>Дата виставлення</span>
+            <strong>${escapeHtml(invoice.date || '')}</strong>
+          </div>
+        </div>
+
+        <div class="parties">
+          <div>
+            <p class="label">Від</p>
+            <p class="party-name">${escapeHtml(invoice.fromName || 'Ваша агенція')}</p>
+            ${invoice.fromDetails ? `<p class="party-details">${escapeHtml(invoice.fromDetails)}</p>` : ''}
+          </div>
+          <div>
+            <p class="label">Кому</p>
+            <p class="party-name">${escapeHtml(invoice.clientName || '—')}</p>
+            ${invoice.clientDetails ? `<p class="party-details">${escapeHtml(invoice.clientDetails)}</p>` : ''}
+          </div>
+        </div>
+
+        <div class="project">
+          <p class="label">Проєкт</p>
+          <p>${escapeHtml(projectLabel)}</p>
+        </div>
+
+        <table>
+          <thead>
+            <tr><th>Послуга</th><th class="num">Час</th><th class="sum">Сума</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        <div class="totals">
+          ${totalRow('Підсумок', money(invoice.subtotal))}
+          ${invoice.discount > 0 ? totalRow(`Знижка (${invoice.discountPct}%)`, `−${money(invoice.discount)}`) : ''}
+          ${invoice.tax > 0 ? totalRow(`ПДВ (${invoice.taxPct}%)`, `+${money(invoice.tax)}`) : ''}
+          ${totalRow('До оплати', money(invoice.total), ' grand')}
+        </div>
+
+        ${invoice.notes ? `<div class="notes">${escapeHtml(invoice.notes)}</div>` : ''}
+      </body>
       </html>
     `);
     // A popup blocker returns no window at all, and the old code dereferenced
     // it straight away — the button simply appeared to do nothing.
     if (!printed) onPrintBlocked?.();
-  };
-
-  const handleCopy = () => {
-    if (!canExport) return;
-    const lines = [
-      `РАХУНОК ${officialNumber}`,
-      `Дата: ${invoice.date}`,
-      `Клієнт: ${invoice.clientName || '—'}`,
-      `Проєкт: ${projectLabel}`,
-      invoice.status === 'void' ? 'Статус: Анульовано' : '',
-      '',
-      'Послуги:',
-      ...invoiceItems.map(i => `  ${i.title} (${i.key}) — ${fmtMoney(i.price, invoice.currency)}`),
-      '',
-      `Підсумок: ${fmtMoney(invoice.subtotal, invoice.currency)}`,
-      invoice.discount > 0 ? `Знижка (${invoice.discountPct}%): -${fmtMoney(invoice.discount, invoice.currency)}` : '',
-      invoice.tax > 0 ? `ПДВ (${invoice.taxPct}%): +${fmtMoney(invoice.tax, invoice.currency)}` : '',
-      `До оплати: ${fmtMoney(invoice.total, invoice.currency)}`,
-    ].filter(l => l !== '').join('\n');
-    // Clipboard access is denied in insecure contexts and by some browsers;
-    // silently swallowing that left the user thinking the copy worked.
-    const copyPromise = navigator.clipboard?.writeText?.(lines);
-    if (!copyPromise) {
-      onCopyFailed?.();
-      return;
-    }
-    copyPromise.then(
-      () => onCopied?.(),
-      () => onCopyFailed?.(),
-    );
   };
 
   return (
@@ -445,14 +511,25 @@ function InvoicePreview({
             <Button style="ghost" size="md" icon={Send} disabled title="Інтеграція в розробці">
               OneB Invoice · в розробці
             </Button>
-            <Button onClick={handleCopy} style="secondary" size="md" icon={Copy}>Копіювати</Button>
-            {/* PDF is not in this menu: «Друкувати» already produces one, from
-                the designed invoice on screen rather than from a bare table. */}
-            <ExportMenu
-              size="md"
-              formats={['xlsx', 'csv']}
-              build={() => buildInvoiceExport({ invoice, project })}
-            />
+            {/* Анулювання живе тут, біля самого рахунку, а не іконкою в
+                списку. Це рішення про конкретний документ, і ухвалюють його,
+                подивившись на нього, — а не проходячи повз рядок. */}
+            {canVoid && (
+              <Button
+                onClick={onVoid}
+                style="ghost"
+                color="red"
+                size="md"
+                icon={Ban}
+                loading={voiding}
+              >
+                Анулювати
+              </Button>
+            )}
+            {/* Копіювання й експорт звідси прибрані: копія віддавала рахунок
+                простим текстом без жодного оформлення, а таблиця в XLSX — це
+                не рахунок, це його вміст. Документ віддає друк, і з нього ж
+                браузер зберігає PDF. */}
             <Button onClick={handlePrint} style="primary" size="md" icon={Printer}>Друкувати</Button>
           </>
         ) : (
@@ -1038,8 +1115,8 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
 
   const voidInvoice = async invoice => {
     if (!(await confirmDialog({
-      title: 'Анулювати чернетку рахунку?',
-      message: 'Рахунок залишиться в історії як анульований, а його записи часу та позиції знову стануть доступними.',
+      title: 'Анулювати рахунок?',
+      message: 'Рахунок залишиться у списку як анульований, а його записи часу та позиції знову стануть доступними.',
       confirmText: 'Анулювати',
       danger: true,
     }))) return;
@@ -1341,17 +1418,6 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <span className="text-[14px] font-black text-ink">{fmtMoney(inv.total, inv.currency)}</span>
-                      {inv.status === 'draft' && (
-                        <Button
-                          style="ghost"
-                          color="red"
-                          size="icon-sm"
-                          icon={Ban}
-                          title="Анулювати рахунок"
-                          loading={voidingInvoiceId === inv.id}
-                          onClick={() => voidInvoice(inv)}
-                        />
-                      )}
                       {/* Шеврон — це те, що робить рядок читабельно натисним.
                           Без нього номер, дата й сума виглядають як підпис. */}
                       <ChevronRight size={16} className="shrink-0 text-faint" />
@@ -1508,9 +1574,7 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
             >
               Створити рахунок
             </Button>
-            <p className="text-center text-[11px] leading-relaxed text-faint">
-              Отримає номер і закріпить за собою обраний час. Знайдете його в «Історії»; помилковий — анулюйте.
-            </p>
+
           </div>
         </Card>
       </div>
@@ -1523,8 +1587,12 @@ export default function BillingTab({ issues = [], events = [], members = [], pro
           isSaved={invoicePreview.kind === 'saved'}
           onClose={closeInvoicePreview}
           onPrintBlocked={() => showToast('Дозвольте спливаючі вікна, щоб надрукувати рахунок', 'error')}
-          onCopied={() => showToast('Рахунок скопійовано')}
-          onCopyFailed={() => showToast('Не вдалося скопіювати рахунок', 'error')}
+          onVoid={() => {
+            const invoice = invoicePreview.invoice;
+            closeInvoicePreview();
+            voidInvoice(invoice);
+          }}
+          voiding={voidingInvoiceId === invoicePreview.invoice?.id}
         />
       )}
     </div>

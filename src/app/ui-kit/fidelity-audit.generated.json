@@ -642,7 +642,7 @@
       "className": "sticky left-0 flex items-center bg-canvas rounded-[6px] px-3 py-[6px] mb-2 w-max min-w-[200px]"
     },
     {
-      "location": "src/components/workspace/BillingTab.jsx:511",
+      "location": "src/components/workspace/BillingTab.jsx:588",
       "tag": "div",
       "className": "bg-canvas rounded-[10px] px-4 py-3 mb-6"
     },
