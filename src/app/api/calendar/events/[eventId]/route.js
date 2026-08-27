@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { syncCalendarEventReminderRows } from '@/lib/server/reminderJobs';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { assigneesOffProjectTeam, assigneesOutsideProject } from '@/lib/utils/projectAccess.mjs';
 import {
@@ -557,6 +558,15 @@ export async function PATCH(request, context) {
     ]), 'update');
 
     const updated = await (mutationResult.eventRef || loaded.ref).get();
+    // «Нагадати за 15 хвилин» is knowable the moment the event is saved, so
+    // the queue rows are written here rather than found by a scan minutes
+    // before the meeting. A moved start rewrites them; a deleted event or a
+    // dropped participant leaves nothing wanted, and the rows are cancelled.
+    await syncCalendarEventReminderRows({
+      eventId: updated.id,
+      event: updated.exists ? { ...updated.data(), id: updated.id } : null,
+    }).catch(error => console.warn('[calendar PATCH] reminder rows failed:', error.message));
+
     return NextResponse.json({ event: serializeCalendarEvent(updated) });
   } catch (error) {
     if (error?.calendarEventMutation) {
@@ -688,6 +698,14 @@ export async function DELETE(request, context) {
         : 'Організатор скасував командну подію',
       link: '/calendar',
     }), 'delete');
+    // A deleted series wants nothing; a deleted single occurrence still wants
+    // the rest of the series, so the event is read back rather than assumed
+    // gone.
+    await syncCalendarEventReminderRows({
+      eventId,
+      ...(deletedEvent.deletedOccurrence ? {} : { event: null }),
+    }).catch(error => console.warn('[calendar DELETE] reminder rows failed:', error.message));
+
     return NextResponse.json({
       success: true,
       scope: deletedEvent.deletedOccurrence ? 'occurrence' : 'series',

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { isArchivedIssue } from '@/lib/utils/issueArchive.mjs';
 import { isCancelledIssue } from '@/lib/utils/issueCancel.mjs';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { syncCalendarEventReminderRows } from '@/lib/server/reminderJobs';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { assigneesOffProjectTeam, assigneesOutsideProject } from '@/lib/utils/projectAccess.mjs';
 import {
@@ -324,6 +325,15 @@ export async function POST(request) {
     });
 
     const created = await ref.get();
+    // «Нагадати за 15 хвилин» is knowable the moment the event is saved, so
+    // the queue rows are written here rather than found by a scan minutes
+    // before the meeting. A moved start rewrites them; a deleted event or a
+    // dropped participant leaves nothing wanted, and the rows are cancelled.
+    await syncCalendarEventReminderRows({
+      eventId: ref.id,
+      event: { ...created.data(), id: ref.id },
+    }).catch(error => console.warn('[calendar POST] reminder rows failed:', error.message));
+
     return NextResponse.json({ event: serializeCalendarEvent(created) }, { status: 201 });
   } catch (error) {
     if (error?.calendarEventCreate) {

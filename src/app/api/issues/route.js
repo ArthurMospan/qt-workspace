@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { isValidIssuePrefix } from '@/lib/utils/issueKeys.mjs';
 import { rolesFor } from '@/lib/utils/can';
@@ -251,6 +252,9 @@ export async function POST(request) {
     }
     const issueRef = db.collection('issues').doc();
     let issueKey;
+    // Read back out of the transaction so the reminder row below can be written
+    // from what was stored, without a second read of the task.
+    let createdStatus;
 
     await db.runTransaction(async transaction => {
       const freshProjectSnap = await transaction.get(projectRef);
@@ -286,6 +290,7 @@ export async function POST(request) {
       const status = (project.hiddenColumns || []).includes(statusCandidate)
         ? entryStatusId
         : statusCandidate;
+      createdStatus = status;
       const closedIds = resolveClosedStatusIds(freshWorkflow.statuses);
       const freshPriorityIds = new Set(workflowIds(
         freshWorkflow.priorities,
@@ -445,6 +450,25 @@ export async function POST(request) {
         });
       }
     });
+
+    // The payload above is everything a deadline candidate reads, so the queue
+    // row is written without reading the task back.
+    if (dueDate && assigneeIds.length) {
+      await syncIssueReminderRows({
+        issueId: issueRef.id,
+        issue: {
+          id: issueRef.id,
+          organizationId,
+          projectId,
+          issueKey,
+          title: data.title.trim(),
+          dueDate,
+          assigneeIds,
+          columnId: createdStatus,
+          status: createdStatus,
+        },
+      }).catch(error => console.warn('[issues POST] reminder rows failed:', error.message));
+    }
 
     return NextResponse.json({ id: issueRef.id, issueKey }, { status: 201 });
   } catch (error) {

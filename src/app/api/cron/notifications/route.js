@@ -16,12 +16,17 @@ function presentedSecretMatches(header, expected) {
 // can drive delivery on a tight interval without paying for a collection scan
 // every minute:
 //
-//   ?mode=dispatch      — send what is due. One indexed query; safe every minute.
-//   ?mode=materialise   — restock the outbox and post birthday greetings.
-//   (default) full      — both, with materialising self-throttled internally.
+//   ?mode=dispatch      — send what is due. One indexed query, no state read and
+//                         no state write; safe every minute.
+//   ?mode=maintenance   — empty «Нещодавно видалене» past its window and expire
+//                         read records. Two bounded queries; hourly.
+//   ?mode=materialise   — restock the outbox from the source data and post
+//                         birthday greetings. Nightly; a safety net, because the
+//                         rows are written when the deadline is set.
+//   (default) full      — all three, with materialising self-throttled internally.
 //
 // See docs/ARCHITECTURE.md.
-const MODES = new Set(['full', 'dispatch', 'materialise']);
+const MODES = new Set(['full', 'dispatch', 'maintenance', 'materialise']);
 
 export async function GET(request) {
   const cronSecret = process.env.CRON_SECRET?.trim() || '';

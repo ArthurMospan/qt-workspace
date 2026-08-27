@@ -41,7 +41,10 @@ import {
   planMyTaskDrop,
 } from '@/lib/utils/myTaskOrder.mjs';
 import { sendNotification } from '@/lib/hooks/useNotifications';
-import { transitionIssueStatusViaApi } from '@/lib/services/issues';
+import {
+  syncIssueRemindersViaApi,
+  transitionIssueStatusViaApi,
+} from '@/lib/services/issues';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
 function issueLabel(issue) {
@@ -361,6 +364,9 @@ export function useAllMyTasks(userId) {
       }
       throw err;
     }
+    // Same act, same rule as the board: the deadline is written here, the
+    // queue row that reminds somebody about it is written by the server.
+    syncIssueRemindersViaApi(taskId, directData);
   }, [
     applyAllPatch,
     applyPatch,

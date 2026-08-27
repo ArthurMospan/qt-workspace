@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
 import { rolesFor } from '@/lib/utils/can';
@@ -108,6 +109,13 @@ export async function PATCH(request, context) {
       return { changed: true, issueKey: current.issueKey || issueId };
     });
 
+
+    // A deadline is knowable the moment it is written, so that is when its
+    // reminders are written down. Fire and forget: the task change has already been
+    // committed, and a queue row that failed to appear is restocked by the nightly
+    // safety net rather than being allowed to fail the request that made it.
+    await syncIssueReminderRows({ issueId })
+      .catch(error => console.warn('[issues] reminder rows failed:', error.message));
     return NextResponse.json({ success: true, archived, ...result });
   } catch (error) {
     if (error?.archiveApi) {

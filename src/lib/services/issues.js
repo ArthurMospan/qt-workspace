@@ -15,6 +15,33 @@ export async function createIssueViaApi({ organizationId, projectId, data }) {
   }, 'Не вдалося створити задачу');
 }
 
+// Fields whose new value changes who gets reminded, and when.
+const REMINDER_FIELDS = ['dueDate', 'assigneeIds'];
+
+/**
+ * Tell the server the deadline moved, so the queued reminders move with it.
+ *
+ * A task's own fields are written straight from the browser, but the reminder
+ * queue is not writable from a browser at all — no Firestore rule describes
+ * `scheduledNotifications`, deliberately, because a row in it is an instruction
+ * to notify somebody. So the composer writes the field and then asks the server
+ * to recompute from what is now stored.
+ *
+ * Nothing is awaited and no failure is surfaced: the task change has already
+ * landed, this is the notification that follows it, and the nightly sweep
+ * writes whatever this missed. A toast about a reminder queue would be about
+ * machinery the reader has no way to act on.
+ */
+export function syncIssueRemindersViaApi(issueId, changedFields) {
+  if (!issueId) return;
+  if (changedFields && !REMINDER_FIELDS.some(field => field in changedFields)) return;
+  authenticatedIssueRequest(
+    `/api/issues/${encodeURIComponent(issueId)}/reminders`,
+    { method: 'POST' },
+    'Не вдалося оновити нагадування',
+  ).catch(() => {});
+}
+
 export async function bulkIssuesViaApi({ organizationId, issueIds, action, value }) {
   return authenticatedIssueRequest('/api/issues/bulk', {
     method: 'POST',

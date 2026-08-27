@@ -222,7 +222,7 @@ test('a wall-clock hour resolves to the right instant on both sides of DST', () 
 
 test('the expensive half and the cheap half are separately drivable', async () => {
   const route = await read('../src/app/api/cron/notifications/route.js');
-  assert.match(route, /new Set\(\['full', 'dispatch', 'materialise'\]\)/);
+  assert.match(route, /new Set\(\['full', 'dispatch', 'maintenance', 'materialise'\]\)/);
   assert.match(route, /runScheduledNotificationSweep\(\{ mode: requested \}\)/);
   // An unknown mode is refused rather than silently treated as "everything".
   assert.match(route, /Unknown mode/);
@@ -234,7 +234,115 @@ test('the expensive half and the cheap half are separately drivable', async () =
     jobs.indexOf('materialiseScheduledNotifications({ nowMs, lookBackMs })')
       < jobs.indexOf('dispatchDueNotifications({ nowMs })'),
   );
-  assert.match(jobs, /MATERIALISE_INTERVAL_MS = 20 \* 60 \* 1000/);
+  // Once a night. The scan is the safety net now — the rows are written by the
+  // route that accepted the deadline — and a safety net that runs seventy-two
+  // times a day is the cost it was supposed to replace.
+  assert.match(jobs, /MATERIALISE_INTERVAL_MS = 12 \* 60 \* 60 \* 1000/);
+});
+
+// The pass that runs every minute is the one whose cost is multiplied by
+// fourteen hundred, so it reads the outbox and nothing else.
+test('a dispatch pass reads the outbox and nothing else', async () => {
+  const jobs = await read('../src/lib/server/reminderJobs.js');
+  const sweep = jobs.slice(jobs.indexOf('export async function runScheduledNotificationSweep'));
+  // The watermark belongs to the expensive half. Reading it every minute
+  // doubled the cost of an idle pass to learn something dispatch never uses.
+  assert.match(sweep, /const state = wantsMaterialise\s*\n\s*\? await readSweepState\(nowMs\)/);
+  // And it writes nothing: a status line written every minute is a hot document.
+  assert.match(sweep, /if \(!wantsDispatch \|\| wantsMaterialise \|\| wantsMaintenance\) \{/);
+
+  // The delivery-time query used to run beside the retry-time one on every
+  // pass, to pick up rows from a schema nobody has written since. A query that
+  // matches nothing still costs a read; at one a minute that was fourteen
+  // hundred reads a day. It is the index fallback now, and only that.
+  const outbox = await read('../src/lib/server/notificationOutbox.js');
+  const dispatch = outbox.slice(outbox.indexOf('export async function dispatchDueNotifications'));
+  assert.doesNotMatch(dispatch, /Promise\.all\(\[readyQuery\.get\(\), legacyQuery\.get\(\)\]\)/);
+  assert.match(dispatch, /readySnapshot = await readyQuery\.get\(\);/);
+});
+
+// A reminder is written down when it becomes knowable, not found later.
+//
+// Materialising by scanning is what made a reminder cost the whole issue and
+// calendarEvents collections on every pass. The row is a consequence of a
+// write, so it is written by the write: the route that accepts a deadline
+// records who has to be told and when, and the nightly scan is what catches
+// whatever that missed.
+test('setting a deadline writes its reminder down, rather than leaving it to be found', async () => {
+  const [jobs, outbox] = await Promise.all([
+    read('../src/lib/server/reminderJobs.js'),
+    read('../src/lib/server/notificationOutbox.js'),
+  ]);
+
+  // One reconciliation, two ways of naming what it owns — so a row written by
+  // the sweep and a row written by a deadline edit are the same row.
+  assert.match(outbox, /export async function reconcileScopedRows\(/);
+  assert.match(outbox, /\.where\(field, '==', value\)/);
+  assert.match(outbox, /\.where\('status', '==', 'pending'\)/);
+  assert.match(outbox, /\.limit\(SCOPED_ROW_LIMIT\)/);
+  assert.match(jobs, /export async function syncIssueReminderRows\(/);
+  assert.match(jobs, /export async function syncCalendarEventReminderRows\(/);
+
+  // Every server route that can change when somebody must be reminded.
+  const callers = [
+    'src/app/api/issues/route.js',
+    'src/app/api/issues/bulk/route.js',
+    'src/app/api/issues/[issueId]/route.js',
+    'src/app/api/issues/[issueId]/status/route.js',
+    'src/app/api/issues/[issueId]/archive/route.js',
+    'src/app/api/issues/[issueId]/cancel/route.js',
+    'src/app/api/issues/[issueId]/restore/route.js',
+    'src/app/api/issues/[issueId]/reminders/route.js',
+  ];
+  for (const file of callers) {
+    assert.match(
+      await read(`../${file}`),
+      /syncIssueReminderRows/,
+      `${file} changes when a reminder is owed and must say so`,
+    );
+  }
+  for (const file of [
+    'src/app/api/calendar/events/route.js',
+    'src/app/api/calendar/events/[eventId]/route.js',
+  ]) {
+    assert.match(await read(`../${file}`), /syncCalendarEventReminderRows/, file);
+  }
+
+  // The deadline is still written straight from the browser, and the browser
+  // cannot write the queue — so the composer asks the server to recompute it.
+  const service = await read('../src/lib/services/issues.js');
+  assert.match(service, /export function syncIssueRemindersViaApi/);
+  assert.match(service, /const REMINDER_FIELDS = \['dueDate', 'assigneeIds'\]/);
+  for (const file of ['../src/lib/hooks/useIssues.js', '../src/lib/hooks/useAllMyTasks.js']) {
+    assert.match(await read(file), /syncIssueRemindersViaApi\(/, file);
+  }
+
+  // And the scoped query has an index to run against.
+  const indexes = JSON.parse(await read('../firestore.indexes.json')).indexes;
+  const paths = indexes
+    .filter(entry => entry.collectionGroup === 'scheduledNotifications')
+    .map(entry => entry.fields.map(field => field.fieldPath).join(','));
+  assert.ok(paths.includes('issueId,status'), 'a task\'s own rows need (issueId, status)');
+  assert.ok(paths.includes('calendarEventId,status'), 'an event\'s own rows need (calendarEventId, status)');
+});
+
+// The scan that remains is the safety net, and a safety net still has to be
+// bounded — the whole reason it ran the workspace out of quota was a query with
+// no edge.
+test('the nightly scan is bounded on both sides', async () => {
+  const [jobs, candidates] = await Promise.all([
+    read('../src/lib/server/reminderJobs.js'),
+    read('../src/lib/utils/reminderCandidates.mjs'),
+  ]);
+  // Deadlines: a week back, because that is what an overdue nag can still reach.
+  assert.match(candidates, /DEADLINE_FLOOR_MS = 7 \* 24 \* 60 \* 60 \* 1000/);
+  // One-off events already had a window. Recurring ones did not have one at
+  // all: their start is in the past forever, so the query read every series
+  // ever created, with no ceiling and no edge.
+  assert.match(jobs, /const RECURRING_SCAN_LIMIT = 500;/);
+  const recurring = jobs.slice(jobs.indexOf('const recurringQuery'));
+  assert.match(recurring, /\.where\('startAt', '<=', Timestamp\.fromMillis\(nowMs \+ CALENDAR_LEAD_MS\)\)/);
+  assert.match(recurring, /\.limit\(RECURRING_SCAN_LIMIT\)/);
 });
 
 test('the outbox query has an index to run against', async () => {
@@ -327,8 +435,12 @@ test('expiry runs on the slow pass, and pays for what it deletes and nothing els
   // The guard is only read for the types that can be resent at all.
   assert.match(prune, /record\.type === 'deadline' \|\| record\.type === 'calendar_reminder'/);
   assert.match(prune, /expirableNotificationIds\(records, rows\)/);
-  // Never on the every-minute dispatch pass.
-  assert.match(source, /wantsMaterialise && materialiseDue\s*\n\s*\? await pruneReadNotifications/);
+  // Never on the every-minute dispatch pass — and no longer only on the
+  // nightly one either. «Нещодавно видалене» promises twenty-four hours, and a
+  // nightly purge makes that up to forty-eight, so both of these run on their
+  // own hourly pass.
+  assert.match(source, /const issueTrash = wantsMaintenance\s*\n\s*\? await purgeExpiredDeletedIssues/);
+  assert.match(source, /const prunedNotifications = wantsMaintenance\s*\n\s*\? await pruneReadNotifications/);
 });
 
 test('an event-driven message that failed to leave is owed, not lost', async () => {

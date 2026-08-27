@@ -672,16 +672,49 @@ Calendar reminders and deadline notifications use
 attempt count, per-channel success timestamps and last error. Deterministic row
 IDs make repeated materialisation and dispatch idempotent.
 
-The worker is split into two modes:
+**A row is written when the deadline is set, not found by a scan later.** This
+is the part that took two attempts to get right, and the first attempt is what
+made reminders unaffordable. Asking «is anything due?» costs the whole `issues`
+and `calendarEvents` collections, and ninety-nine passes in a hundred pay that
+to find nothing. But a reminder is a consequence of a write: somebody types a
+deadline, and at that instant it is fully known who has to be told and when.
 
-- `materialise` runs the more expensive half. Every twenty minutes it performs
-  bounded reads of upcoming calendar events and issues, fills the outbox three
-  hours ahead, corrects moved reminders and cancels pending rows whose source is
-  no longer valid.
-- `dispatch` runs the cheap half. It reads at most 50 pending rows whose
-  `nextAttemptAtMs` is due, sends them and records `sent`, `failed` or a backed-
-  off retry. An idle pass is one bounded indexed query.
-- `full` runs both halves; materialisation remains internally throttled.
+So every server route that can change that writes the row —
+`syncIssueReminderRows` from the task routes, `syncCalendarEventReminderRows`
+from the calendar routes. Moving the deadline rewrites the row; finishing,
+cancelling, archiving or deleting the task leaves nothing wanted, and what is
+pending is cancelled. A task's own fields are still written straight from the
+browser, and the browser cannot write this queue — no Firestore rule describes
+`scheduledNotifications`, deliberately — so the composer writes the deadline and
+then asks `POST /api/issues/{id}/reminders` to recompute from what is stored.
+It accepts no body: a route that takes a delivery time is a route that can be
+asked to notify anybody at any hour.
+
+The worker therefore runs in three modes, on three schedules, because the three
+passes cost three different amounts:
+
+- `dispatch` — every minute. At most 50 pending rows whose `nextAttemptAtMs` is
+  due, sent, then recorded as `sent`, `failed` or a backed-off retry. It reads
+  no watermark and writes no state, so an idle pass costs one Firestore read.
+  This is the only mode that decides how late a reminder is.
+- `maintenance` — hourly. Two bounded indexed queries: finalising soft-deleted
+  tasks past their undo window, and expiring read records. Hourly rather than
+  nightly because «Нещодавно видалене» promises twenty-four hours, and a nightly
+  pass would stretch that to forty-eight.
+- `materialise` — nightly, and now a safety net rather than the mechanism. It
+  performs bounded reads of upcoming calendar events and issues, fills the
+  outbox 48 hours ahead, corrects moved reminders and cancels pending rows whose
+  source is no longer valid. It is what catches a write-time sync that failed,
+  or a change made directly in the database.
+- `full` runs all three; materialisation is internally throttled to twelve hours.
+
+The scan that remains is bounded on both sides. Deadlines are read back one week
+(`DEADLINE_FLOOR_MS`), because that is as far as an overdue nag can still reach.
+One-off calendar events are read inside the reminder window. Recurring ones used
+to have no window at all — a series' start is in the past forever, so the query
+read every series ever created — and are now bounded forward by the reminder
+lead and capped by `RECURRING_SCAN_LIMIT`, which logs loudly rather than
+silently dropping events.
 
 Email and Telegram outcomes are tracked separately. If email succeeds and
 Telegram fails, only Telegram is retried; a successful channel is not sent a
@@ -692,10 +725,12 @@ The dispatch and materialisation watermarks are also separate. A frequent
 dispatch pass therefore cannot shorten the recovery window after the
 materialiser was unavailable.
 
-Materialisation is still a bounded periodic derivation, not yet a write-time
-derivation. The final architecture is to rewrite affected outbox rows in every
-server path that creates, moves or completes an event/deadline. Until that
-invariant is implemented and tested, the twenty-minute materialiser is required.
+The dispatch query used to run twice on every pass — once on
+`nextAttemptAtMs`, once on `deliverAtMs` — to pick up rows written before the
+retry-time field existed. A Firestore query that matches nothing still costs a
+read, so that compatibility shim was fourteen hundred reads a day for a schema
+nobody had written since. It is the index fallback now, and a legacy row still
+inside the materialised window is upgraded by the nightly pass instead.
 
 ### Hygiene of the record itself
 
@@ -704,7 +739,7 @@ the claim that says «this person has already been told». That is why nothing
 removed read records for so long — deleting a claim is how a reminder gets sent
 twice.
 
-`pruneReadNotifications` runs on the slow (materialising) half of the sweep and
+`pruneReadNotifications` runs on the hourly `maintenance` pass and
 deletes records that are read and older than `READ_NOTIFICATION_TTL_MS` (30
 days), bounded to 100 per pass because deletions are writes and the daily write
 budget is the tighter of the two free-tier limits. For the two types this outbox

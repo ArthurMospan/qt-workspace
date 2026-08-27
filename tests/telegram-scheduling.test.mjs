@@ -19,14 +19,22 @@ test('a schedule invokes the notification sweep independently of a browser', asy
   // Vercel Hobby allows one cron run per day, so the five-minute sweep is
   // driven from GitHub Actions rather than vercel.json.
   const workflow = await read('../.github/workflows/scheduled-notifications.yml');
+  const sweep = await read('../.github/scripts/sweep-notifications.sh');
+  // Three schedules, because the three passes cost three different amounts:
+  // delivery every minute, tidying hourly, and the scan once a night.
   assert.match(workflow, /cron: '\*\/5 \* \* \* \*'/);
-  assert.match(workflow, /\$\{APP_URL\}\/api\/cron\/notifications/);
-  assert.match(workflow, /Authorization: Bearer \$\{CRON_SECRET\}/);
+  assert.match(workflow, /cron: '7 \* \* \* \*'/);
+  assert.match(workflow, /cron: '11 3 \* \* \*'/);
+  assert.match(workflow, /MODE: dispatch/);
+  assert.match(workflow, /MODE: maintenance/);
+  assert.match(workflow, /MODE: materialise/);
+  assert.match(sweep, /\$\{APP_URL\}\/api\/cron\/notifications\?mode=\$\{MODE\}/);
+  assert.match(sweep, /Authorization: Bearer \$\{CRON_SECRET\}/);
 
   // An unset secret must fail loudly instead of silently sending no header and
   // reading the endpoint's 401 as a healthy run.
-  assert.match(workflow, /if \[ -z "\$\{CRON_SECRET\}" \]/);
-  assert.match(workflow, /if \[ "\$\{status\}" != "200" \]/);
+  assert.match(sweep, /if \[ -z "\$\{CRON_SECRET\}" \]/);
+  assert.match(sweep, /if \[ "\$\{status\}" != "200" \]/);
 
   await assert.rejects(read('../vercel.json'), /ENOENT/);
 

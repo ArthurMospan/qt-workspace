@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { projectWriteError } from '@/lib/utils/projectAccess.mjs';
@@ -219,6 +220,12 @@ export async function DELETE(request, context) {
       });
       return { childCount: children.length };
     });
+
+    // The task is gone, so nothing wants its reminders. `issue: null` says so
+    // without a read: the row is cancelled rather than left to fire about a
+    // deadline on a task nobody can open.
+    await syncIssueReminderRows({ issueId, issue: null })
+      .catch(error => console.warn('[issues DELETE] reminder rows failed:', error.message));
 
     return NextResponse.json({
       success: true,

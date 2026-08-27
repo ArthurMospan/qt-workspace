@@ -6,6 +6,7 @@ import {
   getAdminDb,
 } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { localizedIssueAuthorizationMessage } from '@/lib/utils/issueApiMessages.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import {
@@ -448,6 +449,11 @@ export async function PATCH(request, context) {
       };
     });
 
+    // Closing a task takes its deadline reminder off the queue; reopening one
+    // puts it back. Written now rather than found by a scan later — see
+    // src/lib/server/notificationOutbox.js.
+    await syncIssueReminderRows({ issueId })
+      .catch(error => console.warn('[issues] reminder rows failed:', error.message));
     return NextResponse.json({
       success: true,
       changed: result.changed,

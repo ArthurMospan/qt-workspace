@@ -7,6 +7,7 @@ import { PATCH as cancelIssue } from '../[issueId]/cancel/route';
 import { PATCH as transitionIssueStatus } from '../[issueId]/status/route';
 import { deliverBulkNotifications } from '@/lib/server/bulkNotifications';
 import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
   ISSUE_BULK_ACTION_BY_ID,
@@ -396,6 +397,16 @@ export async function POST(request) {
             createdAt: now,
           });
         });
+        // A bulk deadline or a change of assignee moves the same reminders a
+        // single edit would, so it writes the same rows. The patched task is
+        // handed over rather than read back — the transaction above already
+        // holds every field a deadline candidate looks at.
+        if (patch && (patch.dueDate !== undefined || patch.assigneeIds !== undefined)) {
+          await syncIssueReminderRows({
+            issueId: issue.id,
+            issue: { ...freshIssue, ...patch, id: issue.id },
+          }).catch(error => console.warn('[issue-bulk] reminder rows failed:', error.message));
+        }
         return {
           id: issue.id,
           patch,

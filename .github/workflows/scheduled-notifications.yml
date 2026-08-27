@@ -6,16 +6,29 @@ name: Scheduled notifications
 #
 # GitHub does not honour `*/5 * * * *` either. Measured on this repository, a
 # five-minute schedule actually starts a run roughly once an hour during the day
-# and once every two to three hours overnight. A run that swept once therefore
-# left hours uncovered, and the sweep's fixed ten-minute look-back threw away
-# every reminder whose trigger fell inside those hours instead of delivering it
-# late — which is why "нагадати за 15 хвилин" mostly never arrived.
+# and once every two to three hours overnight. So one run stays alive sweeping
+# on a real interval instead of firing once and exiting, and
+# `cancel-in-progress: true` makes the next scheduled run replace the loop
+# rather than double it.
 #
-# Two changes fix that together: the sweep carries a watermark and asks for
-# everything since its own previous pass, so nothing is dropped whatever the
-# cadence; and one run now stays alive sweeping on a real interval instead of
-# firing once and exiting. `cancel-in-progress: true` makes the next scheduled
-# run replace the loop rather than double it.
+# ── Three schedules, because the work is three different costs ──────────────
+#
+# dispatch (every minute, inside the loop) — one indexed query against the
+#   outbox, no state read, no state write. It costs a single Firestore read when
+#   nothing is due, and it is the only thing that decides how late a reminder
+#   is. It is cheap because the rows it reads are written when somebody sets a
+#   deadline, by the route that accepted it — not found by a scan.
+#
+# maintenance (hourly) — two bounded indexed queries: finalising soft-deleted
+#   tasks past their undo window, and expiring read notifications. Hourly rather
+#   than nightly because «Нещодавно видалене» promises twenty-four hours, and a
+#   nightly pass would stretch that to forty-eight.
+#
+# materialise (nightly) — the safety net. Rebuilds the outbox from the source
+#   data and posts birthday greetings. This is the expensive pass — it reads
+#   deadlines and calendar events rather than an indexed queue — and it used to
+#   run every twenty minutes, which is what made the sweep unaffordable on a
+#   free tier at all.
 #
 # Requires the CRON_SECRET repository secret to hold exactly the same value as
 # the CRON_SECRET environment variable in the production deployment.
@@ -23,74 +36,80 @@ name: Scheduled notifications
 on:
   schedule:
     - cron: '*/5 * * * *'
+    - cron: '7 * * * *'
+    - cron: '11 3 * * *'
   workflow_dispatch:
     inputs:
-      once:
-        description: 'Sweep a single time and exit'
-        type: boolean
-        default: false
-
-concurrency:
-  group: scheduled-notifications
-  cancel-in-progress: true
+      mode:
+        description: 'Which pass to run once'
+        type: choice
+        options: [dispatch, maintenance, materialise, full]
+        default: full
 
 jobs:
-  sweep:
+  dispatch:
+    if: github.event.schedule == '*/5 * * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    concurrency:
+      group: scheduled-notifications-dispatch
+      cancel-in-progress: true
     steps:
-      - name: Sweep on an interval until the next scheduled run takes over
+      - uses: actions/checkout@v4
+      - name: Send what is due, every minute, until the next scheduled run takes over
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           APP_URL: ${{ vars.APP_URL || 'https://qt-workspace.vercel.app' }}
-          # A pass is now one indexed query against the outbox plus whatever is
-          # actually due, so a tight interval costs almost nothing. Restocking
-          # the outbox is the expensive half and throttles itself server-side.
           SWEEP_INTERVAL_SECONDS: '60'
-          SWEEP_MINUTES: ${{ inputs.once && '0' || '50' }}
-        run: |
-          set -uo pipefail
+          SWEEP_MINUTES: '50'
+          MODE: dispatch
+        run: bash .github/scripts/sweep-notifications.sh
 
-          if [ -z "${CRON_SECRET}" ]; then
-            echo "CRON_SECRET repository secret is not set — the endpoint would answer 401." >&2
-            exit 1
-          fi
+  maintenance:
+    if: github.event.schedule == '7 * * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: scheduled-notifications-maintenance
+    steps:
+      - uses: actions/checkout@v4
+      - name: Empty the undo window and expire read records
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://qt-workspace.vercel.app' }}
+          SWEEP_INTERVAL_SECONDS: '60'
+          SWEEP_MINUTES: '0'
+          MODE: maintenance
+        run: bash .github/scripts/sweep-notifications.sh
 
-          deadline=$(( $(date +%s) + SWEEP_MINUTES * 60 ))
-          failures=0
-          passes=0
+  materialise:
+    if: github.event.schedule == '11 3 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: scheduled-notifications-materialise
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restock the outbox from the source data, and greet the birthdays
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://qt-workspace.vercel.app' }}
+          SWEEP_INTERVAL_SECONDS: '60'
+          SWEEP_MINUTES: '0'
+          MODE: materialise
+        run: bash .github/scripts/sweep-notifications.sh
 
-          while : ; do
-            status=$(curl --silent --show-error --location \
-              --max-time 60 \
-              --output response.json \
-              --write-out '%{http_code}' \
-              --header "Authorization: Bearer ${CRON_SECRET}" \
-              "${APP_URL}/api/cron/notifications") || status="000"
-
-            passes=$(( passes + 1 ))
-            echo "[$(date -u +%H:%M:%SZ)] HTTP ${status} $(head -c 400 response.json)"
-
-            if [ "${status}" = "401" ] || [ "${status}" = "403" ]; then
-              echo "The endpoint rejected the bearer token — CRON_SECRET mismatch." >&2
-              exit 1
-            fi
-
-            if [ "${status}" != "200" ]; then
-              failures=$(( failures + 1 ))
-              # One bad pass is a cold start or a blip, and the watermark means
-              # the next pass covers whatever it missed. Five in a row is an
-              # outage worth a red run.
-              if [ "${failures}" -ge 5 ]; then
-                echo "Five consecutive failed sweeps — failing the run." >&2
-                exit 1
-              fi
-            else
-              failures=0
-            fi
-
-            [ "$(date +%s)" -ge "${deadline}" ] && break
-            sleep "${SWEEP_INTERVAL_SECONDS}"
-          done
-
-          echo "Completed ${passes} sweep(s)."
+  manual:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run one pass by hand
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://qt-workspace.vercel.app' }}
+          SWEEP_INTERVAL_SECONDS: '60'
+          SWEEP_MINUTES: '0'
+          MODE: ${{ inputs.mode }}
+        run: bash .github/scripts/sweep-notifications.sh

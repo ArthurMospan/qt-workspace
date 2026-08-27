@@ -44,10 +44,14 @@ async function commitInChunks(db, writes) {
 
 // ── Materialise ───────────────────────────────────────────────────────────────
 
-// Writes the rows for every reminder that will come due inside the window, and
-// cancels the pending rows in that window that the source data no longer
-// justifies — an event that moved, a task someone finished.
-export async function materialiseCandidates(candidates, { windowStartMs, windowEndMs, nowMs }) {
+// The shared half of «write down what is wanted, cancel what is not».
+//
+// `pendingRows` is what the caller believes it owns: the whole window for the
+// nightly sweep, one task's or one event's rows for a write that just happened.
+// Everything else is identical, and it has to be — a row written by the sweep
+// and a row written when somebody set the deadline are the same row, or the
+// reminder goes out twice.
+async function reconcile(candidates, { pendingRows, windowStartMs, windowEndMs, nowMs }) {
   const db = getAdminDb();
   const wanted = new Map();
   for (const candidate of candidates) {
@@ -95,21 +99,82 @@ export async function materialiseCandidates(candidates, { windowStartMs, windowE
   }
 
   // Anything pending in this window that nothing wants any more.
-  const pendingSnapshot = await outboxRef()
-    .where('status', '==', 'pending')
-    .where('deliverAtMs', '>=', windowStartMs)
-    .where('deliverAtMs', '<=', windowEndMs)
-    .select('status', 'deliverAtMs')
-    .get();
   let cancelled = 0;
-  for (const document of pendingSnapshot.docs) {
+  for (const document of pendingRows) {
     if (wanted.has(document.id)) continue;
+    const at = Number(document.get('deliverAtMs'));
+    if (!Number.isFinite(at) || at < windowStartMs || at > windowEndMs) continue;
     batch.update(document.ref, { status: 'cancelled', cancelledAtMs: nowMs });
     cancelled += 1;
   }
 
   await commitInChunks(db, writes);
   return { created, updated, cancelled, window: { windowStartMs, windowEndMs } };
+}
+
+// Writes the rows for every reminder that will come due inside the window, and
+// cancels the pending rows in that window that the source data no longer
+// justifies — an event that moved, a task someone finished.
+export async function materialiseCandidates(candidates, { windowStartMs, windowEndMs, nowMs }) {
+  const pendingSnapshot = await outboxRef()
+    .where('status', '==', 'pending')
+    .where('deliverAtMs', '>=', windowStartMs)
+    .where('deliverAtMs', '<=', windowEndMs)
+    .select('status', 'deliverAtMs')
+    .get();
+  return reconcile(candidates, {
+    pendingRows: pendingSnapshot.docs,
+    windowStartMs,
+    windowEndMs,
+    nowMs,
+  });
+}
+
+// How many pending rows one source may own. A task produces one row per
+// assignee per day-key it nags on; an event, one per participant per occurrence
+// per configured reminder. Fifty is far past either, and a ceiling here is what
+// keeps a per-write reconciliation from ever becoming a collection scan.
+const SCOPED_ROW_LIMIT = 50;
+
+/**
+ * The same reconciliation, for the rows one task or one calendar event owns.
+ *
+ * This is what turns the outbox from something that is *found* into something
+ * that is *written*. Setting a deadline is the moment the reminder becomes
+ * knowable, so that is the moment its row is written — one indexed query and a
+ * handful of writes, on an action a person just performed. Moving the deadline
+ * rewrites the row; finishing, cancelling, archiving or deleting the task
+ * leaves nothing wanted, so the row is cancelled.
+ *
+ * The nightly sweep still runs over everything, and has to keep agreeing with
+ * this: the row id is derived from the candidate, so both write the same row.
+ *
+ * @param {object[]} candidates What this source produces now — empty when the
+ *   source is gone, which is how a deletion cancels its rows.
+ * @param {{issueId?: string, calendarEventId?: string}} scope The source.
+ */
+export async function reconcileScopedRows(candidates, {
+  scope,
+  windowStartMs,
+  windowEndMs,
+  nowMs = Date.now(),
+}) {
+  const field = scope?.issueId ? 'issueId' : 'calendarEventId';
+  const value = scope?.issueId || scope?.calendarEventId || '';
+  if (!value) throw new Error('reconcileScopedRows needs an issueId or a calendarEventId');
+
+  const pendingSnapshot = await outboxRef()
+    .where(field, '==', value)
+    .where('status', '==', 'pending')
+    .select('status', 'deliverAtMs')
+    .limit(SCOPED_ROW_LIMIT)
+    .get();
+  return reconcile(candidates, {
+    pendingRows: pendingSnapshot.docs,
+    windowStartMs,
+    windowEndMs,
+    nowMs,
+  });
 }
 
 // ── Dispatch ──────────────────────────────────────────────────────────────────
@@ -197,9 +262,9 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
     .limit(limit);
 
   let readySnapshot;
-  let legacySnapshot;
+  let legacySnapshot = null;
   try {
-    [readySnapshot, legacySnapshot] = await Promise.all([readyQuery.get(), legacyQuery.get()]);
+    readySnapshot = await readyQuery.get();
   } catch (error) {
     // Deployments are not atomic with Firestore index creation. Keep delivery
     // alive on the old index until `status + nextAttemptAtMs` is ready, then
@@ -210,9 +275,13 @@ export async function dispatchDueNotifications({ nowMs = Date.now(), limit = DIS
     legacySnapshot = readySnapshot;
   }
 
-  // Rows written by the previous schema have no retry-time field and are
-  // invisible to the new query. Include and upgrade the bounded legacy slice
-  // in the same pass; this is idempotent and needs no one-off migration.
+  // The delivery-time query used to run on *every* pass alongside this one, to
+  // pick up rows written before `nextAttemptAtMs` existed. A pass runs every
+  // minute, and a Firestore query that matches nothing still costs a read, so
+  // that compatibility shim was fourteen hundred reads a day, forever, for a
+  // schema nobody has written since. It runs only as the index fallback now;
+  // a pending legacy row still inside the materialised window is upgraded by
+  // the nightly sweep, which rewrites `nextAttemptAtMs` when it is missing.
   const legacyDocuments = (legacySnapshot?.docs || [])
     .filter(document => !Number.isFinite(Number(document.data()?.nextAttemptAtMs))
       && Number.isFinite(Number(document.data()?.deliverAtMs)));

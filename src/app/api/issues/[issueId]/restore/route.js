@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { hasProjectAccess } from '@/lib/utils/projectAccess.mjs';
 import {
   canRestoreIssueTombstone,
@@ -112,6 +113,11 @@ export async function POST(request, context) {
       return { projectId: issue.projectId };
     });
 
+    // Closing a task takes its deadline reminder off the queue; reopening one
+    // puts it back. Written now rather than found by a scan later — see
+    // src/lib/server/notificationOutbox.js.
+    await syncIssueReminderRows({ issueId })
+      .catch(error => console.warn('[issues] reminder rows failed:', error.message));
     return NextResponse.json({ success: true, issueId, projectId: result.projectId });
   } catch (error) {
     if (error?.restoreApi) {

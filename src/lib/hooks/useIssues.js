@@ -31,6 +31,7 @@ import { useOptimisticPatch } from '@/lib/hooks/useOptimisticPatch';
 import {
   createIssueViaApi,
   notifyIssueAssigned,
+  syncIssueRemindersViaApi,
   transitionIssueStatusViaApi,
 } from '@/lib/services/issues';
 import { createResponseError } from '@/lib/utils/errors';
@@ -241,6 +242,10 @@ export function useIssues(projectId, { includeLinks = true, includeSetAside = fa
       if (optimistic) revertPatch([issueId]);
       throw err;
     }
+      // A moved deadline moves its reminders. The field write above is the
+      // browser's; the queue row behind it is the server's, and this is how
+      // the two stay one act.
+      syncIssueRemindersViaApi(issueId, directData);
 
     // Touch parent project
     if (Object.keys(directData).length > 0) {

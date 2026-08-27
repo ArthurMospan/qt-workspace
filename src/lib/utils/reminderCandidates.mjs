@@ -29,7 +29,15 @@ export const OVERDUE_NAG_INTERVAL_DAYS = 7;
 // A deadline older than this stops producing candidates altogether. It also
 // bounds the Firestore query that feeds the sweep: without a floor it read every
 // issue that had ever been overdue, on every pass, forever.
-export const DEADLINE_FLOOR_MS = 120 * 24 * 60 * 60 * 1000;
+//
+// Four months was the floor while the sweep was the only thing that ever wrote
+// a reminder down, and it had to be generous enough to re-find anything it had
+// missed. Rows are written when the deadline is set now, so this query is the
+// safety net rather than the mechanism, and it only has to cover the nags an
+// overdue task still produces: the day it slips, the day after, and weekly.
+// A week finds every one of those; four months read a hundred and thirteen days
+// of settled deadlines to produce nothing.
+export const DEADLINE_FLOOR_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function clampReminderLookback(elapsedMs) {
   if (!Number.isFinite(elapsedMs)) return REMINDER_LOOKBACK_MS;

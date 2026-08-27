@@ -17,7 +17,13 @@ export const OUTBOX_COLLECTION = 'scheduledNotifications';
 // How far ahead reminders are materialised. Must comfortably exceed the
 // interval between materialisation passes, or a reminder becomes knowable and
 // its delivery time passes before anyone writes it down.
-export const MATERIALISE_LEAD_MS = 3 * 60 * 60 * 1000;
+//
+// Three hours was right while the scan ran every twenty minutes. The scan is a
+// nightly safety net now — the rows themselves are written when somebody sets
+// the deadline — so the lead has to cover the gap between two nights plus the
+// day the deadline reminder itself looks ahead. Forty-eight hours does, with
+// room to spare for a night the scheduler misses entirely.
+export const MATERIALISE_LEAD_MS = 48 * 60 * 60 * 1000;
 
 // One dispatch pass never sends more than this. A backlog drains over several
 // passes instead of one pass timing out and delivering nothing.

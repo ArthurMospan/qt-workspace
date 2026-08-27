@@ -17,7 +17,11 @@ import {
   deadlineReminderCandidates,
 } from '@/lib/utils/reminderCandidates.mjs';
 import { telegramAppLink } from '@/lib/server/telegram';
-import { dispatchDueNotifications, materialiseCandidates } from '@/lib/server/notificationOutbox';
+import {
+  dispatchDueNotifications,
+  materialiseCandidates,
+  reconcileScopedRows,
+} from '@/lib/server/notificationOutbox';
 import {
   OUTBOX_COLLECTION,
   READ_NOTIFICATION_TTL_MS,
@@ -37,6 +41,14 @@ const SWEEP_STATE_PATH = ['system', 'notificationSweep'];
 // day against a Spark project with a 50k daily read cap.
 const CALENDAR_LEAD_MS = 8 * 24 * 60 * 60 * 1000;
 const RECURRING_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'];
+// How many recurring series one pass will consider. A series that has not
+// started yet cannot produce an occurrence inside the window, so the query is
+// bounded forward; backwards there is no edge — a standing weekly meeting from
+// two years ago is still due on Thursday — and what bounds it instead is how
+// many series the workspace has ever created, which is the same kind of bound
+// as «projects of one organization». This is the ceiling on that assumption,
+// and it is loud when it is reached rather than silently dropping events.
+const RECURRING_SCAN_LIMIT = 500;
 
 function sweepStateRef() {
   const db = getAdminDb();
@@ -237,23 +249,56 @@ async function loadReminderEvents({ nowMs, lookBackMs, organizationId, recipient
     return snapshot.docs.map(document => ({ ...document.data(), id: document.id }));
   }
 
+  const recurringQuery = db.collection('calendarEvents')
+    .where('recurrence.frequency', 'in', RECURRING_FREQUENCIES)
+    // Forward edge. A series whose first occurrence is past the lead cannot
+    // reach into this window, and if it could the query above would have it.
+    .where('startAt', '<=', Timestamp.fromMillis(nowMs + CALENDAR_LEAD_MS))
+    .select(...CALENDAR_FIELDS)
+    .limit(RECURRING_SCAN_LIMIT);
   const [upcoming, recurring] = await Promise.all([
     db.collection('calendarEvents')
       .where('startAt', '>=', Timestamp.fromMillis(nowMs - lookBackMs))
       .where('startAt', '<=', Timestamp.fromMillis(nowMs + CALENDAR_LEAD_MS))
       .select(...CALENDAR_FIELDS)
       .get(),
-    db.collection('calendarEvents')
-      .where('recurrence.frequency', 'in', RECURRING_FREQUENCIES)
-      .select(...CALENDAR_FIELDS)
-      .get(),
+    recurringQuery.get().catch(error => {
+      // Deployments are not atomic with Firestore index creation. The unbounded
+      // shape still works while (recurrence.frequency, startAt) is building.
+      if (error?.code !== 9 && error?.code !== 'failed-precondition') throw error;
+      console.warn('[reminder-job] Recurring-window index is not ready; scanning unbounded');
+      return db.collection('calendarEvents')
+        .where('recurrence.frequency', 'in', RECURRING_FREQUENCIES)
+        .select(...CALENDAR_FIELDS)
+        .get();
+    }),
   ]);
+  if (recurring.size >= RECURRING_SCAN_LIMIT) {
+    console.warn(
+      `[reminder-job] ${RECURRING_SCAN_LIMIT} recurring events reached the scan ceiling; `
+      + 'reminders for the rest of them are not being materialised',
+    );
+  }
 
   const events = new Map();
   for (const document of [...upcoming.docs, ...recurring.docs]) {
     events.set(document.id, { ...document.data(), id: document.id });
   }
   return [...events.values()];
+}
+
+// A calendar reminder is deliberately not emailed: it is a nudge minutes
+// before a meeting, and an inbox is the wrong place for one.
+function decorateCalendarCandidate(candidate) {
+  const occurrence = new Date(candidate.occurrenceStart).toISOString();
+  return {
+    ...candidate,
+    allowEmail: false,
+    link: withNotificationOrganization(
+      `/calendar/event/${encodeURIComponent(candidate.calendarEventId)}?occurrence=${encodeURIComponent(occurrence)}`,
+      candidate.organizationId,
+    ),
+  };
 }
 
 export async function collectCalendarCandidates({
@@ -265,17 +310,7 @@ export async function collectCalendarCandidates({
 } = {}) {
   const events = await loadReminderEvents({ nowMs, lookBackMs, organizationId, recipientId });
   return calendarReminderCandidates(events, { nowMs, lookBackMs, lookAheadMs, recipientId })
-    .map(candidate => {
-      const occurrence = new Date(candidate.occurrenceStart).toISOString();
-      return {
-        ...candidate,
-        allowEmail: false,
-        link: withNotificationOrganization(
-          `/calendar/event/${encodeURIComponent(candidate.calendarEventId)}?occurrence=${encodeURIComponent(occurrence)}`,
-          candidate.organizationId,
-        ),
-      };
-    });
+    .map(decorateCalendarCandidate);
 }
 
 export async function runCalendarReminderSweep({
@@ -304,6 +339,126 @@ export async function runCalendarReminderSweep({
     candidate => claimAndDeliver(candidate, context, { allowEmail: false }),
   );
   return { candidates: candidates.length, ...summarize(results, await deliverTelegramDigests(results)) };
+}
+
+// What the sweep and a single write both need to know about an organization
+// before a deadline candidate means anything: which statuses close a task, and
+// what «сьогодні» means where the workspace is.
+//
+// Cached in process for a few minutes because a write path pays for it on an
+// action a person just performed, and both documents change about once a year.
+// Vercel reuses a function instance across requests, so this is usually free.
+const ORGANIZATION_CONTEXT_TTL_MS = 5 * 60 * 1000;
+const organizationContextCache = new Map();
+
+async function organizationReminderContext(organizationId, { nowMs = Date.now() } = {}) {
+  const cached = organizationContextCache.get(organizationId);
+  if (cached && nowMs - cached.readAtMs < ORGANIZATION_CONTEXT_TTL_MS) return cached.value;
+  const db = getAdminDb();
+  const [organizationSnapshot, workflowSnapshot] = await db.getAll(
+    db.collection('organizations').doc(organizationId),
+    db.collection('organizations').doc(organizationId).collection('settings').doc('workflow'),
+  );
+  const value = {
+    closedStatusIds: new Set(resolveClosedStatusIds(workflowSnapshot?.data()?.statuses)),
+    timeZone: organizationSnapshot?.data()?.timezone || 'Europe/Kyiv',
+  };
+  organizationContextCache.set(organizationId, { readAtMs: nowMs, value });
+  return value;
+}
+
+// A candidate is a row waiting to be written; this is the only place that turns
+// one into something a reader can act on, so the sweep and a write cannot
+// disagree about the link or the sender.
+function decorateDeadlineCandidate(candidate) {
+  return {
+    ...candidate,
+    actorId: 'quickteam-system',
+    actorName: 'QuickTeam',
+    link: withNotificationOrganization(
+      issuePath({ id: candidate.issueId, issueKey: candidate.issueKey }, candidate.projectId),
+      candidate.organizationId,
+    ),
+  };
+}
+
+/**
+ * The reminders one task owes right now, written down the moment its deadline
+ * is set rather than found by a scan hours later.
+ *
+ * A deadline is knowable at exactly one instant — when somebody types it — and
+ * that is the cheapest possible moment to record it: no query finds the task,
+ * because the caller is holding it. Everything after that is the same
+ * reconciliation the nightly sweep does, against the same row ids, so the two
+ * are idempotent with respect to each other.
+ *
+ * Passing `issue: null` (or an issue with no deadline, a closed status, an
+ * archive or a cancellation) is how a row gets removed: there is nothing to
+ * want, so what is pending is cancelled.
+ *
+ * @param {{issueId: string, issue?: object|null, nowMs?: number}} options
+ */
+export async function syncIssueReminderRows({ issueId, issue = undefined, nowMs = Date.now() }) {
+  if (!issueId) return { created: 0, updated: 0, cancelled: 0 };
+  const db = getAdminDb();
+  let source = issue;
+  if (source === undefined) {
+    const snapshot = await db.collection('issues').doc(issueId).get();
+    source = snapshot.exists ? { ...snapshot.data(), id: snapshot.id } : null;
+  }
+
+  let candidates = [];
+  if (source?.organizationId) {
+    const context = await organizationReminderContext(source.organizationId, { nowMs });
+    candidates = deadlineReminderCandidates([{ ...source, id: issueId }], {
+      nowMs,
+      lookAheadMs: MATERIALISE_LEAD_MS,
+      closedStatusIdsByOrganization: new Map([[source.organizationId, context.closedStatusIds]]),
+      timeZonesByOrganization: new Map([[source.organizationId, context.timeZone]]),
+    }).map(decorateDeadlineCandidate);
+  }
+
+  return reconcileScopedRows(candidates, {
+    scope: { issueId },
+    windowStartMs: nowMs - REMINDER_LOOKBACK_MS,
+    windowEndMs: nowMs + MATERIALISE_LEAD_MS,
+    nowMs,
+  });
+}
+
+/**
+ * The same, for one calendar event. Creating or moving an event writes its
+ * reminders down; deleting it, or removing somebody from it, takes them away.
+ *
+ * @param {{eventId: string, event?: object|null, nowMs?: number}} options
+ */
+export async function syncCalendarEventReminderRows({
+  eventId,
+  event = undefined,
+  nowMs = Date.now(),
+}) {
+  if (!eventId) return { created: 0, updated: 0, cancelled: 0 };
+  const db = getAdminDb();
+  let source = event;
+  if (source === undefined) {
+    const snapshot = await db.collection('calendarEvents').doc(eventId).get();
+    source = snapshot.exists ? { ...snapshot.data(), id: snapshot.id } : null;
+  }
+
+  const candidates = source?.organizationId
+    ? calendarReminderCandidates([{ ...source, id: eventId }], {
+      nowMs,
+      lookBackMs: REMINDER_LOOKBACK_MS,
+      lookAheadMs: MATERIALISE_LEAD_MS,
+    }).map(decorateCalendarCandidate)
+    : [];
+
+  return reconcileScopedRows(candidates, {
+    scope: { calendarEventId: eventId },
+    windowStartMs: nowMs - REMINDER_LOOKBACK_MS,
+    windowEndMs: nowMs + MATERIALISE_LEAD_MS,
+    nowMs,
+  });
 }
 
 // The deadline half of materialisation: every candidate the window can see,
@@ -355,15 +510,7 @@ export async function collectDeadlineCandidates({ nowMs = Date.now(), lookAheadM
     lookAheadMs,
     closedStatusIdsByOrganization,
     timeZonesByOrganization,
-  }).map(candidate => ({
-    ...candidate,
-    actorId: 'quickteam-system',
-    actorName: 'QuickTeam',
-    link: withNotificationOrganization(
-      issuePath({ id: candidate.issueId, issueKey: candidate.issueKey }, candidate.projectId),
-      candidate.organizationId,
-    ),
-  }));
+  }).map(decorateDeadlineCandidate);
 }
 
 export async function runDeadlineReminderSweep({ nowMs = Date.now() } = {}) {
@@ -594,10 +741,16 @@ export async function readSweepState(nowMs) {
   };
 }
 
-// How often the expensive half runs. Dispatching is what decides latency, and
-// it costs one indexed query; materialising is what costs a collection scan, and
-// it only has to stay far enough ahead of the delivery window.
-export const MATERIALISE_INTERVAL_MS = 20 * 60 * 1000;
+// How often the expensive half may run.
+//
+// It used to run every twenty minutes, because it was the only thing that ever
+// wrote a reminder down: a deadline set at 14:03 was invisible until the next
+// scan noticed it. It is not that any more — the row is written by the route
+// that accepted the deadline — so this scan is the safety net, and a safety net
+// that runs seventy-two times a day is not a safety net, it is the cost it was
+// supposed to replace. Once a night, with this as the guard against a second
+// call in the same window.
+export const MATERIALISE_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
 export async function materialiseScheduledNotifications({ nowMs = Date.now(), lookBackMs } = {}) {
   const windowStartMs = nowMs - (lookBackMs ?? REMINDER_LOOKBACK_MS);
@@ -680,11 +833,42 @@ export async function pruneReadNotifications({ nowMs = Date.now(), limit = PRUNE
   return { scanned: records.length, deleted: removable.length, kept: records.length - removable.length };
 }
 
+/**
+ * One pass.
+ *
+ * `mode` exists because the two halves have nothing in common but a name.
+ *
+ *   dispatch     — send what is due. One indexed query against the outbox, no
+ *                  state read and no state write, so an idle minute costs a
+ *                  single read. This is what runs every minute, and it is the
+ *                  only thing that decides how late a reminder is.
+ *   maintenance  — the two bounded indexed queries that tidy up: finalising
+ *                  soft-deleted tasks past their undo window, and expiring read
+ *                  records. Hourly, because «Нещодавно видалене» promises
+ *                  twenty-four hours and a nightly pass would make it up to
+ *                  forty-eight.
+ *   materialise  — restock the outbox from the source data, and post birthday
+ *                  greetings. Nightly. The rows themselves are written when
+ *                  somebody sets a deadline or moves an event; this is the pass
+ *                  that catches whatever a failed write or a direct database
+ *                  edit left behind.
+ *   full         — all three, with materialising self-throttled internally.
+ *
+ * See docs/ARCHITECTURE.md.
+ */
 export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode = 'full' } = {}) {
-  const state = await readSweepState(nowMs);
-  const lookBackMs = clampReminderLookback(state.materialiseElapsedMs);
   const wantsMaterialise = mode === 'full' || mode === 'materialise';
   const wantsDispatch = mode === 'full' || mode === 'dispatch';
+  const wantsMaintenance = mode === 'full' || mode === 'maintenance';
+
+  // A dispatch pass reads nothing but the outbox. Reading the watermark would
+  // double the cost of the cheapest and most frequent pass in the product to
+  // learn something only the expensive half uses.
+  const state = wantsMaterialise
+    ? await readSweepState(nowMs)
+    : { lastRunAtMs: null, lastBirthdayScanAtMs: null, lastMaterialiseAtMs: null,
+      elapsedMs: REMINDER_LOOKBACK_MS, materialiseElapsedMs: REMINDER_LOOKBACK_MS };
+  const lookBackMs = clampReminderLookback(state.materialiseElapsedMs);
   const materialiseDue = !Number.isFinite(state.lastMaterialiseAtMs)
     || nowMs - state.lastMaterialiseAtMs >= MATERIALISE_INTERVAL_MS;
 
@@ -702,42 +886,46 @@ export async function runScheduledNotificationSweep({ nowMs = Date.now(), mode =
     ? await runBirthdaySweep({ nowMs, lastScanAtMs: state.lastBirthdayScanAtMs })
     : { created: 0, skipped: true };
 
-  // The same slower pass finalizes issue soft-deletes after their undo window.
-  // Dispatch stays a single indexed outbox query on the every-minute schedule.
-  const issueTrash = wantsMaterialise && materialiseDue
+  // Finalising a soft-deleted task and expiring a read record are each one
+  // bounded indexed query, and neither may ride the every-minute pass.
+  const issueTrash = wantsMaintenance
     ? await purgeExpiredDeletedIssues({ nowMs })
     : { scanned: 0, purged: 0, failed: 0, related: 0, skipped: true };
 
-  // And it expires read records on the same slow pass, for the same reason: it
-  // is one bounded indexed query, and it must not ride the every-minute one.
-  const prunedNotifications = wantsMaterialise && materialiseDue
+  const prunedNotifications = wantsMaintenance
     ? await pruneReadNotifications({ nowMs })
     : { scanned: 0, deleted: 0, kept: 0, skipped: true };
 
   // Written last and unconditionally after a successful pass: a sweep that
   // throws must not advance the watermark, or the reminders it failed to record
   // would fall into the gap the watermark exists to close.
-  await sweepStateRef().set({
-    lastRunAtMs: nowMs,
-    lastRunAt: Timestamp.fromMillis(nowMs),
-    lookBackMs,
-    mode,
-    previousRunAtMs: state.lastRunAtMs,
-    ...(materialised.skipped ? {} : { lastMaterialiseAtMs: nowMs }),
-    ...(birthdays.skipped ? {} : { lastBirthdayScanAtMs: nowMs }),
-    counts: {
-      materialised: materialised.created || 0,
-      cancelled: materialised.cancelled || 0,
-      sent: dispatched.sent || 0,
-      failed: dispatched.failed || 0,
-      telegram: dispatched.telegram || 0,
-      birthdays: birthdays.created || 0,
-      purgedIssues: issueTrash.purged || 0,
-      prunedNotifications: prunedNotifications.deleted || 0,
-    },
-  }, { merge: true }).catch(error => {
-    console.warn('[reminder-job] Could not record sweep state:', error.message);
-  });
+  //
+  // A dispatch pass writes nothing. It has no watermark to advance — nothing it
+  // does depends on when it last ran — and writing one every minute made a hot
+  // document out of a status line.
+  if (!wantsDispatch || wantsMaterialise || wantsMaintenance) {
+    await sweepStateRef().set({
+      lastRunAtMs: nowMs,
+      lastRunAt: Timestamp.fromMillis(nowMs),
+      lookBackMs,
+      mode,
+      previousRunAtMs: state.lastRunAtMs,
+      ...(materialised.skipped ? {} : { lastMaterialiseAtMs: nowMs }),
+      ...(birthdays.skipped ? {} : { lastBirthdayScanAtMs: nowMs }),
+      counts: {
+        materialised: materialised.created || 0,
+        cancelled: materialised.cancelled || 0,
+        sent: dispatched.sent || 0,
+        failed: dispatched.failed || 0,
+        telegram: dispatched.telegram || 0,
+        birthdays: birthdays.created || 0,
+        purgedIssues: issueTrash.purged || 0,
+        prunedNotifications: prunedNotifications.deleted || 0,
+      },
+    }, { merge: true }).catch(error => {
+      console.warn('[reminder-job] Could not record sweep state:', error.message);
+    });
+  }
 
   return {
     mode,
