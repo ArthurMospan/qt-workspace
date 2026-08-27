@@ -12,6 +12,11 @@ import { AnalyticsRollupDeltas } from '@/lib/utils/analyticsRollups.mjs';
 import { normalizePlan, planLimit, planLimitRefusal } from '@/lib/utils/plans.mjs';
 import { resolveProjectIssuePrefixInTransaction } from '@/lib/server/issueKeys';
 import { recountProjectIssueCounts } from '@/lib/server/projectIssueCounts';
+import {
+  ISSUE_IMPORT_COLLECTION,
+  ISSUE_IMPORT_DOCUMENT,
+  splitIssueImportRecord,
+} from '@/lib/utils/issueImportRecord.mjs';
 import { youTrackClientFor } from '@/lib/server/youtrackIntegration';
 import {
   isValidIssuePrefix,
@@ -630,6 +635,15 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
     createdAt: sourceCreatedAt,
     updatedAt: sourceUpdatedAt,
   };
+  // What the task carries about its origin, and what goes to the subcollection
+  // nothing subscribes to. The raw record — every custom field YouTrack had on
+  // the issue, every external person on it — used to sit on the task document
+  // itself, which meant every board delivered it to every browser to draw cards
+  // that show none of it. See `src/lib/utils/issueImportRecord.mjs` for the
+  // measurement that decided the split.
+  const importRecord = splitIssueImportRecord(importedFields.importMetadata);
+  importedFields.importMetadata = importRecord.carried;
+
   const actors = [reporter, ...assigneeActors, ...watcherActors];
 
   if (existingIssue?.exists) {
@@ -780,6 +794,15 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
         },
         ...acceptedWorkflowFields,
       }, { merge: true });
+      // Written whole rather than merged: a re-import is what the source says
+      // now, and a custom field somebody deleted in YouTrack must not survive
+      // here because the last import happened to mention it.
+      if (importRecord.hasArchive) {
+        transaction.set(
+          existingIssue.ref.collection(ISSUE_IMPORT_COLLECTION).doc(ISSUE_IMPORT_DOCUMENT),
+          { ...importRecord.archived, importedAt: firstImportedAt },
+        );
+      }
       transaction.set(linkRef, {
         externalUpdatedAt: sourceUpdatedAt,
         updatedAt: FieldValue.serverTimestamp(),
@@ -878,6 +901,12 @@ async function upsertIssue({ job, sourceProject, issue, targetProjectId, attachm
       order: -next,
       createdBy: job.createdBy,
     });
+    if (importRecord.hasArchive) {
+      transaction.create(
+        issueRef.collection(ISSUE_IMPORT_COLLECTION).doc(ISSUE_IMPORT_DOCUMENT),
+        { ...importRecord.archived, importedAt: currentImportAt },
+      );
+    }
     transaction.update(projectRef, {
       issueCounter: next,
       ...(!isValidIssuePrefix(project.issuePrefix) ? { issuePrefix } : {}),
