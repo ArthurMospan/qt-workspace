@@ -82,6 +82,7 @@ export const ICON_SIZES = {
 export const COMPOSITION_ICON_SIZES = {
   'settings-row-action': 12,
   'sidebar-help-action': 16,
+  'sidebar-nav-action': 18,
 
   // The section kebab, beside a plus in the same 20px box. Three filled dots
   // and two hairline strokes are not the same amount of ink at the same pixel

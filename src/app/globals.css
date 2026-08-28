@@ -1838,6 +1838,29 @@
   opacity: 1;
 }
 
+/* A destination-shaped action in the branded rail. qTicket opens through a
+   signed POST, so it cannot be a Link, but it must occupy exactly the same row
+   as destinations around it. The behavior stays Button; this composition owns
+   only the rail geometry and its organization-colour variables. */
+.ui-button[data-ui-composition='sidebar-nav-action'] {
+  --ui-control-height: 40px;
+  --ui-control-px: 0px;
+  width: calc(100% - 16px);
+  margin-inline: 8px;
+  border-radius: 12px;
+  color: var(--sb-muted, var(--color-muted)) !important;
+  background: transparent !important;
+  font-size: 13px;
+  font-weight: 500;
+}
+.ui-button[data-ui-composition='sidebar-nav-action']:hover {
+  color: var(--sb-text, var(--color-ink)) !important;
+  background: var(--sb-hover, var(--color-canvas)) !important;
+}
+.ui-button[data-ui-composition='sidebar-nav-action'][data-collapsed='true'] {
+  justify-content: center;
+}
+
 /* Respect the OS "reduce motion" setting across the app — drag & drop, modal
    transitions and the timer pulse all animate by default. Kept near-zero rather
    than 0 so transitionend/animationend handlers still fire. */

@@ -4,6 +4,7 @@ export const INTEGRATION_STATES = Object.freeze({
 });
 
 export const INTEGRATIONS = Object.freeze([
+  Object.freeze({ id: 'qticket', label: 'qTicket', state: 'available', route: '/settings?section=integrations' }),
   Object.freeze({ id: 'quickteam-plus', label: 'QuickTeam+', state: 'available', route: '/settings?section=integrations' }),
   Object.freeze({ id: 'telegram', label: 'Telegram', state: 'available', route: '/settings?section=integrations' }),
   Object.freeze({ id: 'buggybag', label: 'BuggyBag', state: 'available', route: '/settings?section=integrations' }),

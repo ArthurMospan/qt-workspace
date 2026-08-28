@@ -6,12 +6,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import Image from 'next/image';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
-import { Counter, IconAction, Skeleton } from '@/components/ui';
+import { Button, Counter, IconAction, Skeleton } from '@/components/ui';
 import {
   Folder, Users, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
   ChevronLeft, ChevronRight, PieChart, PanelLeftClose, PanelLeftOpen,
-  Zap, Clock, Square as StopIcon, Sparkles,
+  Zap, Clock, Square as StopIcon, Sparkles, TicketCheck,
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -22,6 +22,7 @@ import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCached
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 import WorkspaceHelpMenu from '@/components/WorkspaceHelpMenu';
 import WorkspacePlanLimitRail from '@/components/WorkspacePlanLimitRail';
+import { useQTicketIntegration } from '@/lib/hooks/useQTicketIntegration';
 
 
 export default function WorkspaceSidebar() {
@@ -110,6 +111,11 @@ export default function WorkspaceSidebar() {
   const formatElapsed = useWorkspaceStore(s => s.formatElapsed);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
   const showToast = useWorkspaceStore(s => s.showToast);
+  const {
+    enabledForCurrentUser: qTicketEnabled,
+    loading: qTicketLoading,
+    open: openQTicket,
+  } = useQTicketIntegration();
 
   const handleStopGlobalTimer = async (e) => {
     e.preventDefault();
@@ -130,6 +136,14 @@ export default function WorkspaceSidebar() {
   const isActive = (href, exact) =>
     exact ? pathname === href : pathname.startsWith(href);
 
+  const handleOpenQTicket = async () => {
+    try {
+      await openQTicket('/overview');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося відкрити qTicket', 'error');
+    }
+  };
+
   const topNav = [
     { href: '/',            icon: Folder,        label: 'Проєкти',     exact: true },
     { href: '/my',         icon: TaskIcon,      label: 'Мої завдання' },
@@ -141,6 +155,7 @@ export default function WorkspaceSidebar() {
     // «Дзвінок → задачі» свідомо НЕ в сайдбарі: це не окремий екран, а вкладка
     // всередині створення задачі (CreateTaskModal → AudioTaskPanel).
     { href: '/settings',   icon: Settings,      label: 'Налаштування' },
+    ...(qTicketEnabled ? [{ action: 'qticket', icon: TicketCheck, label: 'qTicket' }] : []),
   ];
 
   return (
@@ -344,27 +359,58 @@ export default function WorkspaceSidebar() {
 
       {/* Main Navigation (y=88 in Figma) */}
       <nav className="pt-[8px] flex flex-col gap-[4px] shrink-0">
-        {topNav.map(({ href, icon: Icon, label, exact }) => {
-          const active = isActive(href, exact);
+        {topNav.map(({ href, action, icon: Icon, label, exact }) => {
+          const active = href ? isActive(href, exact) : false;
+          const content = (
+            <Tooltip content={collapsed ? label : null} position="right" className="w-full h-full flex items-center">
+              <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
+                <Icon size={18} className="shrink-0" />
+                {!collapsed && <span className="text-[13px] font-medium">{qTicketLoading && action === 'qticket' ? 'Відкриваємо…' : label}</span>}
+                {!collapsed && label === 'Чат' && showUnreadChatBadge && (
+                  <Counter value={unreadChats} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
+                )}
+              </div>
+            </Tooltip>
+          );
+          if (action === 'qticket') {
+            return (
+              <Button
+                key={action}
+                style="ghost"
+                size="lg"
+                composition="sidebar-nav-action"
+                data-collapsed={collapsed ? 'true' : 'false'}
+                onClick={handleOpenQTicket}
+                disabled={qTicketLoading}
+                aria-label={qTicketLoading ? 'Відкриваємо qTicket' : 'Відкрити qTicket'}
+              >
+                {content}
+              </Button>
+            );
+          }
+          const commonProps = {
+            title: collapsed ? undefined : label,
+            className: 'flex items-center mx-[8px] h-[40px] rounded-[12px] transition-all',
+            style: {
+              backgroundColor: active ? 'var(--sb-active)' : 'transparent',
+              color: active ? 'var(--sb-text)' : 'var(--sb-muted)',
+            },
+            onMouseEnter: event => {
+              if (!active) {
+                event.currentTarget.style.backgroundColor = 'var(--sb-hover)';
+                event.currentTarget.style.color = 'var(--sb-text)';
+              }
+            },
+            onMouseLeave: event => {
+              if (!active) {
+                event.currentTarget.style.backgroundColor = 'transparent';
+                event.currentTarget.style.color = 'var(--sb-muted)';
+              }
+            },
+          };
           return (
-            <Link key={href} href={href} title={collapsed ? undefined : label}
-              className="flex items-center mx-[8px] h-[40px] rounded-[12px] transition-all"
-              style={{
-                backgroundColor: active ? 'var(--sb-active)' : 'transparent',
-                color: active ? 'var(--sb-text)' : 'var(--sb-muted)',
-              }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = 'var(--sb-hover)'; e.currentTarget.style.color = 'var(--sb-text)'; } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--sb-muted)'; } }}
-            >
-              <Tooltip content={collapsed ? label : null} position="right" className="w-full h-full flex items-center">
-                <div className={`flex items-center w-full h-full ${collapsed ? 'justify-center' : 'pl-[12px] gap-[16px] pr-[12px]'}`}>
-                  <Icon size={18} className="shrink-0" />
-                  {!collapsed && <span className="text-[13px] font-medium">{label}</span>}
-                  {!collapsed && label === 'Чат' && showUnreadChatBadge && (
-                    <Counter value={unreadChats} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
-                  )}
-                </div>
-              </Tooltip>
+            <Link key={href} href={href} {...commonProps}>
+              {content}
             </Link>
           );
         })}

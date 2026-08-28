@@ -8,20 +8,20 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 267,
-    "parsedFiles": 267,
+    "productFiles": 268,
+    "parsedFiles": 268,
     "parseErrors": 0,
-    "nativeControls": 20,
+    "nativeControls": 21,
     "structures": {
       "chat": 2,
       "analytics": 1,
       "qtplus": 1,
       "settings": 1,
-      "shell": 12,
+      "shell": 13,
       "other": 3
     },
-    "styledNativeControls": 12,
-    "reviewedNativeControls": 7,
+    "styledNativeControls": 13,
+    "reviewedNativeControls": 8,
     "manualLabels": 0,
     "manualModalShells": 0,
     "manualPills": 0,
@@ -33,7 +33,7 @@
     "localSharedNameCollisions": 0
   },
   "nativeByTag": {
-    "button": 20,
+    "button": 21,
     "input": 0,
     "textarea": 0,
     "select": 0
@@ -112,7 +112,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:241",
+      "location": "src/components/MobileNav.jsx:255",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -128,7 +128,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:301",
+      "location": "src/components/MobileNav.jsx:315",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -144,7 +144,23 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:379",
+      "location": "src/components/MobileNav.jsx:340",
+      "className": "flex h-[44px] items-center gap-[14px] rounded-[12px] px-[12px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)] disabled:opacity-50",
+      "text": "",
+      "childElements": [
+        "TicketCheck",
+        "span"
+      ],
+      "ariaLabel": "",
+      "styled": true,
+      "reviewed": "navigation-sheet-row",
+      "resembles": "IconAction",
+      "structure": "shell",
+      "routes": []
+    },
+    {
+      "tag": "button",
+      "location": "src/components/MobileNav.jsx:405",
       "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
       "text": "",
       "childElements": [
@@ -357,7 +373,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:298",
+      "location": "src/components/WorkspaceSidebar.jsx:313",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -372,7 +388,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:321",
+      "location": "src/components/WorkspaceSidebar.jsx:336",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -405,7 +421,7 @@
     },
     {
       "file": "src/components/MobileNav.jsx",
-      "count": 3
+      "count": 4
     },
     {
       "file": "src/components/profile/ProfileView.jsx",
@@ -456,7 +472,12 @@
       "context": "auth-footer-support"
     },
     {
-      "location": "src/components/MobileNav.jsx:379",
+      "location": "src/components/MobileNav.jsx:340",
+      "tag": "button",
+      "context": "navigation-sheet-row"
+    },
+    {
+      "location": "src/components/MobileNav.jsx:405",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
@@ -476,12 +497,12 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:298",
+      "location": "src/components/WorkspaceSidebar.jsx:313",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:321",
+      "location": "src/components/WorkspaceSidebar.jsx:336",
       "tag": "button",
       "context": "branding-action"
     }
@@ -517,22 +538,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:546",
+      "location": "src/app/(app)/settings/page.js:548",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:566",
+      "location": "src/app/(app)/settings/page.js:568",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:610",
+      "location": "src/app/(app)/settings/page.js:612",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:729",
+      "location": "src/app/(app)/settings/page.js:731",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },

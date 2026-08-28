@@ -58,6 +58,7 @@ import {
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, TextAction, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
+import { MultiSelect } from '@/components/ui/Select';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -85,6 +86,7 @@ import {
 } from '@/lib/hooks/useWorkflowConfig';
 import { hydrateWorkflowSettings } from '@/lib/utils/workflowSettingsHydration.mjs';
 import { navigateToSameOrigin } from '@/lib/utils/browserNavigation.mjs';
+import { useQTicketIntegration } from '@/lib/hooks/useQTicketIntegration';
 import {
   createUkrainianDndAnnouncements,
   UKRAINIAN_DRAG_HANDLE_USAGE_INSTRUCTIONS,
@@ -819,6 +821,66 @@ export default function SettingsPage() {
   const myRole = orgRole || myMemberInfo?.role || 'member';
   const isAdmin = myRole === 'owner' || myRole === 'admin';
   const isOwner = myRole === 'owner';
+  const {
+    status: qTicketStatus,
+    loading: qTicketLoading,
+    enabledForCurrentUser: qTicketEnabledForMe,
+    synchronize: synchronizeQTicket,
+    deactivate: deactivateQTicket,
+    open: openQTicket,
+  } = useQTicketIntegration();
+  const [qTicketSelectedIds, setQTicketSelectedIds] = useState([]);
+  const qTicketOwnerId = members.find(member => member.role === 'owner')?.id || '';
+  const qTicketMemberOptions = useMemo(() => members
+    .filter(isActiveMember)
+    .map(member => ({
+      value: member.id || member.uid,
+      label: member.name || member.email || 'Учасник команди',
+      user: member,
+    })), [members]);
+
+  useEffect(() => {
+    const selected = qTicketStatus.selectedUserIds?.length
+      ? qTicketStatus.selectedUserIds
+      : [qTicketOwnerId].filter(Boolean);
+    setQTicketSelectedIds(selected);
+  }, [qTicketOwnerId, qTicketStatus.selectedUserIds]);
+
+  const handleQTicketSelection = value => {
+    setQTicketSelectedIds([...new Set([qTicketOwnerId, ...value].filter(Boolean))]);
+  };
+
+  const handleQTicketSync = async () => {
+    try {
+      await synchronizeQTicket(qTicketSelectedIds);
+      showToast(qTicketStatus.active ? 'Команду qTicket синхронізовано' : 'qTicket активовано');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося синхронізувати qTicket', 'error');
+    }
+  };
+
+  const handleQTicketOpen = async () => {
+    try {
+      await openQTicket('/overview');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося відкрити qTicket', 'error');
+    }
+  };
+
+  const handleQTicketDeactivate = async () => {
+    if (!(await confirmDialog({
+      title: 'Вимкнути qTicket?',
+      message: 'Працівники й клієнти втратять доступ до порталу, доки ви не активуєте доповнення знову. Інциденти, проєкти та історія не видаляються.',
+      confirmText: 'Вимкнути',
+      danger: true,
+    }))) return;
+    try {
+      await deactivateQTicket();
+      showToast('qTicket вимкнено');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося вимкнути qTicket', 'error');
+    }
+  };
 
   const [activeSection, setActiveSection] = useState('profile');
   const [integrationDetail, setIntegrationDetail] = useState('');
@@ -3344,6 +3406,17 @@ export default function SettingsPage() {
         // by changing one line here.
         const integrationRows = [
           {
+            id: 'qticket',
+            title: 'qTicket',
+            description: 'Окремий портал інцидентів для ваших клієнтів.',
+            logo: '/logo-min.svg',
+            capability: '',
+            status: qTicketStatus.active
+              ? (qTicketEnabledForMe ? 'Активовано' : 'Без доступу')
+              : qTicketStatus.configured ? 'Не активовано' : 'Недоступно',
+            active: qTicketStatus.active,
+          },
+          {
             id: 'quickteam-plus',
             title: 'QuickTeam+',
             description: 'Клієнтські запити та оновлення з порталу.',
@@ -3435,7 +3508,89 @@ export default function SettingsPage() {
             backLabel="Усі інтеграції"
             rightAction={saveButton}
           >
-            <PlanGate capabilityId="integrations">
+            {integrationDetail === 'qticket' && <IntegrationCard
+              title="qTicket"
+              description="Тікет-система для звернень ваших клієнтів. Організація, брендинг і внутрішня команда беруться з QuickTeam; клієнти входять окремо."
+              logoSrc="/logo-min.svg"
+              logoAlt="qTicket"
+              enabled={qTicketStatus.active}
+              actionLabel={qTicketStatus.active ? 'Відкрити' : 'Активувати'}
+              onAction={qTicketStatus.active ? handleQTicketOpen : handleQTicketSync}
+              actionIcon={qTicketStatus.active ? ExternalLink : undefined}
+              toggleDisabled={qTicketLoading || !qTicketStatus.configured || (!isOwner && !qTicketEnabledForMe)}
+              status={!qTicketStatus.configured
+                ? 'unavailable'
+                : qTicketStatus.lastError ? 'error'
+                  : qTicketStatus.active ? 'connected' : 'off'}
+              statusLabel={!qTicketStatus.configured
+                ? 'Не налаштовано на сервері'
+                : qTicketStatus.lastError ? 'Помилка синхронізації'
+                  : qTicketStatus.active ? 'Активовано' : 'Не активовано'}
+              statusMeta={qTicketStatus.lastSyncAt ? (
+                <span className="text-[11px] text-muted">
+                  Синхронізовано {new Date(qTicketStatus.lastSyncAt).toLocaleString('uk-UA')}
+                </span>
+              ) : null}
+            >
+              {qTicketStatus.lastError && (
+                <Alert
+                  variant="error"
+                  title="Остання синхронізація не завершилась"
+                  description={qTicketStatus.lastError}
+                />
+              )}
+              {isOwner ? (
+                <IntegrationNote title="Команда підтримки в qTicket">
+                  <p>
+                    Оберіть людей із чинної команди QuickTeam. Власник входить завжди;
+                    окремих запрошень і паролів для внутрішніх працівників не буде.
+                  </p>
+                  <div className="mt-3 max-w-[520px]">
+                    <MultiSelect
+                      value={qTicketSelectedIds}
+                      onChange={handleQTicketSelection}
+                      options={qTicketMemberOptions}
+                      placeholder="Оберіть менеджерів і адміністраторів"
+                      searchPlaceholder="Знайти в команді QuickTeam..."
+                      selectAllLabel="Обрати всю команду"
+                      showSelectedAvatars
+                      ariaLabel="Працівники з доступом до qTicket"
+                      className="w-full"
+                    />
+                  </div>
+                  {qTicketStatus.active && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        style="secondary"
+                        size="sm"
+                        icon={RefreshCw}
+                        onClick={handleQTicketSync}
+                        loading={qTicketLoading}
+                      >
+                        Синхронізувати склад і брендинг
+                      </Button>
+                      <Button
+                        style="ghost"
+                        size="sm"
+                        icon={ToggleLeft}
+                        onClick={handleQTicketDeactivate}
+                        disabled={qTicketLoading}
+                      >
+                        Вимкнути qTicket
+                      </Button>
+                    </div>
+                  )}
+                </IntegrationNote>
+              ) : (
+                <IntegrationNote title="Доступ керується власником">
+                  <p>
+                    Власник організації обирає працівників QuickTeam, які можуть відкривати qTicket.
+                  </p>
+                </IntegrationNote>
+              )}
+            </IntegrationCard>}
+
+            {integrationDetail !== 'qticket' && <PlanGate capabilityId="integrations">
 
             {integrationDetail === 'quickteam-plus' && <IntegrationCard
               title="QuickTeam+"
@@ -3627,7 +3782,7 @@ export default function SettingsPage() {
                 </IntegrationNote>
               )}
             </IntegrationCard>}
-            </PlanGate>
+            </PlanGate>}
           </Section>
         );
       }

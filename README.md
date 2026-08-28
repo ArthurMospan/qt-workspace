@@ -32,6 +32,10 @@ CLOUDINARY_API_SECRET=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_PORTAL_URL=
 
+# Optional qTicket add-on (the secret must match qTicket)
+NEXT_PUBLIC_QTICKET_URL=
+QUICKTEAM_QTICKET_SHARED_SECRET=
+
 # Transactional email (configure Resend or Brevo)
 RESEND_API_KEY=
 BREVO_API_KEY=
@@ -81,6 +85,12 @@ The scheduled outbox tracks retries and each channel separately. Dispatch reads 
 Local development intentionally has no Telegram credentials by default, but an existing production binding can still be disconnected from localhost.
 
 QuickTeam+ setup, optional portal Firebase overrides, and the OAuth/data flow are documented in [docs/integrations/QUICKTEAM_PLUS.md](docs/integrations/QUICKTEAM_PLUS.md).
+
+qTicket activation, staff selection, branding sync and one-click launch are
+documented in [docs/integrations/QTICKET.md](docs/integrations/QTICKET.md).
+`QUICKTEAM_QTICKET_SHARED_SECRET` is server-only; only the qTicket origin is
+public. Owners activate the add-on from **Налаштування → Інтеграції → qTicket**
+and select people from the existing QuickTeam team.
 
 ## Commands
 

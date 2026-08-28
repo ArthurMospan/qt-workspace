@@ -13,7 +13,7 @@ import { Button, Counter, IconAction } from '@/components/ui';
 import { can } from '@/lib/utils/can';
 import {
   Folder, PieChart, Menu, X,
-  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown, CircleHelp,
+  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown, CircleHelp, TicketCheck,
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
@@ -23,6 +23,7 @@ import { computeSidebarTheme, computeTranslucentSidebarTheme, SIDEBAR_PRESETS } 
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
+import { useQTicketIntegration } from '@/lib/hooks/useQTicketIntegration';
 
 // The bar is glass: the organization's colour at this much opacity over a blur
 // of whatever is scrolling underneath. It is a request rather than a setting —
@@ -109,6 +110,11 @@ export default function MobileNav({ keyboardOpen = false }) {
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const stopTimer = useWorkspaceStore(s => s.stopTimer);
   const showToast = useWorkspaceStore(s => s.showToast);
+  const {
+    enabledForCurrentUser: qTicketEnabled,
+    loading: qTicketLoading,
+    open: openQTicket,
+  } = useQTicketIntegration();
   const unreadByOrganization = useWorkspaceStore(s => s.notificationUnreadByOrg);
   // Published by WorkspaceNotificationBridge, which holds the only subscription
   // to the chat channels and read cursors.
@@ -177,6 +183,14 @@ export default function MobileNav({ keyboardOpen = false }) {
     setMoreOpen(false);
     const targetHref = timerTargetHref(timer);
     if (targetHref) router.push(targetHref);
+  };
+
+  const handleOpenQTicket = async () => {
+    try {
+      await openQTicket('/overview');
+    } catch (error) {
+      showToast(error.message || 'Не вдалося відкрити qTicket', 'error');
+    }
   };
 
   return (
@@ -322,6 +336,18 @@ export default function MobileNav({ keyboardOpen = false }) {
 
             {/* Secondary nav */}
             <div className="flex flex-col gap-[2px] px-[8px]">
+              {qTicketEnabled && (
+                <button
+                  type="button"
+                  data-ui-control="navigation-sheet-row"
+                  onClick={handleOpenQTicket}
+                  disabled={qTicketLoading}
+                  className="flex h-[44px] items-center gap-[14px] rounded-[12px] px-[12px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)] disabled:opacity-50"
+                >
+                  <TicketCheck size={19} />
+                  <span className="text-[14px] font-medium">{qTicketLoading ? 'Відкриваємо…' : 'qTicket'}</span>
+                </button>
+              )}
               {MORE_NAV.map(({ href, icon: Icon, label }) => {
                 const active = isActive(href);
                 return (
