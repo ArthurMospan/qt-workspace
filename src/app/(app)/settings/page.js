@@ -802,11 +802,16 @@ const cleanWorkflowItems = arr => (arr || [])
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { currentUser, signOut, activeOrgId, projects, orgRole, allOrgs, orgRoles } = useAppContext();
+  // The organization this screen edits comes from the same place every other
+  // screen reads it — `activeOrg`, seeded by the server directory and kept live
+  // by `OrgContext`. This screen used to take it from a second listener of its
+  // own, and was the only reader that listener had; when that listener's cache
+  // answered «no such document», «Загальні» went blank while the sidebar, the
+  // plan badge and the sidebar branding stayed right. One document, one road.
+  const { currentUser, signOut, activeOrgId, activeOrg: org, projects, orgRole, allOrgs, orgRoles } = useAppContext();
   const showToast = useWorkspaceStore(s => s.showToast);
   const confirmDialog = useConfirm();
   const {
-    org,
     members,
     inviteMember,
     changeMemberRole,

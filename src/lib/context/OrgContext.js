@@ -437,7 +437,14 @@ export function OrgProvider({ user, children }) {
         });
       }
     }, (err) => {
-      console.warn('[OrgContext] org sync permission error (expected during logout):', err.message);
+      // Signing out really does deauthorize these listeners mid-flight, and
+      // that noise is worth suppressing. What used to be printed here declared
+      // *every* failure a sign-out artefact, including a workspace that simply
+      // could not be read — so the one line that would have named the blank
+      // «Загальні» screen called it routine instead. The account going away is
+      // the narrow case; anything else is a real load error.
+      if (!auth.currentUser) return;
+      reportLoadError('[OrgContext] organization document', err);
     });
 
     // Sync role from orgMemberships
@@ -448,7 +455,8 @@ export function OrgProvider({ user, children }) {
         if (snap.exists()) setOrgRole(snap.data().role);
         else if (!snap.metadata.fromCache) setOrgRole(null);
       }, (err) => {
-        console.warn('[OrgContext] membership sync permission error (expected during logout):', err.message);
+        if (!auth.currentUser) return;
+        reportLoadError('[OrgContext] own membership', err);
       });
     }
 

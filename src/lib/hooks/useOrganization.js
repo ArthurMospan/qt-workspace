@@ -16,13 +16,11 @@ import {
 import { claimActivityHeartbeat } from '@/lib/utils/activity';
 import { reportLoadError } from '@/lib/utils/errors';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
-import { firestoreDocumentData } from '@/lib/utils/firestoreDocument.mjs';
 
 // How often returning to the tab may re-read the member directory.
 const MEMBER_RECHECK_MS = 30 * 60 * 1000;
 
 const ORGANIZATION_SERVER_SNAPSHOT = Object.freeze({
-  org: null,
   members: [],
   loading: true,
   error: null,
@@ -74,22 +72,37 @@ function createOrganizationStore(organizationId, viewerScope) {
     if (unsubscribeOrg || unsubscribeMembers) return;
     refresh();
 
+    // The organization document has exactly one publisher, and it is not this
+    // one: `OrgContext` fills `activeOrg` from the server directory and its own
+    // listener only ever *adds* to it, so a snapshot claiming the document is
+    // gone leaves the last good copy standing. Here the same document is only
+    // an invalidation signal for the member directory.
+    //
+    // It used to be published as `org` too, and Settings → «Загальні» was the
+    // only screen that read it. A persistent-cache snapshot saying the document
+    // did not exist was taken at face value and wiped both the organization and
+    // the member list, so that one screen showed a workspace with no name, no
+    // logo and branding switched off while every other screen — reading
+    // `activeOrg` — was correct. Nothing in the browser said why, and the cure
+    // was a write to the document: changing the plan and changing it back.
     unsubscribeOrg = onSnapshot(doc(db, 'organizations', organizationId), orgSnap => {
+      // «Missing» out of the local cache is not «missing». Same guard and same
+      // reason as `OrgContext`'s membership listener and `useProjects`: an
+      // unresolved cache answer is not an answer.
       if (!orgSnap.exists()) {
-        emit({ org: null, members: [], loading: false, error: null });
+        if (!orgSnap.metadata.fromCache) memberDirectoryVersion = undefined;
         return;
       }
-      const nextOrg = firestoreDocumentData(orgSnap);
-      const nextDirectoryVersion = Number(nextOrg.memberDirectoryVersion) || 0;
+      const nextDirectoryVersion = Number(orgSnap.get('memberDirectoryVersion')) || 0;
       if (
         memberDirectoryVersion !== undefined
         && memberDirectoryVersion !== nextDirectoryVersion
       ) refresh();
       memberDirectoryVersion = nextDirectoryVersion;
-      emit({ ...snapshot, org: nextOrg, error: null });
     }, error => {
+      // Losing this listener costs the member directory its invalidation
+      // signal and nothing else — no screen reads its data from here.
       reportLoadError('[useOrganization] organization', error);
-      emit({ ...snapshot, loading: false, error });
     });
 
     const uid = auth.currentUser?.uid;
@@ -176,7 +189,7 @@ export function useOrganization() {
     () => getOrganizationStore(activeOrgId, viewerScope),
     [activeOrgId, viewerScope],
   );
-  const { org, members, loading, error } = useSyncExternalStore(
+  const { members, loading, error } = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
     store.getServerSnapshot,
@@ -247,7 +260,6 @@ export function useOrganization() {
     return result;
   }, [activeOrgId, store]);
   return {
-    org,
     members,
     loading,
     error,

@@ -372,6 +372,46 @@ test('switching to a server-recovered organization does not erase its verified r
   assert.match(context, /if \(snap\.exists\(\)\) setOrgRole\(snap\.data\(\)\.role\);\s*else if \(!snap\.metadata\.fromCache\) setOrgRole\(null\);/);
 });
 
+// Settings → «Загальні» showed a workspace with no name, no logo and branding
+// switched off, while the sidebar, the plan badge and the sidebar branding —
+// all reading `activeOrg` — stayed correct. The screen was the only reader of a
+// second listener on the same document, and that listener believed a
+// persistent-cache snapshot claiming the document did not exist: it published
+// `org: null` and an empty member list, and neither the screen nor the console
+// said so. What cured it was a write to the document — changing the plan and
+// changing it back, which forced a fresh server snapshot.
+test('the organization document has one publisher, and a cache miss is not a deletion', async () => {
+  const [hook, settings] = await Promise.all([
+    read('../src/lib/hooks/useOrganization.js'),
+    read('../src/app/(app)/settings/page.js'),
+  ]);
+
+  // The member directory still needs `memberDirectoryVersion` off this
+  // document, so the listener stays — but an unresolved cache answer is not an
+  // answer, and the listener publishes nothing.
+  assert.match(hook, /if \(!orgSnap\.exists\(\)\) \{\s*if \(!orgSnap\.metadata\.fromCache\) memberDirectoryVersion = undefined;\s*return;\s*\}/);
+  assert.doesNotMatch(hook, /emit\(\{ org: null/);
+  assert.doesNotMatch(hook, /org: nextOrg/);
+  assert.doesNotMatch(hook, /^\s{4}org,$/m);
+
+  // And the screen that edits the workspace reads the same copy as every screen
+  // that merely displays it.
+  assert.match(settings, /activeOrg: org/);
+  assert.doesNotMatch(settings, /const \{\s*org,\s*members,/);
+});
+
+// The two listeners that read the workspace printed «expected during logout» on
+// every failure, not just the one that follows signing out. So the single
+// message that would have named a workspace which could not be read called
+// itself routine.
+test('a failed workspace read is not logged as a sign-out', async () => {
+  const context = await read('../src/lib/context/OrgContext.js');
+
+  assert.doesNotMatch(context, /expected during logout/);
+  assert.match(context, /if \(!auth\.currentUser\) return;\s*reportLoadError\('\[OrgContext\] organization document', err\);/);
+  assert.match(context, /if \(!auth\.currentUser\) return;\s*reportLoadError\('\[OrgContext\] own membership', err\);/);
+});
+
 test('the obsolete client-side organization bootstrap is gone', async () => {
   const hook = await read('../src/lib/hooks/useOrganization.js');
 
