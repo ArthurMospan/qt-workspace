@@ -1843,6 +1843,9 @@
    as destinations around it. The behavior stays Button; this composition owns
    only the rail geometry and its organization-colour variables. */
 .ui-button[data-ui-composition='sidebar-nav-action'] {
+  /* The kit button centres its content; a rail row does not. Without this the
+     glyph sat right of the column every destination above it lines up in. */
+  justify-content: flex-start;
   --ui-control-height: 40px;
   --ui-control-px: 0px;
   width: calc(100% - 16px);

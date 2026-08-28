@@ -8,6 +8,7 @@ import Image from 'next/image';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { Button, Counter, IconAction, Skeleton } from '@/components/ui';
 import {
+  ArrowUpRight,
   Folder, Users, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
   ChevronLeft, ChevronRight, PieChart, PanelLeftClose, PanelLeftOpen,
@@ -368,6 +369,13 @@ export default function WorkspaceSidebar() {
                 {!collapsed && <span className="text-[13px] font-medium">{qTicketLoading && action === 'qticket' ? 'Відкриваємо…' : label}</span>}
                 {!collapsed && label === 'Чат' && showUnreadChatBadge && (
                   <Counter value={unreadChats} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
+                )}
+                {/* qTicket is a neighbouring product, not another section of
+                    this one. The row sits with the destinations because that is
+                    where people look for it; the glyph is what says the click
+                    leaves. */}
+                {!collapsed && action === 'qticket' && (
+                  <ArrowUpRight size={14} className="ml-auto shrink-0" aria-hidden />
                 )}
               </div>
             </Tooltip>
