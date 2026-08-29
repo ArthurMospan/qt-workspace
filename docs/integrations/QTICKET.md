@@ -155,6 +155,45 @@ Three rules this side owns:
 qTicket refuses the same way it refuses a launch: `inactive` when the add-on is
 off, `not_enabled` when the person holds no internal seat there.
 
+## Receiving a task from qTicket
+
+The only two endpoints in this contract that QuickTeam serves rather than calls.
+qTicket signs them with the same shared secret, the same headers and the same
+five-minute window; `verifyQTicketRequest` is the mirror of the verifier on the
+other side, and the nonce is recorded here because everything qTicket asks of
+QuickTeam changes something.
+
+```text
+POST /api/integrations/qticket/projects
+POST /api/integrations/qticket/tasks
+```
+
+Both name a person the way provisioning did — `sourceUserId` — and both refuse
+unless three things still hold: the add-on is active, this organization selected
+this person for qTicket, and their internal seat is still there. A staff
+selection that shrank takes the transfer right with it.
+
+`projects` answers with the list that person would see here: every project of
+the organization for an owner or an admin, the ones they are on for everybody
+else, minus anything archived, being deleted, or read-only because the plan's
+ceiling moved. A picker that offers what the next step refuses is worse than no
+picker.
+
+`tasks` creates one task through `createIssueForActor` — the same path
+`POST /api/issues` uses, so the key, the counters, the audit row and the
+reminder rows are the ones any task here would have. Nothing about it says
+«imported»: it is a task, and the person who pressed the button in qTicket is
+its author.
+
+**One task per request, however many times it is sent.** `qticketTransfers/{id}`
+is claimed before the task is written and deleted if the write fails, so a
+repeat returns the first task (`status: "existing"`) and a failed attempt does
+not lock the request out forever. A repeat that arrives while the first is still
+in flight is refused with `transfer_in_progress` rather than queued.
+
+`integrationNonces` and `qticketTransfers` are server-only; `firestore.rules`
+denies both to browsers explicitly.
+
 ## Ownership table
 
 | Data | Authority |
@@ -164,5 +203,7 @@ off, `not_enabled` when the person holds no internal seat there.
 | Client projects, client users, incidents and workflow | qTicket |
 | qTicket-to-QuickTeam exported task | QuickTeam after explicit export |
 
-Incident-to-task export is a later, separate idempotent API contract. It must
-not reuse the launch flow or imply shared database ownership.
+Incident-to-task export is the separate idempotent contract described above. It
+reuses no session and no launch code, and implies no shared database ownership:
+QuickTeam stores the id of the request a task came from, qTicket stores a link
+to the task, and neither reads the other's records.

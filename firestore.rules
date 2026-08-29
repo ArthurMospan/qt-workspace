@@ -516,6 +516,18 @@ service cloud.firestore {
       }
     }
 
+    // The signed qTicket contract writes both of these and nothing else reads
+    // them: the replay guard for an inbound signed request, and the claim that
+    // makes «Створити завдання в QuickTeam» produce one task however many times
+    // it is pressed. A browser has no business in either.
+    match /integrationNonces/{nonceId} {
+      allow read, write: if false;
+    }
+
+    match /qticketTransfers/{transferId} {
+      allow read, write: if false;
+    }
+
     match /externalObjectLinks/{linkId} {
       allow read, write: if false;
     }

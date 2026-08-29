@@ -5,6 +5,7 @@ import {
   createQTicketSignedRequest,
   qTicketIntegrationConfig,
   signQTicketRequest,
+  verifyQTicketRequest,
 } from '../src/lib/integrations/qticketContract.mjs';
 
 const environment = {
@@ -81,4 +82,74 @@ test('the qTicket row carries an unread badge that fails to nothing', async () =
   assert.match(sidebar, /\{qTicketUnread > 0 && \(\s*<Counter value=\{qTicketUnread\}/);
   // Число, яке видно, має бути й у назві кнопки для тих, хто його не бачить.
   assert.match(sidebar, /Відкрити qTicket, непрочитаних: \$\{qTicketUnread\}/);
+});
+
+// Той самий конверт, який ми підписуємо, тепер треба перевіряти: qTicket
+// просить нас створити завдання, і підпис — це вся довіра.
+test('an inbound qTicket request is verified the same way we sign our own', () => {
+  const body = JSON.stringify({ version: 1, projectId: 'p1' });
+  const timestamp = 2_000_000_000;
+  const nonce = 'nonce_0123456789abcdef';
+  const secret = environment.QUICKTEAM_QTICKET_SHARED_SECRET;
+  const signature = signQTicketRequest(secret, { timestamp, nonce, body });
+
+  assert.deepEqual(
+    verifyQTicketRequest({ secret, timestamp, nonce, signature, body, nowSeconds: timestamp }),
+    { ok: true, timestamp, nonce },
+  );
+  // Один байт різниці — це вже інший запит.
+  assert.deepEqual(
+    verifyQTicketRequest({ secret, timestamp, nonce, signature, body: `${body} `, nowSeconds: timestamp }),
+    { ok: false, code: 'signature' },
+  );
+  assert.deepEqual(
+    verifyQTicketRequest({ secret, timestamp, nonce, signature, body, nowSeconds: timestamp + 301 }),
+    { ok: false, code: 'expired' },
+  );
+  assert.deepEqual(
+    verifyQTicketRequest({ secret, timestamp, nonce: 'short', signature, body, nowSeconds: timestamp }),
+    { ok: false, code: 'nonce' },
+  );
+});
+
+test('a transferred request becomes one task, however many times it is sent', async () => {
+  const [inbound, tasks, projects, rules] = await Promise.all([
+    readFile(new URL('../src/lib/server/qticketInbound.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/api/integrations/qticket/tasks/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/api/integrations/qticket/projects/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../firestore.rules', import.meta.url), 'utf8'),
+  ]);
+
+  // Підпис — це те, що запит від qTicket. Дозвіл діяти за людину — це те, що
+  // організація її обрала й вона досі має внутрішнє місце.
+  assert.match(inbound, /verifyQTicketRequest\(\{/);
+  assert.match(inbound, /integration\.active !== true/);
+  assert.match(inbound, /!selected\.includes\(userId\)/);
+  assert.match(inbound, /INTERNAL_ROLES\.has\(membership\.role\)/);
+  assert.match(inbound, /membership\.removalPending === true/);
+  // Усе, що qTicket у нас просить, щось змінює — тому nonce записується.
+  assert.match(inbound, /integrationNonces'\)\.doc\(qTicketNonceId/);
+  assert.match(inbound, /code: 'replay'/);
+
+  // Заявка створюється до завдання й зникає, якщо завдання не створилось —
+  // інакше невдала спроба замкнула б звернення назавжди.
+  const claimBeforeCreate = tasks.indexOf('const claimRef') < tasks.indexOf('await createIssueForActor({');
+  assert.ok(claimBeforeCreate, 'the claim is taken before the task is written');
+  assert.match(tasks, /catch \(error\) \{[\s\S]{0,200}claimRef\.delete\(\)/);
+  assert.match(tasks, /status: 'existing'/);
+  assert.match(tasks, /code: 'transfer_in_progress'/);
+  // Один шлях запису: та сама функція, що й у композера.
+  assert.match(tasks, /createIssueForActor\(\{/);
+  assert.doesNotMatch(tasks, /issueCounter|projectIssueCountIncrements/);
+
+  // Список місць — це відповідь про цю людину, і в ньому немає того, куди
+  // наступний крок однаково відмовить.
+  assert.match(projects, /project\.status !== 'archived'/);
+  assert.match(projects, /project\.deletionPending !== true/);
+  assert.match(projects, /project\.overPlanLimit !== true/);
+  assert.match(projects, /isPrivileged \|\| \(Array\.isArray\(project\.team\) && project\.team\.includes\(actor\.uid\)\)/);
+
+  // Обидві серверні колекції закриті для браузера явно, як і решта таких.
+  assert.match(rules, /match \/integrationNonces\/\{nonceId\} \{\s*allow read, write: if false;/);
+  assert.match(rules, /match \/qticketTransfers\/\{transferId\} \{\s*allow read, write: if false;/);
 });
