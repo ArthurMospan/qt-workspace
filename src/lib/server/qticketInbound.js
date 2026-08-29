@@ -21,8 +21,12 @@ const INTERNAL_ROLES = new Set(['owner', 'admin', 'member']);
  * would be a second task about the same request.
  */
 export async function readSignedQTicketRequest(request) {
-  const config = qTicketIntegrationConfig();
-  if (!config.configured) {
+  // Only the secret. `configured` also insists on knowing where qTicket lives,
+  // which is what QuickTeam needs to *call* it — a request arriving here has
+  // already found us, and refusing it for a missing origin would be refusing a
+  // correctly signed request for the wrong reason.
+  const { secret } = qTicketIntegrationConfig();
+  if (String(secret).length < 32) {
     return { error: 'qTicket інтеграцію не налаштовано', status: 503, code: 'not_configured' };
   }
   const declaredLength = Number(request.headers.get('content-length') || 0);
@@ -35,7 +39,7 @@ export async function readSignedQTicketRequest(request) {
   }
 
   const verification = verifyQTicketRequest({
-    secret: config.secret,
+    secret,
     timestamp: request.headers.get('x-qt-timestamp') || '',
     nonce: request.headers.get('x-qt-nonce') || '',
     signature: request.headers.get('x-qt-signature') || '',
