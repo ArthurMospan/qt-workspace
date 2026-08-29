@@ -104,7 +104,7 @@ test('QUI-74 gives sprint backlog cards the canonical Kanban card width', async 
 test('QUI-73 and QUI-81 show newly created sprint, backlog and board tasks first', async () => {
   const [source, createRoute, board] = await Promise.all([
     read('../src/app/(app)/sprints/page.js'),
-    read('../src/app/api/issues/route.js'),
+    read('../src/lib/server/issueCreation.js'),
     read('../src/components/workspace/AgileBoard.jsx'),
   ]);
 
@@ -273,7 +273,7 @@ test('QUI-68 unifies project settings and safely moves hidden statuses to Backlo
     read('../src/components/ui/TaskManagement/StatusVisibilityPicker.jsx'),
     read('../src/app/api/projects/[projectId]/route.js'),
     read('../src/app/api/projects/route.js'),
-    read('../src/app/api/issues/route.js'),
+    read('../src/lib/server/issueCreation.js'),
     read('../src/app/(app)/my/page.js'),
     readKitShowcase(),
   ]);

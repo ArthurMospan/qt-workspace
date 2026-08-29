@@ -118,7 +118,7 @@ test('the table header selects what is on screen, and asks about the rest', () =
 test('a subtask never prints prose where its parent’s key goes', () => {
   const identity = read('components/ui/TaskManagement/TaskIdentity.jsx');
   const detail = read('components/workspace/IssueDetail.jsx');
-  const createRoute = read('app/api/issues/route.js');
+  const createRoute = read('lib/server/issueCreation.js');
   const parentRoute = read('app/api/issues/[issueId]/parent/route.js');
 
   assert.doesNotMatch(identity, /parentIssue\.issueKey \|\| parentIssue\.title \|\| 'Батьківське завдання'/);

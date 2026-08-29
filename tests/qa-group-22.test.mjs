@@ -59,12 +59,22 @@ test('comment composers lock synchronously against a same-tick double submit', a
 });
 
 test('invalid issue bodies do not consume the 60-per-minute creation limit', async () => {
-  const route = await read('src/app/api/issues/route.js');
-  const titleValidation = route.indexOf("typeof data.title !== 'string'");
-  const estimateValidation = route.indexOf("code: 'INVALID_ESTIMATE'");
-  const limiter = route.indexOf("enforceRateLimit('issue-create'");
+  // The judgement moved into `validateIssueCreationInput` when qTicket needed
+  // the same creation path, and the order it has to run in moved with it: the
+  // route asks that question before it spends the limit, and the limit stays
+  // with the caller because only the caller knows whose budget it is.
+  const [route, creation] = await Promise.all([
+    read('src/app/api/issues/route.js'),
+    read('src/lib/server/issueCreation.js'),
+  ]);
+  const titleValidation = creation.indexOf("typeof data.title !== 'string'");
+  const estimateValidation = creation.indexOf("code: 'INVALID_ESTIMATE'");
   assert.ok(titleValidation >= 0 && estimateValidation > titleValidation);
-  assert.ok(limiter > estimateValidation);
+
+  const validation = route.indexOf('validateIssueCreationInput({ projectId, data })');
+  const limiter = route.indexOf("enforceRateLimit('issue-create'");
+  const creating = route.indexOf('createIssueForActor({');
+  assert.ok(validation >= 0 && limiter > validation && creating > limiter);
   assert.match(route, /enforceRateLimit\('issue-create', authorization\.user\.uid, 60, 60\)/);
 });
 

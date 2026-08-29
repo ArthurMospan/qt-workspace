@@ -344,7 +344,7 @@ test('setting a deadline writes its reminder down, rather than leaving it to be 
 
   // Every server route that can change when somebody must be reminded.
   const callers = [
-    'src/app/api/issues/route.js',
+    'src/lib/server/issueCreation.js',
     'src/app/api/issues/bulk/route.js',
     'src/app/api/issues/[issueId]/route.js',
     'src/app/api/issues/[issueId]/status/route.js',

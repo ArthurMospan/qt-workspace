@@ -438,7 +438,7 @@ test('what measures output reads delivered; what asks "is there work left" reads
 
 test('no writer guesses the incoming column by the name «backlog»', async () => {
   for (const path of [
-    '../src/app/api/issues/route.js',
+    '../src/lib/server/issueCreation.js',
     '../src/app/api/v1/tasks/route.js',
     '../src/lib/server/telegram.js',
     '../src/lib/server/youtrackImporter.js',

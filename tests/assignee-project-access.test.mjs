@@ -80,7 +80,7 @@ test('a project whose team was never recorded is legacy data, not a closed door'
 });
 
 test('the create route never writes a project roster it was not asked to write', async () => {
-  const route = await read('../src/app/api/issues/route.js');
+  const route = await read('../src/lib/server/issueCreation.js');
   assert.match(route, /assigneesOutsideProject/);
   assert.match(route, /assigneesOffProjectTeam/);
   assert.match(route, /ASSIGNEE_OUTSIDE_PROJECT/);

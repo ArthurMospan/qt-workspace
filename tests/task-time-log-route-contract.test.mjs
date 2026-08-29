@@ -144,7 +144,7 @@ test('task time-log clients use APIs and contain no direct mutation primitives',
 
 test('all trusted issue creators initialize the accounting mirror', async () => {
   const [issues, apiV1, telegram, youtrack] = await Promise.all([
-    readSource('src/app/api/issues/route.js'),
+    readSource('src/lib/server/issueCreation.js'),
     readSource('src/app/api/v1/tasks/route.js'),
     readSource('src/lib/server/telegram.js'),
     readSource('src/lib/server/youtrackImporter.js'),

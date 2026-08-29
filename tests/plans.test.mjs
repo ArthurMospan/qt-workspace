@@ -723,7 +723,7 @@ test('проєкт понад стелю стає тільки для читан
   // і видаляють задачу, і власна перевірка там, де задачу створюють.
   const access = withoutComments(await read('src/lib/utils/projectAccess.mjs'));
   assert.match(access, /project.overPlanLimit === true/);
-  const create = withoutComments(await read('src/app/api/issues/route.js'));
+  const create = withoutComments(await read('src/lib/server/issueCreation.js'));
   assert.match(create, /PROJECT_OVER_PLAN_LIMIT/);
 });
 

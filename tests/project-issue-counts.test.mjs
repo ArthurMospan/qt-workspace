@@ -304,7 +304,7 @@ test('the percentage a card draws is the same arithmetic either way', () => {
 // a wrong one, silently, on the screen that stopped reading the tasks behind it.
 
 const COUNTING_PATHS = [
-  ['src/app/api/issues/route.js', 'creating a task'],
+  ['src/lib/server/issueCreation.js', 'creating a task'],
   ['src/app/api/issues/bulk/route.js', 'a bulk deadline'],
   ['src/app/api/issues/[issueId]/status/route.js', 'moving a task'],
   ['src/app/api/issues/[issueId]/archive/route.js', 'archiving a task'],

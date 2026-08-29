@@ -17,7 +17,7 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 test('every project task writer consumes the stable project issue sequence', async () => {
   const [sources, transactionalResolver] = await Promise.all([
     Promise.all([
-    read('../src/app/api/issues/route.js'),
+    read('../src/lib/server/issueCreation.js'),
     read('../src/lib/server/telegram.js'),
     read('../src/app/api/v1/tasks/route.js'),
     read('../src/lib/server/youtrackImporter.js'),

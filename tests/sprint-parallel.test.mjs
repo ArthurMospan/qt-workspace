@@ -17,7 +17,7 @@ test('nothing limits how many sprints run at once', async () => {
 test('a sprint belongs to the organization and holds tasks from any project', async () => {
   const [hook, issuesRoute, bulkRoute, detail, board] = await Promise.all([
     read('../src/lib/hooks/useSprints.js'),
-    read('../src/app/api/issues/route.js'),
+    read('../src/lib/server/issueCreation.js'),
     read('../src/app/api/issues/bulk/route.js'),
     read('../src/components/workspace/IssueDetail.jsx'),
     read('../src/app/(app)/[projectId]/ProjectBoardClient.jsx'),

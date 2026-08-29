@@ -63,7 +63,7 @@ test('no path that creates a task invents a priority for it', async () => {
     'src/app/(app)/[projectId]/ProjectBoardClient.jsx',
     'src/components/AudioTaskPanel.jsx',
     'src/components/workspace/IssueDetail.jsx',
-    'src/app/api/issues/route.js',
+    'src/lib/server/issueCreation.js',
     'src/app/api/v1/tasks/route.js',
     'src/lib/server/telegram.js',
   ];
@@ -81,7 +81,7 @@ test('no path that creates a task invents a priority for it', async () => {
   // The server is the one that decides, because it is the only place a client
   // cannot go around — it used to rewrite an unranked task to `medium` even
   // when the form sent `none`.
-  const route = await readFile(new URL('../src/app/api/issues/route.js', import.meta.url), 'utf8');
+  const route = await readFile(new URL('../src/lib/server/issueCreation.js', import.meta.url), 'utf8');
   assert.match(route, /priority: freshPriorityIds\.has\(data\.priority\) \? data\.priority : NO_PRIORITY_ID/);
   assert.match(route, /freshPriorityIds\.add\(NO_PRIORITY_ID\)/);
   assert.equal(NO_PRIORITY_ID, 'none');

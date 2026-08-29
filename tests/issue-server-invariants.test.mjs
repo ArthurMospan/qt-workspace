@@ -204,7 +204,7 @@ test('status API error details can never replace the HTTP status code', async ()
 });
 
 test('issue creation validates the canonical organization-wide sprint model', async () => {
-  const route = await read('../src/app/api/issues/route.js');
+  const route = await read('../src/lib/server/issueCreation.js');
 
   assert.match(
     route,

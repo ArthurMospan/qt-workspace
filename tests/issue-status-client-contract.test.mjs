@@ -52,7 +52,7 @@ test('a task nobody has positioned yet sorts above the ones somebody has', async
   // One sign, every writer. `+next` buried Telegram and imported tasks at the
   // bottom of the column and a fixed 0 collided with the first planned slot.
   for (const path of [
-    '../src/app/api/issues/route.js',
+    '../src/lib/server/issueCreation.js',
     '../src/lib/server/telegram.js',
     '../src/lib/server/youtrackImporter.js',
   ]) {
