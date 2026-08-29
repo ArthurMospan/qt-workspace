@@ -192,7 +192,9 @@ not lock the request out forever. A repeat that arrives while the first is still
 in flight is refused with `transfer_in_progress` rather than queued.
 
 `integrationNonces` and `qticketTransfers` are server-only; `firestore.rules`
-denies both to browsers explicitly.
+denies both to browsers explicitly. On the qTicket side the answer is stored
+where a customer cannot read it either — where their supplier tracks the work is
+internal routing, not part of their request.
 
 ## Ownership table
 
