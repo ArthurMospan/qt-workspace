@@ -2791,7 +2791,7 @@
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
-            "src/components/WorkspaceSidebar.jsx:385",
+            "src/components/WorkspaceSidebar.jsx:395",
             "src/components/workspace/BillingTab.jsx:1545",
             "src/components/workspace/BillingTab.jsx:1566",
             "src/components/workspace/QtPlusProjectTab.jsx:240",
@@ -3298,7 +3298,7 @@
             "src/components/WorkspaceHeader.jsx:360",
             "src/components/WorkspaceHelpMenu.jsx:87",
             "src/components/WorkspaceInfoCenter.jsx:87",
-            "src/components/WorkspaceSidebar.jsx:385",
+            "src/components/WorkspaceSidebar.jsx:395",
             "src/components/integrations/YouTrackImportCard.jsx:803",
             "src/components/workspace/AgileBoard.jsx:412",
             "src/components/workspace/AgileBoard.jsx:493",
@@ -3463,7 +3463,7 @@
             "src/components/WorkspaceHelpMenu.jsx:87",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
-            "src/components/WorkspaceSidebar.jsx:385",
+            "src/components/WorkspaceSidebar.jsx:395",
             "src/components/integrations/IntegrationCard.jsx:106",
             "src/components/integrations/YouTrackImportCard.jsx:530",
             "src/components/integrations/YouTrackImportCard.jsx:563",
@@ -3695,7 +3695,7 @@
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
-            "src/components/WorkspaceSidebar.jsx:385",
+            "src/components/WorkspaceSidebar.jsx:395",
             "src/components/integrations/IntegrationCard.jsx:106",
             "src/components/integrations/YouTrackImportCard.jsx:530",
             "src/components/integrations/YouTrackImportCard.jsx:563",
@@ -3906,7 +3906,7 @@
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:55",
-            "src/components/WorkspaceSidebar.jsx:385",
+            "src/components/WorkspaceSidebar.jsx:395",
             "src/components/integrations/IntegrationCard.jsx:106",
             "src/components/integrations/YouTrackImportCard.jsx:530",
             "src/components/integrations/YouTrackImportCard.jsx:563",
@@ -4281,7 +4281,7 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:385"
+            "src/components/WorkspaceSidebar.jsx:395"
           ]
         },
         "inline-add-action": {
@@ -4335,7 +4335,7 @@
             "src/app/(app)/chat/page.js:327",
             "src/app/(app)/chat/page.js:336",
             "src/app/(app)/chat/page.js:401",
-            "src/components/WorkspaceSidebar.jsx:505"
+            "src/components/WorkspaceSidebar.jsx:519"
           ]
         },
         "md": {
@@ -4510,7 +4510,7 @@
           "routes": [],
           "files": [
             "src/components/MobileNav.jsx:78",
-            "src/components/WorkspaceSidebar.jsx:505"
+            "src/components/WorkspaceSidebar.jsx:519"
           ]
         },
         "surface": {
@@ -4615,7 +4615,7 @@
           "files": [
             "src/app/(app)/chat/page.js:468",
             "src/components/MobileNav.jsx:78",
-            "src/components/WorkspaceSidebar.jsx:505"
+            "src/components/WorkspaceSidebar.jsx:519"
           ]
         },
         "circle": {
@@ -4676,7 +4676,7 @@
             "src/components/MobileNav.jsx:78",
             "src/components/WorkspaceHeader.jsx:443",
             "src/components/WorkspaceHeader.jsx:461",
-            "src/components/WorkspaceSidebar.jsx:505",
+            "src/components/WorkspaceSidebar.jsx:519",
             "src/components/integrations/YouTrackImportCard.jsx:573",
             "src/components/profile/ProfileModal.jsx:41",
             "src/components/profile/ProfileModal.jsx:46",
@@ -6857,7 +6857,7 @@
     "Counter": {
       "size": {
         "sm": {
-          "count": 7,
+          "count": 8,
           "routes": [
             "/chat"
           ],
@@ -6866,9 +6866,10 @@
             "src/components/MobileNav.jsx:249",
             "src/components/MobileNav.jsx:273",
             "src/components/MobileNav.jsx:320",
-            "src/components/WorkspaceSidebar.jsx:298",
-            "src/components/WorkspaceSidebar.jsx:371",
-            "src/components/WorkspaceSidebar.jsx:454"
+            "src/components/WorkspaceSidebar.jsx:299",
+            "src/components/WorkspaceSidebar.jsx:372",
+            "src/components/WorkspaceSidebar.jsx:385",
+            "src/components/WorkspaceSidebar.jsx:468"
           ]
         },
         "md": {
@@ -6886,7 +6887,7 @@
       },
       "variant": {
         "(default)": {
-          "count": 5,
+          "count": 6,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
@@ -6897,7 +6898,8 @@
             "src/app/(app)/chat/page.js:398",
             "src/components/MobileNav.jsx:249",
             "src/components/OrgSwitcherScreen.jsx:72",
-            "src/components/WorkspaceSidebar.jsx:371",
+            "src/components/WorkspaceSidebar.jsx:372",
+            "src/components/WorkspaceSidebar.jsx:385",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6907,8 +6909,8 @@
           "files": [
             "src/components/MobileNav.jsx:273",
             "src/components/MobileNav.jsx:320",
-            "src/components/WorkspaceSidebar.jsx:298",
-            "src/components/WorkspaceSidebar.jsx:454"
+            "src/components/WorkspaceSidebar.jsx:299",
+            "src/components/WorkspaceSidebar.jsx:468"
           ]
         }
       },
@@ -6926,23 +6928,24 @@
             "src/components/MobileNav.jsx:273",
             "src/components/MobileNav.jsx:320",
             "src/components/OrgSwitcherScreen.jsx:72",
-            "src/components/WorkspaceSidebar.jsx:298",
+            "src/components/WorkspaceSidebar.jsx:299",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
         "muted": {
-          "count": 2,
+          "count": 3,
           "routes": [],
           "files": [
             "src/components/MobileNav.jsx:249",
-            "src/components/WorkspaceSidebar.jsx:371"
+            "src/components/WorkspaceSidebar.jsx:372",
+            "src/components/WorkspaceSidebar.jsx:385"
           ]
         },
         "info": {
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:454"
+            "src/components/WorkspaceSidebar.jsx:468"
           ]
         }
       },
@@ -6957,7 +6960,7 @@
           ]
         },
         "(default)": {
-          "count": 4,
+          "count": 5,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
@@ -6965,8 +6968,9 @@
           ],
           "files": [
             "src/components/MobileNav.jsx:249",
-            "src/components/WorkspaceSidebar.jsx:371",
-            "src/components/WorkspaceSidebar.jsx:454",
+            "src/components/WorkspaceSidebar.jsx:372",
+            "src/components/WorkspaceSidebar.jsx:385",
+            "src/components/WorkspaceSidebar.jsx:468",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
           ]
         },
@@ -6976,7 +6980,7 @@
           "files": [
             "src/components/MobileNav.jsx:273",
             "src/components/MobileNav.jsx:320",
-            "src/components/WorkspaceSidebar.jsx:298"
+            "src/components/WorkspaceSidebar.jsx:299"
           ]
         },
         "inverse-outline": {
@@ -7616,15 +7620,15 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:201"
+            "src/components/WorkspaceSidebar.jsx:202"
           ]
         },
         "caption": {
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:207",
-            "src/components/WorkspaceSidebar.jsx:210"
+            "src/components/WorkspaceSidebar.jsx:208",
+            "src/components/WorkspaceSidebar.jsx:211"
           ]
         }
       },
@@ -7633,21 +7637,21 @@
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:201"
+            "src/components/WorkspaceSidebar.jsx:202"
           ]
         },
         "wide": {
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:207"
+            "src/components/WorkspaceSidebar.jsx:208"
           ]
         },
         "half": {
           "count": 1,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:210"
+            "src/components/WorkspaceSidebar.jsx:211"
           ]
         }
       },
@@ -7656,9 +7660,9 @@
           "count": 3,
           "routes": [],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:201",
-            "src/components/WorkspaceSidebar.jsx:207",
-            "src/components/WorkspaceSidebar.jsx:210"
+            "src/components/WorkspaceSidebar.jsx:202",
+            "src/components/WorkspaceSidebar.jsx:208",
+            "src/components/WorkspaceSidebar.jsx:211"
           ]
         }
       }

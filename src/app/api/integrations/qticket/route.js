@@ -4,9 +4,59 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { qTicketIntegrationConfig } from '@/lib/integrations/qticketContract.mjs';
-import { provisionQTicket } from '@/lib/server/qticket';
+import { fetchQTicketUnread, provisionQTicket } from '@/lib/server/qticket';
 
 const INTERNAL_ROLES = new Set(['owner', 'admin', 'member']);
+// The rail asks for its badge on every mount, and the answer lives in another
+// product. A minute of staleness is the price of not turning a page reload into
+// a cross-service request — the number that matters is the one inside qTicket,
+// and this one is a hint that it is worth opening. The map is per server
+// instance and bounded; a cold start simply asks.
+const UNREAD_TTL_MS = 60_000;
+const UNREAD_CACHE_LIMIT = 500;
+const unreadCache = new Map();
+
+function cachedUnread(key, nowMs) {
+  const entry = unreadCache.get(key);
+  return entry && entry.expiresAt > nowMs ? entry.unread : null;
+}
+
+function rememberUnread(key, unread, nowMs) {
+  if (unreadCache.size >= UNREAD_CACHE_LIMIT) {
+    for (const [candidate, entry] of unreadCache) {
+      if (entry.expiresAt <= nowMs) unreadCache.delete(candidate);
+    }
+    if (unreadCache.size >= UNREAD_CACHE_LIMIT) {
+      unreadCache.delete(unreadCache.keys().next().value);
+    }
+  }
+  unreadCache.set(key, { unread, expiresAt: nowMs + UNREAD_TTL_MS });
+}
+
+// A badge nobody can be shown is not worth a request: the row itself is drawn
+// only for an active add-on and a person QuickTeam actually sent to qTicket.
+async function qTicketUnreadFor(config, view, userId) {
+  if (!config.configured || view.active !== true || !view.selectedUserIds.includes(userId)) return 0;
+  const key = `${view.qTicketOrganizationId || 'pending'}|${userId}`;
+  const nowMs = Date.now();
+  const cached = cachedUnread(key, nowMs);
+  if (cached !== null) return cached;
+  try {
+    const answer = await fetchQTicketUnread({
+      sourceOrganizationId: view.sourceOrganizationId,
+      sourceUserId: userId,
+    });
+    const unread = Math.max(0, Number(answer?.unread) || 0);
+    rememberUnread(key, unread, nowMs);
+    return unread;
+  } catch (error) {
+    // qTicket being unreachable is not a failure of this screen. The badge is
+    // absent, the row still opens the product, and the miss is not cached —
+    // the next mount asks again.
+    console.error('[qticket] unread badge', error?.code || error?.message || error);
+    return 0;
+  }
+}
 const PUBLIC_PROFILE_FIELDS = ['name', 'email', 'customAvatar', 'avatar', 'photoURL'];
 
 function organizationIdFrom(request) {
@@ -17,7 +67,7 @@ function serializeTimestamp(value) {
   return value?.toDate?.().toISOString?.() || value || null;
 }
 
-function integrationView(config, data = {}) {
+function integrationView(config, data = {}, extra = {}) {
   return {
     configured: config.configured,
     active: data.active === true,
@@ -26,6 +76,8 @@ function integrationView(config, data = {}) {
     revision: Number(data.revision) || 0,
     lastSyncAt: serializeTimestamp(data.lastSyncAt),
     lastError: data.lastError || '',
+    unread: 0,
+    ...extra,
   };
 }
 
@@ -89,7 +141,15 @@ export async function GET(request) {
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     const config = qTicketIntegrationConfig();
     const snapshot = await getAdminDb().doc(`organizations/${organizationId}/private/qticket`).get();
-    return NextResponse.json(integrationView(config, snapshot.data()), {
+    const view = integrationView(config, snapshot.data());
+    // The rail already asks this route on every mount, so the badge rides with
+    // the status it belongs to rather than opening a second request of its own.
+    const unread = await qTicketUnreadFor(
+      config,
+      { ...view, sourceOrganizationId: organizationId },
+      authorization.user.uid,
+    );
+    return NextResponse.json({ ...view, unread }, {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {

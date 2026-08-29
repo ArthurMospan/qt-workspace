@@ -116,6 +116,45 @@ placing the QuickTeam ID token, session cookie or shared secret in the URL. The
 opaque code is single-use and expires after 90 seconds; qTicket consumes it on
 its own origin and creates its own Firebase session.
 
+## The unread badge on the rail
+
+The qTicket row draws a number when that person has unread qTicket
+notifications, so somebody working in QuickTeam sees that a client wrote
+without opening the other product. `GET /api/integrations/qticket` — the call
+the rail already makes on every mount — answers with `unread` beside the
+integration status, and asks qTicket for it with the same signature:
+
+```text
+POST <NEXT_PUBLIC_QTICKET_URL>/api/integrations/quickteam/unread
+```
+
+```json
+{
+  "version": 1,
+  "sourceOrganizationId": "quickteam-org-id",
+  "sourceUserId": "quickteam-user-id"
+}
+```
+
+qTicket answers `{ "version": 1, "unread": 3 }` and nothing else. No incident
+title, no client name, no issue key: the badge is a reason to open qTicket, not
+a copy of the bell that lives there, and the copy would be a second inbox to
+keep truthful.
+
+Three rules this side owns:
+
+- **Ask only for a row that exists.** No request is sent unless the add-on is
+  active and this user is in the synchronized staff selection.
+- **One answer a minute per person**, cached in the server instance. The rail
+  asks on every mount; a page reload must not become a cross-service request.
+  The badge is allowed to be a minute stale.
+- **A failure is an absent badge, never a zero that means «nothing new».** If
+  qTicket cannot be reached the row still opens the product, and the miss is not
+  cached — the next mount asks again.
+
+qTicket refuses the same way it refuses a launch: `inactive` when the add-on is
+off, `not_enabled` when the person holds no internal seat there.
+
 ## Ownership table
 
 | Data | Authority |

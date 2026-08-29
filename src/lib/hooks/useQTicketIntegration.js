@@ -12,6 +12,9 @@ const EMPTY_STATUS = Object.freeze({
   revision: 0,
   lastSyncAt: null,
   lastError: '',
+  // Unknown and none are drawn the same way — nothing — so the badge never
+  // claims an empty inbox it could not reach. See the status route.
+  unread: 0,
 });
 
 export function useQTicketIntegration() {
@@ -95,11 +98,13 @@ export function useQTicketIntegration() {
   const enabledForCurrentUser = useMemo(() => (
     status.active === true && status.selectedUserIds.includes(userId)
   ), [status.active, status.selectedUserIds, userId]);
+  const unread = enabledForCurrentUser ? Math.max(0, Number(status.unread) || 0) : 0;
 
   return {
     status,
     loading,
     enabledForCurrentUser,
+    unread,
     refresh,
     synchronize,
     deactivate,

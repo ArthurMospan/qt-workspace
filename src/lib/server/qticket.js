@@ -34,3 +34,14 @@ export function createQTicketLaunch(payload) {
     ...payload,
   });
 }
+
+// How many unread qTicket notifications this QuickTeam person has waiting.
+// The answer is a number and nothing else — see docs/integrations/QTICKET.md,
+// «Unread badge»: a badge is a reason to open the other product, not a copy of
+// its bell. Callers treat a failure as «unknown», never as «none».
+export function fetchQTicketUnread(payload) {
+  return callQTicket('/api/integrations/quickteam/unread', {
+    version: QTICKET_CONTRACT_VERSION,
+    ...payload,
+  });
+}

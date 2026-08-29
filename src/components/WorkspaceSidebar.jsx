@@ -115,6 +115,7 @@ export default function WorkspaceSidebar() {
   const {
     enabledForCurrentUser: qTicketEnabled,
     loading: qTicketLoading,
+    unread: qTicketUnread,
     open: openQTicket,
   } = useQTicketIntegration();
 
@@ -373,9 +374,18 @@ export default function WorkspaceSidebar() {
                 {/* qTicket is a neighbouring product, not another section of
                     this one. The row sits with the destinations because that is
                     where people look for it; the glyph is what says the click
-                    leaves. */}
+                    leaves. The number beside it is what a client wrote while
+                    somebody was working here — a reason to leave, drawn like
+                    every other unread count in this rail. It is a minute stale
+                    by design and absent when qTicket cannot be reached, never
+                    a zero standing in for an unknown. */}
                 {!collapsed && action === 'qticket' && (
-                  <ArrowUpRight size={14} className="ml-auto shrink-0" aria-hidden />
+                  <div className="ml-auto flex items-center gap-2">
+                    {qTicketUnread > 0 && (
+                      <Counter value={qTicketUnread} size="sm" status="muted" dark={theme.isDark} />
+                    )}
+                    <ArrowUpRight size={14} className="shrink-0" aria-hidden />
+                  </div>
                 )}
               </div>
             </Tooltip>
@@ -390,7 +400,11 @@ export default function WorkspaceSidebar() {
                 data-collapsed={collapsed ? 'true' : 'false'}
                 onClick={handleOpenQTicket}
                 disabled={qTicketLoading}
-                aria-label={qTicketLoading ? 'Відкриваємо qTicket' : 'Відкрити qTicket'}
+                aria-label={qTicketLoading
+                  ? 'Відкриваємо qTicket'
+                  : qTicketUnread > 0
+                    ? `Відкрити qTicket, непрочитаних: ${qTicketUnread}`
+                    : 'Відкрити qTicket'}
               >
                 {content}
               </Button>

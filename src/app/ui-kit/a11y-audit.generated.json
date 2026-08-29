@@ -11,7 +11,7 @@
   },
   "totals": {
     "files": 386,
-    "elements": 4506,
+    "elements": 4508,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
@@ -359,7 +359,7 @@
     },
     {
       "element": "Button",
-      "location": "src/components/WorkspaceSidebar.jsx:385",
+      "location": "src/components/WorkspaceSidebar.jsx:395",
       "attributes": [
         "aria-label"
       ]
