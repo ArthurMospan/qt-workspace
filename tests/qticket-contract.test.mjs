@@ -110,6 +110,13 @@ test('an inbound qTicket request is verified the same way we sign our own', () =
     verifyQTicketRequest({ secret, timestamp, nonce: 'short', signature, body, nowSeconds: timestamp }),
     { ok: false, code: 'nonce' },
   );
+  // Запит зовсім без заголовків — це не протермінований запит.
+  for (const missing of ['', null, undefined]) {
+    assert.deepEqual(
+      verifyQTicketRequest({ secret, timestamp: missing, nonce, signature, body, nowSeconds: timestamp }),
+      { ok: false, code: 'timestamp' },
+    );
+  }
 });
 
 test('a transferred request becomes one task, however many times it is sent', async () => {
