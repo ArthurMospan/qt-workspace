@@ -20,8 +20,16 @@ test('the sealed box never contains the plaintext', () => {
 test('the same plaintext seals differently every time', () => {
   process.env.QTPLUS_TOKEN_KEY = KEY;
   // A reused IV in GCM is catastrophic, so this is not a style preference.
-  assert.notEqual(seal('x').data, seal('x').data);
-  assert.notEqual(seal('x').iv, seal('x').iv);
+  //
+  // The secret is long on purpose. GCM encrypts by XOR against a keystream, so
+  // sealing a *one-byte* plaintext twice produces the same single ciphertext
+  // byte once in every 256 runs even though both IVs were different and
+  // nothing was wrong — which is exactly how this test failed in CI, with
+  // «Gg==» on both sides of an assertion about IV reuse. A long plaintext
+  // makes the coincidence impossible to reach while testing the same thing.
+  const secret = 'refresh-token-value-long-enough-that-two-seals-cannot-collide';
+  assert.notEqual(seal(secret).data, seal(secret).data);
+  assert.notEqual(seal(secret).iv, seal(secret).iv);
 });
 
 test('refuses to open a tampered ciphertext', () => {
