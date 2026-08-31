@@ -8,11 +8,10 @@ import Image from 'next/image';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
 import { Button, Counter, IconAction, Skeleton } from '@/components/ui';
 import {
-  ArrowUpRight,
   Folder, Users, BarChart2,
   CheckSquare, Settings, LayoutGrid, ChevronsUpDown,
   ChevronLeft, ChevronRight, PieChart, PanelLeftClose, PanelLeftOpen,
-  Zap, Clock, Square as StopIcon, Sparkles, TicketCheck,
+  Zap, Clock, Square as StopIcon, Sparkles, LifeBuoy,
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
@@ -156,8 +155,13 @@ export default function WorkspaceSidebar() {
     { href: '/analytics',  icon: PieChart,      label: 'Аналітика',   exact: false },
     // «Дзвінок → задачі» свідомо НЕ в сайдбарі: це не окремий екран, а вкладка
     // всередині створення задачі (CreateTaskModal → AudioTaskPanel).
+    // Above «Налаштування», not after it. Settings is where a rail ends —
+    // everything below it reads as an appendix — and qTicket is a destination
+    // people go to do work, not a preference. It also fixes the indicator: the
+    // unread counter used to share its slot with a diagonal arrow, which is why
+    // this one number sat differently from every other count in the rail.
+    ...(qTicketEnabled ? [{ action: 'qticket', icon: LifeBuoy, label: 'qTicket' }] : []),
     { href: '/settings',   icon: Settings,      label: 'Налаштування' },
-    ...(qTicketEnabled ? [{ action: 'qticket', icon: TicketCheck, label: 'qTicket' }] : []),
   ];
 
   return (
@@ -372,20 +376,20 @@ export default function WorkspaceSidebar() {
                   <Counter value={unreadChats} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
                 )}
                 {/* qTicket is a neighbouring product, not another section of
-                    this one. The row sits with the destinations because that is
-                    where people look for it; the glyph is what says the click
-                    leaves. The number beside it is what a client wrote while
-                    somebody was working here — a reason to leave, drawn like
-                    every other unread count in this rail. It is a minute stale
-                    by design and absent when qTicket cannot be reached, never
-                    a zero standing in for an unknown. */}
-                {!collapsed && action === 'qticket' && (
-                  <div className="ml-auto flex items-center gap-2">
-                    {qTicketUnread > 0 && (
-                      <Counter value={qTicketUnread} size="sm" status="muted" dark={theme.isDark} />
-                    )}
-                    <ArrowUpRight size={14} className="shrink-0" aria-hidden />
-                  </div>
+                    this one — and the row no longer says so twice. It carried an
+                    `ArrowUpRight` beside the count, which put two marks in the
+                    slot every other row gives to one number, so the unread
+                    badge here hung further left than the badge on «Чат» four
+                    rows above. That the click leaves is said by the tooltip and
+                    by the row's own name; a diagonal arrow is decoration that
+                    cost the indicator its alignment.
+                    The number is what a client wrote while somebody was working
+                    here — a reason to leave, drawn exactly like every other
+                    unread count in this rail. It is a minute stale by design and
+                    absent when qTicket cannot be reached, never a zero standing
+                    in for an unknown. */}
+                {!collapsed && action === 'qticket' && qTicketUnread > 0 && (
+                  <Counter value={qTicketUnread} size="sm" status="muted" className="ml-auto" dark={theme.isDark} />
                 )}
               </div>
             </Tooltip>

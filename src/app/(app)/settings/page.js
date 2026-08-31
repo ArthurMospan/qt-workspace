@@ -830,6 +830,7 @@ export default function SettingsPage() {
     status: qTicketStatus,
     loading: qTicketLoading,
     enabledForCurrentUser: qTicketEnabledForMe,
+    unread: qTicketUnread,
     synchronize: synchronizeQTicket,
     deactivate: deactivateQTicket,
     open: openQTicket,
@@ -3544,6 +3545,55 @@ export default function SettingsPage() {
                   description={qTicketStatus.lastError}
                 />
               )}
+              {/* What this card knew and never said.
+                  It drew a toggle, a multiselect and a sync button, and the
+                  whole state of the add-on — which organization it provisioned,
+                  how many people can open it, which revision the two products
+                  last agreed on, when — sat in `qTicketStatus` unread. An
+                  integration card is the one screen somebody opens to answer
+                  «а воно взагалі працює?», and this one could only answer
+                  «увімкнено». */}
+              <IntegrationNote title="Стан підключення">
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">Доступ мають</dt>
+                    <dd className="mt-1 text-[13px] font-semibold text-ink">
+                      {qTicketStatus.selectedUserIds?.length || 0} з {members.length}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">Остання синхронізація</dt>
+                    <dd className="mt-1 text-[13px] font-semibold text-ink">
+                      {qTicketStatus.lastSyncAt
+                        ? new Date(qTicketStatus.lastSyncAt).toLocaleString('uk-UA')
+                        : 'ще не було'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">Ревізія</dt>
+                    {/* The number both products compare to decide whether a
+                        snapshot is newer than the one they hold. It is the first
+                        thing to look at when «я змінив команду, а там старий
+                        склад». */}
+                    <dd className="mt-1 text-[13px] font-semibold text-ink">
+                      {qTicketStatus.revision || '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">Непрочитаних у вас</dt>
+                    <dd className="mt-1 text-[13px] font-semibold text-ink">
+                      {qTicketEnabledForMe ? (qTicketUnread || 0) : '—'}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="mt-4 text-[12px] leading-relaxed text-muted">
+                  Назва організації, логотип і колір бічної панелі їдуть у qTicket
+                  звідси — з «Налаштування» → «Організація». qTicket їх не редагує
+                  й перезаписує свою копію з кожною синхронізацією, тож змінювати
+                  їх треба тут, а потім натиснути «Синхронізувати».
+                </p>
+              </IntegrationNote>
+
               {isOwner ? (
                 <IntegrationNote title="Команда підтримки в qTicket">
                   <p>

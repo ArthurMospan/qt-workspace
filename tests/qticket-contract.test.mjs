@@ -79,7 +79,17 @@ test('the qTicket row carries an unread badge that fails to nothing', async () =
   // Невідомо й нуль малюються однаково — нічим.
   assert.match(hook, /unread: 0,/);
   assert.match(hook, /const unread = enabledForCurrentUser \? Math\.max\(0, Number\(status\.unread\) \|\| 0\) : 0;/);
-  assert.match(sidebar, /\{qTicketUnread > 0 && \(\s*<Counter value=\{qTicketUnread\}/);
+  assert.match(sidebar, /qTicketUnread > 0 && \(\s*<Counter value=\{qTicketUnread\}/);
+  // І малюється як кожен інший лічильник у рейці. Поруч стояла ще діагональна
+  // стрілка, тож у слот, який в інших рядків тримає одне число, тут ішли дві
+  // позначки — і бейдж qTicket висів лівіше за бейдж «Чату» чотирма рядками
+  // вище. Що клік веде назовні, кажуть тултип і сама назва рядка.
+  assert.doesNotMatch(sidebar, /<ArrowUpRight/);
+  // Рядок стоїть серед призначень, а не після «Налаштувань»: рейка на
+  // налаштуваннях закінчується, і все нижче читається як додаток.
+  const nav = sidebar.match(/const topNav = \[([\s\S]*?)\n {2}\];/)?.[1] || '';
+  assert.ok(nav.indexOf("action: 'qticket'") >= 0);
+  assert.ok(nav.indexOf("action: 'qticket'") < nav.indexOf("label: 'Налаштування'"));
   // Число, яке видно, має бути й у назві кнопки для тих, хто його не бачить.
   assert.match(sidebar, /Відкрити qTicket, непрочитаних: \$\{qTicketUnread\}/);
 });

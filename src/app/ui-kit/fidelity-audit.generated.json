@@ -373,7 +373,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:315",
+      "location": "src/components/WorkspaceSidebar.jsx:319",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -388,7 +388,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:338",
+      "location": "src/components/WorkspaceSidebar.jsx:342",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -497,12 +497,12 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:315",
+      "location": "src/components/WorkspaceSidebar.jsx:319",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:338",
+      "location": "src/components/WorkspaceSidebar.jsx:342",
       "tag": "button",
       "context": "branding-action"
     }
