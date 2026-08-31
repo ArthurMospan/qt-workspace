@@ -32,6 +32,15 @@ test('task chat exposes an unread boundary and reads it only after visibility', 
   // only by leaving the task, so «11 нових» stood there for a whole visit no
   // matter how far you read.
   assert.match(timeline, /consumeChanges\(\);/);
+  // And having been read is what takes the line down. It used to take it down
+  // to 70% opacity and no further — `read: true` only faded it — so a reader
+  // who opened a task, read the two new messages and looked away was still
+  // being told they had something new by a marker that already knew they did
+  // not. The trigger is the intersection observer the read receipt already
+  // trusts, never a hover: a pointer entering a box is not a person reading
+  // what is in it, and on a phone there is no pointer at all.
+  assert.match(timeline, /if \(!boundary\.read \|\| boundary\.dismissed\) return undefined;/);
+  assert.match(timeline, /window\.setTimeout\(dismissBoundary, 320\)/);
   assert.match(timeline, /markIssueSeen\(\{/);
   // The jump button points where the line actually is.
   assert.match(timeline, /unreadDirection === 'up' \? ChevronUp : ChevronDown/);
