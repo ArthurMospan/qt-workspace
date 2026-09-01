@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { refuseWithoutCapability } from '@/lib/server/planLimits';
 import { qTicketIntegrationConfig } from '@/lib/integrations/qticketContract.mjs';
 import {
   historyEntry,
@@ -188,6 +189,12 @@ export async function POST(request) {
     }
 
     const db = getAdminDb();
+    // Активація й синхронізація — це «пускає», тож питають реєстр. DELETE не
+    // питає ніколи: зачинити двері, які сам відчинив, робочий простір мусить
+    // мати змогу за будь-якого тарифу.
+    const refusal = await refuseWithoutCapability(db, organizationId, 'qticket');
+    if (refusal) return refusal;
+
     const privateRef = db.doc(`organizations/${organizationId}/private/qticket`);
     const currentSnap = await privateRef.get();
     const current = currentSnap.exists ? currentSnap.data() : {};

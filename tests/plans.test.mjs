@@ -658,6 +658,13 @@ test('кожна платна можливість має двері, а не л
     // вкладку й перемикач, а показує проєкт замовнику QuickTeam+. Двері для
     // нього — у контракті між репозиторіями, не в цьому файлі.
     portal: [],
+    // qTicket живе в іншому застосунку, але двері до нього — тут: активація
+    // збирає знімок і відправляє його, `launch` видає одноразовий вхід. Обидві
+    // пускають, тож обидві питають реєстр.
+    qticket: [
+      'src/app/api/integrations/qticket/route.js',
+      'src/app/api/integrations/qticket/launch/route.js',
+    ],
   };
 
   for (const capability of PLAN_CAPABILITIES.filter(entry => entry.enforced)) {

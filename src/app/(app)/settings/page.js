@@ -3597,17 +3597,18 @@ export default function SettingsPage() {
         };
 
         // Each row names the capability it needs rather than inheriting one
-        // from the section. The rail used to carry that decision for all three
-        // at once, which left nowhere to say «this one is free» — and giving a
-        // single integration away is a thing a price list should be able to do
-        // by changing one line here.
+        // from the section. The rail used to carry that decision for all of
+        // them at once, which left nowhere to say that one of them is a
+        // different product on a different line of the price list — and giving
+        // a single integration away is a thing a price list should be able to
+        // do by changing one line here.
         const integrationRows = [
           {
             id: 'qticket',
             title: 'qTicket',
             description: 'Окремий портал інцидентів для ваших клієнтів.',
             logo: '/logo-min.svg',
-            capability: '',
+            capability: 'qticket',
             status: qTicketStatus.active
               ? (qTicketEnabledForMe ? 'Активовано' : 'Без доступу')
               : qTicketStatus.configured ? 'Не активовано' : 'Недоступно',
@@ -3705,7 +3706,10 @@ export default function SettingsPage() {
             backLabel="Усі інтеграції"
             rightAction={saveButton}
           >
-            {integrationDetail === 'qticket' && <IntegrationCard
+            {/* Своя брама, не спільна з рештою: qTicket — не одна з
+                «Інтеграцій», а окремий продукт, і в прайслисті він окремим
+                рядком. */}
+            {integrationDetail === 'qticket' && <PlanGate capabilityId="qticket"><IntegrationCard
               title="qTicket"
               description="Тікет-система для звернень ваших клієнтів. Організація, брендинг і внутрішня команда беруться з QuickTeam; клієнти входять окремо."
               logoSrc="/logo-min.svg"
@@ -4072,7 +4076,7 @@ export default function SettingsPage() {
                   </p>
                 </IntegrationNote>
               )}
-            </IntegrationCard>}
+            </IntegrationCard></PlanGate>}
 
             {integrationDetail !== 'qticket' && <PlanGate capabilityId="integrations">
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '@/lib/context/AppContext';
+import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 
 const EMPTY_STATUS = Object.freeze({
@@ -29,6 +30,7 @@ const EMPTY_STATUS = Object.freeze({
 
 export function useQTicketIntegration() {
   const { activeOrgId, currentUser } = useAppContext();
+  const { allows } = usePlanLimits();
   const userId = currentUser?.uid || currentUser?.id || '';
   const [status, setStatus] = useState(EMPTY_STATUS);
   const [loading, setLoading] = useState(false);
@@ -125,9 +127,12 @@ export function useQTicketIntegration() {
     }
   }, [activeOrgId, request]);
 
+  // Тут, а не в рейці: `enabledForCurrentUser` читають і сайдбар, і нижня
+  // панель телефона, і жодна з них не має вирішувати це окремо. Малювати
+  // платний пункт меню — те саме «відповідати за фічу», що й пускати в неї.
   const enabledForCurrentUser = useMemo(() => (
-    status.active === true && status.selectedUserIds.includes(userId)
-  ), [status.active, status.selectedUserIds, userId]);
+    status.active === true && status.selectedUserIds.includes(userId) && allows('qticket')
+  ), [allows, status.active, status.selectedUserIds, userId]);
   const unread = enabledForCurrentUser ? Math.max(0, Number(status.unread) || 0) : 0;
 
   return {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
+import { refuseWithoutCapability } from '@/lib/server/planLimits';
 import { createQTicketLaunch } from '@/lib/server/qticket';
 
 export async function POST(request) {
@@ -9,6 +10,12 @@ export async function POST(request) {
     const organizationId = String(body?.organizationId || '').trim();
     const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin', 'member']);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
+
+    // Виданий доступ не відкликається зниженням тарифу — але й не відчиняє.
+    // Знімок, люди й усе, що вони написали, лишаються на місці й запрацюють
+    // тієї ж хвилини, коли тариф повернеться.
+    const refusal = await refuseWithoutCapability(getAdminDb(), organizationId, 'qticket');
+    if (refusal) return refusal;
 
     const integration = await getAdminDb().collection('organizations').doc(organizationId)
       .collection('private').doc('qticket').get();
