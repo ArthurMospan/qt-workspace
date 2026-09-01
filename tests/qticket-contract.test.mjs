@@ -7,6 +7,11 @@ import {
   signQTicketRequest,
   verifyQTicketRequest,
 } from '../src/lib/integrations/qticketContract.mjs';
+import {
+  historyEntry,
+  normalizePortal,
+  normalizeStaffRoles,
+} from '../src/lib/integrations/qticketDesk.mjs';
 
 const environment = {
   NEXT_PUBLIC_QTICKET_URL: 'https://qticket.example.com/',
@@ -40,6 +45,106 @@ test('signed requests preserve the exact body used to calculate the HMAC', () =>
       body: request.body,
     }),
   );
+});
+
+// Роль у підтримці — не роль у QuickTeam. Доти вона нею була: адміністратор
+// QuickTeam ставав адміністратором qTicket, і зробити когось головним у
+// підтримці означало підвищити його в усьому продукті.
+test('роль у qTicket обирається окремо і тільки для тих, хто справді обраний', () => {
+  const selectedUserIds = ['owner-uid', 'agent-uid'];
+  assert.deepEqual(
+    normalizeStaffRoles({ 'agent-uid': 'admin' }, { selectedUserIds, ownerId: 'owner-uid' }),
+    { 'agent-uid': 'admin' },
+  );
+  // Власника не перевизначають: організація називає рівно одного, і qTicket
+  // відмовляє знімку, який із цим не згоден.
+  assert.deepEqual(
+    normalizeStaffRoles({ 'owner-uid': 'member' }, { selectedUserIds, ownerId: 'owner-uid' }),
+    {},
+  );
+  // Роль для людини без місця — твердження ні про що, і збережена вона тихо
+  // повернула б їй цю роль, щойно її додадуть назад.
+  assert.deepEqual(
+    normalizeStaffRoles({ 'stranger-uid': 'admin' }, { selectedUserIds, ownerId: 'owner-uid' }),
+    {},
+  );
+  assert.deepEqual(
+    normalizeStaffRoles({ 'agent-uid': 'client_admin' }, { selectedUserIds, ownerId: 'owner-uid' }),
+    {},
+  );
+});
+
+test('бренд порталу: null — це «той самий», а не «жодного»', () => {
+  assert.equal(normalizePortal(null), null);
+  // Обʼєкт із самих порожніх полів — не перевизначення. Збережений, він читався
+  // б наступним читачем як «хтось це налаштував».
+  assert.equal(normalizePortal({ name: '', logo: '', sidebarTheme: '', sidebarColor: '' }), null);
+  assert.deepEqual(normalizePortal({ name: '  OneB Підтримка  ', sidebarTheme: 'neon' }), {
+    name: 'OneB Підтримка',
+    logo: '',
+    // Негодяща тема лишається порожньою, щоб qTicket успадкував тему
+    // організації, а не отримав вигаданий 'dark'.
+    sidebarTheme: '',
+    sidebarColor: '',
+  });
+});
+
+test('журнал синхронізацій називає зміну, а не склад', () => {
+  const entry = historyEntry({
+    before: { selectedUserIds: ['owner-uid', 'olia-uid'], staffRoles: {}, portal: null },
+    after: { selectedUserIds: ['owner-uid', 'new-uid'], staffRoles: { 'new-uid': 'admin' }, portal: null },
+    actorId: 'owner-uid',
+    revision: 8,
+    at: new Date('2026-09-01T10:00:00.000Z'),
+  });
+  assert.deepEqual(entry, {
+    at: '2026-09-01T10:00:00.000Z',
+    by: 'owner-uid',
+    revision: 8,
+    added: ['new-uid'],
+    removed: ['olia-uid'],
+    rolesChanged: true,
+    brandChanged: false,
+  });
+});
+
+// Контракт повертав `conflicts` від початку — саме щоб QuickTeam міг пояснити
+// адміністратору, чому в колеги немає місця. Роут їх викидав: читав із
+// відповіді `organizationId` і `status`, і власник бачив зелений тост над
+// людиною, яка не отримала нічого.
+test('відмову qTicket у місці зберігають і показують, а не ковтають', async () => {
+  const route = await readFile(
+    new URL('../src/app/api/integrations/qticket/route.js', import.meta.url),
+    'utf8',
+  );
+  assert.ok(route.includes('const conflicts = Array.isArray(provisioned.conflicts)'));
+  assert.ok(route.includes('lastConflicts: conflicts'));
+  assert.ok(route.includes('conflicts: Array.isArray(data.lastConflicts)'));
+
+  const settings = await readFile(
+    new URL('../src/app/(app)/settings/page.js', import.meta.url),
+    'utf8',
+  );
+  assert.ok(settings.includes('qTicketStatus.conflicts.length > 0'));
+  // Успіх із відмовами не повідомляється як успіх.
+  assert.ok(settings.includes('next?.conflicts?.length'));
+});
+
+// Проба питає qTicket, а не цю базу. Ревізія звідси — це те, що QuickTeam
+// думає, ніби надіслав, і після невдалого провіженінгу вона виглядає точно так
+// само, як після вдалого.
+test('перевірка звʼязку порівнює ревізію qTicket із записаною тут', async () => {
+  const route = await readFile(
+    new URL('../src/app/api/integrations/qticket/ping/route.js', import.meta.url),
+    'utf8',
+  );
+  assert.ok(route.includes('pingQTicket({ sourceOrganizationId: organizationId })'));
+  assert.ok(route.includes('inSync: (Number(answer.revision) || 0) === localRevision'));
+  // Недосяжний qTicket — це відповідь, а не сторінка помилки: дізнатись і є
+  // сенсом кнопки.
+  assert.ok(route.includes('reachable: false'));
+  // Питання «чи працює доповнення, яким я користуюсь» — не питання власника.
+  assert.ok(route.includes("['owner', 'admin', 'member']"));
 });
 
 test('deactivation is an owner-only inactive provisioning snapshot, not local UI state', async () => {

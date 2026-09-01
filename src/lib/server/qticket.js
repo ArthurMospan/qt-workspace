@@ -28,6 +28,20 @@ export function provisionQTicket(payload) {
   });
 }
 
+// What qTicket actually holds for this organization, asked of qTicket.
+//
+// The card used to answer «а воно взагалі працює?» out of this database — the
+// revision QuickTeam believes it sent. A failed provisioning leaves that number
+// looking exactly like a successful one. This asks the other product, and the
+// answer proves the origin, the secret and the two clocks agree as a
+// side effect of arriving at all.
+export function pingQTicket(payload) {
+  return callQTicket('/api/integrations/quickteam/ping', {
+    version: QTICKET_CONTRACT_VERSION,
+    ...payload,
+  });
+}
+
 export function createQTicketLaunch(payload) {
   return callQTicket('/api/integrations/quickteam/launch', {
     version: QTICKET_CONTRACT_VERSION,

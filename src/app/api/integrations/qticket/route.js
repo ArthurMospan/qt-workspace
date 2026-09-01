@@ -4,6 +4,12 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { qTicketIntegrationConfig } from '@/lib/integrations/qticketContract.mjs';
+import {
+  historyEntry,
+  normalizePortal,
+  normalizeStaffRoles,
+  QTICKET_HISTORY_LIMIT,
+} from '@/lib/integrations/qticketDesk.mjs';
 import { fetchQTicketUnread, provisionQTicket } from '@/lib/server/qticket';
 
 const INTERNAL_ROLES = new Set(['owner', 'admin', 'member']);
@@ -58,6 +64,9 @@ async function qTicketUnreadFor(config, view, userId) {
   }
 }
 const PUBLIC_PROFILE_FIELDS = ['name', 'email', 'customAvatar', 'avatar', 'photoURL'];
+// The three decisions this route makes about the desk — which role, which
+// brand, what changed — live in `qticketDesk.mjs`, where they can be tested as
+// rules rather than as the text of a handler.
 
 function organizationIdFrom(request) {
   return new URL(request.url).searchParams.get('organizationId')?.trim() || '';
@@ -72,16 +81,24 @@ function integrationView(config, data = {}, extra = {}) {
     configured: config.configured,
     active: data.active === true,
     selectedUserIds: Array.isArray(data.selectedUserIds) ? data.selectedUserIds : [],
+    staffRoles: data.staffRoles && typeof data.staffRoles === 'object' ? data.staffRoles : {},
+    portal: data.portal || null,
     qTicketOrganizationId: data.qTicketOrganizationId || '',
     revision: Number(data.revision) || 0,
     lastSyncAt: serializeTimestamp(data.lastSyncAt),
     lastError: data.lastError || '',
+    // Whom qTicket refused a seat, and why. The contract has always returned
+    // this so QuickTeam could explain it; nothing here read it, so a colleague
+    // who already held a client seat got no access and the owner got a green
+    // toast. See docs/integrations/QTICKET.md, «Provisioning».
+    conflicts: Array.isArray(data.lastConflicts) ? data.lastConflicts : [],
+    history: Array.isArray(data.history) ? data.history : [],
     unread: 0,
     ...extra,
   };
 }
 
-async function organizationSnapshot(db, organizationId, selectedUserIds) {
+async function organizationSnapshot(db, organizationId, selectedUserIds, requestedRoles) {
   const organizationSnap = await db.doc(`organizations/${organizationId}`).get();
   if (!organizationSnap.exists) throw Object.assign(new Error('Організацію не знайдено'), { status: 404 });
   const organization = organizationSnap.data();
@@ -106,6 +123,7 @@ async function organizationSnapshot(db, organizationId, selectedUserIds) {
   const profiles = requested.length
     ? await db.getAll(...requested.map(userId => db.doc(`users/${userId}`)))
     : [];
+  const staffRoles = normalizeStaffRoles(requestedRoles, { selectedUserIds: requested, ownerId });
   const staff = requested.map((userId, index) => {
     const membership = memberships[index];
     const profile = profiles[index]?.exists ? profiles[index].data() : {};
@@ -120,12 +138,13 @@ async function organizationSnapshot(db, organizationId, selectedUserIds) {
       email,
       name,
       avatar: safe.customAvatar || safe.avatar || safe.photoURL || '',
-      role: userId === ownerId ? 'owner' : membership.role,
+      role: userId === ownerId ? 'owner' : (staffRoles[userId] || membership.role),
     };
   });
   return {
     organization,
     selectedUserIds: requested,
+    staffRoles,
     staff,
   };
 }
@@ -172,7 +191,13 @@ export async function POST(request) {
     const privateRef = db.doc(`organizations/${organizationId}/private/qticket`);
     const currentSnap = await privateRef.get();
     const current = currentSnap.exists ? currentSnap.data() : {};
-    const snapshot = await organizationSnapshot(db, organizationId, body?.selectedUserIds);
+    const snapshot = await organizationSnapshot(db, organizationId, body?.selectedUserIds, body?.staffRoles);
+    // A brand the request did not mention is the brand already stored, not an
+    // absent one: the roster form and the brand form are two controls on one
+    // card, and a sync from either must not silently clear the other.
+    const portal = body?.portal === undefined
+      ? normalizePortal(current.portal)
+      : normalizePortal(body.portal);
     const desired = {
       sourceOrganizationId: organizationId,
       entitlement: 'active',
@@ -182,6 +207,7 @@ export async function POST(request) {
         sidebarTheme: snapshot.organization.sidebarTheme || 'dark',
         sidebarColor: snapshot.organization.sidebarColor || '',
         timezone: snapshot.organization.timezone || 'Europe/Kyiv',
+        ...(portal ? { portal } : {}),
       },
       staff: snapshot.staff,
     };
@@ -196,6 +222,8 @@ export async function POST(request) {
     await privateRef.set({
       active: current.active === true,
       selectedUserIds: snapshot.selectedUserIds,
+      staffRoles: snapshot.staffRoles,
+      portal,
       pendingDigest: digest,
       pendingRevision: revision,
       updatedAt: FieldValue.serverTimestamp(),
@@ -205,9 +233,25 @@ export async function POST(request) {
 
     try {
       const provisioned = await provisionQTicket({ ...desired, revision });
+      // qTicket names whoever it refused a seat, on every answer and not only
+      // the one that refused them. Kept so the card can say why a colleague has
+      // no access — this was returned and dropped, and the owner saw «Команду
+      // qTicket синхронізовано» over a person who got nothing.
+      const conflicts = Array.isArray(provisioned.conflicts) ? provisioned.conflicts : [];
+      const history = [
+        historyEntry({
+          before: current,
+          after: { selectedUserIds: snapshot.selectedUserIds, staffRoles: snapshot.staffRoles, portal },
+          actorId: authorization.user.uid,
+          revision,
+        }),
+        ...(Array.isArray(current.history) ? current.history : []),
+      ].slice(0, QTICKET_HISTORY_LIMIT);
       await privateRef.set({
         active: true,
         selectedUserIds: snapshot.selectedUserIds,
+        staffRoles: snapshot.staffRoles,
+        portal,
         qTicketOrganizationId: provisioned.organizationId,
         revision,
         snapshotDigest: digest,
@@ -215,6 +259,8 @@ export async function POST(request) {
         pendingRevision: FieldValue.delete(),
         lastSyncAt: FieldValue.serverTimestamp(),
         lastError: '',
+        lastConflicts: conflicts,
+        history,
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       return NextResponse.json({
@@ -222,9 +268,14 @@ export async function POST(request) {
           ...current,
           active: true,
           selectedUserIds: snapshot.selectedUserIds,
+          staffRoles: snapshot.staffRoles,
+          portal,
           qTicketOrganizationId: provisioned.organizationId,
           revision,
+          lastConflicts: conflicts,
+          history,
         }),
+        lastSyncAt: new Date().toISOString(),
         status: provisioned.status,
       });
     } catch (upstreamError) {

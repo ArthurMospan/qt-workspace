@@ -63,7 +63,13 @@ Payload version 1:
     "logo": "https://cdn.example/logo.png",
     "sidebarTheme": "dark",
     "sidebarColor": "",
-    "timezone": "Europe/Kyiv"
+    "timezone": "Europe/Kyiv",
+    "portal": {
+      "name": "OneB Підтримка",
+      "logo": "",
+      "sidebarTheme": "light",
+      "sidebarColor": ""
+    }
   },
   "staff": [
     {
@@ -80,18 +86,64 @@ Payload version 1:
 - `revision` increases for every entitlement, branding or selected-staff
   change. Retrying the same revision is safe.
 - The current QuickTeam owner is always selected as the one `owner`.
-- Selected QuickTeam admins may map to qTicket `admin`; selected ordinary team
-  members map to `member`, shown in qTicket as «Менеджер підтримки».
+- Each selected person carries the qTicket role the owner chose for them on the
+  card, which need not be the role they hold here: `admin`, or `member` shown
+  in qTicket as «Менеджер підтримки». Absent an explicit choice it is their
+  QuickTeam role, which is what the whole selection used to be — so running the
+  desk meant a promotion in the whole product, and a support manager could not
+  be an administrator of support alone. The owner is not overridable: the
+  organization document names exactly one and qTicket refuses a snapshot that
+  disagrees.
+- `organization.portal` is optional and carries the brand a *customer* sees.
+  The fields outside it are the organization — what the staff shell says over
+  the queue. qTicket has always kept the two apart and QuickTeam always sent one
+  value for both, so a company could not name its desk anything but itself.
+  Absent `portal` means «the same brand»; an empty field inside a present
+  `portal` inherits that one field, so renaming the desk does not cost you your
+  logo. QuickTeam still owns the value — qTicket does not edit it and overwrites
+  its copy from every snapshot.
 - Never send `client_admin` or `client_member`. External accounts belong to
   qTicket and its project-scoped invitation flow.
 - Removing someone from the selection removes qTicket access on the next
-  complete snapshot; it does not delete their historical work.
+  complete snapshot; it does not delete their historical work. The card asks
+  before it sends one: it archives that person's seat and takes them off every
+  client roster in the other product, and it used to happen on a chip's ×.
+- The response may carry `conflicts`: people qTicket refused a seat because
+  they already hold a *client* seat in that organization. One membership is one
+  role, so a staff seat written over a customer would hand an external person
+  every other customer's queue and move everything they ever wrote from «клієнт
+  написав» to «підтримка відповіла». qTicket skips them; QuickTeam stores the
+  list under `lastConflicts` and the card names them, because for one release
+  this was returned and dropped and the owner saw a green toast over a colleague
+  who got nothing.
 - QuickTeam sends only profile/branding facts it already owns. It never sends
   its tasks or projects during activation.
 - Disabling the add-on sends a newer complete snapshot with
   `entitlement: "inactive"`. qTicket refuses new launches and existing qTicket
   sessions lose organization access on their next read, while client accounts,
   incidents, discussion and history remain preserved for later reactivation.
+
+## Connection probe
+
+`POST /api/integrations/qticket/ping` (QuickTeam, any member of the
+organization) asks qTicket what it actually holds, and forwards:
+
+```text
+POST <NEXT_PUBLIC_QTICKET_URL>/api/integrations/quickteam/ping
+{ "version": 1, "sourceOrganizationId": "quickteam-org-id" }
+```
+
+The card used to answer «а воно взагалі працює?» out of this database — the
+revision QuickTeam believes it sent, which after a failed provisioning looks
+exactly like a successful one. A reply proves the origin, the shared secret and
+the two clocks agree as a side effect of arriving; `inSync` compares the
+revision qTicket stored against the one recorded here.
+
+The answer also carries `portalUrl` — where a customer of this tenant signs in.
+QuickTeam cannot work that out, because the origin is qTicket's own deployment
+setting, and until this existed «куди я відправляю клієнтів?» was answered by
+asking somebody. An unreachable qTicket is reported as `reachable: false` with
+the reason, not as a failed request: finding out is the point of the button.
 
 ## Opening qTicket
 

@@ -8,6 +8,16 @@ const EMPTY_STATUS = Object.freeze({
   configured: false,
   active: false,
   selectedUserIds: [],
+  // Which qTicket role each selected person gets, where it is not the role
+  // they hold in QuickTeam. Absent means «the same one».
+  staffRoles: {},
+  // The client-facing brand, when it is not the organization's own. `null` is
+  // «the same one» and is the default.
+  portal: null,
+  // Whom qTicket refused a seat because they already hold a client one. The
+  // contract always returned these; the card never asked.
+  conflicts: [],
+  history: [],
   qTicketOrganizationId: '',
   revision: 0,
   lastSyncAt: null,
@@ -49,19 +59,39 @@ export function useQTicketIntegration() {
     return () => window.clearTimeout(timeoutId);
   }, [refresh]);
 
-  const synchronize = useCallback(async selectedUserIds => {
+  // One sync sends whatever the card is holding. `portal` left out means «keep
+  // the brand you have» rather than «clear it» — the roster form and the brand
+  // form are two controls on one card, and either must be able to sync without
+  // erasing the other.
+  const synchronize = useCallback(async ({ selectedUserIds, staffRoles, portal } = {}) => {
     if (!activeOrgId) throw new Error('Не вказано організацію');
     setLoading(true);
     try {
       const next = await request('/api/integrations/qticket', {
         method: 'POST',
-        body: JSON.stringify({ organizationId: activeOrgId, selectedUserIds }),
+        body: JSON.stringify({
+          organizationId: activeOrgId,
+          selectedUserIds,
+          staffRoles,
+          ...(portal === undefined ? {} : { portal }),
+        }),
       });
       setStatus(previous => ({ ...previous, ...next }));
       return next;
     } finally {
       setLoading(false);
     }
+  }, [activeOrgId, request]);
+
+  // Asked of qTicket, not of this database — see the route. It writes nothing,
+  // so it does not touch `status`: an unreachable add-on is a finding to show,
+  // not a reason to redraw the card as broken.
+  const ping = useCallback(async () => {
+    if (!activeOrgId) throw new Error('Не вказано організацію');
+    return request('/api/integrations/qticket/ping', {
+      method: 'POST',
+      body: JSON.stringify({ organizationId: activeOrgId }),
+    });
   }, [activeOrgId, request]);
 
   const open = useCallback(async (returnTo = '/overview') => {
@@ -109,5 +139,6 @@ export function useQTicketIntegration() {
     synchronize,
     deactivate,
     open,
+    ping,
   };
 }

@@ -57,8 +57,7 @@ import {
   UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Alert, Button, Card, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, TextAction, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
-import { MultiSelect } from '@/components/ui/Select';
+import { Alert, Button, Card, Checkbox, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, TextAction, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -834,34 +833,153 @@ export default function SettingsPage() {
     synchronize: synchronizeQTicket,
     deactivate: deactivateQTicket,
     open: openQTicket,
+    ping: pingQTicket,
   } = useQTicketIntegration();
+  // The desk is edited as a draft and sent in one press. It used to be a
+  // multiselect that wrote on every chip, and unticking somebody is not a
+  // filter: it archives their seat in the other product and takes them off
+  // every client roster there. That is not a thing to do on the way past.
   const [qTicketSelectedIds, setQTicketSelectedIds] = useState([]);
+  const [qTicketRoles, setQTicketRoles] = useState({});
+  const [qTicketPortal, setQTicketPortal] = useState(null);
+  const [qTicketStaffSearch, setQTicketStaffSearch] = useState('');
+  const [qTicketProbe, setQTicketProbe] = useState(null);
+  const [qTicketProbing, setQTicketProbing] = useState(false);
   const qTicketOwnerId = members.find(member => member.role === 'owner')?.id || '';
-  const qTicketMemberOptions = useMemo(() => members
-    .filter(isActiveMember)
-    .map(member => ({
-      value: member.id || member.uid,
-      label: member.name || member.email || 'Учасник команди',
-      user: member,
-    })), [members]);
 
   useEffect(() => {
     const selected = qTicketStatus.selectedUserIds?.length
       ? qTicketStatus.selectedUserIds
       : [qTicketOwnerId].filter(Boolean);
     setQTicketSelectedIds(selected);
-  }, [qTicketOwnerId, qTicketStatus.selectedUserIds]);
+    setQTicketRoles(qTicketStatus.staffRoles || {});
+    setQTicketPortal(qTicketStatus.portal || null);
+  }, [qTicketOwnerId, qTicketStatus.selectedUserIds, qTicketStatus.staffRoles, qTicketStatus.portal]);
 
-  const handleQTicketSelection = value => {
-    setQTicketSelectedIds([...new Set([qTicketOwnerId, ...value].filter(Boolean))]);
+  // Whom qTicket refused a seat, by the QuickTeam id the row is drawn for. The
+  // reason is always the same one — that person is already a customer of this
+  // organization in qTicket — and the remedy is a different address or removing
+  // the client seat there, never a silent conversion.
+  const qTicketConflicts = useMemo(
+    () => new Map((qTicketStatus.conflicts || []).map(item => [item.sourceUserId, item])),
+    [qTicketStatus.conflicts],
+  );
+
+  const qTicketStaff = useMemo(() => {
+    const query = qTicketStaffSearch.trim().toLowerCase();
+    return members
+      .filter(isActiveMember)
+      .map(member => {
+        const userId = member.id || member.uid;
+        return {
+          member,
+          userId,
+          selected: qTicketSelectedIds.includes(userId),
+          isOwner: userId === qTicketOwnerId,
+          conflict: qTicketConflicts.get(userId) || null,
+          deskRole: userId === qTicketOwnerId ? 'owner' : (qTicketRoles[userId] || member.role || 'member'),
+        };
+      })
+      .filter(row => !query || `${row.member.name || ''} ${row.member.email || ''}`.toLowerCase().includes(query));
+  }, [members, qTicketStaffSearch, qTicketSelectedIds, qTicketOwnerId, qTicketConflicts, qTicketRoles]);
+
+  // What pressing «Синхронізувати» would actually change, against the snapshot
+  // the two products last agreed on. A card that cannot tell «збережено» from
+  // «змінено, але не надіслано» is why «я змінив команду, а там старий склад»
+  // was a question at all.
+  const qTicketDraft = useMemo(() => {
+    const saved = new Set(qTicketStatus.selectedUserIds || []);
+    const draft = new Set(qTicketSelectedIds);
+    return {
+      added: [...draft].filter(userId => !saved.has(userId)),
+      removed: [...saved].filter(userId => !draft.has(userId)),
+      rolesChanged: JSON.stringify(qTicketRoles) !== JSON.stringify(qTicketStatus.staffRoles || {}),
+      brandChanged: JSON.stringify(qTicketPortal) !== JSON.stringify(qTicketStatus.portal || null),
+    };
+  }, [qTicketSelectedIds, qTicketRoles, qTicketPortal, qTicketStatus.selectedUserIds, qTicketStatus.staffRoles, qTicketStatus.portal]);
+  const qTicketDirty = qTicketDraft.added.length > 0
+    || qTicketDraft.removed.length > 0
+    || qTicketDraft.rolesChanged
+    || qTicketDraft.brandChanged;
+
+  const qTicketMemberName = useCallback(userId => {
+    const member = members.find(item => (item.id || item.uid) === userId);
+    return member?.name || member?.email || 'учасник';
+  }, [members]);
+
+  const handleQTicketToggleMember = (userId, next) => {
+    if (userId === qTicketOwnerId) return;
+    setQTicketSelectedIds(previous => (next
+      ? [...new Set([qTicketOwnerId, ...previous, userId].filter(Boolean))]
+      : previous.filter(item => item !== userId)));
+  };
+
+  // The role somebody holds at the desk, which is not the role they hold here.
+  // Choosing one selects them: picking «Адміністратор» for a person who is not
+  // on the desk yet and having nothing happen is the kind of control that
+  // teaches people not to trust the screen.
+  const handleQTicketRole = (userId, role) => {
+    if (userId === qTicketOwnerId) return;
+    setQTicketRoles(previous => ({ ...previous, [userId]: role }));
+    setQTicketSelectedIds(previous => [...new Set([qTicketOwnerId, ...previous, userId].filter(Boolean))]);
+  };
+
+  const handleQTicketPortalToggle = next => {
+    setQTicketPortal(next
+      ? {
+        // Prefilled from the organization, because a desk that is not visibly
+        // this company's desk is a worse default than no override at all.
+        name: org?.name || '',
+        logo: org?.logo || '',
+        sidebarTheme: org?.sidebarTheme || 'dark',
+        sidebarColor: org?.sidebarColor || '',
+      }
+      : null);
+  };
+
+  const handleQTicketPortalField = (field, value) => {
+    setQTicketPortal(previous => ({ ...(previous || {}), [field]: value }));
   };
 
   const handleQTicketSync = async () => {
+    // Removing somebody archives their qTicket seat and takes them off every
+    // client roster there. It is reversible — a later snapshot restores the
+    // same role, position and projects — but it is not nothing, and it used to
+    // happen on a chip's × with no sentence anywhere.
+    if (qTicketDraft.removed.length) {
+      const names = qTicketDraft.removed.map(qTicketMemberName).join(', ');
+      if (!(await confirmDialog({
+        title: 'Забрати доступ до qTicket?',
+        message: `${names} втратить доступ до підтримки й зникне зі складу всіх клієнтських проєктів у qTicket. Звернення, коментарі та історія лишаються. Доступ повернеться, якщо додати людину знову.`,
+        confirmText: 'Забрати',
+        danger: true,
+      }))) return;
+    }
     try {
-      await synchronizeQTicket(qTicketSelectedIds);
-      showToast(qTicketStatus.active ? 'Команду qTicket синхронізовано' : 'qTicket активовано');
+      const next = await synchronizeQTicket({
+        selectedUserIds: qTicketSelectedIds,
+        staffRoles: qTicketRoles,
+        portal: qTicketPortal,
+      });
+      // A green toast over a colleague who got nothing was the whole defect.
+      if (next?.conflicts?.length) {
+        showToast(`Синхронізовано, але ${next.conflicts.length} ${plural(next.conflicts.length, ['працівник не отримав місця', 'працівники не отримали місць', 'працівників не отримали місць'])}`, 'error');
+      } else {
+        showToast(qTicketStatus.active ? 'Команду qTicket синхронізовано' : 'qTicket активовано');
+      }
     } catch (error) {
       showToast(error.message || 'Не вдалося синхронізувати qTicket', 'error');
+    }
+  };
+
+  const handleQTicketProbe = async () => {
+    setQTicketProbing(true);
+    try {
+      setQTicketProbe(await pingQTicket());
+    } catch (error) {
+      setQTicketProbe({ reachable: false, error: error.message || 'qTicket не відповів' });
+    } finally {
+      setQTicketProbing(false);
     }
   };
 
@@ -3545,85 +3663,326 @@ export default function SettingsPage() {
                   description={qTicketStatus.lastError}
                 />
               )}
-              {/* What this card knew and never said.
-                  It drew a toggle, a multiselect and a sync button, and the
-                  whole state of the add-on — which organization it provisioned,
-                  how many people can open it, which revision the two products
-                  last agreed on, when — sat in `qTicketStatus` unread. An
-                  integration card is the one screen somebody opens to answer
-                  «а воно взагалі працює?», and this one could only answer
-                  «увімкнено». */}
+
+              {/* Кому qTicket відмовив у місці — і чому.
+                  Контракт повертав це від початку, щоб QuickTeam міг пояснити;
+                  ця картка ніколи не питала. Колега, який уже сидить клієнтом
+                  цієї організації в qTicket, лишався без доступу, а власник
+                  бачив зелений тост «Команду qTicket синхронізовано». */}
+              {qTicketStatus.conflicts.length > 0 && (
+                <Alert
+                  variant="warning"
+                  title={`${qTicketStatus.conflicts.length} ${plural(qTicketStatus.conflicts.length, ['працівник не отримав місця', 'працівники не отримали місць', 'працівників не отримали місць'])} у qTicket`}
+                  description={(
+                    <>
+                      <p>
+                        Ці адреси вже належать клієнтам цієї організації в qTicket. Одне місце — одна роль,
+                        тож зробити з клієнта працівника означало б віддати йому чужі черги й переписати
+                        все, що він колись написав, із «клієнт написав» на «підтримка відповіла». qTicket
+                        цього не робить і пропускає таку людину.
+                      </p>
+                      <ul className="mt-2 space-y-1">
+                        {qTicketStatus.conflicts.map(conflict => (
+                          <li key={conflict.sourceUserId}>
+                            <IntegrationCode>{conflict.email}</IntegrationCode>
+                            {' — уже '}
+                            {conflict.currentRole === 'client_admin' ? 'адміністратор клієнта' : 'співробітник клієнта'}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-2">
+                        Рішення: інша адреса для роботи в підтримці, або зняти клієнтське місце в qTicket
+                        і синхронізувати ще раз.
+                      </p>
+                    </>
+                  )}
+                />
+              )}
+
+              {/* Що ця картка знала і ніколи не казала.
+                  Тут стояли чотири клітинки: скільки обрано, коли синхронізовано,
+                  номер ревізії й скільки в тебе непрочитаних. Ревізія — службове
+                  число, непрочитані вже є бейджем у рейці, а на питання, заради
+                  якого сюди заходять — «а воно взагалі працює?» — жодна з них не
+                  відповідала: усі чотири беруться з цієї бази, тобто описують те,
+                  що QuickTeam думає, ніби надіслав. Тепер тут стан, а не статистика. */}
               <IntegrationNote title="Стан підключення">
-                <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                   <div>
-                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">Доступ мають</dt>
-                    <dd className="mt-1 text-[13px] font-semibold text-ink">
-                      {qTicketStatus.selectedUserIds?.length || 0} з {members.length}
-                    </dd>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Доступ мають</p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {(qTicketStatus.selectedUserIds || []).slice(0, 5).map(userId => {
+                          const member = members.find(item => (item.id || item.uid) === userId);
+                          return member
+                            ? <UserAvatar key={userId} user={member} size="sm" />
+                            : null;
+                        })}
+                      </div>
+                      <span className="text-[13px] font-semibold text-ink">
+                        {qTicketStatus.selectedUserIds?.length || 0} з {members.filter(isActiveMember).length}
+                      </span>
+                    </div>
                   </div>
                   <div>
-                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">Остання синхронізація</dt>
-                    <dd className="mt-1 text-[13px] font-semibold text-ink">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Синхронізовано</p>
+                    <p className="mt-1.5 text-[13px] font-semibold text-ink">
                       {qTicketStatus.lastSyncAt
                         ? new Date(qTicketStatus.lastSyncAt).toLocaleString('uk-UA')
                         : 'ще не було'}
-                    </dd>
+                    </p>
                   </div>
-                  <div>
-                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">Ревізія</dt>
-                    {/* The number both products compare to decide whether a
-                        snapshot is newer than the one they hold. It is the first
-                        thing to look at when «я змінив команду, а там старий
-                        склад». */}
-                    <dd className="mt-1 text-[13px] font-semibold text-ink">
-                      {qTicketStatus.revision || '—'}
-                    </dd>
+                  {qTicketDirty && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Не надіслано</p>
+                      <p className="mt-1.5 text-[13px] font-semibold text-warning">
+                        {[
+                          qTicketDraft.added.length ? `+${qTicketDraft.added.length}` : '',
+                          qTicketDraft.removed.length ? `−${qTicketDraft.removed.length}` : '',
+                          qTicketDraft.rolesChanged ? 'ролі' : '',
+                          qTicketDraft.brandChanged ? 'бренд' : '',
+                        ].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Питання «а воно взагалі працює?» ставиться qTicket, а не цій
+                    базі. Відповідь, яка просто прийшла, вже доводить, що origin,
+                    спільний секрет і два годинники згодні між собою. */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                  <Button
+                    style="secondary"
+                    size="sm"
+                    icon={PlugZap}
+                    onClick={handleQTicketProbe}
+                    loading={qTicketProbing}
+                  >
+                    Перевірити зв&apos;язок
+                  </Button>
+                  {qTicketProbe && (qTicketProbe.reachable ? (
+                    <span className="text-[12px] text-ink">
+                      {qTicketProbe.inSync
+                        ? `qTicket відповів: склад актуальний, ревізія ${qTicketProbe.remoteRevision}.`
+                        : qTicketProbe.known
+                          ? `qTicket відповів, але тримає ревізію ${qTicketProbe.remoteRevision}, а тут ${qTicketProbe.localRevision}. Натисніть «Синхронізувати».`
+                          : 'qTicket відповів, але цієї організації ще не знає. Натисніть «Активувати».'}
+                      {qTicketProbe.reachable && qTicketProbe.entitlement !== 'active' && ' Доповнення вимкнене на боці qTicket.'}
+                    </span>
+                  ) : (
+                    <span className="text-[12px] text-danger">qTicket не відповів: {qTicketProbe.error}</span>
+                  ))}
+                </div>
+
+                {/* Куди йдуть клієнти. Адреса — це налаштування розгортання
+                    qTicket, і QuickTeam не може її вивести; доти вона була
+                    відповіддю, яку доводилось у когось питати. */}
+                {qTicketProbe?.portalUrl && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Посилання для клієнтів</p>
+                    <IntegrationCode>{qTicketProbe.portalUrl}</IntegrationCode>
+                    <Button
+                      style="ghost"
+                      size="icon-sm"
+                      icon={Copy}
+                      onClick={() => { navigator.clipboard.writeText(qTicketProbe.portalUrl); showToast('Посилання скопійовано'); }}
+                      aria-label="Копіювати посилання для клієнтів"
+                    />
                   </div>
-                  <div>
-                    <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">Непрочитаних у вас</dt>
-                    <dd className="mt-1 text-[13px] font-semibold text-ink">
-                      {qTicketEnabledForMe ? (qTicketUnread || 0) : '—'}
-                    </dd>
-                  </div>
-                </dl>
-                <p className="mt-4 text-[12px] leading-relaxed text-muted">
-                  Назва організації, логотип і колір бічної панелі їдуть у qTicket
-                  звідси — з «Налаштування» → «Організація». qTicket їх не редагує
-                  й перезаписує свою копію з кожною синхронізацією, тож змінювати
-                  їх треба тут, а потім натиснути «Синхронізувати».
-                </p>
+                )}
               </IntegrationNote>
 
               {isOwner ? (
-                <IntegrationNote title="Команда підтримки в qTicket">
-                  <p>
-                    Оберіть людей із чинної команди QuickTeam. Власник входить завжди;
-                    окремих запрошень і паролів для внутрішніх працівників не буде.
-                  </p>
-                  <div className="mt-3 max-w-[520px]">
-                    <MultiSelect
-                      value={qTicketSelectedIds}
-                      onChange={handleQTicketSelection}
-                      options={qTicketMemberOptions}
-                      placeholder="Оберіть менеджерів і адміністраторів"
-                      searchPlaceholder="Знайти в команді QuickTeam..."
-                      selectAllLabel="Обрати всю команду"
-                      showSelectedAvatars
-                      ariaLabel="Працівники з доступом до qTicket"
-                      className="w-full"
-                    />
-                  </div>
-                  {qTicketStatus.active && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Button
-                        style="secondary"
-                        size="sm"
-                        icon={RefreshCw}
-                        onClick={handleQTicketSync}
-                        loading={qTicketLoading}
-                      >
-                        Синхронізувати склад і брендинг
-                      </Button>
+                <>
+                  <IntegrationNote title="Команда підтримки в qTicket">
+                    <p>
+                      Оберіть людей із чинної команди QuickTeam і роль, яку кожен матиме саме в підтримці —
+                      вона не мусить збігатися з роллю тут. Власник входить завжди; окремих запрошень і
+                      паролів для внутрішніх працівників не буде.
+                    </p>
+
+                    {members.filter(isActiveMember).length > 6 && (
+                      <div className="mt-3 max-w-[320px]">
+                        <Input
+                          value={qTicketStaffSearch}
+                          onChange={event => setQTicketStaffSearch(event.target.value)}
+                          placeholder="Знайти в команді QuickTeam..."
+                          size="md"
+                          ariaLabel="Пошук у команді QuickTeam"
+                        />
+                      </div>
+                    )}
+
+                    {/* Список замість мультиселекту. Мультиселект показував
+                        саме ім'я — не роль, не пошту, не те, ким людина стане в
+                        підтримці, і не те, що комусь місця не дадуть. */}
+                    <ul className="mt-3 divide-y divide-line rounded-[8px] border border-line bg-white">
+                      {qTicketStaff.map(row => (
+                        <li key={row.userId} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                          <Checkbox
+                            checked={row.selected}
+                            onChange={next => handleQTicketToggleMember(row.userId, next)}
+                            disabled={row.isOwner || Boolean(row.conflict)}
+                            ariaLabel={`Доступ до qTicket: ${row.member.name || row.member.email}`}
+                            size="md"
+                          />
+                          <UserAvatar user={row.member} size="md" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate text-[13px] font-semibold text-ink">
+                                {row.member.name || row.member.email}
+                              </p>
+                              {row.isOwner && <Pill shape="badge" size="sm" uppercase>Власник</Pill>}
+                              {row.conflict && <Pill shape="badge" size="sm" uppercase>Клієнт у qTicket</Pill>}
+                            </div>
+                            <p className="truncate text-[11px] text-muted">
+                              {row.member.email} · у QuickTeam {organizationRoleLabel(row.member.role).toLowerCase()}
+                            </p>
+                          </div>
+                          {row.conflict ? (
+                            <span className="text-[11px] text-warning">місця не буде</span>
+                          ) : (
+                            <Select
+                              value={row.deskRole}
+                              onChange={value => handleQTicketRole(row.userId, value)}
+                              options={row.isOwner
+                                ? [{ value: 'owner', label: 'Власник' }]
+                                : [
+                                  { value: 'admin', label: 'Адміністратор' },
+                                  { value: 'member', label: 'Менеджер підтримки' },
+                                ]}
+                              disabled={row.isOwner}
+                              size="sm"
+                              ariaLabel={`Роль у qTicket: ${row.member.name || row.member.email}`}
+                              className="w-[190px]"
+                            />
+                          )}
+                        </li>
+                      ))}
+                      {qTicketStaff.length === 0 && (
+                        <li className="px-3 py-4 text-center text-[12px] text-muted">Нікого не знайдено</li>
+                      )}
+                    </ul>
+                  </IntegrationNote>
+
+                  {/* Бренд підтримки — окремо від бренду QuickTeam.
+                      У qTicket ці поля завжди були різні (`name` для шелу
+                      персоналу, `portalBranding` для клієнтського порталу) і
+                      завжди годувалися одним значенням, тож компанія не могла
+                      назвати свою підтримку інакше, ніж собою. Значення однаково
+                      належить QuickTeam: qTicket його не редагує й перезаписує
+                      свою копію з кожною синхронізацією. */}
+                  <IntegrationNote title="Бренд клієнтського порталу">
+                    <div className="flex items-start justify-between gap-4">
+                      <p className="flex-1">
+                        За замовчуванням клієнти бачать назву, логотип і колір вашої організації — ті самі,
+                        що в «Налаштування» → «Загальні». Увімкніть, якщо підтримка має виглядати окремо
+                        («OneB Підтримка»). Персонал у QuickTeam це не змінює.
+                      </p>
+                      <ToggleSwitch
+                        checked={Boolean(qTicketPortal)}
+                        onChange={handleQTicketPortalToggle}
+                        size="md"
+                        ariaLabel="Окремий бренд клієнтського порталу"
+                      />
+                    </div>
+
+                    {qTicketPortal && (
+                      <div className="mt-3 space-y-3 border-t border-line pt-3">
+                        <div className="max-w-[320px]">
+                          <Label>Назва підтримки</Label>
+                          <Input
+                            value={qTicketPortal.name || ''}
+                            onChange={event => handleQTicketPortalField('name', event.target.value)}
+                            placeholder={org?.name || 'Підтримка'}
+                            size="md"
+                            ariaLabel="Назва підтримки для клієнтів"
+                          />
+                        </div>
+                        <div>
+                          <Label>Логотип на порталі</Label>
+                          <ImageUpload
+                            value={qTicketPortal.logo || ''}
+                            organizationId={activeOrgId}
+                            kind="logos"
+                            theme="light"
+                            showHint={false}
+                            onChange={url => handleQTicketPortalField('logo', url || '')}
+                          />
+                        </div>
+                        <div>
+                          <Label>Колір бічної панелі порталу</Label>
+                          <div className="mt-1.5 flex flex-wrap gap-[16px]">
+                            {[
+                              { id: 'dark', label: 'Темна', bg: SIDEBAR_PRESETS.dark },
+                              { id: 'light', label: 'Світла', bg: SIDEBAR_PRESETS.light },
+                              { id: 'custom', label: 'Ваш колір', bg: qTicketPortal.sidebarColor || SIDEBAR_PRESETS.dark },
+                            ].map(option => (
+                              <label key={option.id} className="flex cursor-pointer flex-col items-center gap-[6px]">
+                                <ColorSwatch
+                                  size="theme"
+                                  selected={qTicketPortal.sidebarTheme === option.id}
+                                  label={option.label}
+                                  color={option.bg}
+                                  onClick={() => handleQTicketPortalField('sidebarTheme', option.id)}
+                                />
+                                <span className="text-[11px] font-medium text-muted">{option.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                          {qTicketPortal.sidebarTheme === 'custom' && (
+                            <div className="mt-3 max-w-[200px]">
+                              <Input
+                                value={qTicketPortal.sidebarColor || ''}
+                                onChange={event => handleQTicketPortalField('sidebarColor', event.target.value)}
+                                composition="color-hex"
+                                size="md"
+                                placeholder="#1a365d"
+                                ariaLabel="HEX-колір бічної панелі порталу"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <p>
+                          Порожнє поле успадковує саме себе: перейменували підтримку — логотип і колір
+                          лишаються організаційні.
+                        </p>
+                      </div>
+                    )}
+                  </IntegrationNote>
+
+                  {/* «Хто зняв Олю з підтримки» — питання про останню зміну, і
+                      доти на нього не було де подивитись. Двадцять записів. */}
+                  {qTicketStatus.history.length > 0 && (
+                    <IntegrationNote title="Останні синхронізації">
+                      <ul className="space-y-1.5">
+                        {qTicketStatus.history.slice(0, 5).map(entry => (
+                          <li key={`${entry.at}-${entry.revision}`}>
+                            {new Date(entry.at).toLocaleString('uk-UA')} — {qTicketMemberName(entry.by)}:{' '}
+                            {[
+                              entry.added?.length ? `додав ${entry.added.map(qTicketMemberName).join(', ')}` : '',
+                              entry.removed?.length ? `прибрав ${entry.removed.map(qTicketMemberName).join(', ')}` : '',
+                              entry.rolesChanged ? 'змінив ролі' : '',
+                              entry.brandChanged ? 'змінив бренд' : '',
+                            ].filter(Boolean).join('; ') || 'оновив знімок'}
+                          </li>
+                        ))}
+                      </ul>
+                    </IntegrationNote>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      style={qTicketDirty ? 'primary' : 'secondary'}
+                      size="sm"
+                      icon={RefreshCw}
+                      onClick={handleQTicketSync}
+                      loading={qTicketLoading}
+                      disabled={qTicketStatus.active && !qTicketDirty}
+                    >
+                      {qTicketStatus.active ? 'Синхронізувати' : 'Активувати qTicket'}
+                    </Button>
+                    {qTicketStatus.active && (
                       <Button
                         style="ghost"
                         size="sm"
@@ -3633,13 +3992,14 @@ export default function SettingsPage() {
                       >
                         Вимкнути qTicket
                       </Button>
-                    </div>
-                  )}
-                </IntegrationNote>
+                    )}
+                  </div>
+                </>
               ) : (
                 <IntegrationNote title="Доступ керується власником">
                   <p>
-                    Власник організації обирає працівників QuickTeam, які можуть відкривати qTicket.
+                    Власник організації обирає працівників QuickTeam, які можуть відкривати qTicket,
+                    їхні ролі в підтримці та бренд клієнтського порталу.
                   </p>
                 </IntegrationNote>
               )}
