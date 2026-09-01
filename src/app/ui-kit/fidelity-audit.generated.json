@@ -26,7 +26,7 @@
     "manualModalShells": 0,
     "manualPills": 0,
     "manualSurfaces": 0,
-    "localSurfaceExceptions": 46,
+    "localSurfaceExceptions": 41,
     "manualIconButtons": 0,
     "headingStyles": 0,
     "sharedChromeOverrides": 0,
@@ -40,13 +40,13 @@
   },
   "kit": {
     "totals": {
-      "components": 120,
-      "used": 120,
+      "components": 121,
+      "used": 121,
       "unused": 0,
-      "covered": 115,
+      "covered": 116,
       "uncovered": 0,
       "routes": 12,
-      "previews": 151,
+      "previews": 152,
       "internal": 5,
       "unlisted": 0
     },
@@ -132,8 +132,7 @@
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
-        "span",
-        "ChevronsUpDown"
+        "span"
       ],
       "ariaLabel": "",
       "styled": true,
@@ -144,7 +143,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:340",
+      "location": "src/components/MobileNav.jsx:346",
       "className": "flex h-[44px] items-center gap-[14px] rounded-[12px] px-[12px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)] disabled:opacity-50",
       "text": "",
       "childElements": [
@@ -160,7 +159,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:405",
+      "location": "src/components/MobileNav.jsx:411",
       "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
       "text": "",
       "childElements": [
@@ -373,7 +372,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:319",
+      "location": "src/components/WorkspaceSidebar.jsx:334",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -388,7 +387,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:342",
+      "location": "src/components/WorkspaceSidebar.jsx:357",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -472,12 +471,12 @@
       "context": "auth-footer-support"
     },
     {
-      "location": "src/components/MobileNav.jsx:340",
+      "location": "src/components/MobileNav.jsx:346",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
     {
-      "location": "src/components/MobileNav.jsx:405",
+      "location": "src/components/MobileNav.jsx:411",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
@@ -497,12 +496,12 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:319",
+      "location": "src/components/WorkspaceSidebar.jsx:334",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:342",
+      "location": "src/components/WorkspaceSidebar.jsx:357",
       "tag": "button",
       "context": "branding-action"
     }
@@ -538,22 +537,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:697",
+      "location": "src/app/(app)/settings/page.js:675",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:717",
+      "location": "src/app/(app)/settings/page.js:695",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:761",
+      "location": "src/app/(app)/settings/page.js:739",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:880",
+      "location": "src/app/(app)/settings/page.js:858",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -593,37 +592,12 @@
       "className": "rounded-[14px] border border-line bg-white p-4 transition-opacity ${…}"
     },
     {
-      "location": "src/components/integrations/IntegrationCard.jsx:109",
-      "tag": "div",
-      "className": "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white"
-    },
-    {
-      "location": "src/components/integrations/IntegrationCard.jsx:42",
-      "tag": "div",
-      "className": "rounded-[12px] border border-line bg-canvas p-4 ${…}"
-    },
-    {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:609",
-      "tag": "div",
-      "className": "rounded-[10px] bg-white p-2"
-    },
-    {
-      "location": "src/components/integrations/YouTrackImportCard.jsx:705",
-      "tag": "div",
-      "className": "grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
-    },
-    {
       "location": "src/components/InviteLinkSection.jsx:98",
       "tag": "div",
       "className": "mt-4 rounded-[12px] border border-dashed border-faint bg-white p-2"
     },
     {
-      "location": "src/components/migrations/DataMigrationSettings.jsx:228",
-      "tag": "div",
-      "className": "flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border border-line bg-white"
-    },
-    {
-      "location": "src/components/migrations/DataMigrationSettings.jsx:90",
+      "location": "src/components/migrations/DataMigrationSettings.jsx:65",
       "tag": "div",
       "className": "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white"
     },

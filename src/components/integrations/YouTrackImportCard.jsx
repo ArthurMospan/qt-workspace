@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ExternalLink, RefreshCw, Search, Upload } from 'lucide-react';
-import { Alert, Button, Checkbox, IconAction, Input, Pill, Select, useConfirm } from '@/components/ui';
-import IntegrationCard, { IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
+import { Search, Upload } from 'lucide-react';
+import { Alert, Button, Card, Checkbox, Dialog, Input, Label, Meter, Pill, Select, SettingRow, TextAction, useConfirm } from '@/components/ui';
+import { IntegrationConnect, IntegrationWork } from '@/components/integrations/IntegrationScreen';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import {
   sourceUserId,
@@ -61,7 +61,7 @@ export default function YouTrackImportCard({
   members = [],
   projects = [],
   showToast,
-  presentation = 'integration',
+  onStatus,
 }) {
   const [connection, setConnection] = useState({ connected: false });
   const [baseUrl, setBaseUrl] = useState('');
@@ -75,7 +75,9 @@ export default function YouTrackImportCard({
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
-  const [setupOpen, setSetupOpen] = useState(false);
+  // Два екрани, які в рядок не складаються: обсяг імпорту й зіставлення людей.
+  const [scopeOpen, setScopeOpen] = useState(false);
+  const [peopleOpen, setPeopleOpen] = useState(false);
   // Відмова цього екрана — не подія, а стан: «знайти проєкти не вийшло, ось
   // чому». Тост про таке спливав над нижнім краєм, за 800 пікселів від кнопки,
   // яку натиснули, тримався дев'ять секунд і йшов — а причина лишалася чинною
@@ -105,7 +107,6 @@ export default function YouTrackImportCard({
       setConnection(nextConnection);
       setBaseUrl(nextConnection.baseUrl || '');
       setJob((imports.jobs || []).find(item => ACTIVE_JOB_STATUSES.has(item.status)) || imports.jobs?.[0] || null);
-      if (nextConnection.connected) setSetupOpen(false);
       setFailure('');
     } catch (error) {
       setFailure(errorTextUk(error?.message, 'Не вдалося прочитати стан інтеграції YouTrack. Спробуйте ще раз.'));
@@ -182,7 +183,6 @@ export default function YouTrackImportCard({
       setConnection(next);
       setBaseUrl(next.baseUrl || baseUrl);
       setToken('');
-      setSetupOpen(false);
       showToast('YouTrack підключено');
     } catch (error) {
       setFailure(errorTextUk(error?.message, 'Не вдалося підключити YouTrack. Перевірте адресу й токен.'));
@@ -217,7 +217,6 @@ export default function YouTrackImportCard({
       setStatusMappings({});
       setUserMappings({});
       setJob(null);
-      setSetupOpen(false);
       setFailure('');
       showToast('YouTrack відключено');
       return true;
@@ -227,19 +226,6 @@ export default function YouTrackImportCard({
     } finally {
       setAction('');
     }
-  };
-
-  const toggleConnection = async enabled => {
-    if (enabled) {
-      setSetupOpen(true);
-      return;
-    }
-    if (connection.connected) {
-      await disconnect();
-      return;
-    }
-    setSetupOpen(false);
-    setToken('');
   };
 
   const discover = async () => {
@@ -416,15 +402,19 @@ export default function YouTrackImportCard({
     : null;
   const jobIsMine = !job?.createdBy || job.createdBy === currentUserId;
   const jobOwnerName = jobOwner?.name || jobOwner?.displayName || jobOwner?.email || 'інший учасник';
-  const cardEnabled = connection.connected || setupOpen;
-  const migrationPresentation = presentation === 'migration';
-  const cardStatus = loading
-    ? 'pending'
-    : connection.connected
-      ? 'connected'
-      : setupOpen
-        ? 'pending'
-        : 'off';
+  // Скільки людей уже прив'язано до учасників QuickTeam — те саме число, що
+  // раніше треба було рахувати очима, гортаючи двісті рядків селектів.
+  const mappedUserCount = visibleUsers.filter(user => {
+    const mapping = userMappings[sourceUserId(user)];
+    return mapping && mapping !== 'external';
+  }).length;
+
+  // Стан джерела читає шапка секції над цим компонентом — там, де його читають
+  // усі інші інтеграції. Односторонньо: сюди назад нічого не приходить, тож
+  // циклу перерендерів тут немає.
+  useEffect(() => {
+    onStatus?.(loading ? 'connecting' : connection.connected ? 'connected' : 'idle');
+  }, [onStatus, loading, connection.connected]);
 
   useEffect(() => {
     if (action !== 'run') return undefined;
@@ -436,382 +426,329 @@ export default function YouTrackImportCard({
     return () => window.removeEventListener('beforeunload', warnBeforeClose);
   }, [action]);
 
+  // Той самий екран, що й у будь-якої інтеграції: сцена підключення, поки
+  // джерела немає, і рядки на білому, коли воно є. Відрізняється рівно одним —
+  // зоною роботи внизу, і це відхилення чесне: імпорт триває хвилинами, показує
+  // поступ і може обірватись посередині. Такого немає в жодної інтеграції, і
+  // рядок налаштування цього не вміщає.
+  //
+  // Те, що пішло звідси разом зі старим шелом: пронумеровані кроки підключення
+  // (їх було три, і всі три малювались одночасно, тож «крок» нічого не значив),
+  // сірі панелі з обводкою навколо кожного блока, і власна смуга прогресу —
+  // тепер це `Meter`, той самий, яким продукт малює будь-яку частку.
   return (
-    <IntegrationCard
-      title="YouTrack"
-      description="Перенесіть проєкти, задачі, коментарі, вкладення, облік часу, зв’язки та користувачів без дублів."
-      logoSrc="/integrations/youtrack.svg"
-      logoAlt="YouTrack"
-      // Підключити й відключити джерело — один перемикач, як в «Інтеграціях».
-      // У «Перенесенні даних» на тому самому місці стояла текстова кнопка, що
-      // міняла назву («Налаштувати» / «Закрити» / «Відключити») і робила рівно
-      // те саме, що світчер поруч на сусідньому екрані: та сама дія у двох
-      // виглядах, і той із них, який виглядав як звичайна кнопка, нічим не
-      // показував, що інтеграція взагалі вимикається.
-      enabled={cardEnabled}
-      onToggle={toggleConnection}
-      toggleDisabled={loading || Boolean(action) || activeJob}
-      status={cardStatus}
-      statusLabel={loading
-        ? 'Перевіряємо'
-        : connection.connected
-          ? migrationPresentation ? 'Готово до імпорту' : 'Підключено'
-          : setupOpen
-            ? 'Налаштування'
-            : migrationPresentation ? 'Не налаштовано' : 'Вимкнено'}
-      statusMeta={connection.connected ? (
-        <span className="min-w-0 truncate text-[12px] text-muted">
-          {connection.account?.name || connection.account?.login || 'YouTrack'} · {connection.baseUrl}
-        </span>
-      ) : null}
-    >
-      {(failure || connection.connected || setupOpen) ? (
-      <>
-      {/* Причина стоїть у картці, під кнопкою, яку натиснули, і тримається,
-          доки її не усунуть або доки читач сам її не закриє. Тост тут не
-          працював: він спливав над нижнім краєм екрана, за сотні пікселів від
-          дії, зникав за девʼять секунд — а причина лишалася чинною. І він
-          пропонував «Повідомити про помилку» там, де повідомляти нема про що:
-          зіпсований токен чи невибраний статус — це відповідь продукту, а не
-          його поломка. */}
+    <div className="flex flex-col gap-[16px]">
+      {/* Причина стоїть на екрані, під тим, що натиснули, і тримається, доки її
+          не усунуть або доки читач сам її не закриє. Тост тут не працював: він
+          спливав над нижнім краєм, за сотні пікселів від дії, зникав за девʼять
+          секунд — а причина лишалася чинною. */}
       {failure && (
-        <Alert variant="danger" className="mb-3" onClose={() => setFailure('')}>
+        <Alert variant="danger" onClose={() => setFailure('')}>
           <span className="whitespace-pre-line">{failure}</span>
         </Alert>
       )}
+
       {!connection.connected ? (
-        setupOpen ? (
-          <div className="space-y-3">
-            <IntegrationSteps
-              steps={[
-                {
-                  title: 'Створіть постійний токен у YouTrack',
-                  description: 'Відкрийте Profile → Account Security → New token і виберіть scope «YouTrack». Токен матиме ті самі права доступу, що й ваш акаунт.',
-                  content: (
-                    <a
-                      href="https://www.jetbrains.com/help/youtrack/devportal/Manage-Permanent-Token.html"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-ink hover:underline"
-                    >
-                      Відкрити офіційну інструкцію JetBrains <ExternalLink size={10} />
-                    </a>
-                  ),
-                },
-                {
-                  title: 'Вкажіть адресу та токен',
-                  description: 'Використовуйте адресу вашого YouTrack без шляху до конкретного проєкту або задачі.',
-                  content: (
-                    <div className="mt-2 grid max-w-[760px] gap-2 md:grid-cols-2">
-                      <Input
-                        type="url"
-                        value={baseUrl}
-                        onChange={event => setBaseUrl(event.target.value)}
-                        placeholder="https://company.youtrack.cloud"
-                        aria-label="Адреса YouTrack"
-                        disabled={loading}
-                      />
-                      <Input
-                        type="password"
-                        value={token}
-                        onChange={event => setToken(event.target.value)}
-                        placeholder="Постійний токен YouTrack"
-                        aria-label="Постійний токен YouTrack"
-                        autoComplete="new-password"
-                        disabled={loading}
-                      />
-                    </div>
-                  ),
-                },
-                {
-                  title: 'Перевірте доступ',
-                  description: 'QuickTeam перевірить токен і збереже його для цієї організації. Після цього можна вибрати проєкти та зіставити людей.',
-                  content: (
-                    <Button
-                      style="secondary"
-                      size="sm"
-                      icon={Search}
-                      className="mt-2"
-                      onClick={connect}
-                      loading={action === 'connect'}
-                      disabled={!baseUrl.trim() || !token.trim()}
-                    >
-                      Перевірити й підключити
-                    </Button>
-                  ),
-                },
-              ]}
-            />
-            <IntegrationNote>
-              <p>
-                Підключення виконується один раз для організації. Токен зберігається у зашифрованому вигляді й після збереження не повертається у браузер.
-              </p>
-            </IntegrationNote>
-          </div>
-        ) : null
+        <IntegrationConnect
+          logoSrc="/integrations/youtrack.svg"
+          title="Підключіть YouTrack"
+          description="Вкажіть адресу вашого YouTrack і постійний токен. QuickTeam перевірить доступ і збереже токен зашифрованим."
+          action={{
+            label: 'Перевірити й підключити',
+            icon: Search,
+            onClick: connect,
+            loading: action === 'connect',
+            disabled: !baseUrl.trim() || !token.trim() || loading,
+          }}
+          footnote={(
+            <>
+              Потрібен токен зі scope «YouTrack» — Profile → Account Security → New token.{' '}
+              <a
+                href="https://www.jetbrains.com/help/youtrack/devportal/Manage-Permanent-Token.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-ink hover:underline"
+              >
+                Інструкція JetBrains
+              </a>
+            </>
+          )}
+        >
+          <Label>Адреса YouTrack</Label>
+          <Input
+            type="url"
+            value={baseUrl}
+            onChange={event => setBaseUrl(event.target.value)}
+            placeholder="https://company.youtrack.cloud"
+            aria-label="Адреса YouTrack"
+            disabled={loading}
+            size="md"
+          />
+          <Label>Постійний токен</Label>
+          <Input
+            type="password"
+            value={token}
+            onChange={event => setToken(event.target.value)}
+            placeholder="perm:..."
+            aria-label="Постійний токен YouTrack"
+            autoComplete="new-password"
+            disabled={loading}
+            size="md"
+          />
+        </IntegrationConnect>
       ) : (
-        <div className="space-y-4">
-              {/* Одна підписана дія, а не три речі поспіль.
-                  «Знайти проєкти» — те, по що сюди приходять, тож воно
-                  лишається кнопкою з назвою і бере всю ширину картки: на цьому
-                  кроці більше нічого не роблять, а короткий прямокутник ліворуч
-                  читався як щось необовʼязкове. «Оновити» перечитує той самий
-                  стан і лишається значком поруч. Речення про світчер пішло:
-                  світчер тепер стоїть на обох екранах, просто над цим рядком,
-                  і сам про себе все каже. */}
-              <div className="flex items-center gap-2">
-                <Button
-                  style="secondary"
-                  size="md"
-                  icon={Search}
-                  onClick={discover}
-                  loading={action === 'discover'}
-                  className="flex-1"
-                >
+        <>
+          <Card preset="borderless" padding="lg">
+            <SettingRow label="Джерело" desc="Звідки переносимо">
+              <span className="text-[13px] text-muted">
+                {connection.account?.name || connection.account?.login || 'YouTrack'} · {connection.baseUrl}
+              </span>
+            </SettingRow>
+
+            <SettingRow
+              label="Проєкти й статуси"
+              desc={discovery
+                ? 'Що переносимо і в які статуси QuickTeam. Повторний запуск оновлює вже перенесене без дублів.'
+                : 'Спочатку подивимось, що є у вашому YouTrack'}
+            >
+              {discovery ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-[13px] text-muted">
+                    {selectedProjectIds.length} {plural(selectedProjectIds.length, ['проєкт', 'проєкти', 'проєктів'])}
+                  </span>
+                  <TextAction onClick={() => setScopeOpen(true)}>Налаштувати</TextAction>
+                </div>
+              ) : (
+                <Button style="secondary" size="sm" icon={Search} onClick={discover} loading={action === 'discover'}>
                   Знайти проєкти
                 </Button>
-                <IconAction
-                  label="Оновити стан"
-                  tooltip
-                  icon={RefreshCw}
-                  size="compact"
-                  appearance="surface"
-                  onClick={refresh}
-                  disabled={loading}
-                />
-              </div>
+              )}
+            </SettingRow>
 
-              {discovery && (
-                <div data-ui-surface="compact-bordered-panel" data-ui-padding="sm" className="ui-surface space-y-4">
-                  <div>
-                    <p className="text-[12px] font-semibold text-ink">1. Проєкти та місце імпорту</p>
-                    <p className="mt-1 text-[11px] text-muted">
-                      Оберіть проєкти й статуси задач, які переносимо. Повторний запуск оновлює вже
-                      імпортовані записи без дублів.
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted">
-                      Разом із задачами переносяться коментарі, вкладення, зв’язки та work items:
-                      затрачений час зʼявиться у записах часу і в сумі витраченого часу задачі.
-                    </p>
+            {discovery && (
+              <SettingRow
+                label="Люди"
+                desc="Кого прив'язати до учасників QuickTeam. Решта перенесуться як зовнішні автори."
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-[13px] text-muted">
+                    {mappedUserCount} із {visibleUsers.length}
+                  </span>
+                  <TextAction onClick={() => setPeopleOpen(true)}>Зіставити</TextAction>
+                </div>
+              </SettingRow>
+            )}
+
+            {discovery && !activeJob && (
+              <SettingRow label="Перевірка перед імпортом" desc="Рахує задачі й нічого не змінює">
+                <Button style="secondary" size="sm" icon={Search} onClick={prepare} loading={action === 'prepare'}>
+                  Перевірити імпорт
+                </Button>
+              </SettingRow>
+            )}
+
+            <SettingRow
+              label="Відключити YouTrack"
+              desc="Токен буде видалено. Уже перенесені проєкти й задачі залишаться у QuickTeam."
+              danger
+            >
+              <Button style="ghost" color="red" size="sm" onClick={disconnect} loading={action === 'disconnect'} disabled={activeJob}>
+                Відключити
+              </Button>
+            </SettingRow>
+          </Card>
+
+          {job && (
+            <IntegrationWork
+              title="Імпорт"
+              description="Іде з цієї вкладки — тримайте її відкритою. Перезапуск не створює дублів."
+              status={<Pill tone={JOB_TONES[job.status] || 'neutral'} size="md">{statusLabel(job.status)}</Pill>}
+            >
+              <Meter
+                value={job.totalIssues ? (job.processedIssues + job.failedIssues) / job.totalIssues : 0}
+                label={`${job.processedIssues + job.failedIssues} із ${job.totalIssues} ${plural(job.totalIssues, ['задача', 'задачі', 'задач'])}`}
+                reading={`${progress}%`}
+              />
+
+              {jobSummary.length > 0 && (
+                <p className="text-[12px] text-muted">{jobSummary.join(' · ')}</p>
+              )}
+
+              {/* Це поле може містити що завгодно: воно зберігає те, що сказав
+                  шар, який зламався, і в базі вже лежать рядки, записані до
+                  того, як їх навчилися перекладати. */}
+              {job.lastError && (
+                <Alert variant="danger">
+                  {errorTextUk(job.lastError, 'Крок імпорту не вдався. Спробуйте продовжити — уже перенесене не дублюється.')}
+                </Alert>
+              )}
+
+              {job.warnings?.length > 0 && (
+                <p className="text-[12px] text-warning">
+                  {job.warnings.length} {plural(job.warnings.length, ['попередження', 'попередження', 'попереджень'])}. Дані без помилок продовжують імпортуватися.
+                </p>
+              )}
+
+              {!jobIsMine && (
+                <p className="text-[12px] leading-relaxed text-muted">
+                  Цей імпорт запустив(ла) {jobOwnerName}
+                  {isOrganizationOwner
+                    ? '. Продовжити його може лише той, хто розпочав; ви як власник можете його зупинити.'
+                    : '. Продовжити або зупинити його може той, хто розпочав, або власник організації.'}
+                </p>
+              )}
+
+              {activeJob && (
+                <div className="flex flex-wrap gap-2">
+                  {jobIsMine && (
+                    <Button size="md" icon={Upload} onClick={run} loading={action === 'run'}>
+                      {job.status === 'running' ? 'Продовжити імпорт' : 'Почати імпорт'}
+                    </Button>
+                  )}
+                  {(jobIsMine || isOrganizationOwner) && (
+                    <Button style="ghost" color="red" size="md" onClick={cancel} loading={action === 'cancel'}>
+                      Зупинити
+                    </Button>
+                  )}
+                </div>
+              )}
+            </IntegrationWork>
+          )}
+        </>
+      )}
+
+      {/* Обсяг імпорту — діалог, а не половина екрана.
+          П'ять проєктів, у кожного до двох десятків статусів, і в кожного
+          статусу власний селект: це таблиця на кількасот рядків, і вона стояла
+          просто в картці, у сірій панелі, всередині якої були білі плитки, у
+          яких були рамки навколо кожного статусу. Чотири рівні вкладеності на
+          один вибір. */}
+      <Dialog
+        isOpen={scopeOpen}
+        onClose={() => setScopeOpen(false)}
+        size="lg"
+        title="Проєкти й статуси"
+        description="Оберіть, що переносимо. Необрані залишаться в YouTrack."
+        footer={<Button style="primary" size="md" onClick={() => setScopeOpen(false)}>Готово</Button>}
+      >
+        <div className="flex flex-col divide-y divide-line">
+          {discovery?.projects?.map(project => {
+            const checked = selectedProjectIds.includes(project.id);
+            return (
+              <div key={project.id} className="py-3">
+                <div className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Checkbox
+                      size="sm"
+                      checked={checked}
+                      onChange={() => toggleProject(project.id)}
+                      disabled={(project.statuses || []).length === 0}
+                      ariaLabel={project.name}
+                    />
+                    <span className="min-w-0 truncate text-[13px] font-semibold text-ink">
+                      {project.name} <span className="font-normal text-muted">({project.shortName})</span>
+                    </span>
                   </div>
-                  {/* The import is driven step by step from this tab, so the tab has to
-                      stay open. Warning only once a job exists came too late — by then
-                      the page had already been closed once. */}
-                  <Alert
-                    variant="info"
-                    title="Імпорт іде з цієї вкладки — тримайте її відкритою"
-                    description="Закрита або перезавантажена сторінка призупиняє перенесення. Продовжити можна тією ж кнопкою й без дублів, але процес не рухається, доки вкладка закрита."
+                  <Select
+                    value={projectMappings[project.id] || 'create'}
+                    onChange={value => updateProjectMapping(project, value)}
+                    disabled={!checked}
+                    options={[
+                      { value: 'create', label: 'Створити новий проєкт' },
+                      ...activeProjects.map(target => ({ value: target.id, label: `Додати в: ${target.name}` })),
+                    ]}
+                    ariaLabel={`Куди імпортувати ${project.name}`}
                   />
-                  <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
-                    {discovery.projects.map(project => {
-                      const checked = selectedProjectIds.includes(project.id);
-                      return (
-                        <div key={project.id} data-ui-surface="local" className="rounded-[10px] bg-white p-2">
-                          <div className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
-                            {/* The kit's checkbox, not a native one with an
-                                accent colour: this screen was the last place
-                                drawing its own. */}
-                            <div className="flex min-w-0 items-center gap-2">
-                              <Checkbox
-                                size="sm"
-                                checked={checked}
-                                onChange={() => toggleProject(project.id)}
-                                disabled={(project.statuses || []).length === 0}
-                                ariaLabel={project.name}
-                              />
-                              <span className="min-w-0 truncate text-[12px] font-semibold text-ink">
-                                {project.name} <span className="font-normal text-muted">({project.shortName})</span>
-                              </span>
-                            </div>
-                            <Select
-                              value={projectMappings[project.id] || 'create'}
-                              onChange={value => updateProjectMapping(project, value)}
-                              disabled={!checked}
-                              options={[
-                                { value: 'create', label: 'Створити новий проєкт' },
-                                ...activeProjects.map(target => ({ value: target.id, label: `Додати в: ${target.name}` })),
-                              ]}
-                            />
-                          </div>
-                          {(project.statuses || []).length > 0 ? (
-                            <div className="mt-2 space-y-2 border-t border-line pt-2">
-                              <div>
-                                <p className="text-[11px] font-semibold text-ink">Статуси YouTrack → QuickTeam</p>
-                                <p className="text-[10px] text-muted">
-                                  Відмітьте, які задачі імпортувати, і оберіть їхній статус у QuickTeam. Необрані залишаться в YouTrack.
-                                </p>
-                              </div>
-                              {project.statuses.map(sourceStatus => {
-                                const selected = (statusFilters[project.id] || []).includes(sourceStatus.name);
-                                const targetStatuses = targetStatusesFor(project.id);
-                                return (
-                                  <div
-                                    key={sourceStatus.id || sourceStatus.name}
-                                    className="grid items-center gap-2 rounded-[8px] border border-line p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
-                                  >
-                                    <div className="flex min-w-0 items-center gap-2">
-                                      <Checkbox
-                                        size="sm"
-                                        checked={selected}
-                                        onChange={() => toggleSourceStatus(project.id, sourceStatus.name)}
-                                        disabled={!checked}
-                                        ariaLabel={`Імпортувати ${sourceStatus.name}`}
-                                      />
-                                      <p className="min-w-0 truncate text-[11px] text-ink">
-                                        {sourceStatus.name}
-                                        {sourceStatus.issueCount > 0 ? <span className="text-muted"> · {sourceStatus.issueCount}</span> : null}
-                                        {sourceStatus.archived ? <span className="text-muted"> · архівний</span> : null}
-                                      </p>
-                                    </div>
-                                    <Select
-                                      value={statusMappings[project.id]?.[sourceStatus.name] || ''}
-                                      onChange={value => setStatusMappings(current => ({
-                                        ...current,
-                                        [project.id]: {
-                                          ...current[project.id],
-                                          [sourceStatus.name]: value,
-                                        },
-                                      }))}
-                                      disabled={!checked || !selected}
-                                      options={targetStatuses.map(status => ({
-                                        value: status.id,
-                                        label: `${status.label} · ${statusCategoryLabel(status.category)}`,
-                                      }))}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <Alert className="mt-2" variant="warning">
-                              У доступних задачах цього проєкту не знайдено жодного статусу, тому імпорт для нього вимкнено.
-                            </Alert>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                </div>
 
-                  <div className="border-t border-line pt-3">
-                    <p className="text-[12px] font-semibold text-ink">2. Зіставлення користувачів</p>
-                    <p className="mt-1 text-[11px] text-muted">
-                      Точний збіг email уже підставлено. Решта збережуться як зовнішні автори, доки ви не оберете учасника.
-                    </p>
-                  </div>
-                  <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
-                    {visibleUsers.map(user => {
-                      const id = sourceUserId(user);
+                {(project.statuses || []).length > 0 ? (
+                  <div className="mt-2 flex flex-col gap-2 pl-6">
+                    {project.statuses.map(sourceStatus => {
+                      const selected = (statusFilters[project.id] || []).includes(sourceStatus.name);
+                      const targetStatuses = targetStatusesFor(project.id);
                       return (
-                        <div key={id} data-ui-surface="local" className="grid items-center gap-2 rounded-[10px] bg-white p-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
-                          <div className="min-w-0">
-                            <p className="truncate text-[12px] font-semibold text-ink">{user.name}</p>
-                            <p className="truncate text-[11px] text-muted">{user.email || user.login || id}</p>
+                        <div
+                          key={sourceStatus.id || sourceStatus.name}
+                          className="grid items-center gap-2 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Checkbox
+                              size="sm"
+                              checked={selected}
+                              onChange={() => toggleSourceStatus(project.id, sourceStatus.name)}
+                              disabled={!checked}
+                              ariaLabel={`Імпортувати ${sourceStatus.name}`}
+                            />
+                            <p className="min-w-0 truncate text-[12px] text-ink">
+                              {sourceStatus.name}
+                              {sourceStatus.issueCount > 0 ? <span className="text-muted"> · {sourceStatus.issueCount}</span> : null}
+                              {sourceStatus.archived ? <span className="text-muted"> · архівний</span> : null}
+                            </p>
                           </div>
                           <Select
-                            value={userMappings[id] || 'external'}
-                            onChange={value => setUserMappings(current => ({ ...current, [id]: value }))}
-                            options={memberOptions}
+                            value={statusMappings[project.id]?.[sourceStatus.name] || ''}
+                            onChange={value => setStatusMappings(current => ({
+                              ...current,
+                              [project.id]: {
+                                ...current[project.id],
+                                [sourceStatus.name]: value,
+                              },
+                            }))}
+                            disabled={!checked || !selected}
+                            options={targetStatuses.map(status => ({
+                              value: status.id,
+                              label: `${status.label} · ${statusCategoryLabel(status.category)}`,
+                            }))}
+                            ariaLabel={`Статус QuickTeam для ${sourceStatus.name}`}
                           />
                         </div>
                       );
                     })}
-                    {(discovery.users?.length || 0) > visibleUsers.length && (
-                      <p className="px-2 text-[11px] text-muted">
-                        Показано перші {visibleUsers.length} активних користувачів; інші імпортуються як зовнішні.
-                      </p>
-                    )}
                   </div>
+                ) : (
+                  <Alert className="mt-2" variant="warning">
+                    У доступних задачах цього проєкту не знайдено жодного статусу, тому імпорт для нього вимкнено.
+                  </Alert>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Dialog>
 
-                  <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                    <Button
-                      style="secondary"
-                      size="md"
-                      icon={Search}
-                      onClick={prepare}
-                      loading={action === 'prepare'}
-                      disabled={action === 'run'}
-                    >
-                      Перевірити імпорт
-                    </Button>
-                    <p className="text-[11px] text-muted">Цей крок лише рахує задачі й нічого не змінює.</p>
-                  </div>
+      <Dialog
+        isOpen={peopleOpen}
+        onClose={() => setPeopleOpen(false)}
+        size="md"
+        title="Зіставлення людей"
+        description="Точний збіг email уже підставлено. Решта збережуться як зовнішні автори."
+        footer={<Button style="primary" size="md" onClick={() => setPeopleOpen(false)}>Готово</Button>}
+      >
+        <div className="flex flex-col divide-y divide-line">
+          {visibleUsers.map(user => {
+            const id = sourceUserId(user);
+            return (
+              <div key={id} className="grid items-center gap-2 py-3 sm:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)]">
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold text-ink">{user.name}</p>
+                  <p className="truncate text-[11px] text-muted">{user.email || user.login || id}</p>
                 </div>
-              )}
-
-              {job && (
-                <div data-ui-surface="compact-bordered-card" data-ui-padding="sm" className="ui-surface">
-                  {ACTIVE_JOB_STATUSES.has(job.status) && (
-                    <Alert
-                      variant="warning"
-                      title="Не закривайте цю сторінку під час імпорту"
-                      description="Імпорт виконується послідовними кроками з браузера. Якщо закрити або оновити сторінку, процес призупиниться; його можна буде продовжити без дублів."
-                      className="mb-3"
-                    />
-                  )}
-                  {/* Стан імпорту — один рядок, а не чотири.
-                      Тут стояли назва стану, лічильник задач, три підсумкові
-                      числа й відсоток — п'ять написів про те саме, набраних
-                      11–12-м кеглем, з яких три завжди були нулями. Стан бере
-                      бейдж, обсяг — читабельне число, а підсумок називає лише
-                      те, що справді сталося. */}
-                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Pill tone={JOB_TONES[job.status] || 'neutral'} size="md">{statusLabel(job.status)}</Pill>
-                      <span className="text-[13px] font-semibold text-ink">
-                        {job.processedIssues + job.failedIssues} / {job.totalIssues} {plural(job.totalIssues, ['задача', 'задачі', 'задач'])}
-                      </span>
-                    </div>
-                    <span className="text-[13px] font-bold tabular-nums text-ink">{progress}%</span>
-                  </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-canvas">
-                    <div className="h-full rounded-full bg-ink transition-[width]" style={{ width: `${progress}%` }} />
-                  </div>
-                  {jobSummary.length > 0 && (
-                    <p className="mt-2 text-[12px] text-muted">{jobSummary.join(' · ')}</p>
-                  )}
-                  {/* Це поле може містити що завгодно: воно зберігає те, що
-                      сказав шар, який зламався, і в базі вже лежать рядки,
-                      записані до того, як їх навчилися перекладати. Саме звідси
-                      під смугою прогресу зʼявилось Node-івське «Unsupported
-                      state or unable to authenticate data». */}
-                  {job.lastError && (
-                    <Alert variant="danger" className="mt-3">
-                      {errorTextUk(job.lastError, 'Крок імпорту не вдався. Спробуйте продовжити — уже перенесене не дублюється.')}
-                    </Alert>
-                  )}
-                  {job.warnings?.length > 0 && (
-                    <p className="mt-2 text-[12px] text-warning">
-                      {job.warnings.length} {plural(job.warnings.length, ['попередження', 'попередження', 'попереджень'])}. Дані без помилок продовжують імпортуватися.
-                    </p>
-                  )}
-                  {!jobIsMine && (
-                    <p className="mt-2 text-[12px] leading-relaxed text-muted">
-                      Цей імпорт запустив(ла) {jobOwnerName}
-                      {isOrganizationOwner
-                        ? '. Продовжити його може лише той, хто розпочав; ви як власник можете його зупинити.'
-                        : '. Продовжити або зупинити його може той, хто розпочав, або власник організації.'}
-                    </p>
-                  )}
-                  {ACTIVE_JOB_STATUSES.has(job.status) && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {jobIsMine && (
-                        <Button size="md" icon={Upload} onClick={run} loading={action === 'run'}>
-                          {job.status === 'running' ? 'Продовжити імпорт' : 'Почати імпорт'}
-                        </Button>
-                      )}
-                      {(jobIsMine || isOrganizationOwner) && (
-                        <Button style="ghost" color="red" size="md" onClick={cancel} loading={action === 'cancel'}>
-                          Зупинити
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                <Select
+                  value={userMappings[id] || 'external'}
+                  onChange={value => setUserMappings(current => ({ ...current, [id]: value }))}
+                  options={memberOptions}
+                  ariaLabel={`Кому відповідає ${user.name}`}
+                />
+              </div>
+            );
+          })}
+          {(discovery?.users?.length || 0) > visibleUsers.length && (
+            <p className="py-3 text-[11px] text-muted">
+              Показано перші {visibleUsers.length} активних користувачів; інші імпортуються як зовнішні.
+            </p>
           )}
-      </>
-      ) : null}
-    </IntegrationCard>
+        </div>
+      </Dialog>
+    </div>
   );
 }

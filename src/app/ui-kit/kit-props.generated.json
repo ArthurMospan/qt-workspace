@@ -5,9 +5,9 @@
     "documentation": "A description comes from JSDoc (@param props.name / @prop) or the trailing // comment beside the prop."
   },
   "totals": {
-    "components": 120,
-    "props": 889,
-    "documentedProps": 889,
+    "components": 121,
+    "props": 892,
+    "documentedProps": 892,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5400,6 +5400,33 @@
           "type": "string",
           "values": [],
           "description": "Optional colour role for the `label` shape."
+        }
+      ]
+    },
+    "SettingRow": {
+      "file": "src/components/ui/Layout/SettingRow.jsx",
+      "summary": "Рядок одного налаштування.",
+      "props": [
+        {
+          "name": "danger",
+          "default": "false",
+          "type": "boolean",
+          "values": [],
+          "description": "Незворотна дія: назва й пояснення беруть `danger`."
+        },
+        {
+          "name": "desc",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Пояснення під назвою; одне речення."
+        },
+        {
+          "name": "label",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Назва налаштування."
         }
       ]
     },

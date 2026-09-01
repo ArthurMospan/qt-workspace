@@ -1,15 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import {
-  AlertTriangle,
-  ChevronRight,
-  Clock3,
-  ScanSearch,
-  ShieldCheck,
-  UsersRound,
-} from 'lucide-react';
-import { Card, Pill, PlanGate, PlanMark } from '@/components/ui';
+import { ChevronRight, Clock3 } from 'lucide-react';
+import { Alert, Card, Pill, PlanGate, PlanMark } from '@/components/ui';
 import { capabilityAvailability } from '@/lib/utils/plans.mjs';
 import YouTrackImportCard from '@/components/integrations/YouTrackImportCard';
 
@@ -64,24 +57,6 @@ export const MIGRATION_SOURCE_TITLES = Object.freeze({
   youtrack: 'YouTrack',
   ...Object.fromEntries(UPCOMING_PROVIDERS.map(provider => [provider.id, provider.name])),
 });
-
-const SAFEGUARDS = [
-  {
-    icon: ScanSearch,
-    title: 'Спочатку аналіз',
-    description: 'Показуємо склад і обсяг даних до першого запису в QuickTeam.',
-  },
-  {
-    icon: UsersRound,
-    title: 'Зіставлення людей',
-    description: 'Кожного автора й виконавця можна прив’язати до учасника або лишити зовнішнім.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Без дублів',
-    description: 'Повторний запуск продовжує імпорт за зовнішніми ID, а не створює копії.',
-  },
-];
 
 function UpcomingProviderCard({ provider }) {
   return (
@@ -148,6 +123,9 @@ export default function DataMigrationSettings({
   // The capability this screen needs, when the plan does not include it.
   // Empty when it does — the list draws each source's own status instead.
   lockedCapabilityId = '',
+  // Стан джерела читає шапка секції над цим компонентом — так само, як у
+  // «Інтеграціях». Тут він лише проходить наскрізь.
+  onSourceStatus,
 }) {
   const selectedProvider = UPCOMING_PROVIDERS.find(provider => provider.id === selectedProviderId);
 
@@ -185,21 +163,30 @@ export default function DataMigrationSettings({
                 <span className="block text-[13px] font-bold text-ink">{provider.name}</span>
                 <span className="mt-[2px] block truncate text-[11px] text-muted">{provider.description}</span>
               </span>
-              {/* Which source is ready is worth seeing whatever the plan is —
-                  it is how somebody decides whether the import is worth paying
-                  for. The crown replaces the status only where the plan is the
-                  thing in the way. */}
-              {lockedCapabilityId ? (
+              {/* Корона означає рівно одне: «між вами і цим стоїть тариф».
+                  Вона стояла на всіх сімох рядках, бо `lockedCapabilityId`
+                  питався першим — і шість джерел, яких не існує, обіцяли себе
+                  кожному, хто дивиться на прайс. Клієнт купував тариф заради
+                  Jira, ClickUp, Asana, Trello, Linear і monday.com, а
+                  отримував YouTrack.
+
+                  Для джерела «У планах» тариф не є перешкодою: перешкода в
+                  тому, що його ще не написано, і покупка цього не змінює. Тож
+                  готовність питається першою, а корона лишається там, де вона
+                  правдива — на єдиному джерелі, яке тариф справді відмикає.
+                  Саме це стверджував коментар, що тут стояв; код стверджував
+                  протилежне і ховав готовність саме тоді, коли за неї платять. */}
+              {!provider.ready ? (
+                <Pill tone="neutral" appearance="soft-outline" size="md">{provider.status}</Pill>
+              ) : lockedCapabilityId ? (
                 <PlanMark
                   capabilityId={lockedCapabilityId}
                   label={capabilityAvailability(lockedCapabilityId)}
                 />
-              ) : provider.ready ? (
+              ) : (
                 // Та сама гама, що й у списку інтеграцій поруч: «Готово» —
                 // стан, а не успіх, тож воно біле на ink, а не зелене.
                 <Pill tone="dark" size="md">{provider.status}</Pill>
-              ) : (
-                <Pill tone="neutral" appearance="soft-outline" size="md">{provider.status}</Pill>
               )}
               <ChevronRight size={16} className="shrink-0 text-faint" />
             </div>
@@ -209,64 +196,28 @@ export default function DataMigrationSettings({
     );
   }
 
+  // Той самий аргумент, що й у списку вище, лише на екран глибше: за стіною
+  // тарифу стояла картка джерела, якого не існує. Пропозиція заплатити за
+  // «Заплановане покриття» — обіцянка, якої продукт не виконає, тож її тут
+  // немає: сторінка каже «У планах» і не бере грошей за план.
   if (selectedProvider) {
-    return (
-      <PlanGate capabilityId="data-import">
-        <UpcomingProviderCard provider={selectedProvider} />
-      </PlanGate>
-    );
+    return <UpcomingProviderCard provider={selectedProvider} />;
   }
 
   return (
     <PlanGate capabilityId="data-import">
-    <div className="space-y-8">
-      <Card preset="borderless" padding="lg" className="overflow-hidden">
-        <div className="flex items-start gap-4">
-          {/* Цей блок малюється лише для YouTrack, тож і знак на ньому —
-              YouTrack, а не родова іконка бази даних. Той самий квадрат із
-              логотипом, що й на картці джерела нижче. */}
-          <div data-ui-surface="local" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border border-line bg-white">
-            <Image
-              src="/integrations/youtrack.svg"
-              alt="YouTrack"
-              width={30}
-              height={30}
-              className="h-[30px] w-[30px] object-contain"
-            />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[15px] font-bold text-ink">Перехід у QuickTeam без ручного відтворення роботи</p>
-            <p className="mt-1 max-w-[760px] text-[12px] leading-relaxed text-muted">
-              Це одноразове перенесення даних, а не постійна інтеграція. Після перевірки можна
-              імпортувати вибрані проєкти, зіставити людей і продовжити перерваний процес.
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-col gap-[16px]">
+        {/* Стіна тексту над екраном пішла.
+            Тут стояла картка з заголовком «Перехід у QuickTeam без ручного
+            відтворення роботи», абзацом під ним і трьома «запобіжниками» —
+            «Спочатку аналіз», «Зіставлення людей», «Без дублів». Усі три
+            описували те, що екран нижче робить сам і показує кнопками:
+            «Знайти проєкти», «Зіставити», «Перевірити імпорт». Пояснювати
+            наперед те, що людина зараз побачить, — це не допомога, а ще один
+            екран перед екраном.
 
-        <div className="mt-5 grid gap-3 border-t border-line pt-5 md:grid-cols-3">
-          {SAFEGUARDS.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="flex gap-2.5">
-              {/* Сірим, не зеленим: це перелік того, як влаштований імпорт,
-                  а не три успіхи. Зелене в продукті означає «вийшло». */}
-              <Icon size={16} className="mt-0.5 shrink-0 text-muted" />
-              <div>
-                <p className="text-[11px] font-bold text-ink">{title}</p>
-                <p className="mt-0.5 text-[10px] leading-relaxed text-muted">{description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* QUI-106. There was a green «1 джерело готове» pill here. The one
-          source is on the screen directly below it, with its own «Готово до
-          імпорту» badge — the pill counted what the reader could already see,
-          in the loudest colour on the page.
-          QUI-30. Далі пішов і заголовок «Доступно зараз» із підписом: на екрані
-          рівно одне джерело, і воно назване, підписане й позначене власним
-          бейджем. Заголовок над однією карткою — це рядок, який нічого не
-          повідомляє, але коштує читачеві уваги. */}
-      <section>
+            Те, чого екран НЕ робить, лишилось: чого перенести не можна — це
+            єдине, чого з самого інтерфейсу не видно. */}
         <YouTrackImportCard
           key={organizationId}
           organizationId={organizationId}
@@ -275,19 +226,14 @@ export default function DataMigrationSettings({
           members={members}
           projects={projects}
           showToast={showToast}
-          presentation="migration"
+          onStatus={onSourceStatus}
         />
-      </section>
 
-      <div className="flex items-start gap-2.5 rounded-[12px] border border-warning/25 bg-warning-soft px-4 py-3">
-        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" />
-        <p className="text-[11px] leading-relaxed text-warning">
-          Автоматизації, права доступу, ролі адміністраторів, API-ключі, білінг і налаштування
-          сторонніх інтеграцій не можна безпечно перенести один в один. Перед запуском кожного
-          імпорту QuickTeam окремо покаже, що буде перенесено, зіставлено або пропущено.
-        </p>
+        <Alert
+          variant="warning"
+          description="Автоматизації, права доступу, ролі адміністраторів, API-ключі, білінг і налаштування сторонніх інтеграцій не можна безпечно перенести один в один. Перед запуском кожного імпорту QuickTeam покаже, що буде перенесено, зіставлено або пропущено."
+        />
       </div>
-    </div>
     </PlanGate>
   );
 }

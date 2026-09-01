@@ -184,7 +184,7 @@ export default function LoginPage() {
   // the familiar one-frame (or slow-network several-second) login flash.
   if (authLoading || currentUser) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#1c1c1c]">
+      <div className="w-full h-full flex items-center justify-center bg-shell-dark">
         <div className="w-[32px] h-[32px] border-[3px] border-[#3a3a3a] border-t-white rounded-full animate-spin" />
       </div>
     );

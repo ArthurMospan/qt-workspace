@@ -10,14 +10,14 @@
     "runtimeNameVerification": "Dynamic accessible names are listed for browser verification; their mere presence in JSX is not proof of a non-empty runtime name."
   },
   "totals": {
-    "files": 386,
-    "elements": 4577,
+    "files": 387,
+    "elements": 4529,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
     "fakeButtons": 0,
     "contrastFailures": 0,
-    "runtimeNameVerification": 47
+    "runtimeNameVerification": 46
   },
   "namelessControls": [],
   "imagesWithoutAlt": [],
@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:4430",
+      "location": "src/app/(app)/settings/page.js:4172",
       "attributes": [
         "title",
         "aria-label"
@@ -35,7 +35,7 @@
     },
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:842",
+      "location": "src/app/(app)/settings/page.js:820",
       "attributes": [
         "aria-label",
         "title"
@@ -54,13 +54,6 @@
       "location": "src/app/(app)/team/page.js:124",
       "attributes": [
         "title"
-      ]
-    },
-    {
-      "element": "Button",
-      "location": "src/components/integrations/IntegrationCard.jsx:119",
-      "attributes": [
-        "aria-label"
       ]
     },
     {
@@ -359,7 +352,7 @@
     },
     {
       "element": "Button",
-      "location": "src/components/WorkspaceSidebar.jsx:399",
+      "location": "src/components/WorkspaceSidebar.jsx:414",
       "attributes": [
         "aria-label"
       ]

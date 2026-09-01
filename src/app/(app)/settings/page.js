@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 // src/app/workspace/settings/page.js — Redesigned Settings (clean, no emoji, QT-style)
-import { Children, createContext, isValidElement, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppContext }  from '@/lib/context/AppContext';
@@ -57,7 +57,7 @@ import {
   UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Alert, Button, Card, Checkbox, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SidebarLayout, Surface, Tabs, TextAction, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
+import { Alert, Button, Card, Checkbox, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SettingRow, SidebarLayout, Surface, Tabs, TextAction, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -73,7 +73,8 @@ import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 const Colorful = dynamic(() => import('@uiw/react-color').then(module => module.Colorful), { ssr: false });
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import TeamMemberSettingsDialog from '@/components/TeamMemberSettingsDialog';
-import IntegrationCard, { IntegrationCode, IntegrationNote, IntegrationSteps } from '@/components/integrations/IntegrationCard';
+import { IntegrationCode, IntegrationConnect, IntegrationControls, IntegrationLogo } from '@/components/integrations/IntegrationScreen';
+import { integrationStatus } from '@/lib/content/integrations.mjs';
 import DataMigrationSettings, { MIGRATION_SOURCE_TITLES } from '@/components/migrations/DataMigrationSettings';
 import {
   DEFAULT_STATUSES,
@@ -245,20 +246,6 @@ function remainingTrashTime(purgeAfterMs) {
 // left margin under its own caption. So the row asks what it is holding — the
 // same static-marker trick PageHeader uses to find a FilterBar — and keeps a
 // switch on the right where it reads as an on/off for the line beside it.
-// Whether a row is governed by a switch. A switch is the smallest control in
-// the product, so its row stays one line on a phone while a row holding a
-// select or a text field stacks.
-//
-// Through a plain wrapper, not direct children only. «Брендинг у сайдбарі»
-// keeps its logo preview beside the toggle, so the pair lives in a `div` — and
-// a `div` is not a switch, which read as "this row holds something big" and
-// dropped the toggle onto a line of its own on every phone.
-const isSwitchNode = node => {
-  if (!isValidElement(node)) return false;
-  if (node.type?.isSwitch) return true;
-  if (node.type !== 'div' && node.type !== 'span') return false;
-  return Children.toArray(node.props?.children).some(isSwitchNode);
-};
 
 // The label above a group of settings inside a card.
 //
@@ -300,21 +287,6 @@ function CardHeading({ icon: Icon, title, caption, action = null }) {
   );
 }
 
-function Row({ label, desc, children, danger = false }) {
-  const items = Children.toArray(children);
-  const switchOnly = items.length > 0 && items.every(isSwitchNode);
-  return (
-    <div className={`flex justify-between gap-3 py-[12px] sm:flex-row sm:items-center sm:gap-6 ${
-      switchOnly ? 'flex-row items-center' : 'flex-col items-stretch'
-    }`}>
-      <div className="min-w-0 flex-1">
-        <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-danger' : 'text-ink'}`}>{label}</p>
-        {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-danger' : 'text-muted'}`}>{desc}</p>}
-      </div>
-      <div className={switchOnly ? 'shrink-0' : 'w-full sm:w-auto sm:shrink-0'}>{children}</div>
-    </div>
-  );
-}
 
 // The one way back, published to every Section on the screen rather than
 // threaded through fifteen call sites. It always means "one level up": out of
@@ -326,7 +298,12 @@ function Row({ label, desc, children, danger = false }) {
 // Without one the arrow is the way out of the pane, which only a phone has.
 const SectionBackContext = createContext(null);
 
-function Section({ title, desc, backLabel, rightAction, children }) {
+// `icon` — плитка сервісу ліворуч від заголовка, і вона є лише там, де
+// заголовок називає сервіс: екран інтеграції та екран джерела перенесення. На
+// решті секцій її немає, бо «Загальні» нічим не позначені. Логотип тут не
+// прикраса: у списку кожен рядок починався з нього, і без нього перехід у
+// глибину виглядав так, ніби ви потрапили не на той екран.
+function Section({ title, desc, icon, backLabel, rightAction, children }) {
   const mobileBack = useContext(SectionBackContext);
   return (
     <div className="flex flex-col">
@@ -346,6 +323,7 @@ function Section({ title, desc, backLabel, rightAction, children }) {
               className="mt-[2px]"
             />
           )}
+          {icon}
           <div className="min-w-0 flex-1">
             <h2 className="ui-type-detail-title text-ink tracking-tight">{title}</h2>
             {desc && <p className="text-[13px] text-muted mt-[4px] leading-relaxed">{desc}</p>}
@@ -503,7 +481,7 @@ function SidebarThemePicker({ theme, color, onThemeChange, onColorChange, onCanc
                     composition="color-hex"
                     size="md"
                     placeholder="#1a365d"
-                    ariaLabel={`${ariaPrefix}: HEX`}
+                    aria-label={`${ariaPrefix}: HEX`}
                   />
                 </div>
                 {/* «Скасувати» повертає збережений колір; хрестика зверху
@@ -983,7 +961,6 @@ export default function SettingsPage() {
     synchronize: synchronizeQTicket,
     deactivate: deactivateQTicket,
     open: openQTicket,
-    ping: pingQTicket,
   } = useQTicketIntegration();
   // The desk is edited as a draft and sent in one press. It used to be a
   // multiselect that wrote on every chip, and unticking somebody is not a
@@ -993,8 +970,22 @@ export default function SettingsPage() {
   const [qTicketRoles, setQTicketRoles] = useState({});
   const [qTicketPortal, setQTicketPortal] = useState(null);
   const [qTicketStaffSearch, setQTicketStaffSearch] = useState('');
-  const [qTicketProbe, setQTicketProbe] = useState(null);
-  const [qTicketProbing, setQTicketProbing] = useState(false);
+  // «Перевірити зв'язок» більше немає, і разом із нею пішов її стан.
+  //
+  // Кнопка відповідала номером ревізії — «qTicket відповів, але тримає ревізію
+  // 12, а тут 13» — тобто службовим числом на питання «а воно працює?». Те, що
+  // вона доводила насправді (сервіс відповідає, спільний секрет збігається),
+  // тепер каже пігулка стану в шапці, і каже без натискання: `useQTicketIntegration`
+  // читає стан при відкритті екрана, а помилка стає рядком «Помилка» й
+  // окремим `Alert` із причиною. Питання, яке ставили кнопкою, має бути вже
+  // відповідене до того, як його поставили.
+  //
+  // Три екрани, на які не влазить рядок: склад підтримки, бренд порталу й
+  // журнал змін. Кожен — діалог зі своїм «Зберегти», бо надсилаються вони
+  // цілим знімком, і зберегти половину складу неможливо.
+  const [qTicketTeamOpen, setQTicketTeamOpen] = useState(false);
+  const [qTicketBrandOpen, setQTicketBrandOpen] = useState(false);
+  const [qTicketLogOpen, setQTicketLogOpen] = useState(false);
   const qTicketOwnerId = members.find(member => member.role === 'owner')?.id || '';
 
   useEffect(() => {
@@ -1122,17 +1113,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleQTicketProbe = async () => {
-    setQTicketProbing(true);
-    try {
-      setQTicketProbe(await pingQTicket());
-    } catch (error) {
-      setQTicketProbe({ reachable: false, error: error.message || 'qTicket не відповів' });
-    } finally {
-      setQTicketProbing(false);
-    }
-  };
-
   const handleQTicketOpen = async () => {
     try {
       await openQTicket('/overview');
@@ -1161,6 +1141,9 @@ export default function SettingsPage() {
   // Which migration source is open, held here for the same reason
   // `integrationDetail` is: the section header above it needs to know.
   const [migrationProvider, setMigrationProvider] = useState('');
+  // Стан підключеного джерела, щоб шапка секції могла показати ту саму
+  // пігулку, що й будь-яка інтеграція. Односторонньо, знизу вгору.
+  const [migrationStatus, setMigrationStatus] = useState('idle');
   // Whether this person may delete themselves, and what it would touch. Loaded
   // when the danger section opens rather than on every settings visit — it is
   // three collection queries for a screen most people never reach.
@@ -1483,6 +1466,33 @@ export default function SettingsPage() {
     }
     return status;
   }, [activeOrgId, isAdmin, telegramRequest]);
+
+  // «Перевірити підключення», яке справді відповідає.
+  //
+  // Кнопка викликала `refreshTelegramGroup()` і більше нічого: успіх мовчав, бо
+  // перечитаний стан збігався з тим, що вже на екрані, і жоден піксель не
+  // рухався. Кнопка, яка на натискання не відповідає нічим, зламана — незалежно
+  // від того, що вона робить усередині.
+  //
+  // Відповідь тепер є в обох випадках, і вона називає те, що перевіряли: групу
+  // на тому боці. Тост, а не рядок у картці, бо це подія, яка сталась і минула,
+  // а не стан, що лишається чинним.
+  const [telegramGroupChecking, setTelegramGroupChecking] = useState(false);
+  const checkTelegramGroup = useCallback(async () => {
+    setTelegramGroupChecking(true);
+    try {
+      const status = await refreshTelegramGroup();
+      if (status?.connected) {
+        showToast(`Група «${status.chatTitle || 'Telegram-група'}» на місці, бот відповідає`);
+      } else {
+        showToast('Бот більше не бачить групу. Додайте його знову й надішліть команду підтвердження.', 'error');
+      }
+    } catch (error) {
+      showToast(error.message || 'Не вдалося зв’язатися з Telegram', 'error');
+    } finally {
+      setTelegramGroupChecking(false);
+    }
+  }, [refreshTelegramGroup, showToast]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => refreshTelegram().catch(() => {}), 0);
@@ -3113,7 +3123,7 @@ export default function SettingsPage() {
       case 'profile': return (
         <Section title="Особистий профіль" desc="Ваша інформація відображається у профілі команди, завданнях та чаті" rightAction={saveButton}>
           <Card preset="borderless" padding="lg">
-            <Row label="Аватар" desc="Квадратне зображення виглядає найкраще — інші обрізаються по центру">
+            <SettingRow label="Аватар" desc="Квадратне зображення виглядає найкраще — інші обрізаються по центру">
               <ImageUpload
                 value={customAvatar || currentUser?.avatar || ''}
                 storagePath={customAvatarStoragePath}
@@ -3125,23 +3135,23 @@ export default function SettingsPage() {
                 showLabel={false}
                 showHint={false}
               />
-            </Row>
-            <Row label="Ім'я" desc="Показується в завданнях і чаті">
+            </SettingRow>
+            <SettingRow label="Ім'я" desc="Показується в завданнях і чаті">
               <InlineEditField value={displayName} onChange={setDisplayName} saved={currentUser?.name || ''} onSave={() => saveProfileField('name', displayName)} className="w-[260px]" />
-            </Row>
-            <Row label="Email" desc="Використовується для входу та запрошень">
+            </SettingRow>
+            <SettingRow label="Email" desc="Використовується для входу та запрошень">
               <span className="text-[13px] text-muted">{currentUser?.email}</span>
-            </Row>
-            <Row label="Telegram" desc="Ваш нікнейм без @ (наприклад: username)">
+            </SettingRow>
+            <SettingRow label="Telegram" desc="Ваш нікнейм без @ (наприклад: username)">
               <InlineEditField value={telegram} onChange={setTelegram} saved={currentUser?.telegram || ''} onSave={() => saveProfileField('telegram', telegram)} placeholder="username" className="w-[260px]" />
-            </Row>
-            <Row label="Телефон">
+            </SettingRow>
+            <SettingRow label="Телефон">
               <InlineEditField value={phone} onChange={setPhone} saved={currentUser?.phone || ''} onSave={() => saveProfileField('phone', phone)} placeholder="+380..." className="w-[260px]" />
-            </Row>
-            <Row label="Локація">
+            </SettingRow>
+            <SettingRow label="Локація">
               <InlineEditField value={location} onChange={setLocation} saved={currentUser?.location || ''} onSave={() => saveProfileField('location', location)} placeholder="Київ, Україна" className="w-[260px]" />
-            </Row>
-            <Row label="День народження" desc="Показується команді в профілі та календарі">
+            </SettingRow>
+            <SettingRow label="День народження" desc="Показується команді в профілі та календарі">
               <InlineDateField
                 value={birthday}
                 onChange={setBirthday}
@@ -3149,7 +3159,7 @@ export default function SettingsPage() {
                 onSave={() => saveProfileField('birthday', birthday)}
                 placeholder="Оберіть день народження"
               />
-            </Row>
+            </SettingRow>
             <div className="flex flex-col gap-2 py-[12px] border-t border-canvas mt-2">
               <Label context="inline">Про себе</Label>
               <p className="text-[12px] text-muted -mt-1 leading-relaxed">Коротка інформація про вашу роль, досвід чи інтереси</p>
@@ -3186,7 +3196,7 @@ export default function SettingsPage() {
           { key: 'chatMessage',   label: 'Повідомлення в чаті',      desc: 'Нові повідомлення в каналах і особистих чатах' },
         ].filter(row => NOTIFICATION_EVENTS.some(event => event.key === row.key));
 
-        // Every line is the shared <Row>, so all three cards land on the same
+        // Every line is the shared <SettingRow>, so all three cards land on the same
         // label column and the same right-hand control column.
         const channelCard = ({ id, icon: ChannelIcon, title, caption, master, available, offNote, showDesc = false, footer = null }) => (
           <Card preset="borderless" padding="lg">
@@ -3196,14 +3206,14 @@ export default function SettingsPage() {
             <CardHeading icon={ChannelIcon} title={title} caption={caption} action={master} />
 
             {available ? eventRows.map(row => (
-              <Row key={row.key} label={row.label} desc={showDesc ? row.desc : undefined}>
+              <SettingRow key={row.key} label={row.label} desc={showDesc ? row.desc : undefined}>
                 <ToggleSwitch
                   checked={notifMatrix[id][row.key] === true}
                   onChange={value => setChannelEvent(id, row.key, value)}
                   size="sm"
                   ariaLabel={`${row.label} — ${title}`}
                 />
-              </Row>
+              </SettingRow>
             )) : (
               <p className="py-[14px] text-[12px] leading-relaxed text-faint">{offNote}</p>
             )}
@@ -3223,12 +3233,12 @@ export default function SettingsPage() {
               showDesc: true,
               footer: (
                 <div className="mt-1 border-t border-line pt-1">
-                  <Row label="Звук" desc="Короткий сигнал при новому сповіщенні">
+                  <SettingRow label="Звук" desc="Короткий сигнал при новому сповіщенні">
                     <ToggleSwitch checked={notif.sound} onChange={v => setNotif(p => ({ ...p, sound: v }))} size="sm" />
-                  </Row>
-                  <Row label="Спливаючі сповіщення" desc="Картка внизу екрана, коли подія стається в реальному часі">
+                  </SettingRow>
+                  <SettingRow label="Спливаючі сповіщення" desc="Картка внизу екрана, коли подія стається в реальному часі">
                     <ToggleSwitch checked={notif.popup} onChange={v => setNotif(p => ({ ...p, popup: v }))} size="sm" />
-                  </Row>
+                  </SettingRow>
                 </div>
               ),
             })}
@@ -3360,7 +3370,7 @@ export default function SettingsPage() {
         return (
         <Section title="Локалізація та регіон" desc="Налаштуйте відображення дати, часу та формату календаря відповідно до вашого регіону" rightAction={saveButton}>
           <Card preset="borderless" padding="lg">
-            <Row label="Мова інтерфейсу" desc="Наразі інтерфейс доступний лише українською">
+            <SettingRow label="Мова інтерфейсу" desc="Наразі інтерфейс доступний лише українською">
               <Select
                 value={language}
                 onChange={setLanguage}
@@ -3370,8 +3380,8 @@ export default function SettingsPage() {
                 ]}
                 className="w-full sm:w-[240px]"
               />
-            </Row>
-            <Row label="Формат дати" desc="Оберіть зручний формат представлення дати">
+            </SettingRow>
+            <SettingRow label="Формат дати" desc="Оберіть зручний формат представлення дати">
               <Select
                 value={dateFormat}
                 onChange={setDateFormat}
@@ -3382,8 +3392,8 @@ export default function SettingsPage() {
                 ]}
                 className="w-full sm:w-[240px]"
               />
-            </Row>
-            <Row label="Перший день тижня" desc="Перший день тижня в сітці календаря (DatePicker)">
+            </SettingRow>
+            <SettingRow label="Перший день тижня" desc="Перший день тижня в сітці календаря (DatePicker)">
               <Select
                 value={firstDayOfWeek}
                 onChange={setFirstDayOfWeek}
@@ -3393,8 +3403,8 @@ export default function SettingsPage() {
                 ]}
                 className="w-full sm:w-[240px]"
               />
-            </Row>
-            <Row label="Формат часу" desc="Виберіть між 24-годинним або 12-годинним форматом відображення">
+            </SettingRow>
+            <SettingRow label="Формат часу" desc="Виберіть між 24-годинним або 12-годинним форматом відображення">
               <Select
                 value={timeFormat}
                 onChange={setTimeFormat}
@@ -3404,15 +3414,15 @@ export default function SettingsPage() {
                 ]}
                 className="w-full sm:w-[240px]"
               />
-            </Row>
-            <Row label="Часовий пояс" desc="Поточний регіональний час для планування">
+            </SettingRow>
+            <SettingRow label="Часовий пояс" desc="Поточний регіональний час для планування">
               <Select
                 value={timezone}
                 onChange={setTimezone}
                 options={tzOptions}
                 className="w-full sm:w-[240px]"
               />
-            </Row>
+            </SettingRow>
           </Card>
         </Section>
       );
@@ -3442,10 +3452,10 @@ export default function SettingsPage() {
           {/* Zone 1: Organization */}
           <Card preset="borderless" padding="lg">
             <GroupLabel label="Організація" />
-            <Row label="Назва організації" desc="Видима всім у вашій організації">
+            <SettingRow label="Назва організації" desc="Видима всім у вашій організації">
               <InlineEditField value={orgName} onChange={setOrgName} saved={org?.name || ''} onSave={saveOrgName} className="w-[260px]" />
-            </Row>
-            <Row label="Логотип організації" desc="Квадратне зображення виглядає найкраще — інші обрізаються по центру">
+            </SettingRow>
+            <SettingRow label="Логотип організації" desc="Квадратне зображення виглядає найкраще — інші обрізаються по центру">
               <ImageUpload
                 value={orgLogo}
                 storagePath={orgLogoStoragePath}
@@ -3466,7 +3476,7 @@ export default function SettingsPage() {
                 showLabel={false}
                 showHint={false}
               />
-            </Row>
+            </SettingRow>
             {/* The organisation ID used to sit here, under "Загальні". Nothing
                 on this screen asks for it: it is an argument to an API call,
                 and the place to print it is the instructions that tell you to
@@ -3489,7 +3499,7 @@ export default function SettingsPage() {
             {brandingAllowed && !orgLogo && (
               <p className="text-[12px] text-muted mb-3">Завантажте логотип організації, щоб розблокувати налаштування брендингу</p>
             )}
-            <Row label="Брендинг у сайдбарі" desc="Замінити логотип QuickTeam на логотип вашої організації для всіх учасників">
+            <SettingRow label="Брендинг у сайдбарі" desc="Замінити логотип QuickTeam на логотип вашої організації для всіх учасників">
               <div className="flex items-center gap-[12px]">
                 {/* Show org logo preview when branding is on */}
                 {orgCustomBranding && orgLogo && (
@@ -3509,7 +3519,7 @@ export default function SettingsPage() {
                   disabled={!orgLogo || !brandingAllowed}
                 />
               </div>
-            </Row>
+            </SettingRow>
 
             {/* Theme picker — visible only when branding is ON */}
             {orgCustomBranding && orgLogo && (
@@ -3540,13 +3550,24 @@ export default function SettingsPage() {
         // The same header shape as «Інтеграції» below: the way back lives beside
         // the title, not inside the body, and the title names where you are.
         const migrationSource = MIGRATION_SOURCE_TITLES[migrationProvider] || '';
+        // Джерело перенесення — це екран інтеграції, і шапка в нього та сама:
+        // логотип, назва, стан. Вимикача немає, і це не забудькуватість —
+        // джерело не вмикають, до нього під'єднуються, а «Відключити» стоїть
+        // рядком унизу, поруч із тим, що воно робить. Стан приходить знизу,
+        // з `YouTrackImportCard`, бо токен знає він, а не ця сторінка.
         return (
           <Section
             title={migrationProvider ? migrationSource : 'Перенесення даних'}
             desc={migrationProvider
               ? 'Що переноситься, як зіставляються люди й що буде пропущено'
               : 'Перенесіть робочі проєкти та історію команди у QuickTeam'}
+            icon={migrationProvider === 'youtrack'
+              ? <IntegrationLogo src="/integrations/youtrack.svg" alt="YouTrack" />
+              : null}
             backLabel={migrationProvider ? 'Усі джерела' : ''}
+            rightAction={migrationProvider === 'youtrack'
+              ? <IntegrationControls title="YouTrack" status={migrationStatus} />
+              : null}
           >
             {/* No wall over the list. Which sources exist, and which of them
                 are ready, is worth seeing before deciding whether to pay for
@@ -3563,6 +3584,7 @@ export default function SettingsPage() {
               showToast={showToast}
               selectedProviderId={migrationProvider}
               onSelectProvider={setMigrationProvider}
+              onSourceStatus={setMigrationStatus}
             />
           </Section>
         );
@@ -3602,17 +3624,25 @@ export default function SettingsPage() {
         // different product on a different line of the price list — and giving
         // a single integration away is a thing a price list should be able to
         // do by changing one line here.
+        // Стан кожної інтеграції — ключ, а не напис. Слово й тон беруться з
+        // `INTEGRATION_STATUS`, тож п'ять станів звучать однаково на всіх
+        // екранах, і написати шостий нема де. Доти цей список писав їх руками
+        // й розходився сам із собою: qTicket казав «Активовано» там, де сусіди
+        // казали «Підключено».
         const integrationRows = [
           {
             id: 'qticket',
             title: 'qTicket',
-            description: 'Окремий портал інцидентів для ваших клієнтів.',
-            logo: '/logo-min.svg',
+            description: 'Окремий портал звернень для ваших клієнтів.',
+            // Знак qTicket, а не QuickTeam. Тут стояв `/logo-min.svg` — власний
+            // логотип цього продукту — навпроти рядка, який називається чужим
+            // продуктом, тож у списку з п'яти інтеграцій дві мали один малюнок.
+            logo: '/integrations/qticket.svg',
             capability: 'qticket',
-            status: qTicketStatus.active
-              ? (qTicketEnabledForMe ? 'Активовано' : 'Без доступу')
-              : qTicketStatus.configured ? 'Не активовано' : 'Недоступно',
-            active: qTicketStatus.active,
+            status: !qTicketStatus.configured
+              ? 'unavailable'
+              : qTicketStatus.lastError ? 'error'
+                : qTicketStatus.active ? 'connected' : 'idle',
           },
           {
             id: 'quickteam-plus',
@@ -3620,8 +3650,7 @@ export default function SettingsPage() {
             description: 'Клієнтські запити та оновлення з порталу.',
             logo: '/quickteam.png',
             capability: 'integrations',
-            status: qtEnabled ? 'Підключено' : 'Вимкнено',
-            active: qtEnabled,
+            status: qtEnabled ? 'connected' : 'idle',
           },
           {
             id: 'telegram',
@@ -3630,9 +3659,9 @@ export default function SettingsPage() {
             logo: '/integrations/telegram.svg',
             capability: 'integrations',
             status: telegramGroupStatus.connected
-              ? 'Підключено'
-              : telegramGroupStatus.configured ? 'Не підключено' : 'Недоступно',
-            active: telegramGroupStatus.connected,
+              ? 'connected'
+              : !telegramGroupStatus.configured ? 'unavailable'
+                : telegramGroupSetupOpen ? 'connecting' : 'idle',
           },
           {
             id: 'buggybag',
@@ -3640,8 +3669,7 @@ export default function SettingsPage() {
             description: 'Баг-репорти клієнтів як задачі QuickTeam.',
             logo: '/bug-logo.png',
             capability: 'integrations',
-            status: buggyBagEnabled ? 'Підключено' : 'Вимкнено',
-            active: buggyBagEnabled,
+            status: buggyBagEnabled ? 'connected' : 'idle',
           },
         ];
 
@@ -3651,6 +3679,7 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-[8px]">
                 {integrationRows.map(item => {
                   const locked = Boolean(item.capability) && !allowsOnPlan(item.capability);
+                  const state = integrationStatus(item.status);
                   return (
                     <Card
                       key={item.id}
@@ -3660,9 +3689,7 @@ export default function SettingsPage() {
                       onClick={() => setIntegrationDetail(item.id)}
                     >
                       <div className="flex items-center gap-[12px]">
-                        <span className="flex h-[40px] w-[40px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white">
-                          <Image src={item.logo} alt="" width={30} height={30} className="h-[28px] w-[28px] object-contain" />
-                        </span>
+                        <IntegrationLogo src={item.logo} />
                         <span className="min-w-0 flex-1">
                           <span className="block text-[13px] font-bold text-ink">{item.title}</span>
                           <span className="mt-[2px] block truncate text-[11px] text-muted">{item.description}</span>
@@ -3674,18 +3701,8 @@ export default function SettingsPage() {
                             capabilityId={item.capability}
                             label={capabilityAvailability(item.capability)}
                           />
-                        ) : item.active ? (
-                          // «Підключено» — це факт, а не свято.
-                          //
-                          // Зелений тут був єдиним теплим кольором на екрані й
-                          // тягнув на себе більше уваги, ніж назва сервісу, під
-                          // якою він стоїть. Гама продукту — ink, тож увімкнений
-                          // стан бере її: біле на #1f1f1f. Зелений лишається
-                          // тому, що справді щось означає — «успішно», а не
-                          // «увімкнено».
-                          <Pill tone="dark" size="md">{item.status}</Pill>
                         ) : (
-                          <Pill tone="neutral" size="md" appearance="soft-outline">{item.status}</Pill>
+                          <Pill tone={state.tone} size="md">{state.label}</Pill>
                         )}
                         <ChevronRight size={16} className="shrink-0 text-faint" />
                       </div>
@@ -3697,42 +3714,76 @@ export default function SettingsPage() {
           );
         }
 
-        const integrationTitle = integrationRows.find(item => item.id === integrationDetail)?.title || 'Інтеграція';
+        const integrationRow = integrationRows.find(item => item.id === integrationDetail);
+        const integrationTitle = integrationRow?.title || 'Інтеграція';
+
+        // Дві сцени, і жодного майстра між ними.
+        //
+        // Поки не підключено — `IntegrationConnect`: одна форма, одна кнопка.
+        // Щойно підключено — рядки, ті самі `Row`, якими набрані «Загальні»,
+        // «Сповіщення» й решта. Стан і вимикач стоять у шапці секції, а не
+        // всередині вмісту, бо це стан екрана, а не одне з його налаштувань.
+        //
+        // Кнопки «Синхронізувати» тут немає навмисно. Її не має жодна інша
+        // секція налаштувань — усе зберігається саме, — а qTicket вимагав
+        // натиснути її, щоб надіслати те, що ви щойно змінили. Те, що справді
+        // надсилається цілим знімком (склад підтримки, бренд порталу),
+        // зберігається своїм діалогом, як усе решта в продукті.
+        const integrationDesc = {
+          qticket: 'Тікет-система для звернень клієнтів. Організація, бренд і команда беруться з QuickTeam.',
+          'quickteam-plus': 'Клієнтські запити та оновлення з порталу QuickTeam+.',
+          telegram: 'Задачі створюються прямо з робочої групи й потрапляють у вибраний проєкт.',
+          buggybag: 'Баг-репорти клієнтів стають задачами разом зі скриншотами й технічними даними.',
+        }[integrationDetail] || '';
 
         return (
           <Section
             title={integrationTitle}
-            desc="Опис, стан і налаштування інтеграції"
+            desc={integrationDesc}
+            icon={integrationRow ? <IntegrationLogo src={integrationRow.logo} alt={integrationTitle} /> : null}
             backLabel="Усі інтеграції"
-            rightAction={saveButton}
+            rightAction={(
+              <IntegrationControls
+                title={integrationTitle}
+                status={integrationRow?.status}
+                {...(integrationDetail === 'qticket' ? {
+                  enabled: qTicketStatus.active,
+                  onToggle: next => (next ? handleQTicketSync() : handleQTicketDeactivate()),
+                  toggleDisabled: qTicketLoading || !qTicketStatus.configured || !isOwner,
+                  action: qTicketStatus.active && qTicketEnabledForMe
+                    ? { label: 'Відкрити', icon: ExternalLink, onClick: handleQTicketOpen }
+                    : null,
+                } : {})}
+                {...(integrationDetail === 'quickteam-plus' ? {
+                  enabled: qtEnabled,
+                  onToggle: saveIntegration,
+                  toggleDisabled: qtSaving,
+                  action: qtEnabled && PORTAL_URL
+                    ? { label: 'Відкрити портал', icon: ExternalLink, onClick: () => window.open(PORTAL_URL, '_blank', 'noopener,noreferrer') }
+                    : null,
+                } : {})}
+                {...(integrationDetail === 'telegram' ? {
+                  enabled: telegramGroupStatus.connected || telegramGroupSetupOpen,
+                  onToggle: toggleTelegramGroup,
+                  toggleDisabled: telegramGroupLoading
+                    || (!telegramGroupStatus.configured && !telegramGroupStatus.connected),
+                } : {})}
+                {...(integrationDetail === 'buggybag' ? {
+                  enabled: buggyBagEnabled,
+                  onToggle: toggleBuggyBag,
+                  toggleDisabled: buggyBagLoading,
+                  action: { label: 'Відкрити BuggyBag', icon: ExternalLink, onClick: () => window.open('https://buggy-bag.vercel.app/', '_blank', 'noopener,noreferrer') },
+                } : {})}
+              />
+            )}
           >
             {/* Своя брама, не спільна з рештою: qTicket — не одна з
                 «Інтеграцій», а окремий продукт, і в прайслисті він окремим
                 рядком. */}
-            {integrationDetail === 'qticket' && <PlanGate capabilityId="qticket"><IntegrationCard
-              title="qTicket"
-              description="Тікет-система для звернень ваших клієнтів. Організація, брендинг і внутрішня команда беруться з QuickTeam; клієнти входять окремо."
-              logoSrc="/logo-min.svg"
-              logoAlt="qTicket"
-              enabled={qTicketStatus.active}
-              actionLabel={qTicketStatus.active ? 'Відкрити' : 'Активувати'}
-              onAction={qTicketStatus.active ? handleQTicketOpen : handleQTicketSync}
-              actionIcon={qTicketStatus.active ? ExternalLink : undefined}
-              toggleDisabled={qTicketLoading || !qTicketStatus.configured || (!isOwner && !qTicketEnabledForMe)}
-              status={!qTicketStatus.configured
-                ? 'unavailable'
-                : qTicketStatus.lastError ? 'error'
-                  : qTicketStatus.active ? 'connected' : 'off'}
-              statusLabel={!qTicketStatus.configured
-                ? 'Не налаштовано на сервері'
-                : qTicketStatus.lastError ? 'Помилка синхронізації'
-                  : qTicketStatus.active ? 'Активовано' : 'Не активовано'}
-              statusMeta={qTicketStatus.lastSyncAt ? (
-                <span className="text-[11px] text-muted">
-                  Синхронізовано {new Date(qTicketStatus.lastSyncAt).toLocaleString('uk-UA')}
-                </span>
-              ) : null}
-            >
+            {integrationDetail === 'qticket' && <PlanGate capabilityId="qticket">
+              {/* Причина відмови — рядок під шапкою, а не пігулка, у яку
+                  вміщається одне слово. Пігулка каже «Помилка»; що саме
+                  сталося, читають тут. */}
               {qTicketStatus.lastError && (
                 <Alert
                   variant="error"
@@ -3741,535 +3792,215 @@ export default function SettingsPage() {
                 />
               )}
 
-              {/* Кому qTicket відмовив у місці — і чому.
-                  Контракт повертав це від початку, щоб QuickTeam міг пояснити;
-                  ця картка ніколи не питала. Колега, який уже сидить клієнтом
-                  цієї організації в qTicket, лишався без доступу, а власник
-                  бачив зелений тост «Команду qTicket синхронізовано». */}
-              {qTicketStatus.conflicts.length > 0 && (
-                <Alert
-                  variant="warning"
-                  title={`${qTicketStatus.conflicts.length} ${plural(qTicketStatus.conflicts.length, ['працівник не отримав місця', 'працівники не отримали місць', 'працівників не отримали місць'])} у qTicket`}
-                  description={(
-                    <>
-                      <p>
-                        Ці адреси вже належать клієнтам цієї організації в qTicket. Одне місце — одна роль,
-                        тож зробити з клієнта працівника означало б віддати йому чужі черги й переписати
-                        все, що він колись написав, із «клієнт написав» на «підтримка відповіла». qTicket
-                        цього не робить і пропускає таку людину.
-                      </p>
-                      <ul className="mt-2 space-y-1">
-                        {qTicketStatus.conflicts.map(conflict => (
-                          <li key={conflict.sourceUserId}>
-                            <IntegrationCode>{conflict.email}</IntegrationCode>
-                            {' — уже '}
-                            {conflict.currentRole === 'client_admin' ? 'адміністратор клієнта' : 'співробітник клієнта'}
-                          </li>
-                        ))}
-                      </ul>
-                      <p className="mt-2">
-                        Рішення: інша адреса для роботи в підтримці, або зняти клієнтське місце в qTicket
-                        і синхронізувати ще раз.
-                      </p>
-                    </>
-                  )}
+              {!qTicketStatus.configured ? (
+                <Card preset="borderless" padding="lg">
+                  <SettingRow
+                    label="Інтеграцію не налаштовано в цьому середовищі"
+                    desc="qTicket вмикається на боці сервера QuickTeam. Зверніться до підтримки OneB."
+                  />
+                </Card>
+              ) : !qTicketStatus.active ? (
+                <IntegrationConnect
+                  logoSrc="/integrations/qticket.svg"
+                  title="Увімкніть qTicket"
+                  description="Клієнти отримають портал, де залишають звернення й бачать відповіді. Ваші працівники входять обліковими записами QuickTeam — окремих запрошень і паролів не буде."
+                  action={isOwner
+                    ? { label: 'Увімкнути qTicket', onClick: handleQTicketSync, loading: qTicketLoading }
+                    : null}
+                  footnote={isOwner ? null : 'Увімкнути qTicket може лише власник організації.'}
                 />
-              )}
-
-              {/* Що ця картка знала і ніколи не казала.
-                  Тут стояли чотири клітинки: скільки обрано, коли синхронізовано,
-                  номер ревізії й скільки в тебе непрочитаних. Ревізія — службове
-                  число, непрочитані вже є бейджем у рейці, а на питання, заради
-                  якого сюди заходять — «а воно взагалі працює?» — жодна з них не
-                  відповідала: усі чотири беруться з цієї бази, тобто описують те,
-                  що QuickTeam думає, ніби надіслав. Тепер тут стан, а не статистика. */}
-              <IntegrationNote title="Стан підключення">
-                <div className="grid gap-5 sm:grid-cols-3">
-                  <div>
-                    <p className="ui-type-eyebrow">Доступ мають</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="flex -space-x-2">
-                        {(qTicketStatus.selectedUserIds || []).slice(0, 5).map(userId => {
-                          const member = members.find(item => (item.id || item.uid) === userId);
-                          return member
-                            ? <UserAvatar key={userId} user={member} size="sm" />
-                            : null;
-                        })}
-                      </div>
-                      <span className="text-[13px] font-semibold text-ink">
-                        {qTicketStatus.selectedUserIds?.length || 0} з {members.filter(isActiveMember).length}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="ui-type-eyebrow">Синхронізовано</p>
-                    <p className="mt-2 text-[13px] font-semibold text-ink">
-                      {qTicketStatus.lastSyncAt
-                        ? new Date(qTicketStatus.lastSyncAt).toLocaleString('uk-UA')
-                        : 'ще не було'}
-                    </p>
-                  </div>
-                  {qTicketDirty && (
-                    <div>
-                      <p className="ui-type-eyebrow">Не надіслано</p>
-                      <p className="mt-2 text-[13px] font-semibold text-warning">
-                        {[
-                          qTicketDraft.added.length ? `+${qTicketDraft.added.length}` : '',
-                          qTicketDraft.removed.length ? `−${qTicketDraft.removed.length}` : '',
-                          qTicketDraft.rolesChanged ? 'ролі' : '',
-                          qTicketDraft.brandChanged ? 'бренд' : '',
-                        ].filter(Boolean).join(' · ')}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Питання «а воно взагалі працює?» ставиться qTicket, а не цій
-                    базі. Відповідь, яка просто прийшла, вже доводить, що origin,
-                    спільний секрет і два годинники згодні між собою. */}
-                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
-                  <Button
-                    style="secondary"
-                    size="sm"
-                    icon={PlugZap}
-                    onClick={handleQTicketProbe}
-                    loading={qTicketProbing}
+              ) : !isOwner ? (
+                <Card preset="borderless" padding="lg">
+                  <SettingRow
+                    label="Доступом керує власник"
+                    desc="Хто з працівників відкриває qTicket, з якою роллю в підтримці та під яким брендом бачать портал клієнти — вирішує власник організації."
+                  />
+                </Card>
+              ) : (
+                <Card preset="borderless" padding="lg">
+                  <SettingRow
+                    label="Команда підтримки"
+                    desc="Хто з QuickTeam працює у зверненнях і з якою роллю саме там"
                   >
-                    Перевірити зв&apos;язок
-                  </Button>
-                  {qTicketProbe && (qTicketProbe.reachable ? (
-                    <span className="text-[12px] text-ink">
-                      {qTicketProbe.inSync
-                        ? `qTicket відповів: склад актуальний, ревізія ${qTicketProbe.remoteRevision}.`
-                        : qTicketProbe.known
-                          ? `qTicket відповів, але тримає ревізію ${qTicketProbe.remoteRevision}, а тут ${qTicketProbe.localRevision}. Натисніть «Синхронізувати».`
-                          : 'qTicket відповів, але цієї організації ще не знає. Натисніть «Активувати».'}
-                      {qTicketProbe.reachable && qTicketProbe.entitlement !== 'active' && ' Доповнення вимкнене на боці qTicket.'}
-                    </span>
-                  ) : (
-                    <span className="text-[12px] text-danger">qTicket не відповів: {qTicketProbe.error}</span>
-                  ))}
-                </div>
+                    <TextAction onClick={() => setQTicketTeamOpen(true)}>
+                      {qTicketStatus.selectedUserIds?.length || 0} із {members.filter(isActiveMember).length}
+                    </TextAction>
+                  </SettingRow>
 
-                {/* Куди йдуть клієнти. Адреса — це налаштування розгортання
-                    qTicket, і QuickTeam не може її вивести; доти вона була
-                    відповіддю, яку доводилось у когось питати. */}
-                {qTicketProbe?.portalUrl && (
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <p className="ui-type-eyebrow">Посилання для клієнтів</p>
-                    <IntegrationCode>{qTicketProbe.portalUrl}</IntegrationCode>
-                    <Button
-                      style="ghost"
-                      size="icon-sm"
-                      icon={Copy}
-                      onClick={() => { navigator.clipboard.writeText(qTicketProbe.portalUrl); showToast('Посилання скопійовано'); }}
-                      aria-label="Копіювати посилання для клієнтів"
+                  {/* Кому qTicket відмовив у місці — і чому.
+                      Контракт повертав це від початку, щоб QuickTeam міг
+                      пояснити; ця картка ніколи не питала. Колега, який уже
+                      сидить клієнтом цієї організації в qTicket, лишався без
+                      доступу, а власник бачив зелений тост «Команду qTicket
+                      синхронізовано». Пояснення на сім рядків пішло в діалог,
+                      де воно стоїть біля самої людини; рядок каже, що сталося
+                      і з якою кількістю людей. */}
+                  {qTicketStatus.conflicts.length > 0 && (
+                    <SettingRow
+                      label={`${qTicketStatus.conflicts.length} ${plural(qTicketStatus.conflicts.length, ['працівник не отримав місця', 'працівники не отримали місць', 'працівників не отримали місць'])}`}
+                      desc="Ці адреси вже належать клієнтам цієї організації в qTicket"
+                    >
+                      <TextAction onClick={() => setQTicketTeamOpen(true)}>Подивитись</TextAction>
+                    </SettingRow>
+                  )}
+
+                  <SettingRow
+                    label="Окремий бренд клієнтського порталу"
+                    desc={qTicketPortal
+                      ? `Клієнти бачать «${qTicketPortal.name || org?.name || 'Підтримка'}»`
+                      : `Клієнти бачать бренд організації — «${org?.name || 'QuickTeam'}»`}
+                  >
+                    <ToggleSwitch
+                      checked={Boolean(qTicketPortal)}
+                      onChange={next => { handleQTicketPortalToggle(next); if (next) setQTicketBrandOpen(true); }}
+                      size="md"
+                      ariaLabel="Окремий бренд клієнтського порталу"
                     />
-                  </div>
-                )}
-              </IntegrationNote>
+                  </SettingRow>
 
-              {isOwner ? (
-                <>
-                  <IntegrationNote title="Команда підтримки в qTicket">
-                    <p>
-                      Оберіть людей із чинної команди QuickTeam і роль, яку кожен матиме саме в підтримці —
-                      вона не мусить збігатися з роллю тут. Власник входить завжди; окремих запрошень і
-                      паролів для внутрішніх працівників не буде.
-                    </p>
-
-                    {members.filter(isActiveMember).length > 6 && (
-                      <div className="mt-4 max-w-[320px]">
-                        <Input
-                          value={qTicketStaffSearch}
-                          onChange={event => setQTicketStaffSearch(event.target.value)}
-                          placeholder="Знайти в команді QuickTeam..."
-                          size="md"
-                          ariaLabel="Пошук у команді QuickTeam"
-                        />
-                      </div>
-                    )}
-
-                    {/* Список замість мультиселекту. Мультиселект показував
-                        саме ім'я — не роль, не пошту, не те, ким людина стане в
-                        підтримці, і не те, що комусь місця не дадуть. */}
-                    <ul className="mt-4 divide-y divide-line rounded-[10px] border border-line bg-white">
-                      {qTicketStaff.map(row => (
-                        <li key={row.userId} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                          <Checkbox
-                            checked={row.selected}
-                            onChange={next => handleQTicketToggleMember(row.userId, next)}
-                            disabled={row.isOwner || Boolean(row.conflict)}
-                            ariaLabel={`Доступ до qTicket: ${row.member.name || row.member.email}`}
-                            size="md"
-                          />
-                          <UserAvatar user={row.member} size="md" />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="truncate text-[13px] font-semibold text-ink">
-                                {row.member.name || row.member.email}
-                              </p>
-                              {row.isOwner && <Pill shape="badge" size="sm" uppercase>Власник</Pill>}
-                              {row.conflict && <Pill shape="badge" size="sm" uppercase>Клієнт у qTicket</Pill>}
-                            </div>
-                            <p className="truncate text-[11px] text-muted">
-                              {row.member.email} · у QuickTeam {organizationRoleLabel(row.member.role).toLowerCase()}
-                            </p>
-                          </div>
-                          {row.conflict ? (
-                            <span className="text-[11px] text-warning">місця не буде</span>
-                          ) : (
-                            <Select
-                              value={row.deskRole}
-                              onChange={value => handleQTicketRole(row.userId, value)}
-                              options={row.isOwner
-                                ? [{ value: 'owner', label: 'Власник' }]
-                                : [
-                                  { value: 'admin', label: 'Адміністратор' },
-                                  { value: 'member', label: 'Менеджер підтримки' },
-                                ]}
-                              disabled={row.isOwner}
-                              size="sm"
-                              ariaLabel={`Роль у qTicket: ${row.member.name || row.member.email}`}
-                              className="w-[190px]"
-                            />
-                          )}
-                        </li>
-                      ))}
-                      {qTicketStaff.length === 0 && (
-                        <li className="px-4 py-6 text-center text-[12px] text-muted">Нікого не знайдено</li>
-                      )}
-                    </ul>
-                  </IntegrationNote>
-
-                  {/* Бренд підтримки — окремо від бренду QuickTeam.
-                      У qTicket ці поля завжди були різні (`name` для шелу
-                      персоналу, `portalBranding` для клієнтського порталу) і
-                      завжди годувалися одним значенням, тож компанія не могла
-                      назвати свою підтримку інакше, ніж собою. Значення однаково
-                      належить QuickTeam: qTicket його не редагує й перезаписує
-                      свою копію з кожною синхронізацією. */}
-                  <IntegrationNote title="Бренд клієнтського порталу">
-                    <div className="flex items-start justify-between gap-4">
-                      <p className="flex-1">
-                        За замовчуванням клієнти бачать назву, логотип і колір вашої організації — ті самі,
-                        що в «Налаштування» → «Загальні». Увімкніть, якщо підтримка має виглядати окремо
-                        («OneB Підтримка»). Персонал у QuickTeam це не змінює.
-                      </p>
-                      <ToggleSwitch
-                        checked={Boolean(qTicketPortal)}
-                        onChange={handleQTicketPortalToggle}
-                        size="md"
-                        ariaLabel="Окремий бренд клієнтського порталу"
-                      />
-                    </div>
-
-                    {qTicketPortal && (
-                      <div className="mt-4 grid gap-6 border-t border-line pt-4 lg:grid-cols-[minmax(0,1fr)_240px]">
-                        <div className="flex flex-col gap-5">
-                          <div className="flex max-w-[320px] flex-col gap-[6px]">
-                            <Label>Назва підтримки</Label>
-                            <Input
-                              value={qTicketPortal.name || ''}
-                              onChange={event => handleQTicketPortalField('name', event.target.value)}
-                              placeholder={org?.name || 'Підтримка'}
-                              size="md"
-                              ariaLabel="Назва підтримки для клієнтів"
-                            />
-                            <p className="text-[11px] leading-relaxed text-muted">
-                              Порожнє поле успадковує саме себе: на порталі стоятиме «{org?.name || 'назва організації'}».
-                            </p>
-                          </div>
-
-                          <div className="flex flex-col gap-[8px]">
-                            <Label>Логотип на порталі</Label>
-                            {/* `showLabel` лишався за замовчуванням, тож під написом
-                                «Логотип на порталі» стояв другий — «Завантажити
-                                логотип», від самого контролу. */}
-                            <ImageUpload
-                              value={qTicketPortal.logo || ''}
-                              organizationId={activeOrgId}
-                              kind="logos"
-                              theme="light"
-                              showLabel={false}
-                              showHint={false}
-                              onChange={url => handleQTicketPortalField('logo', url || '')}
-                              onError={message => showToast(message, 'error')}
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-[10px]">
-                            <Label>Колір бічної панелі порталу</Label>
-                            <SidebarThemePicker
-                              theme={qTicketPortal.sidebarTheme || 'dark'}
-                              color={qTicketPortal.sidebarColor}
-                              onThemeChange={value => handleQTicketPortalField('sidebarTheme', value)}
-                              onColorChange={value => handleQTicketPortalField('sidebarColor', value)}
-                              onCancel={() => handleQTicketPortalField(
-                                'sidebarColor',
-                                qTicketStatus.portal?.sidebarColor || org?.sidebarColor || SIDEBAR_PRESETS.dark,
-                              )}
-                              ariaPrefix="Колір бічної панелі порталу"
-                            />
-                          </div>
-                        </div>
-
-                        <PortalBrandPreview
-                          name={qTicketPortal.name || org?.name || 'Підтримка'}
-                          logo={qTicketPortal.logo || org?.logo || ''}
-                          theme={qTicketPortal.sidebarTheme || 'dark'}
-                          color={qTicketPortal.sidebarColor}
-                        />
-                      </div>
-                    )}
-                  </IntegrationNote>
+                  {qTicketPortal && (
+                    <SettingRow label="Вигляд порталу" desc="Назва, логотип і колір бічної панелі, які бачать клієнти">
+                      <TextAction onClick={() => setQTicketBrandOpen(true)}>Налаштувати</TextAction>
+                    </SettingRow>
+                  )}
 
                   {/* «Хто зняв Олю з підтримки» — питання про останню зміну, і
                       доти на нього не було де подивитись. Двадцять записів. */}
                   {qTicketStatus.history.length > 0 && (
-                    <IntegrationNote title="Останні синхронізації">
-                      <ul className="space-y-1.5">
-                        {qTicketStatus.history.slice(0, 5).map(entry => (
-                          <li key={`${entry.at}-${entry.revision}`}>
-                            {new Date(entry.at).toLocaleString('uk-UA')} — {qTicketMemberName(entry.by)}:{' '}
-                            {[
-                              entry.added?.length ? `додав ${entry.added.map(qTicketMemberName).join(', ')}` : '',
-                              entry.removed?.length ? `прибрав ${entry.removed.map(qTicketMemberName).join(', ')}` : '',
-                              entry.rolesChanged ? 'змінив ролі' : '',
-                              entry.brandChanged ? 'змінив бренд' : '',
-                            ].filter(Boolean).join('; ') || 'оновив знімок'}
-                          </li>
-                        ))}
-                      </ul>
-                    </IntegrationNote>
+                    <SettingRow label="Журнал змін" desc="Хто і коли міняв склад підтримки чи бренд порталу">
+                      <TextAction onClick={() => setQTicketLogOpen(true)}>
+                        {qTicketStatus.history.length} {plural(qTicketStatus.history.length, ['запис', 'записи', 'записів'])}
+                      </TextAction>
+                    </SettingRow>
                   )}
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      style={qTicketDirty ? 'primary' : 'secondary'}
-                      size="sm"
-                      icon={RefreshCw}
-                      onClick={handleQTicketSync}
-                      loading={qTicketLoading}
-                      disabled={qTicketStatus.active && !qTicketDirty}
-                    >
-                      {qTicketStatus.active ? 'Синхронізувати' : 'Активувати qTicket'}
-                    </Button>
-                    {qTicketStatus.active && (
-                      <Button
-                        style="ghost"
-                        size="sm"
-                        icon={ToggleLeft}
-                        onClick={handleQTicketDeactivate}
-                        disabled={qTicketLoading}
-                      >
-                        Вимкнути qTicket
-                      </Button>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <IntegrationNote title="Доступ керується власником">
-                  <p>
-                    Власник організації обирає працівників QuickTeam, які можуть відкривати qTicket,
-                    їхні ролі в підтримці та бренд клієнтського порталу.
-                  </p>
-                </IntegrationNote>
+                </Card>
               )}
-            </IntegrationCard></PlanGate>}
+            </PlanGate>}
 
             {integrationDetail !== 'qticket' && <PlanGate capabilityId="integrations">
 
-            {integrationDetail === 'quickteam-plus' && <IntegrationCard
-              title="QuickTeam+"
-              description="Синхронізує клієнтські запити та оновлення з порталу QuickTeam+."
-              logoSrc="/quickteam.png"
-              logoAlt="QuickTeam+"
-              enabled={qtEnabled}
-              onToggle={saveIntegration}
-              toggleDisabled={qtSaving}
-              status={qtEnabled ? 'connected' : 'off'}
-              statusLabel={qtEnabled ? 'Підключено' : 'Вимкнено'}
-              statusMeta={qtEnabled && PORTAL_URL ? (
-                <a
-                  href={PORTAL_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-[12px] font-semibold text-ink hover:underline"
-                >
-                  Відкрити портал <ExternalLink size={11} />
-                </a>
-              ) : null}
-            />}
+            {integrationDetail === 'quickteam-plus' && (qtEnabled ? (
+              <Card preset="borderless" padding="lg">
+                <SettingRow label="Адреса порталу" desc="Куди потрапляють ваші клієнти">
+                  <IntegrationCode className="select-all">{PORTAL_URL || 'не налаштовано'}</IntegrationCode>
+                </SettingRow>
+              </Card>
+            ) : (
+              <IntegrationConnect
+                logoSrc="/quickteam.png"
+                title="Увімкніть портал для клієнтів"
+                description="Клієнти отримають адресу, де залишають запити й бачать оновлення по них."
+                action={{ label: 'Увімкнути', onClick: () => saveIntegration(true), loading: qtSaving }}
+              />
+            ))}
 
             {/* Telegram bot — group task capture */}
-            {integrationDetail === 'telegram' && <IntegrationCard
-              title="Telegram"
-              description="Створюйте задачі прямо з робочої Telegram-групи та автоматично додавайте їх у вибраний проєкт."
-              logoSrc="/integrations/telegram.svg"
-              logoAlt="Telegram"
-              enabled={telegramGroupStatus.connected || telegramGroupSetupOpen}
-              onToggle={toggleTelegramGroup}
-              toggleDisabled={
-                telegramGroupLoading ||
-                (!telegramGroupStatus.configured && !telegramGroupStatus.connected)
-              }
-              status={telegramGroupStatus.connected ? 'connected' : telegramGroupSetupOpen ? 'pending' : telegramGroupStatus.configured ? 'off' : 'unavailable'}
-              statusLabel={telegramGroupStatus.connected ? 'Підключено' : telegramGroupSetupOpen ? 'Налаштування' : telegramGroupStatus.configured ? 'Вимкнено' : 'Недоступно'}
-              statusMeta={telegramGroupStatus.connected ? (
-                <span className="text-[12px] text-muted">
-                  {telegramGroupStatus.chatTitle || 'Telegram-група'}
-                  {telegramGroupProjectId && projects.find(project => project.id === telegramGroupProjectId)?.name
-                    ? ` → ${projects.find(project => project.id === telegramGroupProjectId).name}`
-                    : ''}
-                </span>
-              ) : !telegramGroupStatus.configured ? (
-                <span className="text-[11px] text-muted">Інтеграцію не налаштовано в цьому середовищі.</span>
-              ) : null}
-            >
-              {telegramGroupStatus.connected ? (
-                <div className="space-y-3">
-                  <IntegrationNote title="Як створити задачу в групі">
-                    <p><IntegrationCode>/task Назва задачі</IntegrationCode> — швидка команда.</p>
-                    <p>
-                      <IntegrationCode>
-                        @{telegramGroupStatus.username || 'quick_team_bot'} Назва задачі
-                      </IntegrationCode>
-                      {' '}— звичайне звернення до бота.
-                    </p>
-                    <p>Наступні рядки повідомлення стануть описом задачі.</p>
-                  </IntegrationNote>
+            {integrationDetail === 'telegram' && (telegramGroupStatus.connected ? (
+              <Card preset="borderless" padding="lg">
+                <SettingRow label="Робоча група" desc="Звідки надходять задачі">
+                  <span className="text-[13px] text-muted">{telegramGroupStatus.chatTitle || 'Telegram-група'}</span>
+                </SettingRow>
+                <SettingRow label="Проєкт за замовчуванням" desc="Куди потрапляють задачі з цієї групи">
+                  <span className="text-[13px] text-muted">
+                    {projects.find(project => project.id === telegramGroupProjectId)?.name || 'не обрано'}
+                  </span>
+                </SettingRow>
+                <SettingRow label="Як створити задачу" desc="Наступні рядки повідомлення стануть описом задачі">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <IntegrationCode>/task Назва задачі</IntegrationCode>
+                    <IntegrationCode>@{telegramGroupStatus.username || 'quick_team_bot'} Назва</IntegrationCode>
+                  </div>
+                </SettingRow>
+                {/* Кнопка, яка мовчала.
+                    Вона викликала те саме перечитування стану, що й відкриття
+                    екрана, і не показувала нічого: якщо група була на місці, на
+                    екрані не змінювалось ані пікселя. Натиснути й не побачити
+                    нічого — це зламана кнопка, чим вона для читача і була.
+                    Тепер вона відповідає в обох випадках. */}
+                <SettingRow label="Перевірка зв'язку" desc="Чи бачить QuickTeam групу просто зараз">
                   <Button
-                    style="ghost"
+                    style="secondary"
                     size="sm"
                     icon={RefreshCw}
-                    onClick={() => refreshTelegramGroup().catch(error => showToast(error.message, 'error'))}
+                    loading={telegramGroupChecking}
+                    onClick={checkTelegramGroup}
                   >
-                    Перевірити підключення
+                    Перевірити
                   </Button>
-                </div>
-              ) : telegramGroupSetupOpen ? (
-                <IntegrationSteps
-                  steps={[
-                    {
-                      title: 'Оберіть проєкт QuickTeam',
-                      description: 'Усі нові задачі з цієї Telegram-групи потраплятимуть саме сюди.',
-                      content: (
-                        <div className="mt-2 max-w-[420px]">
-                          <Select
-                            value={telegramGroupProjectId}
-                            onChange={setTelegramGroupProjectId}
-                            options={[
-                              { value: '', label: 'Оберіть проєкт' },
-                              ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
-                            ]}
-                          />
-                        </div>
-                      ),
-                    },
-                    {
-                      title: 'Додайте бота в Telegram-групу',
-                      description: 'Telegram відкриється в новій вкладці. Виберіть потрібну групу та підтвердьте додавання.',
-                      content: (
-                        <Button
-                          style="secondary"
-                          size="sm"
-                          icon={ExternalLink}
-                          className="mt-2"
-                          onClick={connectTelegramGroup}
-                          loading={telegramGroupLoading}
-                          disabled={!telegramGroupProjectId}
-                        >
-                          Відкрити Telegram
-                        </Button>
-                      ),
-                    },
-                    {
-                      title: 'Підтвердьте групу командою',
-                      description: telegramGroupConnect?.command
-                        ? 'Скопіюйте одноразову команду та надішліть її в доданій групі протягом 30 хвилин.'
-                        : 'Після додавання бота тут з’явиться одноразова команда.',
-                      content: telegramGroupConnect?.command ? (
-                        <IntegrationNote className="mt-2 max-w-[620px]">
-                          <div className="flex items-center gap-2">
-                          <IntegrationCode className="min-w-0 flex-1 select-all break-all">{telegramGroupConnect.command}</IntegrationCode>
-                          <Button
-                            style="ghost"
-                            size="icon-sm"
-                            icon={Copy}
-                            onClick={() => {
-                              navigator.clipboard.writeText(telegramGroupConnect.command);
-                              showToast('Команду скопійовано');
-                            }}
-                            aria-label="Копіювати команду"
-                          />
-                          </div>
-                        </IntegrationNote>
-                      ) : null,
-                    },
-                    {
-                      title: 'Перевірте підключення',
-                      description: 'Після надсилання команди поверніться сюди. QuickTeam покаже назву групи та готовий приклад команди.',
-                      content: (
-                        <Button
-                          style="ghost"
-                          size="sm"
-                          icon={RefreshCw}
-                          className="mt-2"
-                          onClick={() => refreshTelegramGroup().catch(error => showToast(error.message, 'error'))}
-                        >
-                          Перевірити
-                        </Button>
-                      ),
-                    },
+                </SettingRow>
+              </Card>
+            ) : (
+              <IntegrationConnect
+                logoSrc="/integrations/telegram.svg"
+                title="Підключіть робочу групу"
+                description="Оберіть проєкт і додайте бота в групу. Далі задачі створюються командою /task прямо в чаті."
+                action={{
+                  label: 'Додати бота в групу',
+                  icon: ExternalLink,
+                  onClick: connectTelegramGroup,
+                  loading: telegramGroupLoading,
+                  disabled: !telegramGroupProjectId || !telegramGroupStatus.configured,
+                }}
+                footnote={telegramGroupConnect?.command
+                  ? 'Бота додано? Надішліть у групі одноразову команду нижче — вона діє 30 хвилин.'
+                  : (telegramGroupStatus.configured ? null : 'Інтеграцію не налаштовано в цьому середовищі.')}
+              >
+                <Label>Проєкт за замовчуванням</Label>
+                <Select
+                  value={telegramGroupProjectId}
+                  onChange={setTelegramGroupProjectId}
+                  options={[
+                    { value: '', label: 'Оберіть проєкт' },
+                    ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
                   ]}
+                  ariaLabel="Проєкт за замовчуванням для задач із Telegram"
                 />
-              ) : null}
-            </IntegrationCard>}
+                {telegramGroupConnect?.command && (
+                  <div className="flex items-center gap-2">
+                    <IntegrationCode className="min-w-0 flex-1 select-all break-all">{telegramGroupConnect.command}</IntegrationCode>
+                    <Button
+                      style="ghost"
+                      size="icon-sm"
+                      icon={Copy}
+                      onClick={() => {
+                        navigator.clipboard.writeText(telegramGroupConnect.command);
+                        showToast('Команду скопійовано');
+                      }}
+                      aria-label="Копіювати команду"
+                    />
+                  </div>
+                )}
+              </IntegrationConnect>
+            ))}
 
             {/* BuggyBag Portal */}
-            {integrationDetail === 'buggybag' && <IntegrationCard
-              title="BuggyBag Portal"
-              description="Перетворює баг-репорти клієнтів на задачі QuickTeam разом зі скріншотами та технічними даними."
-              logoSrc="/bug-logo.png"
-              logoAlt="BuggyBag"
-              enabled={buggyBagEnabled}
-              onToggle={toggleBuggyBag}
-              toggleDisabled={buggyBagLoading}
-              status={buggyBagEnabled ? 'connected' : 'off'}
-              statusLabel={buggyBagEnabled ? 'Підключено' : 'Вимкнено'}
-              statusMeta={(
-                <a
-                  href="https://buggy-bag.vercel.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-[12px] font-semibold text-ink hover:underline"
-                >
-                  Відкрити BuggyBag <ExternalLink size={11} />
-                </a>
-              )}
-            >
-              {buggyBagEnabled && (
-                <IntegrationNote title="Вставте ці дані в налаштуваннях BuggyBag">
-                  <div className="grid items-center gap-3 sm:grid-cols-[100px_1fr]">
-                    <span>API Token</span>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <IntegrationCode className="min-w-0 flex-1 select-all truncate">
-                        {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
-                      </IntegrationCode>
-                      {buggyBagKey.token && (
-                        <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати API Token" />
-                      )}
-                    </div>
-                    <span>Org ID</span>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <IntegrationCode className="min-w-0 flex-1 select-all truncate">{activeOrgId}</IntegrationCode>
-                      <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати ID організації" />
-                    </div>
+            {integrationDetail === 'buggybag' && (buggyBagEnabled ? (
+              <Card preset="borderless" padding="lg">
+                <SettingRow label="API Token" desc="Вставте в налаштуваннях BuggyBag">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <IntegrationCode className="min-w-0 flex-1 select-all truncate">
+                      {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
+                    </IntegrationCode>
+                    {buggyBagKey.token && (
+                      <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати API Token" />
+                    )}
                   </div>
-                </IntegrationNote>
-              )}
-            </IntegrationCard>}
+                </SettingRow>
+                <SettingRow label="Org ID" desc="Ідентифікатор вашої організації">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <IntegrationCode className="min-w-0 flex-1 select-all truncate">{activeOrgId}</IntegrationCode>
+                    <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати ID організації" />
+                  </div>
+                </SettingRow>
+              </Card>
+            ) : (
+              <IntegrationConnect
+                logoSrc="/bug-logo.png"
+                title="Увімкніть приймання баг-репортів"
+                description="QuickTeam видасть ключ, який вставляють у налаштуваннях BuggyBag. Після цього репорти клієнтів стають задачами."
+                action={{ label: 'Увімкнути', onClick: () => toggleBuggyBag(true), loading: buggyBagLoading }}
+              />
+            ))}
             </PlanGate>}
           </Section>
         );
@@ -4335,43 +4066,54 @@ export default function SettingsPage() {
             title={seatsBlocked ? planLimits.notice('members').title : undefined}
           >Запросити</Button>
         ) : null}>
-          <Surface preset="card" padding="none" className="overflow-hidden relative z-10">
-            <div className="flex flex-col divide-y divide-line rounded-[16px]">
-              {directoryMembers.map((member, i) => {
-                const isMe = member.id === (currentUser?.uid || currentUser?.id);
-                const positionLabel = positions.find(position => position.id === member.positionId)?.label || 'Без посади';
-                const deactivated = !isActiveMember(member);
-                return (
-                  <div key={member.id} className={`flex items-center justify-between gap-4 px-5 py-4 hover:bg-canvas transition-colors ${i === 0 ? 'rounded-t-[16px]' : ''} ${i === directoryMembers.length - 1 ? 'rounded-b-[16px]' : ''} ${deactivated ? 'opacity-60' : ''}`}>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <UserAvatar user={member} size="lg" />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-[14px] font-bold text-ink">{member.name || member.email}</p>
-                          {isMe && <Pill shape="badge" size="sm" uppercase>Ти</Pill>}
-                          {deactivated && <Pill shape="badge" size="sm" uppercase>Без доступу</Pill>}
-                        </div>
-                        <p className="truncate text-[12px] text-muted">{member.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Pill size="lg" className="hidden sm:inline-flex">{positionLabel}</Pill>
-                      <Pill tone="ink-subtle" size="lg">{organizationRoleLabel(member.role)}</Pill>
-                      {isAdmin && (
-                        <Button
-                          onClick={() => setMemberSettingsId(member.id || member.uid)}
-                          style="secondary"
-                          size="icon"
-                          icon={SlidersHorizontal}
-                          title="Налаштувати учасника"
-                        />
-                      )}
-                    </div>
+          {/* Учасник — картка, і натиснути можна по всій її площі.
+              Тут був один суцільний список: рядки, розділені волосяними
+              лініями всередині спільної білої панелі, а відкрити людину можна
+              було лише крихітною кнопкою з повзунками праворуч. Дві біди в
+              одній розмітці. Ціль розміром з іконку там, де вся картка означає
+              одну людину, — це ціль, яку треба вишукувати; а суцільний список
+              не дає оку межі між людьми, тож двадцять учасників читаються як
+              одна стіна.
+
+              Форма та сама, що в «Інтеграціях» і «Перенесенні даних»: окрема
+              картка з обводкою, `interactive`, і стрілка в кінці. Три екрани
+              налаштувань, які показують список чогось, показують його однаково.
+
+              Кнопка з повзунками пішла: картка сама і є ця дія. Для того, хто
+              не адміністратор, картка лишається карткою й нікуди не веде —
+              налаштовувати йому нічого. */}
+          <div className="flex flex-col gap-[8px]">
+            {directoryMembers.map(member => {
+              const isMe = member.id === (currentUser?.uid || currentUser?.id);
+              const positionLabel = positions.find(position => position.id === member.positionId)?.label || 'Без посади';
+              const deactivated = !isActiveMember(member);
+              return (
+                <Card
+                  key={member.id}
+                  preset="bordered"
+                  padding="md"
+                  interactive={isAdmin}
+                  onClick={isAdmin ? () => setMemberSettingsId(member.id || member.uid) : undefined}
+                  className={deactivated ? 'opacity-60' : ''}
+                >
+                  <div className="flex items-center gap-[12px]">
+                    <UserAvatar user={member} size="lg" />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-[13px] font-bold text-ink">{member.name || member.email}</span>
+                        {isMe && <Pill shape="badge" size="sm" uppercase>Ти</Pill>}
+                        {deactivated && <Pill shape="badge" size="sm" uppercase>Без доступу</Pill>}
+                      </span>
+                      <span className="mt-[2px] block truncate text-[11px] text-muted">{member.email}</span>
+                    </span>
+                    <Pill size="md" className="hidden sm:inline-flex">{positionLabel}</Pill>
+                    <Pill tone="ink-subtle" size="md">{organizationRoleLabel(member.role)}</Pill>
+                    {isAdmin && <ChevronRight size={16} className="shrink-0 text-faint" />}
                   </div>
-                );
-              })}
-            </div>
-          </Surface>
+                </Card>
+              );
+            })}
+          </div>
         </Section>
         );
       }
@@ -4661,7 +4403,7 @@ export default function SettingsPage() {
       case 'danger': return (
         <Section title="Видалення даних" desc="Незворотні дії з даними організації. Виконуйте обережно.">
           <Card preset="borderless" padding="lg">
-            <Row
+            <SettingRow
               label="Скинути налаштування процесів"
               desc="Повернути статуси, типи, пріоритети та мітки до стандартних значень. Завдання зі статусів, яких немає у стандартному наборі, буде переміщено"
             >
@@ -4672,16 +4414,16 @@ export default function SettingsPage() {
               >
                 Скинути
               </Button>
-            </Row>
+            </SettingRow>
             {isOwner && (
-              <Row
+              <SettingRow
                 label="Видалення організації"
                 desc="Тимчасово недоступне, доки не налаштовано безпечне каскадне видалення даних і файлів"
               >
                 <Button style="secondary" color="red" size="lg" disabled>
                   Недоступно
                 </Button>
-              </Row>
+              </SettingRow>
             )}
 
           </Card>
@@ -4863,7 +4605,7 @@ export default function SettingsPage() {
           </Card>
 
           <Card preset="borderless" padding="lg">
-            <Row label="Вийти з акаунта" desc="Завершити сесію на цьому пристрої">
+            <SettingRow label="Вийти з акаунта" desc="Завершити сесію на цьому пристрої">
               <Button
                 onClick={async () => {
                   if (await confirmDialog({ title: 'Вийти з акаунта?', confirmText: 'Вийти', danger: true })) signOut();
@@ -4873,12 +4615,12 @@ export default function SettingsPage() {
               >
                 Вийти
               </Button>
-            </Row>
+            </SettingRow>
 
             {/* Leaving is the counterpart of being deactivated, and it works the
                 same way: access closes, the work stays. The owner cannot leave
                 a workspace that would then have nobody to answer for it. */}
-            <Row
+            <SettingRow
               label="Вийти з організації"
               desc={isOwner
                 ? 'Ви власник. Спершу передайте права власника комусь із команди'
@@ -4893,12 +4635,12 @@ export default function SettingsPage() {
               >
                 Вийти з організації
               </Button>
-            </Row>
+            </SettingRow>
 
             {/* The one action a person is unconditionally entitled to take
                 about their own data. The product used to answer this with
                 «зверніться до підтримки», which is not an answer. */}
-            <Row
+            <SettingRow
               label="Видалення облікового запису"
               desc={accountDeletion.ownedOrganizations.length > 0
                 ? `Ви власник: ${accountDeletion.ownedOrganizations.join(', ')}. Спершу передайте власність або зверніться до підтримки.`
@@ -4915,7 +4657,7 @@ export default function SettingsPage() {
               >
                 Видалити акаунт
               </Button>
-            </Row>
+            </SettingRow>
           </Card>
         </Section>
         );
@@ -5227,6 +4969,224 @@ export default function SettingsPage() {
           setMemberSettingsId(null);
         }}
       />
+      {/* Склад підтримки — діалог, а не шість блоків посеред налаштувань.
+          Дев'ять людей із чекбоксом, аватаром, поштою, роллю в QuickTeam і
+          селектом ролі в підтримці — це таблиця, і в рядок налаштувань вона не
+          складається. Раніше вона стояла просто на екрані, всередині сірої
+          панелі з обводкою, під якою був ще один список з власною рамкою.
+
+          «Зберегти» тут, а не на екрані, і це та сама відмінність, через яку
+          «Синхронізувати» дратувала: знімок складу надсилається цілим, зберегти
+          половину неможливо, і саме тому в нього є своя кнопка — у діалозі, де
+          кнопка «Зберегти» нікого не дивує. */}
+      <Dialog
+        isOpen={qTicketTeamOpen}
+        onClose={() => setQTicketTeamOpen(false)}
+        size="lg"
+        title="Команда підтримки в qTicket"
+        description="Роль у підтримці не мусить збігатися з роллю в QuickTeam. Власник входить завжди."
+        footer={(
+          <>
+            <Button style="secondary" size="md" onClick={() => setQTicketTeamOpen(false)}>Скасувати</Button>
+            <Button
+              style="primary"
+              size="md"
+              loading={qTicketLoading}
+              disabled={!qTicketDirty}
+              onClick={async () => { await handleQTicketSync(); setQTicketTeamOpen(false); }}
+            >
+              Зберегти
+            </Button>
+          </>
+        )}
+      >
+        <div className="flex flex-col gap-4">
+          {members.filter(isActiveMember).length > 6 && (
+            <Input
+              value={qTicketStaffSearch}
+              onChange={event => setQTicketStaffSearch(event.target.value)}
+              placeholder="Знайти в команді QuickTeam..."
+              size="md"
+              aria-label="Пошук у команді QuickTeam"
+            />
+          )}
+
+          <div className="flex flex-col divide-y divide-line">
+            {qTicketStaff.map(row => (
+              <div key={row.userId} className="flex flex-wrap items-center gap-3 py-3">
+                <Checkbox
+                  checked={row.selected}
+                  onChange={next => handleQTicketToggleMember(row.userId, next)}
+                  disabled={row.isOwner || Boolean(row.conflict)}
+                  ariaLabel={`Доступ до qTicket: ${row.member.name || row.member.email}`}
+                  size="md"
+                />
+                <UserAvatar user={row.member} size="md" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-[13px] font-semibold text-ink">
+                      {row.member.name || row.member.email}
+                    </p>
+                    {row.isOwner && <Pill shape="badge" size="sm" uppercase>Власник</Pill>}
+                  </div>
+                  <p className="truncate text-[11px] text-muted">
+                    {row.member.email} · у QuickTeam {organizationRoleLabel(row.member.role).toLowerCase()}
+                  </p>
+                </div>
+                {row.conflict ? (
+                  // Пояснення на сім рядків стояло вгорі екрана, окремим
+                  // попередженням, за півтори сотні пікселів від людини, якої
+                  // воно стосується. Тут воно біля неї й коротке: чому місця не
+                  // буде, і що з цим робити.
+                  <div className="min-w-0 text-right">
+                    <p className="text-[12px] font-semibold text-warning">Місця не буде</p>
+                    <p className="text-[11px] text-muted">
+                      Ця адреса вже {row.conflict.currentRole === 'client_admin' ? 'адміністратор' : 'співробітник'} клієнта в qTicket.
+                      Потрібна інша робоча адреса.
+                    </p>
+                  </div>
+                ) : (
+                  <Select
+                    value={row.deskRole}
+                    onChange={value => handleQTicketRole(row.userId, value)}
+                    options={row.isOwner
+                      ? [{ value: 'owner', label: 'Власник' }]
+                      : [
+                        { value: 'admin', label: 'Адміністратор' },
+                        { value: 'member', label: 'Менеджер підтримки' },
+                      ]}
+                    disabled={row.isOwner}
+                    size="sm"
+                    ariaLabel={`Роль у qTicket: ${row.member.name || row.member.email}`}
+                  />
+                )}
+              </div>
+            ))}
+            {qTicketStaff.length === 0 && (
+              <p className="py-6 text-center text-[12px] text-muted">Нікого не знайдено</p>
+            )}
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Бренд клієнтського порталу — окремо від бренду QuickTeam.
+          У qTicket ці поля завжди були різні (`name` для шелу персоналу,
+          `portalBranding` для клієнтського порталу) і завжди годувалися одним
+          значенням, тож компанія не могла назвати свою підтримку інакше, ніж
+          собою.
+
+          Поля стоять на білому тлі діалогу. Доти вони жили всередині
+          `IntegrationNote` — панелі кольору `canvas` з рамкою `line`, — і поле
+          вводу на ній не мало видимих меж: сіре на сірому. Саме про це
+          «Назва підтримки зливається з усім». */}
+      <Dialog
+        isOpen={qTicketBrandOpen && Boolean(qTicketPortal)}
+        onClose={() => setQTicketBrandOpen(false)}
+        size="lg"
+        title="Бренд клієнтського порталу"
+        description="Так підтримку бачать клієнти. Персонал у QuickTeam це не змінює."
+        footer={(
+          <>
+            <Button style="secondary" size="md" onClick={() => setQTicketBrandOpen(false)}>Скасувати</Button>
+            <Button
+              style="primary"
+              size="md"
+              loading={qTicketLoading}
+              disabled={!qTicketDirty}
+              onClick={async () => { await handleQTicketSync(); setQTicketBrandOpen(false); }}
+            >
+              Зберегти
+            </Button>
+          </>
+        )}
+      >
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-[6px]">
+              <Label>Назва підтримки</Label>
+              <Input
+                value={qTicketPortal?.name || ''}
+                onChange={event => handleQTicketPortalField('name', event.target.value)}
+                placeholder={org?.name || 'Підтримка'}
+                size="md"
+                aria-label="Назва підтримки для клієнтів"
+              />
+              <p className="text-[11px] leading-relaxed text-muted">
+                Порожнє поле успадкує назву організації — «{org?.name || 'QuickTeam'}».
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-[8px]">
+              <Label>Логотип на порталі</Label>
+              {/* `showLabel` лишався за замовчуванням, тож під написом
+                  «Логотип на порталі» стояв другий — «Завантажити логотип»,
+                  від самого контролу. */}
+              <ImageUpload
+                value={qTicketPortal?.logo || ''}
+                organizationId={activeOrgId}
+                kind="logos"
+                theme="light"
+                showLabel={false}
+                showHint={false}
+                onChange={url => handleQTicketPortalField('logo', url || '')}
+                onError={message => showToast(message, 'error')}
+              />
+            </div>
+
+            <div className="flex flex-col gap-[10px]">
+              <Label>Колір бічної панелі порталу</Label>
+              <SidebarThemePicker
+                theme={qTicketPortal?.sidebarTheme || 'dark'}
+                color={qTicketPortal?.sidebarColor}
+                onThemeChange={value => handleQTicketPortalField('sidebarTheme', value)}
+                onColorChange={value => handleQTicketPortalField('sidebarColor', value)}
+                onCancel={() => handleQTicketPortalField(
+                  'sidebarColor',
+                  qTicketStatus.portal?.sidebarColor || org?.sidebarColor || SIDEBAR_PRESETS.dark,
+                )}
+                ariaPrefix="Колір бічної панелі порталу"
+              />
+            </div>
+          </div>
+
+          <PortalBrandPreview
+            name={qTicketPortal?.name || org?.name || 'Підтримка'}
+            logo={qTicketPortal?.logo || org?.logo || ''}
+            theme={qTicketPortal?.sidebarTheme || 'dark'}
+            color={qTicketPortal?.sidebarColor}
+          />
+        </div>
+      </Dialog>
+
+      {/* Журнал змін. Двадцять записів — і жодного дубля дати з екрана: дата
+          останньої зміни більше не стоїть ні в шапці, ні окремою клітинкою.
+          Вона тут, разом із тим, хто і що змінив, бо саме заради цього її
+          читають. */}
+      <Dialog
+        isOpen={qTicketLogOpen}
+        onClose={() => setQTicketLogOpen(false)}
+        size="md"
+        title="Журнал змін"
+        description="Хто і коли міняв склад підтримки чи бренд порталу."
+        footer={<Button style="secondary" size="md" onClick={() => setQTicketLogOpen(false)}>Закрити</Button>}
+      >
+        <div className="flex flex-col divide-y divide-line">
+          {qTicketStatus.history.slice(0, 20).map(entry => (
+            <div key={`${entry.at}-${entry.revision}`} className="py-3">
+              <p className="text-[13px] font-semibold text-ink">{qTicketMemberName(entry.by)}</p>
+              <p className="mt-[2px] text-[12px] leading-relaxed text-muted">
+                {new Date(entry.at).toLocaleString('uk-UA')} — {[
+                  entry.added?.length ? `додав ${entry.added.map(qTicketMemberName).join(', ')}` : '',
+                  entry.removed?.length ? `прибрав ${entry.removed.map(qTicketMemberName).join(', ')}` : '',
+                  entry.rolesChanged ? 'змінив ролі' : '',
+                  entry.brandChanged ? 'змінив бренд' : '',
+                ].filter(Boolean).join('; ') || 'оновив знімок'}
+              </p>
+            </div>
+          ))}
+        </div>
+      </Dialog>
+
     </SidebarLayout>
   );
 }

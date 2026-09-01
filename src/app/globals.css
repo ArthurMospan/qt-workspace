@@ -49,6 +49,12 @@
      that serve those screens. Named rather than excused, because a value two
      components share is a token whatever screen it is on. */
   --color-surface-dark: #2a2a2a;
+  /* А це саме полотно тих екранів — панель, на якій `surface-dark` лежить
+     контролами. Три місця писали його руками (`AuthLayout`, обидві сторінки
+     входу), і четвертим мав стати кіт: лічильник на екрані вибору організації
+     вирізається саме з цього тла. Значення не змінилося, лише дістало ім'я — з
+     тієї ж причини, що й сусід вище. */
+  --color-shell-dark:   #1c1c1c;
 
   /* ── Status tokens ───────────────────────────────────────────────────
      Success, warning, danger and info — the four things the product says about

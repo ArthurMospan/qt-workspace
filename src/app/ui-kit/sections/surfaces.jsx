@@ -1,7 +1,7 @@
 'use client';
 import Button from '@/components/ui/Button';
 import Surface from '@/components/ui/Surface';
-import { IconAction, Card, ListRow, PlanCards } from '@/components/ui';
+import { IconAction, Card, Input, ListRow, PlanCards, SettingRow, TextAction, ToggleSwitch } from '@/components/ui';
 import { useState } from 'react';
 import { Edit2, Trash2, Settings, X, Zap, MoreVertical } from 'lucide-react';
 import { PreviewBlock } from '../preview';
@@ -86,6 +86,29 @@ export default function SurfacesSection() {
             </ListRow>
           </div>
         </div>
+      </PreviewBlock>
+
+      <PreviewBlock
+        title="Рядок налаштування"
+        component="SettingRow"
+        description="Одне налаштування: назва зліва, пояснення під нею, контрол справа. Рядок, яким набрані всі секції «Налаштувань» і кожен екран інтеграції — саме тому він у кіті, а не всередині сторінки: сусідній файл не може імпортувати локальну функцію, і його вибір був би між власною копією рядка й власною формою екрана. Рядок з одним лише перемикачем лишається одним рядком і на телефоні; рядок із полем або селектом там переноситься."
+        filePath="src/components/ui/Layout/SettingRow.jsx"
+        fullWidth
+      >
+        <Card preset="borderless" padding="lg" className="w-full max-w-[520px]">
+          <SettingRow label="Назва організації" desc="Видима всім у вашій організації">
+            <Input value="OneB" onChange={() => {}} size="md" aria-label="Назва організації" />
+          </SettingRow>
+          <SettingRow label="Окремий бренд клієнтського порталу" desc="Клієнти бачать бренд організації">
+            <ToggleSwitch checked onChange={() => {}} size="md" ariaLabel="Окремий бренд" />
+          </SettingRow>
+          <SettingRow label="Команда підтримки" desc="Хто працює у зверненнях і з якою роллю">
+            <TextAction onClick={() => {}}>5 із 9</TextAction>
+          </SettingRow>
+          <SettingRow label="Відключити джерело" desc="Токен буде видалено. Перенесене залишиться." danger>
+            <Button style="ghost" color="red" size="sm">Відключити</Button>
+          </SettingRow>
+        </Card>
       </PreviewBlock>
 
       <PreviewBlock title="Outline danger — Profile emergency call" description="Єдиний фактичний outline-варіант на сайті." filePath="src/components/profile/ProfileView.jsx">

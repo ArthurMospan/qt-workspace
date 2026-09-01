@@ -13,14 +13,14 @@
     "long-text"
   ],
   "totals": {
-    "components": 120,
-    "stateful": 107,
+    "components": 121,
+    "stateful": 108,
     "hover": 72,
     "focus": 69,
     "disabled": 35,
     "loading": 7,
     "error": 6,
-    "long-text": 74
+    "long-text": 75
   },
   "components": {
     "Alert": {
@@ -397,6 +397,9 @@
       "focus": "global",
       "long-text": "children"
     },
+    "SettingRow": {
+      "long-text": "children, label"
+    },
     "SidebarLayout": {
       "long-text": "children"
     },
@@ -705,6 +708,7 @@
     ],
     "Input": [
       "inputs",
+      "surfaces",
       "form-groups",
       "dialogs",
       "variant-matrix",
@@ -861,6 +865,9 @@
       "variant-matrix",
       "states"
     ],
+    "SettingRow": [
+      "surfaces"
+    ],
     "SidebarLayout": [
       "inner-nav-layout"
     ],
@@ -927,6 +934,7 @@
       "task-crm"
     ],
     "TextAction": [
+      "surfaces",
       "chat-elements",
       "variant-matrix",
       "states"
@@ -956,6 +964,7 @@
     ],
     "ToggleSwitch": [
       "inputs",
+      "surfaces",
       "variant-matrix",
       "states"
     ],

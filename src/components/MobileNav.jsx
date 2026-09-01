@@ -315,11 +315,17 @@ export default function MobileNav({ keyboardOpen = false }) {
                 <button
                   onClick={() => setShowOrgSwitcher(true)}
                   className="flex items-center gap-[6px] text-[var(--sb-text)] min-w-0">
-                  <span className="text-[15px] font-bold truncate">{activeOrg?.name || 'QuickTeam'}</span>
-                  {otherOrgUnreadCount > 0 && (
-                    <Counter variant="dot" size="sm" appearance="sidebar" />
-                  )}
-                  <ChevronsUpDown size={14} className="shrink-0 text-[var(--sb-muted)]" />
+                  <span className="min-w-0 truncate text-[15px] font-bold">{activeOrg?.name || 'QuickTeam'}</span>
+                  {/* Той самий розклад, що й у рейці: крапка при стрілках, бо
+                      відповідає за неї перемикач, а не назва поруч. Назва
+                      скорочується, тож ні крапка, ні стрілки не наповзають на
+                      «Закрити» праворуч. */}
+                  <span className="flex shrink-0 items-center gap-[6px]">
+                    <ChevronsUpDown size={14} className="shrink-0 text-[var(--sb-muted)]" />
+                    {otherOrgUnreadCount > 0 && (
+                      <Counter variant="dot" size="sm" appearance="sidebar" />
+                    )}
+                  </span>
                 </button>
                 <IconAction label="Закрити" icon={X} size="sm" appearance="quiet" onClick={() => setMoreOpen(false)} className="-mr-[6px]" />
               </div>

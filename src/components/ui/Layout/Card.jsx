@@ -50,7 +50,15 @@ export default function Card({
       className={`
         ui-surface
         ${onClick ? 'block w-full text-left' : ''}
-        ${interactive ? 'cursor-pointer hover:bg-canvas hover:ring-4 hover:ring-line transition-all duration-200' : ''}
+        ${/* Кільце, і більше нічого.
+             Під курсором картка робила дві речі одразу: обводила себе і
+             заливалася сірим. Заливка з'їдала біле тло, на якому стоїть весь
+             вміст, — а біле тло і є те, що відрізняє картку від полотна
+             навколо. Тобто наведення прибирало саме ту межу, яку мало
+             підкреслити.
+             Кільце лишається: це домашній жест продукту, той самий, що на
+             картках задач. Одна відповідь на один рух. */''}
+        ${interactive ? 'cursor-pointer hover:ring-4 hover:ring-line transition-all duration-200' : ''}
         ${className}
       `}
       onClick={onClick}

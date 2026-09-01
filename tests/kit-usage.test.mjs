@@ -666,7 +666,7 @@ test('approved UI decisions stay encoded in shared components', () => {
 // wherever it lives. These two came in as separate reports about the same drift.
 test('every settings row that switches something on is a switch', () => {
   const settings = readFileSync(new URL('../src/app/(app)/settings/page.js', import.meta.url), 'utf8');
-  const integrationCard = readFileSync(new URL('../src/components/integrations/IntegrationCard.jsx', import.meta.url), 'utf8');
+  const integrationScreen = readFileSync(new URL('../src/components/integrations/IntegrationScreen.jsx', import.meta.url), 'utf8');
   const youtrack = readFileSync(new URL('../src/components/integrations/YouTrackImportCard.jsx', import.meta.url), 'utf8');
 
   // QUI-120: login methods used a Підключити/Відключити button pair beside a
@@ -679,15 +679,31 @@ test('every settings row that switches something on is a switch', () => {
   assert.doesNotMatch(loginMethod, /<Button\b|<Pill\b|ProviderStatus/);
   assert.doesNotMatch(settings, /function ProviderStatus/);
 
-  // QUI-119: one instruction panel shared by every integration. The same kind
-  // of hint used to carry a different radius, padding and body colour per
-  // service, and BuggyBag additionally listed what it syncs for no reason.
-  assert.match(integrationCard, /export function IntegrationNote/);
-  assert.match(integrationCard, /export function IntegrationCode/);
-  for (const source of [settings, youtrack]) {
-    assert.match(source, /<IntegrationNote/);
+  // Дві сцени, і одна форма на всі інтеграції разом із перенесенням даних.
+  //
+  // Це замінило правило, яке стояло тут раніше — «одна спільна панель-підказка
+  // для всіх інтеграцій». Панель була чесною відповіддю на попередній розгардіяш
+  // (у кожного сервісу свій радіус, свої відступи, свій колір тексту), але вона
+  // лікувала симптом: сірий блок з обводкою лишався сірим блоком з обводкою, у
+  // нього складали форми, і поле вводу опинялось на `canvas`, де в нього немає
+  // видимих меж. Разом із нею пішли нумеровані кроки, які малювались усі
+  // одночасно й тому не були кроками.
+  assert.match(integrationScreen, /export function IntegrationConnect/);
+  assert.match(integrationScreen, /export function IntegrationControls/);
+  assert.match(integrationScreen, /export function IntegrationWork/);
+  for (const source of [settings, youtrack, integrationScreen]) {
+    // Тег і імпорт, а не слово: коментарі в цих файлах пояснюють саме те,
+    // що звідси прибрали, і мають право називати це на ім'я.
+    assert.doesNotMatch(source, /<IntegrationNote|<IntegrationSteps|import .*Integration(Note|Steps)/);
     assert.doesNotMatch(source, /rounded-\[(8|10)px\] border border-line bg-canvas/);
   }
+  // Підключення — сцена, а не рядок і не майстер, і вона в обох файлах одна й та сама.
+  for (const source of [settings, youtrack]) {
+    assert.match(source, /<IntegrationConnect/);
+  }
+  // Стан підключення — ключ зі спільної таблиці, а не напис на місці показу.
+  assert.doesNotMatch(settings, /'Активовано'|'Не активовано'|'Помилка синхронізації'/);
+  assert.doesNotMatch(youtrack, /'Готово до імпорту'|'Перевіряємо'/);
   assert.doesNotMatch(settings, /'Скріншоти та консоль'/);
 });
 

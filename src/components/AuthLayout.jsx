@@ -52,7 +52,7 @@ export default function AuthLayout({ children, hideCreateOrg = false, onClose })
 
   return (
     <div className={`w-full h-[100dvh] bg-[#f5f5f5] p-[12px] flex flex-col overflow-hidden select-none ${animationClass}`}>
-      <div className="w-full h-full bg-[#1c1c1c] rounded-[24px] overflow-hidden flex flex-col relative text-white">
+      <div className="w-full h-full bg-shell-dark rounded-[24px] overflow-hidden flex flex-col relative text-white">
         
         {/* Header - Padding matches WorkspaceSidebar: pt-24px, px-20px */}
         <div className="w-full flex items-center justify-between pt-[24px] px-[20px] pb-[16px] shrink-0 relative z-50">

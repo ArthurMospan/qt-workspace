@@ -20,7 +20,11 @@ test('calendar and every settings integration share the one-refresh authenticate
   }
   assert.match(settings, /Не вдалося оновити інтеграцію BuggyBag/);
   assert.match(settings, /Не вдалося виконати запит до Telegram/);
-  assert.match(settings, /toggleDisabled=\{buggyBagLoading\}/);
+  // Вимикач замкнений, доки запит у польоті, інакше одноразове поновлення
+  // токена запускається двічі. Раніше це був проп на картці інтеграції; тепер
+  // стан і вимикач стоять у шапці секції, тож той самий прапорець передається
+  // полем. Перевіряється те саме — що він передається взагалі.
+  assert.match(settings, /toggleDisabled:\s*buggyBagLoading,/);
   assert.doesNotMatch(portalSession, /getIdToken\(/);
   assert.doesNotMatch(portalAccount, /getIdToken\(/);
 });

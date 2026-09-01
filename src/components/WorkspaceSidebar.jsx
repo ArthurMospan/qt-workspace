@@ -299,10 +299,25 @@ export default function WorkspaceSidebar() {
                         className="min-w-0 truncate transition-all"
                         style={{ fontSize: isBranded ? 16 : 12, lineHeight: isBranded ? '21px' : '17px', fontWeight: isBranded ? 700 : 500 }}
                       >{activeOrg?.name || 'Company name'}</span>
-                      {otherOrgUnreadCount > 0 && (
-                        <Counter variant="dot" size="sm" appearance="sidebar" />
-                      )}
-                      <ChevronsUpDown size={12} className="shrink-0" style={{ color: theme.muted }} />
+                      {/* Крапка належить перемикачеві, а не назві.
+                          Вона стояла впритул за назвою організації, тож у
+                          короткої назви читалася як мітка самої організації —
+                          «в OneB щось є», — тимчасом як означає рівно
+                          протилежне: щось є в ІНШІЙ організації, і саме тому
+                          варто відкрити перемикач. Тепер вона стоїть при
+                          стрілках, тобто при контролі, який на неї відповідає.
+
+                          Обидва лишаються в потоці й обидва `shrink-0`, а
+                          назва — `min-w-0 truncate`: довга назва скорочується
+                          сама, і ні крапка, ні стрілки не можуть виїхати за
+                          межі колонки на кнопку «Сховати панель». Абсолютне
+                          позиціювання дало б цю гарантію втратити. */}
+                      <span className="flex shrink-0 items-center gap-[4px]">
+                        <ChevronsUpDown size={12} className="shrink-0" style={{ color: theme.muted }} />
+                        {otherOrgUnreadCount > 0 && (
+                          <Counter variant="dot" size="sm" appearance="sidebar" />
+                        )}
+                      </span>
                     </div>
                   </div>
                 )}
