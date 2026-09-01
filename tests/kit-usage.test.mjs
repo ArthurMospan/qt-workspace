@@ -100,7 +100,21 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     // in a line of text and make the loudest thing on the screen the footer,
     // on a screen whose entire job is the three sign-in buttons above it.
     // Marked `data-ui-control="auth-footer-support"`.
-    nativeControls: 21,
+    //
+    // 21 → 22, on purpose: an API token, an organization id, a portal address
+    // and a bot command are copied by clicking the literal itself. What stood
+    // there before was the literal plus a separate icon button beside it — a
+    // target the size of a glyph, next to the text the hand is already aiming
+    // at, so copying a token meant deliberately missing the thing you were
+    // copying. Wrapping it in a `Button` is the opposite mistake: a control box
+    // around a value, in a row whose whole point is that the value is readable.
+    // This is the second click-to-copy value in the product, and it is not the
+    // same drawing as the first — `profile-contact-value` is a 13px line in a
+    // contact grid, this is a bordered monospace literal — so it stays two
+    // marked controls rather than one component forced to be both. A third
+    // would be the moment to make it a kit component. Marked
+    // `data-ui-control="integration-copy-value"`.
+    nativeControls: 22,
   };
   for (const [category, maximum] of Object.entries(maximums)) {
     assert.ok(

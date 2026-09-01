@@ -29,7 +29,9 @@
 //   `IntegrationCode` — <code> для токена й адреси. Лишився там, де це
 //   справді літерал, який копіюють, і не малює більше цілі абзаци.
 
+import { useState } from 'react';
 import Image from 'next/image';
+import { Check, Copy } from 'lucide-react';
 import { Button, Card, Pill, ToggleSwitch } from '@/components/ui';
 import { integrationStatus } from '@/lib/content/integrations.mjs';
 
@@ -80,9 +82,21 @@ export function IntegrationControls({
   title,
 }) {
   const state = integrationStatus(status);
+  // Пігулка каже лише те, чого не каже світчер.
+  //
+  // Поруч із увімкненим світчером стояло «Підключено» — той самий факт двічі, у
+  // двох різних формах, за два сантиметри один від одного. Світчер уже і є
+  // відповідь на «воно ввімкнене?», і на екрані, де він стоїть, пігулка з тим
+  // самим змістом лише додає, що читати.
+  //
+  // Лишаються три стани, яких світчер сказати не може: «Помилка» (він
+  // увімкнений, але не працює), «Недоступно» (вмикати нема чого) і
+  // «Підключаємо» (ще не відомо). І, звісно, там, де світчера немає взагалі —
+  // на джерелі перенесення, — пігулка лишається єдиним, що говорить про стан.
+  const saysSomethingNew = !onToggle || status === 'error' || status === 'unavailable' || status === 'connecting';
   return (
     <>
-      <Pill tone={state.tone} size="md">{state.label}</Pill>
+      {saysSomethingNew && <Pill tone={state.tone} size="md">{state.label}</Pill>}
       {action && (
         <Button style="secondary" size="sm" icon={action.icon} onClick={action.onClick} disabled={action.disabled}>
           {action.label}
@@ -182,13 +196,54 @@ export function IntegrationWork({ title, description, status, children }) {
 /**
  * Літерал, який копіюють: токен, ідентифікатор організації, команда бота.
  *
- * Єдине, що лишилось від старого файлу, і лише в цій ролі. Раніше в <code>
- * загортали і цілі речення.
+ * Він і копіює — сам, натисканням по собі. Поруч стояла окрема кнопка зі
+ * значком, тобто ціль розміром із значок біля тексту, у який усе одно цілиться
+ * рука: щоб скопіювати токен, треба було не влучити в те, що збираєшся
+ * копіювати. Тепер літерал і є кнопка, а значок праворуч лише показує, що з
+ * ним можна зробити, і на дві секунди стає галочкою — інакше натискання не
+ * відповідає нічим, і незрозуміло, чи спрацювало.
+ *
+ * Без `value` це просто напис моноширинним — для того, що копіювати нема сенсу:
+ * замаскованого крапками токена, якого браузер більше не побачить.
+ *
+ * @param {React.ReactNode} props.children Що показано.
+ * @param {string} props.value Що лягає в буфер; без нього літерал не клікається.
+ * @param {string} props.label Доступне ім'я дії — «Копіювати API Token».
+ * @param {string} props.className Розміщення в батьку.
  */
-export function IntegrationCode({ children, className = '' }) {
+export function IntegrationCode({ children, value, label, className = '' }) {
+  const [copied, setCopied] = useState(false);
+  const chrome = `rounded border border-line bg-surface px-1.5 py-0.5 font-mono text-[11px] text-ink ${className}`;
+
+  if (!value) {
+    return <code className={chrome}>{children}</code>;
+  }
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Буфер може бути недоступний — у небезпечному контексті або коли
+      // користувач відмовив у дозволі. Мовчазна невдача краща за виняток:
+      // текст лишається на екрані й виділяється вручну.
+    }
+  };
+
   return (
-    <code className={`rounded border border-line bg-surface px-1.5 py-0.5 font-mono text-[11px] text-ink ${className}`}>
-      {children}
-    </code>
+    <button
+      type="button"
+      onClick={copy}
+      aria-label={label}
+      data-ui-control="integration-copy-value"
+      className={`group inline-flex min-w-0 items-center gap-1.5 text-left transition-colors hover:border-line-strong ${chrome}`}
+    >
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      {copied
+        ? <Check size={12} className="shrink-0 text-success" aria-hidden />
+        : <Copy size={12} className="shrink-0 text-faint transition-colors group-hover:text-ink" aria-hidden />}
+      <span className="sr-only" role="status">{copied ? 'Скопійовано' : ''}</span>
+    </button>
   );
 }

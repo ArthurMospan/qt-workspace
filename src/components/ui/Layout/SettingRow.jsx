@@ -20,6 +20,7 @@
 // переїзду файлу.
 
 import React, { Children, isValidElement } from 'react';
+import { ChevronRight } from 'lucide-react';
 
 // Перемикач — єдиний контрол, поруч з яким рядок лишається рядком на телефоні.
 //
@@ -37,22 +38,57 @@ const isSwitchNode = node => {
 /**
  * Рядок одного налаштування.
  *
+ * З `onClick` рядок сам стає кнопкою: тоді праворуч стоїть `value` і стрілка,
+ * а натиснути можна по всій ширині. Без нього це просто рядок із контролом.
+ *
  * @param {React.ReactNode} props.label Назва налаштування.
  * @param {React.ReactNode} props.desc Пояснення під назвою; одне речення.
  * @param {React.ReactNode} props.children Контрол справа — світч, селект, поле, кнопка.
+ * @param {() => void} props.onClick Робить увесь рядок кнопкою, що відкриває наступний екран.
+ * @param {React.ReactNode} props.value Поточне значення праворуч, коли рядок щось відкриває.
  * @param {boolean} props.danger Незворотна дія: назва й пояснення беруть `danger`.
  */
-export default function SettingRow({ label, desc, children, danger = false }) {
+export default function SettingRow({ label, desc, children, onClick, value, danger = false }) {
   const items = Children.toArray(children);
   const switchOnly = items.length > 0 && items.every(isSwitchNode);
+
+  const text = (
+    <div className="min-w-0 flex-1">
+      <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-danger' : 'text-ink'}`}>{label}</p>
+      {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-danger' : 'text-muted'}`}>{desc}</p>}
+    </div>
+  );
+
+  // Рядок, який щось відкриває, показує це стрілкою — і клікається весь.
+  //
+  // Спершу тут стояла `TextAction` зі значенням замість напису: «5 із 9»
+  // темним текстом праворуч. У спокої вона нічим не відрізнялася від значення,
+  // яке просто надруковано поруч, тож єдиним способом дізнатися, що рядок
+  // кудись веде, було провести по ньому мишею й побачити підкреслення. Ціль до
+  // того ж була завширшки з ці чотири символи.
+  //
+  // Стрілка — той самий знак, яким відкриваються картки інтеграцій і рядки
+  // `SignalList`, і кнопкою стає весь рядок, а не напис у ньому.
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="group flex w-full items-center gap-3 py-[12px] text-left transition-colors sm:gap-6"
+      >
+        {text}
+        {value && <span className="shrink-0 text-[13px] text-muted">{value}</span>}
+        {children}
+        <ChevronRight size={16} className="shrink-0 text-faint transition-colors group-hover:text-ink" aria-hidden />
+      </button>
+    );
+  }
+
   return (
     <div className={`flex justify-between gap-3 py-[12px] sm:flex-row sm:items-center sm:gap-6 ${
       switchOnly ? 'flex-row items-center' : 'flex-col items-stretch'
     }`}>
-      <div className="min-w-0 flex-1">
-        <p className={`text-[13px] font-medium leading-snug ${danger ? 'text-danger' : 'text-ink'}`}>{label}</p>
-        {desc && <p className={`text-[12px] mt-[2px] leading-relaxed ${danger ? 'text-danger' : 'text-muted'}`}>{desc}</p>}
-      </div>
+      {text}
       <div className={switchOnly ? 'shrink-0' : 'w-full sm:w-auto sm:shrink-0'}>{children}</div>
     </div>
   );

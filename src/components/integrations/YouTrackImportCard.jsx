@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Upload } from 'lucide-react';
-import { Alert, Button, Card, Checkbox, Dialog, Input, Label, Meter, Pill, Select, SettingRow, TextAction, useConfirm } from '@/components/ui';
+import { Alert, Button, Card, Checkbox, Dialog, Input, Label, Meter, Pill, Select, SettingRow, useConfirm } from '@/components/ui';
 import { IntegrationConnect, IntegrationWork } from '@/components/integrations/IntegrationScreen';
 import { authenticatedRequest } from '@/lib/services/authenticatedRequest';
 import {
@@ -505,38 +505,28 @@ export default function YouTrackImportCard({
               </span>
             </SettingRow>
 
-            <SettingRow
-              label="Проєкти й статуси"
-              desc={discovery
-                ? 'Що переносимо і в які статуси QuickTeam. Повторний запуск оновлює вже перенесене без дублів.'
-                : 'Спочатку подивимось, що є у вашому YouTrack'}
-            >
-              {discovery ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-[13px] text-muted">
-                    {selectedProjectIds.length} {plural(selectedProjectIds.length, ['проєкт', 'проєкти', 'проєктів'])}
-                  </span>
-                  <TextAction onClick={() => setScopeOpen(true)}>Налаштувати</TextAction>
-                </div>
-              ) : (
+            {discovery ? (
+              <SettingRow
+                label="Проєкти й статуси"
+                desc="Що переносимо і в які статуси QuickTeam. Повторний запуск оновлює вже перенесене без дублів."
+                onClick={() => setScopeOpen(true)}
+                value={`${selectedProjectIds.length} ${plural(selectedProjectIds.length, ['проєкт', 'проєкти', 'проєктів'])}`}
+              />
+            ) : (
+              <SettingRow label="Проєкти й статуси" desc="Спочатку подивимось, що є у вашому YouTrack">
                 <Button style="secondary" size="sm" icon={Search} onClick={discover} loading={action === 'discover'}>
                   Знайти проєкти
                 </Button>
-              )}
-            </SettingRow>
+              </SettingRow>
+            )}
 
             {discovery && (
               <SettingRow
                 label="Люди"
                 desc="Кого прив'язати до учасників QuickTeam. Решта перенесуться як зовнішні автори."
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-[13px] text-muted">
-                    {mappedUserCount} із {visibleUsers.length}
-                  </span>
-                  <TextAction onClick={() => setPeopleOpen(true)}>Зіставити</TextAction>
-                </div>
-              </SettingRow>
+                onClick={() => setPeopleOpen(true)}
+                value={`${mappedUserCount} із ${visibleUsers.length}`}
+              />
             )}
 
             {discovery && !activeJob && (

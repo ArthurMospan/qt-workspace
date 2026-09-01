@@ -3647,7 +3647,7 @@ export default function SettingsPage() {
           {
             id: 'quickteam-plus',
             title: 'QuickTeam+',
-            description: 'Клієнтські запити та оновлення з порталу.',
+            description: 'Спільний простір для роботи з клієнтом.',
             logo: '/quickteam.png',
             capability: 'integrations',
             status: qtEnabled ? 'connected' : 'idle',
@@ -3731,7 +3731,7 @@ export default function SettingsPage() {
         // зберігається своїм діалогом, як усе решта в продукті.
         const integrationDesc = {
           qticket: 'Тікет-система для звернень клієнтів. Організація, бренд і команда беруться з QuickTeam.',
-          'quickteam-plus': 'Клієнтські запити та оновлення з порталу QuickTeam+.',
+          'quickteam-plus': 'Портал для спільної роботи з клієнтом в одному просторі.',
           telegram: 'Задачі створюються прямо з робочої групи й потрапляють у вибраний проєкт.',
           buggybag: 'Баг-репорти клієнтів стають задачами разом зі скриншотами й технічними даними.',
         }[integrationDetail] || '';
@@ -3821,11 +3821,9 @@ export default function SettingsPage() {
                   <SettingRow
                     label="Команда підтримки"
                     desc="Хто з QuickTeam працює у зверненнях і з якою роллю саме там"
-                  >
-                    <TextAction onClick={() => setQTicketTeamOpen(true)}>
-                      {qTicketStatus.selectedUserIds?.length || 0} із {members.filter(isActiveMember).length}
-                    </TextAction>
-                  </SettingRow>
+                    onClick={() => setQTicketTeamOpen(true)}
+                    value={`${qTicketStatus.selectedUserIds?.length || 0} із ${members.filter(isActiveMember).length}`}
+                  />
 
                   {/* Кому qTicket відмовив у місці — і чому.
                       Контракт повертав це від початку, щоб QuickTeam міг
@@ -3839,9 +3837,8 @@ export default function SettingsPage() {
                     <SettingRow
                       label={`${qTicketStatus.conflicts.length} ${plural(qTicketStatus.conflicts.length, ['працівник не отримав місця', 'працівники не отримали місць', 'працівників не отримали місць'])}`}
                       desc="Ці адреси вже належать клієнтам цієї організації в qTicket"
-                    >
-                      <TextAction onClick={() => setQTicketTeamOpen(true)}>Подивитись</TextAction>
-                    </SettingRow>
+                      onClick={() => setQTicketTeamOpen(true)}
+                    />
                   )}
 
                   <SettingRow
@@ -3859,19 +3856,22 @@ export default function SettingsPage() {
                   </SettingRow>
 
                   {qTicketPortal && (
-                    <SettingRow label="Вигляд порталу" desc="Назва, логотип і колір бічної панелі, які бачать клієнти">
-                      <TextAction onClick={() => setQTicketBrandOpen(true)}>Налаштувати</TextAction>
-                    </SettingRow>
+                    <SettingRow
+                      label="Вигляд порталу"
+                      desc="Назва, логотип і колір бічної панелі, які бачать клієнти"
+                      onClick={() => setQTicketBrandOpen(true)}
+                    />
                   )}
 
                   {/* «Хто зняв Олю з підтримки» — питання про останню зміну, і
                       доти на нього не було де подивитись. Двадцять записів. */}
                   {qTicketStatus.history.length > 0 && (
-                    <SettingRow label="Журнал змін" desc="Хто і коли міняв склад підтримки чи бренд порталу">
-                      <TextAction onClick={() => setQTicketLogOpen(true)}>
-                        {qTicketStatus.history.length} {plural(qTicketStatus.history.length, ['запис', 'записи', 'записів'])}
-                      </TextAction>
-                    </SettingRow>
+                    <SettingRow
+                      label="Журнал змін"
+                      desc="Хто і коли міняв склад підтримки чи бренд порталу"
+                      onClick={() => setQTicketLogOpen(true)}
+                      value={`${qTicketStatus.history.length} ${plural(qTicketStatus.history.length, ['запис', 'записи', 'записів'])}`}
+                    />
                   )}
                 </Card>
               )}
@@ -3882,7 +3882,9 @@ export default function SettingsPage() {
             {integrationDetail === 'quickteam-plus' && (qtEnabled ? (
               <Card preset="borderless" padding="lg">
                 <SettingRow label="Адреса порталу" desc="Куди потрапляють ваші клієнти">
-                  <IntegrationCode className="select-all">{PORTAL_URL || 'не налаштовано'}</IntegrationCode>
+                  <IntegrationCode value={PORTAL_URL} label="Копіювати адресу порталу">
+                    {PORTAL_URL || 'не налаштовано'}
+                  </IntegrationCode>
                 </SettingRow>
               </Card>
             ) : (
@@ -3907,8 +3909,15 @@ export default function SettingsPage() {
                 </SettingRow>
                 <SettingRow label="Як створити задачу" desc="Наступні рядки повідомлення стануть описом задачі">
                   <div className="flex flex-wrap items-center gap-2">
-                    <IntegrationCode>/task Назва задачі</IntegrationCode>
-                    <IntegrationCode>@{telegramGroupStatus.username || 'quick_team_bot'} Назва</IntegrationCode>
+                    <IntegrationCode value="/task Назва задачі" label="Копіювати команду /task">
+                      /task Назва задачі
+                    </IntegrationCode>
+                    <IntegrationCode
+                      value={`@${telegramGroupStatus.username || 'quick_team_bot'} Назва`}
+                      label="Копіювати звернення до бота"
+                    >
+                      @{telegramGroupStatus.username || 'quick_team_bot'} Назва
+                    </IntegrationCode>
                   </div>
                 </SettingRow>
                 {/* Кнопка, яка мовчала.
@@ -3956,19 +3965,13 @@ export default function SettingsPage() {
                   ariaLabel="Проєкт за замовчуванням для задач із Telegram"
                 />
                 {telegramGroupConnect?.command && (
-                  <div className="flex items-center gap-2">
-                    <IntegrationCode className="min-w-0 flex-1 select-all break-all">{telegramGroupConnect.command}</IntegrationCode>
-                    <Button
-                      style="ghost"
-                      size="icon-sm"
-                      icon={Copy}
-                      onClick={() => {
-                        navigator.clipboard.writeText(telegramGroupConnect.command);
-                        showToast('Команду скопійовано');
-                      }}
-                      aria-label="Копіювати команду"
-                    />
-                  </div>
+                  <IntegrationCode
+                    value={telegramGroupConnect.command}
+                    label="Копіювати команду підтвердження"
+                    className="w-full break-all"
+                  >
+                    {telegramGroupConnect.command}
+                  </IntegrationCode>
                 )}
               </IntegrationConnect>
             ))}
@@ -3977,20 +3980,20 @@ export default function SettingsPage() {
             {integrationDetail === 'buggybag' && (buggyBagEnabled ? (
               <Card preset="borderless" padding="lg">
                 <SettingRow label="API Token" desc="Вставте в налаштуваннях BuggyBag">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <IntegrationCode className="min-w-0 flex-1 select-all truncate">
-                      {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
-                    </IntegrationCode>
-                    {buggyBagKey.token && (
-                      <Button onClick={() => { navigator.clipboard.writeText(buggyBagKey.token); showToast('Токен скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати API Token" />
-                    )}
-                  </div>
+                  {/* Прихований токен не копіюється: у буфер лягли б крапки.
+                      Він повертається лише один раз, коли ключ щойно видали. */}
+                  <IntegrationCode
+                    value={buggyBagKey.token}
+                    label="Копіювати API Token"
+                    className="max-w-[280px]"
+                  >
+                    {buggyBagKey.token || `${buggyBagKey.prefix || 'qt_'}••••••••••••••••`}
+                  </IntegrationCode>
                 </SettingRow>
                 <SettingRow label="Org ID" desc="Ідентифікатор вашої організації">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <IntegrationCode className="min-w-0 flex-1 select-all truncate">{activeOrgId}</IntegrationCode>
-                    <Button onClick={() => { navigator.clipboard.writeText(activeOrgId); showToast('ID скопійовано'); }} style="ghost" size="icon-sm" icon={Copy} aria-label="Копіювати ID організації" />
-                  </div>
+                  <IntegrationCode value={activeOrgId} label="Копіювати ID організації" className="max-w-[280px]">
+                    {activeOrgId}
+                  </IntegrationCode>
                 </SettingRow>
               </Card>
             ) : (
@@ -4101,7 +4104,7 @@ export default function SettingsPage() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="truncate text-[13px] font-bold text-ink">{member.name || member.email}</span>
-                        {isMe && <Pill shape="badge" size="sm" uppercase>Ти</Pill>}
+                        {isMe && <Pill shape="badge" size="sm" uppercase>Ви</Pill>}
                         {deactivated && <Pill shape="badge" size="sm" uppercase>Без доступу</Pill>}
                       </span>
                       <span className="mt-[2px] block truncate text-[11px] text-muted">{member.email}</span>

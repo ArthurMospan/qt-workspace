@@ -15,8 +15,8 @@
   "totals": {
     "components": 121,
     "stateful": 108,
-    "hover": 72,
-    "focus": 69,
+    "hover": 73,
+    "focus": 70,
     "disabled": 35,
     "loading": 7,
     "error": 6,
@@ -398,6 +398,8 @@
       "long-text": "children"
     },
     "SettingRow": {
+      "hover": "own",
+      "focus": "global",
       "long-text": "children, label"
     },
     "SidebarLayout": {
@@ -934,7 +936,6 @@
       "task-crm"
     ],
     "TextAction": [
-      "surfaces",
       "chat-elements",
       "variant-matrix",
       "states"

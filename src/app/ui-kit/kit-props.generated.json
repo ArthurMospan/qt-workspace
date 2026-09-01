@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 121,
-    "props": 892,
-    "documentedProps": 892,
+    "props": 894,
+    "documentedProps": 894,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5405,7 +5405,7 @@
     },
     "SettingRow": {
       "file": "src/components/ui/Layout/SettingRow.jsx",
-      "summary": "Рядок одного налаштування.",
+      "summary": "Рядок одного налаштування. З `onClick` рядок сам стає кнопкою: тоді праворуч стоїть `value` і стрілка, а натиснути можна по всій ширині. Без нього це просто рядок із контролом.",
       "props": [
         {
           "name": "danger",
@@ -5427,6 +5427,20 @@
           "type": "React.ReactNode",
           "values": [],
           "description": "Назва налаштування."
+        },
+        {
+          "name": "onClick",
+          "default": "",
+          "type": "() => void",
+          "values": [],
+          "description": "Робить увесь рядок кнопкою, що відкриває наступний екран."
+        },
+        {
+          "name": "value",
+          "default": "",
+          "type": "React.ReactNode",
+          "values": [],
+          "description": "Поточне значення праворуч, коли рядок щось відкриває."
         }
       ]
     },

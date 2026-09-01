@@ -11,13 +11,13 @@
   },
   "totals": {
     "files": 387,
-    "elements": 4529,
+    "elements": 4522,
     "namelessControls": 0,
     "imagesWithoutAlt": 0,
     "positiveTabIndex": 0,
     "fakeButtons": 0,
     "contrastFailures": 0,
-    "runtimeNameVerification": 46
+    "runtimeNameVerification": 47
   },
   "namelessControls": [],
   "imagesWithoutAlt": [],
@@ -27,7 +27,7 @@
   "runtimeNameVerification": [
     {
       "element": "Button",
-      "location": "src/app/(app)/settings/page.js:4172",
+      "location": "src/app/(app)/settings/page.js:4175",
       "attributes": [
         "title",
         "aria-label"
@@ -54,6 +54,13 @@
       "location": "src/app/(app)/team/page.js:124",
       "attributes": [
         "title"
+      ]
+    },
+    {
+      "element": "button",
+      "location": "src/components/integrations/IntegrationScreen.jsx:235",
+      "attributes": [
+        "aria-label"
       ]
     },
     {
