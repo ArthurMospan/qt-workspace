@@ -434,6 +434,156 @@ function InlineDateField({ value, onChange, saved, onSave, placeholder = 'Обе
   );
 }
 
+// Один спосіб обрати колір рейки, і він тепер один.
+//
+// «Загальні» відкривали пікер: райдужний кружечок, у ньому — поле кольору, HEX
+// і кнопки. Бренд клієнтського порталу в «Інтеграції» → qTicket мав три пласкі
+// кружечки, а під ними, після вибору «Ваш колір», порожнє поле, у яке треба
+// знати, що вписати. Те саме рішення, два інтерфейси, і гірший з них — на
+// екрані, який бачать клієнти. Це один компонент із двома викликами; де він
+// зберігає результат, вирішує той, хто його малює.
+const BRAND_COLOR_WHEEL = 'conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ec4899, #ef4444)';
+const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+function SidebarThemePicker({ theme, color, onThemeChange, onColorChange, onCancel, ariaPrefix }) {
+  const current = color || SIDEBAR_PRESETS.dark;
+  // Поле тримає те, що людина набирає, а не те, що збережено: доти кожен
+  // проміжний «#1a3» ставав значенням кольору.
+  const [typed, setTyped] = useState(null);
+  const shown = typed === null ? current : typed;
+
+  const options = [
+    { id: 'dark',   label: 'Темна',     bg: SIDEBAR_PRESETS.dark },
+    { id: 'light',  label: 'Світла',    bg: SIDEBAR_PRESETS.light },
+    { id: 'custom', label: 'Ваш колір', bg: current },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-[16px]">
+      {options.map(option => {
+        const isActive = theme === option.id;
+        const swatch = (
+          <label key={option.id} className="group/theme flex cursor-pointer flex-col items-center gap-[6px]">
+            <ColorSwatch
+              size="theme"
+              selected={isActive}
+              label={`${ariaPrefix}: ${option.label}`}
+              onClick={() => onThemeChange(option.id)}
+              color={option.id === 'custom' && !isActive ? BRAND_COLOR_WHEEL : option.bg}
+            />
+            <span className={`text-[11px] font-medium transition-colors ${isActive ? 'text-ink' : 'text-muted group-hover/theme:text-ink'}`}>
+              {option.label}
+            </span>
+          </label>
+        );
+
+        if (option.id !== 'custom') return swatch;
+
+        return (
+          <Popover key={option.id} position="top" trigger={swatch} hideCloseIcon>
+            {({ close }) => (
+              <div className="flex w-[220px] flex-col gap-[16px]">
+                <Colorful
+                  color={current}
+                  onChange={next => { setTyped(null); onColorChange(next.hex); }}
+                  disableAlpha={true}
+                />
+                <div className="flex items-center gap-[10px]">
+                  <div
+                    className="h-[28px] w-[28px] shrink-0 rounded-[6px] border border-line"
+                    style={{ backgroundColor: current }}
+                  />
+                  <Input
+                    value={shown}
+                    onChange={event => {
+                      const next = event.target.value;
+                      setTyped(next);
+                      if (HEX_PATTERN.test(next)) onColorChange(next);
+                    }}
+                    composition="color-hex"
+                    size="md"
+                    placeholder="#1a365d"
+                    ariaLabel={`${ariaPrefix}: HEX`}
+                  />
+                </div>
+                {/* «Скасувати» повертає збережений колір; хрестика зверху
+                    немає — він наїжджав на пікер */}
+                <div className="flex gap-[8px]">
+                  <Button style="secondary" size="sm" className="flex-1" onClick={() => { setTyped(null); onCancel(); close(); }}>
+                    Скасувати
+                  </Button>
+                  <Button style="primary" size="sm" className="flex-1" onClick={() => { setTyped(null); close(); }}>
+                    Готово
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Popover>
+        );
+      })}
+    </div>
+  );
+}
+
+// Що з цього побачить клієнт.
+//
+// Бренд порталу редагувався наосліп: назва, файл і кружечок кольору, і жодного
+// зображення того, у що вони складаються. А складаються вони в рейку, яку малює
+// вже qTicket — інший продукт, інша вкладка, і побачити результат можна було
+// тільки синхронізувавши й відкривши. Кольори тут рахує той самий
+// `computeSidebarTheme`, що й справжня рейка, тож це не схожа картинка.
+function PortalBrandPreview({ name, logo, theme, color }) {
+  const background = theme === 'light'
+    ? SIDEBAR_PRESETS.light
+    : theme === 'custom' ? (color || SIDEBAR_PRESETS.dark) : SIDEBAR_PRESETS.dark;
+  const palette = computeSidebarTheme(background);
+  const initial = (name || '?').trim().charAt(0).toUpperCase();
+  const items = [
+    { label: 'Огляд', active: true },
+    { label: 'Мої звернення', active: false },
+  ];
+
+  return (
+    <div>
+      <p className="ui-type-eyebrow">Що бачить клієнт</p>
+      <div
+        className="mt-[10px] overflow-hidden rounded-[12px] border border-line"
+        style={{ background: palette.bg }}
+      >
+        <div className="flex items-center gap-[10px] p-[14px]">
+          <span
+            className="flex h-[28px] w-[28px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] text-[12px] font-bold"
+            style={{ background: palette.hover, color: palette.text }}
+          >
+            {logo ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={logo} alt="" className="h-full w-full object-cover" />
+            ) : initial}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" style={{ color: palette.text }}>
+            {name}
+          </span>
+        </div>
+        <div className="flex flex-col gap-[2px] px-[10px] pb-[14px]">
+          {items.map(item => (
+            <span
+              key={item.label}
+              className="flex items-center gap-[8px] rounded-[8px] px-[10px] py-[7px] text-[12px] font-medium"
+              style={{
+                background: item.active ? palette.active : 'transparent',
+                color: item.active ? palette.text : palette.muted,
+              }}
+            >
+              <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-current" />
+              {item.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GitHubLogo({ size = 16 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
@@ -3287,12 +3437,6 @@ export default function SettingsPage() {
           brandColorTimer.current = setTimeout(() => persistBranding({ sidebarColor: newColor }), 400);
         };
 
-        const THEME_OPTIONS = [
-          { id: 'dark',   label: 'Темна',     bg: SIDEBAR_PRESETS.dark },
-          { id: 'light',  label: 'Світла',    bg: SIDEBAR_PRESETS.light },
-          { id: 'custom', label: 'Ваш колір', bg: sidebarColor },
-        ];
-
         return (
         <Section title="Загальні" desc="Загальні налаштування вашої організації" rightAction={saveButton}>
           {/* Zone 1: Organization */}
@@ -3373,85 +3517,14 @@ export default function SettingsPage() {
                 <div className="pt-[12px]">
                   <p className="text-[13px] font-medium text-ink mb-[2px]">Тема сайдбару</p>
                   <p className="text-[12px] text-muted mb-[12px]">Оберіть колірну схему бічної панелі</p>
-                  <div className="flex flex-wrap gap-[16px]">
-                    {THEME_OPTIONS.map(opt => {
-                      const isActive = sidebarTheme === opt.id;
-                      const isCustomUnselected = opt.id === 'custom' && !isActive;
-
-                      const buttonNode = (
-                        <label
-                          key={opt.id}
-                          className="flex cursor-pointer flex-col items-center gap-[6px] group/theme"
-                        >
-                          <ColorSwatch
-                            size="theme"
-                            selected={isActive}
-                            label={opt.label}
-                            onClick={() => handleThemeChange(opt.id)}
-                            color={isCustomUnselected
-                              ? 'conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ec4899, #ef4444)'
-                              : opt.bg}
-                          />
-                          <span className={`text-[11px] font-medium transition-colors ${isActive ? 'text-ink' : 'text-muted group-hover/theme:text-ink'}`}>{opt.label}</span>
-                        </label>
-                      );
-
-                      if (opt.id === 'custom') {
-                        return (
-                          <Popover
-                            key={opt.id}
-                            position="top"
-                            trigger={buttonNode}
-                            hideCloseIcon
-                          >
-                            {({ close }) => (
-                              <div className="flex flex-col gap-[16px] w-[220px]">
-                                <Colorful
-                                  color={sidebarColor}
-                                  onChange={(color) => handleColorChange(color.hex)}
-                                  disableAlpha={true}
-                                />
-                                <div className="flex items-center gap-[10px]">
-                                  <div
-                                    className="w-[28px] h-[28px] rounded-[6px] shrink-0 border border-line"
-                                    style={{ backgroundColor: sidebarColor }}
-                                  />
-                                  <Input
-                                    value={sidebarColor}
-                                    onChange={e => {
-                                      const v = e.target.value;
-                                      setSidebarColor(v);
-                                      if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
-                                        handleColorChange(v);
-                                      }
-                                    }}
-                                    composition="color-hex"
-                                    size="md"
-                                    placeholder="#1a365d"
-                                  />
-                                </div>
-                                {/* «Скасувати» повертає збережений колір організації;
-                                    хрестика зверху немає — він наїжджав на пікер */}
-                                <div className="flex gap-[8px]">
-                                  <Button
-                                    style="secondary" size="sm" className="flex-1"
-                                    onClick={() => { handleColorChange(org?.sidebarColor || '#1f1f1f'); close(); }}
-                                  >
-                                    Скасувати
-                                  </Button>
-                                  <Button style="primary" size="sm" className="flex-1" onClick={close}>
-                                    Готово
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </Popover>
-                        );
-                      }
-
-                      return buttonNode;
-                    })}
-                  </div>
+                  <SidebarThemePicker
+                    theme={sidebarTheme}
+                    color={sidebarColor}
+                    onThemeChange={handleThemeChange}
+                    onColorChange={handleColorChange}
+                    onCancel={() => handleColorChange(org?.sidebarColor || SIDEBAR_PRESETS.dark)}
+                    ariaPrefix="Тема сайдбару"
+                  />
                 </div>
               </>
             )}
@@ -3707,10 +3780,10 @@ export default function SettingsPage() {
                   відповідала: усі чотири беруться з цієї бази, тобто описують те,
                   що QuickTeam думає, ніби надіслав. Тепер тут стан, а не статистика. */}
               <IntegrationNote title="Стан підключення">
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <div className="grid gap-5 sm:grid-cols-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Доступ мають</p>
-                    <div className="mt-1.5 flex items-center gap-2">
+                    <p className="ui-type-eyebrow">Доступ мають</p>
+                    <div className="mt-2 flex items-center gap-2">
                       <div className="flex -space-x-2">
                         {(qTicketStatus.selectedUserIds || []).slice(0, 5).map(userId => {
                           const member = members.find(item => (item.id || item.uid) === userId);
@@ -3725,8 +3798,8 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Синхронізовано</p>
-                    <p className="mt-1.5 text-[13px] font-semibold text-ink">
+                    <p className="ui-type-eyebrow">Синхронізовано</p>
+                    <p className="mt-2 text-[13px] font-semibold text-ink">
                       {qTicketStatus.lastSyncAt
                         ? new Date(qTicketStatus.lastSyncAt).toLocaleString('uk-UA')
                         : 'ще не було'}
@@ -3734,8 +3807,8 @@ export default function SettingsPage() {
                   </div>
                   {qTicketDirty && (
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Не надіслано</p>
-                      <p className="mt-1.5 text-[13px] font-semibold text-warning">
+                      <p className="ui-type-eyebrow">Не надіслано</p>
+                      <p className="mt-2 text-[13px] font-semibold text-warning">
                         {[
                           qTicketDraft.added.length ? `+${qTicketDraft.added.length}` : '',
                           qTicketDraft.removed.length ? `−${qTicketDraft.removed.length}` : '',
@@ -3750,7 +3823,7 @@ export default function SettingsPage() {
                 {/* Питання «а воно взагалі працює?» ставиться qTicket, а не цій
                     базі. Відповідь, яка просто прийшла, вже доводить, що origin,
                     спільний секрет і два годинники згодні між собою. */}
-                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
                   <Button
                     style="secondary"
                     size="sm"
@@ -3778,8 +3851,8 @@ export default function SettingsPage() {
                     qTicket, і QuickTeam не може її вивести; доти вона була
                     відповіддю, яку доводилось у когось питати. */}
                 {qTicketProbe?.portalUrl && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Посилання для клієнтів</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <p className="ui-type-eyebrow">Посилання для клієнтів</p>
                     <IntegrationCode>{qTicketProbe.portalUrl}</IntegrationCode>
                     <Button
                       style="ghost"
@@ -3802,7 +3875,7 @@ export default function SettingsPage() {
                     </p>
 
                     {members.filter(isActiveMember).length > 6 && (
-                      <div className="mt-3 max-w-[320px]">
+                      <div className="mt-4 max-w-[320px]">
                         <Input
                           value={qTicketStaffSearch}
                           onChange={event => setQTicketStaffSearch(event.target.value)}
@@ -3816,9 +3889,9 @@ export default function SettingsPage() {
                     {/* Список замість мультиселекту. Мультиселект показував
                         саме ім'я — не роль, не пошту, не те, ким людина стане в
                         підтримці, і не те, що комусь місця не дадуть. */}
-                    <ul className="mt-3 divide-y divide-line rounded-[8px] border border-line bg-white">
+                    <ul className="mt-4 divide-y divide-line rounded-[10px] border border-line bg-white">
                       {qTicketStaff.map(row => (
-                        <li key={row.userId} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                        <li key={row.userId} className="flex flex-wrap items-center gap-3 px-4 py-3">
                           <Checkbox
                             checked={row.selected}
                             onChange={next => handleQTicketToggleMember(row.userId, next)}
@@ -3860,7 +3933,7 @@ export default function SettingsPage() {
                         </li>
                       ))}
                       {qTicketStaff.length === 0 && (
-                        <li className="px-3 py-4 text-center text-[12px] text-muted">Нікого не знайдено</li>
+                        <li className="px-4 py-6 text-center text-[12px] text-muted">Нікого не знайдено</li>
                       )}
                     </ul>
                   </IntegrationNote>
@@ -3888,65 +3961,61 @@ export default function SettingsPage() {
                     </div>
 
                     {qTicketPortal && (
-                      <div className="mt-3 space-y-3 border-t border-line pt-3">
-                        <div className="max-w-[320px]">
-                          <Label>Назва підтримки</Label>
-                          <Input
-                            value={qTicketPortal.name || ''}
-                            onChange={event => handleQTicketPortalField('name', event.target.value)}
-                            placeholder={org?.name || 'Підтримка'}
-                            size="md"
-                            ariaLabel="Назва підтримки для клієнтів"
-                          />
-                        </div>
-                        <div>
-                          <Label>Логотип на порталі</Label>
-                          <ImageUpload
-                            value={qTicketPortal.logo || ''}
-                            organizationId={activeOrgId}
-                            kind="logos"
-                            theme="light"
-                            showHint={false}
-                            onChange={url => handleQTicketPortalField('logo', url || '')}
-                          />
-                        </div>
-                        <div>
-                          <Label>Колір бічної панелі порталу</Label>
-                          <div className="mt-1.5 flex flex-wrap gap-[16px]">
-                            {[
-                              { id: 'dark', label: 'Темна', bg: SIDEBAR_PRESETS.dark },
-                              { id: 'light', label: 'Світла', bg: SIDEBAR_PRESETS.light },
-                              { id: 'custom', label: 'Ваш колір', bg: qTicketPortal.sidebarColor || SIDEBAR_PRESETS.dark },
-                            ].map(option => (
-                              <label key={option.id} className="flex cursor-pointer flex-col items-center gap-[6px]">
-                                <ColorSwatch
-                                  size="theme"
-                                  selected={qTicketPortal.sidebarTheme === option.id}
-                                  label={option.label}
-                                  color={option.bg}
-                                  onClick={() => handleQTicketPortalField('sidebarTheme', option.id)}
-                                />
-                                <span className="text-[11px] font-medium text-muted">{option.label}</span>
-                              </label>
-                            ))}
+                      <div className="mt-4 grid gap-6 border-t border-line pt-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+                        <div className="flex flex-col gap-5">
+                          <div className="flex max-w-[320px] flex-col gap-[6px]">
+                            <Label>Назва підтримки</Label>
+                            <Input
+                              value={qTicketPortal.name || ''}
+                              onChange={event => handleQTicketPortalField('name', event.target.value)}
+                              placeholder={org?.name || 'Підтримка'}
+                              size="md"
+                              ariaLabel="Назва підтримки для клієнтів"
+                            />
+                            <p className="text-[11px] leading-relaxed text-muted">
+                              Порожнє поле успадковує саме себе: на порталі стоятиме «{org?.name || 'назва організації'}».
+                            </p>
                           </div>
-                          {qTicketPortal.sidebarTheme === 'custom' && (
-                            <div className="mt-3 max-w-[200px]">
-                              <Input
-                                value={qTicketPortal.sidebarColor || ''}
-                                onChange={event => handleQTicketPortalField('sidebarColor', event.target.value)}
-                                composition="color-hex"
-                                size="md"
-                                placeholder="#1a365d"
-                                ariaLabel="HEX-колір бічної панелі порталу"
-                              />
-                            </div>
-                          )}
+
+                          <div className="flex flex-col gap-[8px]">
+                            <Label>Логотип на порталі</Label>
+                            {/* `showLabel` лишався за замовчуванням, тож під написом
+                                «Логотип на порталі» стояв другий — «Завантажити
+                                логотип», від самого контролу. */}
+                            <ImageUpload
+                              value={qTicketPortal.logo || ''}
+                              organizationId={activeOrgId}
+                              kind="logos"
+                              theme="light"
+                              showLabel={false}
+                              showHint={false}
+                              onChange={url => handleQTicketPortalField('logo', url || '')}
+                              onError={message => showToast(message, 'error')}
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-[10px]">
+                            <Label>Колір бічної панелі порталу</Label>
+                            <SidebarThemePicker
+                              theme={qTicketPortal.sidebarTheme || 'dark'}
+                              color={qTicketPortal.sidebarColor}
+                              onThemeChange={value => handleQTicketPortalField('sidebarTheme', value)}
+                              onColorChange={value => handleQTicketPortalField('sidebarColor', value)}
+                              onCancel={() => handleQTicketPortalField(
+                                'sidebarColor',
+                                qTicketStatus.portal?.sidebarColor || org?.sidebarColor || SIDEBAR_PRESETS.dark,
+                              )}
+                              ariaPrefix="Колір бічної панелі порталу"
+                            />
+                          </div>
                         </div>
-                        <p>
-                          Порожнє поле успадковує саме себе: перейменували підтримку — логотип і колір
-                          лишаються організаційні.
-                        </p>
+
+                        <PortalBrandPreview
+                          name={qTicketPortal.name || org?.name || 'Підтримка'}
+                          logo={qTicketPortal.logo || org?.logo || ''}
+                          theme={qTicketPortal.sidebarTheme || 'dark'}
+                          color={qTicketPortal.sidebarColor}
+                        />
                       </div>
                     )}
                   </IntegrationNote>

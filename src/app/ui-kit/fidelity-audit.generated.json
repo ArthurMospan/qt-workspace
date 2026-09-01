@@ -538,22 +538,22 @@
       "className": "rounded-full bg-white flex items-center justify-center border-2 border-canvas"
     },
     {
-      "location": "src/app/(app)/settings/page.js:547",
+      "location": "src/app/(app)/settings/page.js:697",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     },
     {
-      "location": "src/app/(app)/settings/page.js:567",
+      "location": "src/app/(app)/settings/page.js:717",
       "tag": "div",
       "className": "absolute left-0 top-[22px] z-20 bg-white border border-line rounded-[10px] p-[10px] shadow-lg grid grid-cols-5 gap-[6px] w-[148px]"
     },
     {
-      "location": "src/app/(app)/settings/page.js:611",
+      "location": "src/app/(app)/settings/page.js:761",
       "tag": "div",
       "className": "absolute left-0 right-0 top-[36px] z-30 rounded-[10px] border border-line bg-white p-1 shadow-lg"
     },
     {
-      "location": "src/app/(app)/settings/page.js:730",
+      "location": "src/app/(app)/settings/page.js:880",
       "tag": "div",
       "className": "flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group"
     },
@@ -593,14 +593,14 @@
       "className": "rounded-[14px] border border-line bg-white p-4 transition-opacity ${…}"
     },
     {
-      "location": "src/components/integrations/IntegrationCard.jsx:36",
-      "tag": "div",
-      "className": "rounded-[10px] border border-line bg-canvas p-3 ${…}"
-    },
-    {
-      "location": "src/components/integrations/IntegrationCard.jsx:95",
+      "location": "src/components/integrations/IntegrationCard.jsx:109",
       "tag": "div",
       "className": "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-line bg-white"
+    },
+    {
+      "location": "src/components/integrations/IntegrationCard.jsx:42",
+      "tag": "div",
+      "className": "rounded-[12px] border border-line bg-canvas p-4 ${…}"
     },
     {
       "location": "src/components/integrations/YouTrackImportCard.jsx:609",

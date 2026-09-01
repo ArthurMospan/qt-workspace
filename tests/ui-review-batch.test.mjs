@@ -438,8 +438,8 @@ test('every collapse control that folds a group of tasks is the same button', as
 test('the sidebar theme picker never nests a ColorSwatch button in another button', async () => {
   const settings = await read('../src/app/(app)/settings/page.js');
   const themePicker = settings.slice(
-    settings.indexOf('const buttonNode = ('),
-    settings.indexOf("if (opt.id === 'custom')"),
+    settings.indexOf('const swatch = ('),
+    settings.indexOf("if (option.id !== 'custom')"),
   );
   assert.match(themePicker, /<label[\s\S]*group\/theme/);
   assert.doesNotMatch(themePicker, /<button[\s\S]*group\/theme/);
