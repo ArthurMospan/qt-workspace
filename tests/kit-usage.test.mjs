@@ -114,7 +114,15 @@ test('new UI work cannot silently grow the audited drift baseline', () => {
     // marked controls rather than one component forced to be both. A third
     // would be the moment to make it a kit component. Marked
     // `data-ui-control="integration-copy-value"`.
-    nativeControls: 22,
+    //
+    // 22 → 23, on purpose: «Додати» in a member profile's project row. It is
+    // the same control the project capsules beside it already are — same
+    // `profile-project-chip` mark, same `Pill`, same geometry — because it
+    // lands in that row rather than sitting above it: a button of a different
+    // shape parked next to a wrapped list of capsules reads as a control over
+    // the section, not as the next item in it. The audit counts it separately
+    // because it is a second element carrying that mark, not a second drawing.
+    nativeControls: 23,
   };
   for (const [category, maximum] of Object.entries(maximums)) {
     assert.ok(

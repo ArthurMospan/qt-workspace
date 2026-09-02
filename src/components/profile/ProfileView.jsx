@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
 import { CakeSlice, Clock3, LockKeyhole, Mail, MapPin, Phone, Zap, Send, MoreVertical, Shield, BarChart2, X } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
+import { Folder, Plus } from 'lucide-react';
 import { Surface, Card, Badge, StatusBadge, Button, IconAction, Pill, PresenceDot, Tabs, ContextMenu, EmptyState, LoadingSpinner, Tooltip } from '@/components/ui';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import TaskRow from '@/components/ui/TaskManagement/TaskRow';
@@ -16,6 +17,9 @@ import { sendNotification } from '@/lib/hooks/useNotifications';
 import { useCalendarEvents } from '@/lib/hooks/useCalendarEvents';
 import { formatLastSeenUk, isPresenceOnline } from '@/lib/utils/presence.mjs';
 import { isOnProjectTeam, isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
+import { updateProjectSettings } from '@/lib/services/projects';
+import { userFacingErrorMessage } from '@/lib/utils/errors';
+import { can } from '@/lib/utils/can';
 
 const EVENT_TYPE_LABELS = {
   meeting: 'Мітинг',
@@ -110,6 +114,10 @@ export default function ProfileView({ user, onClose }) {
   const { events: calendarEvents, loading: calendarLoading } = useCalendarEvents();
   const [activeTab, setActiveTab] = useState('profile');
   const [statusOpen, setStatusOpen] = useState(false);
+  // Which project is being joined right now — see `addToProject`. Declared
+  // with the rest of this screen's state because everything below the `user`
+  // guard is behind a condition.
+  const [addingProjectId, setAddingProjectId] = useState('');
 
   if (!user) return null;
 
@@ -153,6 +161,46 @@ export default function ProfileView({ user, onClose }) {
   // a member holds only the projects they are on — making the list they see the
   // intersection of the two, and «спільні» the only honest word for it.
   const projectListIsComplete = isAdminOrOwner || isMe;
+
+  // ── «+» beside the projects ────────────────────────────────────────────────
+  //
+  // The list answered where somebody is and offered no way to put them
+  // anywhere: adding a colleague to a project meant opening that project's
+  // settings and finding them in a picker. The capsule that says «Додати» sits
+  // in the row of capsules it adds to, and the menu behind it lists exactly the
+  // projects this reader may put this person into.
+  //
+  // Not memoised, and deliberately: every hook in this component runs above the
+  // `if (!user) return null` guard, so a `useMemo` down here would be a hook
+  // behind a condition. It is a filter over the projects already in memory.
+  const canEditProjectTeam = can(orgRole, 'manage:team');
+  const addableProjects = isMe || !canEditProjectTeam
+    ? []
+    : (projects || [])
+      .filter(project => project.status !== 'archived' && !isOnProjectTeam(project, uid))
+      .sort((left, right) => String(left.name || '').localeCompare(String(right.name || ''), 'uk'));
+
+  const addToProject = async project => {
+    if (addingProjectId) return;
+    setAddingProjectId(project.id);
+    try {
+      // Sent with the baseline it was read against, so a save that means «add
+      // this one person» cannot overwrite whoever else joined meanwhile.
+      const team = Array.isArray(project.team) ? project.team : [];
+      await updateProjectSettings(project.id, {
+        team: [...new Set([...team, uid])],
+        teamBaseline: team,
+      });
+      useWorkspaceStore.getState().showToast(`Додано до проєкту «${project.name}»`, 'success');
+    } catch (error) {
+      useWorkspaceStore.getState().showToast(
+        userFacingErrorMessage(error, 'Не вдалося додати до проєкту'),
+        'error',
+      );
+    } finally {
+      setAddingProjectId('');
+    }
+  };
   // And an owner or an admin *being looked at* reaches every project without
   // being on it, so a short list under their name is not the whole story.
   const viewedReachesEveryProject = isPrivilegedRole(memberRecord?.role || user.role || null);
@@ -435,7 +483,7 @@ export default function ProfileView({ user, onClose }) {
               <h3 className="ui-type-column-title text-muted uppercase tracking-wider">
                 {projectListIsComplete ? 'Проєкти' : 'Спільні проєкти'}
               </h3>
-              {memberProjects.length === 0 ? (
+              {memberProjects.length === 0 && addableProjects.length === 0 ? (
                 <p className="text-[14px] text-faint italic">
                   {projectListIsComplete
                     ? 'Не входить до жодного проєкту.'
@@ -450,7 +498,7 @@ export default function ProfileView({ user, onClose }) {
                 // so its geometry is written once; the button around it adds the
                 // one thing a Pill has no business knowing, that this one opens
                 // something.
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {memberProjects.map(project => (
                     <button
                       key={project.id}
@@ -465,6 +513,36 @@ export default function ProfileView({ user, onClose }) {
                       </Pill>
                     </button>
                   ))}
+                  {/* The last capsule in the row is the one that adds another.
+                      It wears the same chip the projects wear, because it lands
+                      in the same list — a button of a different shape parked
+                      beside them would read as a control over the section
+                      rather than as the next item in it. */}
+                  {addableProjects.length > 0 && (
+                    <ContextMenu
+                      align="start"
+                      dropdownClassName="w-[240px]"
+                      trigger={(
+                        <button
+                          type="button"
+                          title="Додати до проєкту"
+                          aria-label="Додати до проєкту"
+                          disabled={Boolean(addingProjectId)}
+                          className="ui-native-control"
+                          data-ui-control="profile-project-chip"
+                        >
+                          <Pill appearance="outline" tone="surface-ink" size="lg" weight="medium" icon={Plus}>
+                            Додати
+                          </Pill>
+                        </button>
+                      )}
+                      items={addableProjects.map(project => ({
+                        label: project.name || project.id,
+                        icon: Folder,
+                        onClick: () => addToProject(project),
+                      }))}
+                    />
+                  )}
                 </div>
               )}
               {/* Said whether or not the list is empty: for an owner or an admin

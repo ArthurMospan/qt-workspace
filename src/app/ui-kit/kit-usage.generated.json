@@ -2953,7 +2953,7 @@
             "src/app/(app)/settings/page.js:911",
             "src/components/MobileNav.jsx:433",
             "src/components/WorkspaceHelpMenu.jsx:87",
-            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/UnifiedTimeline.jsx:1731"
           ]
         },
@@ -3162,7 +3162,7 @@
             "src/components/integrations/IntegrationScreen.jsx:101",
             "src/components/integrations/YouTrackImportCard.jsx:517",
             "src/components/integrations/YouTrackImportCard.jsx:534",
-            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/BillingTab.jsx:1566",
             "src/components/workspace/BillingTab.jsx:536",
             "src/components/workspace/BoardConfigModal.jsx:208",
@@ -3485,7 +3485,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:599",
             "src/components/integrations/YouTrackImportCard.jsx:622",
             "src/components/integrations/YouTrackImportCard.jsx:715",
-            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/AgileBoard.jsx:413",
             "src/components/workspace/AgileBoard.jsx:494",
             "src/components/workspace/AgileBoard.jsx:510",
@@ -3717,7 +3717,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:599",
             "src/components/integrations/YouTrackImportCard.jsx:622",
             "src/components/integrations/YouTrackImportCard.jsx:715",
-            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/AgileBoard.jsx:413",
             "src/components/workspace/AgileBoard.jsx:494",
             "src/components/workspace/AgileBoard.jsx:510",
@@ -3926,7 +3926,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:594",
             "src/components/integrations/YouTrackImportCard.jsx:622",
             "src/components/integrations/YouTrackImportCard.jsx:715",
-            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/AgileBoard.jsx:413",
             "src/components/workspace/AgileBoard.jsx:494",
             "src/components/workspace/AgileBoard.jsx:510",
@@ -4179,7 +4179,7 @@
             "src/components/integrations/YouTrackImportCard.jsx:599",
             "src/components/integrations/YouTrackImportCard.jsx:622",
             "src/components/integrations/YouTrackImportCard.jsx:715",
-            "src/components/profile/ProfileView.jsx:226",
+            "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/AgileBoard.jsx:494",
             "src/components/workspace/AgileBoard.jsx:510",
             "src/components/workspace/AgileBoard.jsx:525",
@@ -4414,10 +4414,10 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:280",
-            "src/components/profile/ProfileView.jsx:289",
-            "src/components/profile/ProfileView.jsx:298",
-            "src/components/profile/ProfileView.jsx:313"
+            "src/components/profile/ProfileView.jsx:328",
+            "src/components/profile/ProfileView.jsx:337",
+            "src/components/profile/ProfileView.jsx:346",
+            "src/components/profile/ProfileView.jsx:361"
           ]
         },
         "micro": {
@@ -4555,10 +4555,10 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:280",
-            "src/components/profile/ProfileView.jsx:289",
-            "src/components/profile/ProfileView.jsx:298",
-            "src/components/profile/ProfileView.jsx:313"
+            "src/components/profile/ProfileView.jsx:328",
+            "src/components/profile/ProfileView.jsx:337",
+            "src/components/profile/ProfileView.jsx:346",
+            "src/components/profile/ProfileView.jsx:361"
           ]
         },
         "inverse": {
@@ -4610,10 +4610,10 @@
             "src/components/MobileNav.jsx:377",
             "src/components/WorkspaceHeader.jsx:458",
             "src/components/WorkspaceHeader.jsx:476",
-            "src/components/profile/ProfileView.jsx:280",
-            "src/components/profile/ProfileView.jsx:289",
-            "src/components/profile/ProfileView.jsx:298",
-            "src/components/profile/ProfileView.jsx:313",
+            "src/components/profile/ProfileView.jsx:328",
+            "src/components/profile/ProfileView.jsx:337",
+            "src/components/profile/ProfileView.jsx:346",
+            "src/components/profile/ProfileView.jsx:361",
             "src/components/workspace/AttentionPanel.jsx:74"
           ]
         },
@@ -4689,10 +4689,10 @@
             "src/components/WorkspaceSidebar.jsx:538",
             "src/components/profile/ProfileModal.jsx:41",
             "src/components/profile/ProfileModal.jsx:46",
-            "src/components/profile/ProfileView.jsx:280",
-            "src/components/profile/ProfileView.jsx:289",
-            "src/components/profile/ProfileView.jsx:298",
-            "src/components/profile/ProfileView.jsx:313",
+            "src/components/profile/ProfileView.jsx:328",
+            "src/components/profile/ProfileView.jsx:337",
+            "src/components/profile/ProfileView.jsx:346",
+            "src/components/profile/ProfileView.jsx:361",
             "src/components/workspace/AttentionPanel.jsx:74",
             "src/components/workspace/QtPlusProjectTab.jsx:69",
             "src/components/workspace/qtplus/MediaLightbox.jsx:29",
@@ -5945,13 +5945,14 @@
           ]
         },
         "surface-ink": {
-          "count": 2,
+          "count": 3,
           "routes": [
             "/calendar/event/[eventId]",
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:463",
+            "src/components/profile/ProfileView.jsx:511",
+            "src/components/profile/ProfileView.jsx:534",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1413"
           ]
         },
@@ -5991,7 +5992,7 @@
       },
       "size": {
         "lg": {
-          "count": 8,
+          "count": 9,
           "routes": [
             "/[projectId]",
             "/calendar/event/[eventId]",
@@ -6005,7 +6006,8 @@
             "src/app/(app)/settings/page.js:783",
             "src/components/TeamMemberSettingsDialog.jsx:56",
             "src/components/migrations/DataMigrationSettings.jsx:77",
-            "src/components/profile/ProfileView.jsx:463",
+            "src/components/profile/ProfileView.jsx:511",
+            "src/components/profile/ProfileView.jsx:534",
             "src/components/workspace/calendar/CalendarEventPage.jsx:1413"
           ]
         },
@@ -6170,7 +6172,7 @@
           ]
         },
         "(default)": {
-          "count": 44,
+          "count": 45,
           "routes": [
             "/",
             "/[projectId]",
@@ -6205,7 +6207,8 @@
             "src/components/migrations/DataMigrationSettings.jsx:189",
             "src/components/migrations/DataMigrationSettings.jsx:77",
             "src/components/migrations/DataMigrationSettings.jsx:89",
-            "src/components/profile/ProfileView.jsx:463",
+            "src/components/profile/ProfileView.jsx:511",
+            "src/components/profile/ProfileView.jsx:534",
             "src/components/workspace/AgileBoard.jsx:503",
             "src/components/workspace/AgileBoard.jsx:520",
             "src/components/workspace/AgileBoard.jsx:560",
@@ -6307,14 +6310,15 @@
           ]
         },
         "outline": {
-          "count": 2,
+          "count": 3,
           "routes": [
             "/settings",
             "/team"
           ],
           "files": [
             "src/components/migrations/DataMigrationSettings.jsx:89",
-            "src/components/profile/ProfileView.jsx:463"
+            "src/components/profile/ProfileView.jsx:511",
+            "src/components/profile/ProfileView.jsx:534"
           ]
         },
         "soft-outline": {
@@ -6333,7 +6337,7 @@
       },
       "preset": {
         "(default)": {
-          "count": 55,
+          "count": 56,
           "routes": [
             "/",
             "/[projectId]",
@@ -6375,7 +6379,8 @@
             "src/components/migrations/DataMigrationSettings.jsx:189",
             "src/components/migrations/DataMigrationSettings.jsx:77",
             "src/components/migrations/DataMigrationSettings.jsx:89",
-            "src/components/profile/ProfileView.jsx:463",
+            "src/components/profile/ProfileView.jsx:511",
+            "src/components/profile/ProfileView.jsx:534",
             "src/components/workspace/AgileBoard.jsx:503",
             "src/components/workspace/AgileBoard.jsx:520",
             "src/components/workspace/AgileBoard.jsx:560",
@@ -6503,7 +6508,7 @@
           ]
         },
         "medium": {
-          "count": 13,
+          "count": 14,
           "routes": [
             "/",
             "/[projectId]",
@@ -6524,7 +6529,8 @@
             "src/components/SearchModal.jsx:121",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/migrations/DataMigrationSettings.jsx:89",
-            "src/components/profile/ProfileView.jsx:463",
+            "src/components/profile/ProfileView.jsx:511",
+            "src/components/profile/ProfileView.jsx:534",
             "src/components/workspace/IssueCard.jsx:322",
             "src/components/workspace/IssueCard.jsx:334",
             "src/components/workspace/IssueCard.jsx:348",
@@ -6631,7 +6637,7 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:233"
+            "src/components/profile/ProfileView.jsx:281"
           ]
         },
         "sm": {
@@ -7425,8 +7431,8 @@
             "src/app/(app)/calendar/page.js:587",
             "src/app/(app)/calendar/page.js:778",
             "src/app/(app)/team/page.js:167",
-            "src/components/profile/ProfileView.jsx:497",
-            "src/components/profile/ProfileView.jsx:529",
+            "src/components/profile/ProfileView.jsx:575",
+            "src/components/profile/ProfileView.jsx:607",
             "src/components/workspace/BillingTab.jsx:1183",
             "src/components/workspace/TimesheetTab.jsx:918",
             "src/components/workspace/VelocityTab.jsx:185",
@@ -7509,8 +7515,8 @@
             "src/app/(app)/team/page.js:167",
             "src/components/WorkspaceInfoCenter.jsx:152",
             "src/components/WorkspaceInfoCenter.jsx:200",
-            "src/components/profile/ProfileView.jsx:497",
-            "src/components/profile/ProfileView.jsx:529",
+            "src/components/profile/ProfileView.jsx:575",
+            "src/components/profile/ProfileView.jsx:607",
             "src/components/workspace/AnalyticsTab.jsx:229",
             "src/components/workspace/AnalyticsTab.jsx:247",
             "src/components/workspace/BillingTab.jsx:1183",
@@ -7564,8 +7570,8 @@
             "src/app/(app)/calendar/page.js:778",
             "src/app/(app)/page.js:958",
             "src/app/(app)/team/page.js:167",
-            "src/components/profile/ProfileView.jsx:497",
-            "src/components/profile/ProfileView.jsx:529",
+            "src/components/profile/ProfileView.jsx:575",
+            "src/components/profile/ProfileView.jsx:607",
             "src/components/workspace/BillingTab.jsx:1183",
             "src/components/workspace/TimesheetTab.jsx:918",
             "src/components/workspace/UnifiedTimeline.jsx:1362",
@@ -7627,7 +7633,7 @@
             "src/app/(app)/settings/page.js:4733",
             "src/app/(app)/settings/page.js:4755",
             "src/app/(app)/settings/page.js:4777",
-            "src/components/profile/ProfileView.jsx:526",
+            "src/components/profile/ProfileView.jsx:604",
             "src/components/workspace/AnalyticsTab.jsx:220",
             "src/components/workspace/BillingTab.jsx:1328",
             "src/components/workspace/QtPlusProjectTab.jsx:277",
@@ -7889,7 +7895,7 @@
           ],
           "files": [
             "src/components/WorkspaceInfoCenter.jsx:79",
-            "src/components/profile/ProfileView.jsx:545",
+            "src/components/profile/ProfileView.jsx:623",
             "src/components/workspace/BillingTab.jsx:595"
           ]
         },
@@ -7951,7 +7957,7 @@
             "src/app/(app)/settings/page.js:4094",
             "src/components/integrations/IntegrationScreen.jsx:183",
             "src/components/migrations/DataMigrationSettings.jsx:151",
-            "src/components/profile/ProfileView.jsx:545",
+            "src/components/profile/ProfileView.jsx:623",
             "src/components/workspace/TimesheetTab.jsx:371"
           ]
         },
@@ -8275,7 +8281,7 @@
             "/team"
           ],
           "files": [
-            "src/components/profile/ProfileView.jsx:324"
+            "src/components/profile/ProfileView.jsx:372"
           ]
         }
       },
@@ -8296,7 +8302,7 @@
             "src/app/(app)/my/page.js:379",
             "src/app/(app)/settings/page.js:4692",
             "src/components/InviteMemberDialog.jsx:119",
-            "src/components/profile/ProfileView.jsx:324",
+            "src/components/profile/ProfileView.jsx:372",
             "src/components/workspace/BillingTab.jsx:1200",
             "src/components/workspace/IssueDetail.jsx:1956",
             "src/components/workspace/qtplus/StageStepper.jsx:44"
