@@ -352,7 +352,7 @@
     },
     {
       "element": "IconAction",
-      "location": "src/components/WorkspaceHeader.jsx:443",
+      "location": "src/components/WorkspaceHeader.jsx:458",
       "attributes": [
         "label"
       ]
