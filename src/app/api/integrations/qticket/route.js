@@ -5,12 +5,7 @@ import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { refuseWithoutCapability } from '@/lib/server/planLimits';
 import { qTicketIntegrationConfig } from '@/lib/integrations/qticketContract.mjs';
-import {
-  historyEntry,
-  normalizePortal,
-  normalizeStaffRoles,
-  QTICKET_HISTORY_LIMIT,
-} from '@/lib/integrations/qticketDesk.mjs';
+import { normalizePortal, normalizeStaffRoles } from '@/lib/integrations/qticketDesk.mjs';
 import { fetchQTicketUnread, provisionQTicket } from '@/lib/server/qticket';
 
 const INTERNAL_ROLES = new Set(['owner', 'admin', 'member']);
@@ -65,9 +60,9 @@ async function qTicketUnreadFor(config, view, userId) {
   }
 }
 const PUBLIC_PROFILE_FIELDS = ['name', 'email', 'customAvatar', 'avatar', 'photoURL'];
-// The three decisions this route makes about the desk — which role, which
-// brand, what changed — live in `qticketDesk.mjs`, where they can be tested as
-// rules rather than as the text of a handler.
+// The two decisions this route makes about the desk — which role, which
+// brand — live in `qticketDesk.mjs`, where they can be tested as rules rather
+// than as the text of a handler.
 
 function organizationIdFrom(request) {
   return new URL(request.url).searchParams.get('organizationId')?.trim() || '';
@@ -93,7 +88,6 @@ function integrationView(config, data = {}, extra = {}) {
     // who already held a client seat got no access and the owner got a green
     // toast. See docs/integrations/QTICKET.md, «Provisioning».
     conflicts: Array.isArray(data.lastConflicts) ? data.lastConflicts : [],
-    history: Array.isArray(data.history) ? data.history : [],
     unread: 0,
     ...extra,
   };
@@ -245,15 +239,6 @@ export async function POST(request) {
       // no access — this was returned and dropped, and the owner saw «Команду
       // qTicket синхронізовано» over a person who got nothing.
       const conflicts = Array.isArray(provisioned.conflicts) ? provisioned.conflicts : [];
-      const history = [
-        historyEntry({
-          before: current,
-          after: { selectedUserIds: snapshot.selectedUserIds, staffRoles: snapshot.staffRoles, portal },
-          actorId: authorization.user.uid,
-          revision,
-        }),
-        ...(Array.isArray(current.history) ? current.history : []),
-      ].slice(0, QTICKET_HISTORY_LIMIT);
       await privateRef.set({
         active: true,
         selectedUserIds: snapshot.selectedUserIds,
@@ -267,7 +252,9 @@ export async function POST(request) {
         lastSyncAt: FieldValue.serverTimestamp(),
         lastError: '',
         lastConflicts: conflicts,
-        history,
+        // The sync journal the card no longer shows; a document written before
+        // 2026-09-02 still carries one, and drops it on its next sync.
+        history: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       return NextResponse.json({
@@ -280,7 +267,6 @@ export async function POST(request) {
           qTicketOrganizationId: provisioned.organizationId,
           revision,
           lastConflicts: conflicts,
-          history,
         }),
         lastSyncAt: new Date().toISOString(),
         status: provisioned.status,

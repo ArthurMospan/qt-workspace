@@ -1,14 +1,13 @@
 // What the support desk is, as distinct from what the workspace is.
 //
-// Three small decisions that used not to exist, kept out of the route so they
+// Two small decisions that used not to exist, kept out of the route so they
 // can be tested as the rules they are rather than as the text of a handler:
-// which qTicket role a person holds, which brand a customer sees, and what a
-// sync actually changed.
-
-// How many syncs the card remembers. «Хто зняв Олю з підтримки» is a question
-// about the last change, not about the year, and an unbounded array on a
-// document every rail mount reads is a bill that grows on its own.
-export const QTICKET_HISTORY_LIMIT = 20;
+// which qTicket role a person holds, and which brand the desk wears.
+//
+// A third — what a sync changed, kept as a twenty-entry journal on the
+// integration document — was built with them and removed on 2026-09-02: the
+// owner opened the card, found a «Журнал змін» row on a screen that has three
+// settings, and said it did not belong there. Nothing else ever read it.
 
 export const QTICKET_PORTAL_THEMES = Object.freeze(['dark', 'light', 'custom']);
 
@@ -62,22 +61,3 @@ export function normalizePortal(value) {
   return Object.values(portal).some(Boolean) ? portal : null;
 }
 
-/**
- * What one sync changed, in the terms the card reads back.
- *
- * Written from ids alone: the names belong to the roster the screen already
- * has, and a copy of them here would be a second directory to keep true.
- */
-export function historyEntry({ before = {}, after = {}, actorId = '', revision = 0, at = new Date() }) {
-  const had = new Set(before.selectedUserIds || []);
-  const has = new Set(after.selectedUserIds || []);
-  return {
-    at: at.toISOString(),
-    by: actorId,
-    revision,
-    added: [...has].filter(userId => !had.has(userId)),
-    removed: [...had].filter(userId => !has.has(userId)),
-    rolesChanged: JSON.stringify(before.staffRoles || {}) !== JSON.stringify(after.staffRoles || {}),
-    brandChanged: JSON.stringify(before.portal || null) !== JSON.stringify(after.portal || null),
-  };
-}

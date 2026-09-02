@@ -7,11 +7,7 @@ import {
   signQTicketRequest,
   verifyQTicketRequest,
 } from '../src/lib/integrations/qticketContract.mjs';
-import {
-  historyEntry,
-  normalizePortal,
-  normalizeStaffRoles,
-} from '../src/lib/integrations/qticketDesk.mjs';
+import { normalizePortal, normalizeStaffRoles } from '../src/lib/integrations/qticketDesk.mjs';
 
 const environment = {
   NEXT_PUBLIC_QTICKET_URL: 'https://qticket.example.com/',
@@ -86,25 +82,6 @@ test('бренд порталу: null — це «той самий», а не «
     // організації, а не отримав вигаданий 'dark'.
     sidebarTheme: '',
     sidebarColor: '',
-  });
-});
-
-test('журнал синхронізацій називає зміну, а не склад', () => {
-  const entry = historyEntry({
-    before: { selectedUserIds: ['owner-uid', 'olia-uid'], staffRoles: {}, portal: null },
-    after: { selectedUserIds: ['owner-uid', 'new-uid'], staffRoles: { 'new-uid': 'admin' }, portal: null },
-    actorId: 'owner-uid',
-    revision: 8,
-    at: new Date('2026-09-01T10:00:00.000Z'),
-  });
-  assert.deepEqual(entry, {
-    at: '2026-09-01T10:00:00.000Z',
-    by: 'owner-uid',
-    revision: 8,
-    added: ['new-uid'],
-    removed: ['olia-uid'],
-    rolesChanged: true,
-    brandChanged: false,
   });
 });
 

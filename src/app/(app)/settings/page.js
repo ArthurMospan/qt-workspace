@@ -42,7 +42,7 @@ import {
 } from '@/lib/utils/plans.mjs';
 import { usePlanLimits } from '@/lib/hooks/usePlanLimits';
 import { switchOrganizationPlan } from '@/lib/services/organizationPlan';
-import { PlanCrownIcon } from '@/lib/design/icons';
+import { PlanCrownIcon, TaskIcon } from '@/lib/design/icons';
 import { auth, createGitHubProvider, db, googleProvider } from '@/lib/firebase';
 import { linkWithPopup, unlink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -53,11 +53,12 @@ import {
   Copy, ExternalLink, ChevronRight, AlertTriangle,
   PlugZap, ToggleLeft, ToggleRight, Receipt, CreditCard,
   Globe, Tag as TagIcon, Briefcase, GripVertical, Send,
+  Palette, LayoutDashboard, Folder,
   Archive, Bug, SlidersHorizontal, DatabaseBackup, Lock,
   UserRoundX, ShieldCheck, MonitorSmartphone, Smartphone, Tablet, Monitor, Undo2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Alert, Button, Card, Checkbox, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SettingRow, SidebarLayout, Surface, Tabs, TextAction, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
+import { Alert, Button, Card, Checkbox, ColorSwatch, DatePicker, Dialog, IconAction, InnerNavigation, Input, Label, LoadingSpinner, MobilePaneBack, OptionCard, PageHeader, Pill, PlanCards, PlanDowngradeDialog, PlanGate, PlanMark, Popover, PriorityBadge, Select, SettingRow, SidebarLayout, Surface, Tabs, TextAction, Textarea, ToggleSwitch, useConfirm } from '@/components/ui';
 import UserAvatar from '@/components/ui/DataDisplay/UserAvatar';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { sendNotification } from '@/lib/hooks/useNotifications';
@@ -503,57 +504,78 @@ function SidebarThemePicker({ theme, color, onThemeChange, onColorChange, onCanc
   );
 }
 
-// Що з цього побачить клієнт.
+// Що побачить кожен, хто відкриє qTicket.
 //
 // Бренд порталу редагувався наосліп: назва, файл і кружечок кольору, і жодного
 // зображення того, у що вони складаються. А складаються вони в рейку, яку малює
 // вже qTicket — інший продукт, інша вкладка, і побачити результат можна було
-// тільки синхронізувавши й відкривши. Кольори тут рахує той самий
-// `computeSidebarTheme`, що й справжня рейка, тож це не схожа картинка.
+// тільки синхронізувавши й відкривши.
+//
+// Це не «схожа картинка». Кольори рахує той самий `computeSidebarTheme`, що й
+// справжня рейка, а кожне число тут узято з
+// `qTicket/src/components/WorkspaceSidebar.jsx`: знак 32px із радіусом 8, під
+// ним нічого, якщо є логотип; підпис 12/500 і назва 16/700 через 12px від
+// знака; рядки навігації 40px з радіусом 12 і 8px від краю, значок 18 і 16px
+// до слова. Попередня версія малювала знак 28px на напівпрозорій підкладці,
+// «пігулки» по 30px із радіусом 8 і крапку замість значка — саме ті «не такі
+// скруглення», які власник побачив, порівнявши з живою рейкою.
 function PortalBrandPreview({ name, logo, theme, color }) {
   const background = theme === 'light'
     ? SIDEBAR_PRESETS.light
     : theme === 'custom' ? (color || SIDEBAR_PRESETS.dark) : SIDEBAR_PRESETS.dark;
   const palette = computeSidebarTheme(background);
   const initial = (name || '?').trim().charAt(0).toUpperCase();
-  const items = [
-    { label: 'Огляд', active: true },
-    { label: 'Мої звернення', active: false },
+  const rows = [
+    { label: 'Огляд', icon: LayoutDashboard, active: true },
+    { label: 'Звернення', icon: TaskIcon, active: false },
+    { label: 'Проєкти', icon: Folder, active: false },
   ];
 
   return (
     <div>
-      <p className="ui-type-eyebrow">Що бачить клієнт</p>
+      <p className="ui-type-eyebrow">Так виглядатиме qTicket</p>
       <div
         className="mt-[10px] overflow-hidden rounded-[12px] border border-line"
         style={{ background: palette.bg }}
+        aria-hidden="true"
       >
-        <div className="flex items-center gap-[10px] p-[14px]">
+        <div className="flex items-center px-[20px] pt-[24px] pb-[16px]">
           <span
-            className="flex h-[28px] w-[28px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] text-[12px] font-bold"
-            style={{ background: palette.hover, color: palette.text }}
+            className="flex h-[32px] w-[32px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] text-[13px] font-bold"
+            style={logo ? undefined : { background: palette.active, color: palette.text }}
           >
             {logo ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img src={logo} alt="" className="h-full w-full object-cover" />
             ) : initial}
           </span>
-          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" style={{ color: palette.text }}>
-            {name}
-          </span>
-        </div>
-        <div className="flex flex-col gap-[2px] px-[10px] pb-[14px]">
-          {items.map(item => (
+          <div className="ml-[12px] flex min-w-0 flex-col">
             <span
-              key={item.label}
-              className="flex items-center gap-[8px] rounded-[8px] px-[10px] py-[7px] text-[12px] font-medium"
+              className="truncate tracking-tight"
+              style={{ color: palette.mutedHeader || palette.muted, fontSize: 12, lineHeight: '15px', height: 15, fontWeight: 500 }}
+            >
+              Портал підтримки
+            </span>
+            <span
+              className="truncate"
+              style={{ color: palette.text, fontSize: 16, lineHeight: '21px', height: 21, fontWeight: 700 }}
+            >
+              {name}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-[4px] pt-[8px] pb-[16px]">
+          {rows.map(({ label, icon: Icon, active }) => (
+            <span
+              key={label}
+              className="mx-[8px] flex h-[40px] items-center gap-[16px] rounded-[12px] pl-[12px] pr-[12px] text-[13px] font-medium"
               style={{
-                background: item.active ? palette.active : 'transparent',
-                color: item.active ? palette.text : palette.muted,
+                background: active ? palette.active : 'transparent',
+                color: active ? palette.text : palette.muted,
               }}
             >
-              <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-current" />
-              {item.label}
+              <Icon size={18} className="shrink-0" />
+              {label}
             </span>
           ))}
         </div>
@@ -985,17 +1007,19 @@ export default function SettingsPage() {
   // цілим знімком, і зберегти половину складу неможливо.
   const [qTicketTeamOpen, setQTicketTeamOpen] = useState(false);
   const [qTicketBrandOpen, setQTicketBrandOpen] = useState(false);
-  const [qTicketLogOpen, setQTicketLogOpen] = useState(false);
   const qTicketOwnerId = members.find(member => member.role === 'owner')?.id || '';
 
-  useEffect(() => {
-    const selected = qTicketStatus.selectedUserIds?.length
+  // The draft starts from the saved snapshot, and goes back to it when a
+  // dialog is cancelled. Closing used to keep whatever was typed, so the row
+  // under the dialog named a brand nobody had saved.
+  const resetQTicketDraft = useCallback(() => {
+    setQTicketSelectedIds(qTicketStatus.selectedUserIds?.length
       ? qTicketStatus.selectedUserIds
-      : [qTicketOwnerId].filter(Boolean);
-    setQTicketSelectedIds(selected);
+      : [qTicketOwnerId].filter(Boolean));
     setQTicketRoles(qTicketStatus.staffRoles || {});
     setQTicketPortal(qTicketStatus.portal || null);
   }, [qTicketOwnerId, qTicketStatus.selectedUserIds, qTicketStatus.staffRoles, qTicketStatus.portal]);
+  useEffect(() => { resetQTicketDraft(); }, [resetQTicketDraft]);
 
   // Whom qTicket refused a seat, by the QuickTeam id the row is drawn for. The
   // reason is always the same one — that person is already a customer of this
@@ -1005,6 +1029,15 @@ export default function SettingsPage() {
     () => new Map((qTicketStatus.conflicts || []).map(item => [item.sourceUserId, item])),
     [qTicketStatus.conflicts],
   );
+
+  // Whom the saved snapshot seats, owner first — what the row shows, as opposed
+  // to the draft the dialog edits.
+  const qTicketSeated = useMemo(() => {
+    const seated = new Set(qTicketStatus.selectedUserIds || []);
+    return members
+      .filter(member => isActiveMember(member) && seated.has(member.id))
+      .sort((left, right) => Number(right.id === qTicketOwnerId) - Number(left.id === qTicketOwnerId));
+  }, [members, qTicketStatus.selectedUserIds, qTicketOwnerId]);
 
   const qTicketStaff = useMemo(() => {
     const query = qTicketStaffSearch.trim().toLowerCase();
@@ -3822,8 +3855,30 @@ export default function SettingsPage() {
                     label="Команда підтримки"
                     desc="Хто з QuickTeam працює у зверненнях і з якою роллю саме там"
                     onClick={() => setQTicketTeamOpen(true)}
-                    value={`${qTicketStatus.selectedUserIds?.length || 0} із ${members.filter(isActiveMember).length}`}
-                  />
+                  >
+                    {/* Обличчя, а не «5 із 5». Дріб відповідав «скільки» — і
+                        нічого про «хто», а саме з цим питанням сюди приходять.
+                        Троє перших і «+N» за ними, як на картці проєкту; повний
+                        список відкриває сам рядок. */}
+                    <span
+                      className="flex items-center -space-x-1.5"
+                      aria-label={`У підтримці: ${qTicketSeated.map(member => member.name || member.email).join(', ')}`}
+                    >
+                      {qTicketSeated.slice(0, 3).map(member => (
+                        <UserAvatar key={member.id} user={member} size="sm" stacked />
+                      ))}
+                      {qTicketSeated.length > 3 && (
+                        <Pill
+                          tone="neutral"
+                          size="md"
+                          preset="avatar-counter"
+                          title={qTicketSeated.slice(3).map(member => member.name || member.email).join(', ')}
+                        >
+                          +{qTicketSeated.length - 3}
+                        </Pill>
+                      )}
+                    </span>
+                  </SettingRow>
 
                   {/* Кому qTicket відмовив у місці — і чому.
                       Контракт повертав це від початку, щоб QuickTeam міг
@@ -3841,38 +3896,20 @@ export default function SettingsPage() {
                     />
                   )}
 
+                  {/* Один рядок про вигляд, і він є завжди. Перемикач «Окремий
+                      бренд клієнтського порталу» стояв тут окремо від «Вигляду
+                      порталу», який з'являвся лише після нього: вимкнути —
+                      мовчки губило поля, увімкнути — відкривало діалог, і жоден
+                      з двох не казав, що портал бачать не лише клієнти. Вибір
+                      «як в організації / свій» тепер усередині діалогу, поруч із
+                      тим, що він означає. */}
                   <SettingRow
-                    label="Окремий бренд клієнтського порталу"
-                    desc={qTicketPortal
-                      ? `Клієнти бачать «${qTicketPortal.name || org?.name || 'Підтримка'}»`
-                      : `Клієнти бачать бренд організації — «${org?.name || 'QuickTeam'}»`}
-                  >
-                    <ToggleSwitch
-                      checked={Boolean(qTicketPortal)}
-                      onChange={next => { handleQTicketPortalToggle(next); if (next) setQTicketBrandOpen(true); }}
-                      size="md"
-                      ariaLabel="Окремий бренд клієнтського порталу"
-                    />
-                  </SettingRow>
-
-                  {qTicketPortal && (
-                    <SettingRow
-                      label="Вигляд порталу"
-                      desc="Назва, логотип і колір бічної панелі, які бачать клієнти"
-                      onClick={() => setQTicketBrandOpen(true)}
-                    />
-                  )}
-
-                  {/* «Хто зняв Олю з підтримки» — питання про останню зміну, і
-                      доти на нього не було де подивитись. Двадцять записів. */}
-                  {qTicketStatus.history.length > 0 && (
-                    <SettingRow
-                      label="Журнал змін"
-                      desc="Хто і коли міняв склад підтримки чи бренд порталу"
-                      onClick={() => setQTicketLogOpen(true)}
-                      value={`${qTicketStatus.history.length} ${plural(qTicketStatus.history.length, ['запис', 'записи', 'записів'])}`}
-                    />
-                  )}
+                    label="Вигляд порталу"
+                    desc={qTicketStatus.portal
+                      ? `Свій: «${qTicketStatus.portal.name || org?.name || 'Підтримка'}»`
+                      : `Як в організації: «${org?.name || 'QuickTeam'}»`}
+                    onClick={() => setQTicketBrandOpen(true)}
+                  />
                 </Card>
               )}
             </PlanGate>}
@@ -4984,13 +5021,13 @@ export default function SettingsPage() {
           кнопка «Зберегти» нікого не дивує. */}
       <Dialog
         isOpen={qTicketTeamOpen}
-        onClose={() => setQTicketTeamOpen(false)}
+        onClose={() => { resetQTicketDraft(); setQTicketTeamOpen(false); }}
         size="lg"
         title="Команда підтримки в qTicket"
         description="Роль у підтримці не мусить збігатися з роллю в QuickTeam. Власник входить завжди."
         footer={(
           <>
-            <Button style="secondary" size="md" onClick={() => setQTicketTeamOpen(false)}>Скасувати</Button>
+            <Button style="secondary" size="md" onClick={() => { resetQTicketDraft(); setQTicketTeamOpen(false); }}>Скасувати</Button>
             <Button
               style="primary"
               size="md"
@@ -5072,25 +5109,29 @@ export default function SettingsPage() {
         </div>
       </Dialog>
 
-      {/* Бренд клієнтського порталу — окремо від бренду QuickTeam.
-          У qTicket ці поля завжди були різні (`name` для шелу персоналу,
-          `portalBranding` для клієнтського порталу) і завжди годувалися одним
-          значенням, тож компанія не могла назвати свою підтримку інакше, ніж
-          собою.
+      {/* Вигляд порталу підтримки — один для всіх, хто відкриває qTicket.
+          Клієнти й команда підтримки бачать ту саму рейку. Окремого «бренду
+          клієнтського порталу» немає з 2026-09-02: власник дав підтримці назву
+          і побачив її лише в клієнта, а на своїй рейці — назву організації.
+          Два імені одного місця були дефектом, а не налаштуванням.
+
+          Вибір «як в організації / свій» стоїть тут, а не перемикачем на
+          екрані: перемикач відкривав діалог, а вимкнення губило поля мовчки.
+          Тут обидві відповіді поруч із тим, що вони означають, і збереження
+          одне.
 
           Поля стоять на білому тлі діалогу. Доти вони жили всередині
           `IntegrationNote` — панелі кольору `canvas` з рамкою `line`, — і поле
-          вводу на ній не мало видимих меж: сіре на сірому. Саме про це
-          «Назва підтримки зливається з усім». */}
+          вводу на ній не мало видимих меж: сіре на сірому. */}
       <Dialog
-        isOpen={qTicketBrandOpen && Boolean(qTicketPortal)}
-        onClose={() => setQTicketBrandOpen(false)}
+        isOpen={qTicketBrandOpen}
+        onClose={() => { resetQTicketDraft(); setQTicketBrandOpen(false); }}
         size="lg"
-        title="Бренд клієнтського порталу"
-        description="Так підтримку бачать клієнти. Персонал у QuickTeam це не змінює."
+        title="Вигляд порталу підтримки"
+        description="Назва, логотип і колір бічної панелі в qTicket. Їх бачать усі — і клієнти, і команда підтримки."
         footer={(
           <>
-            <Button style="secondary" size="md" onClick={() => setQTicketBrandOpen(false)}>Скасувати</Button>
+            <Button style="secondary" size="md" onClick={() => { resetQTicketDraft(); setQTicketBrandOpen(false); }}>Скасувати</Button>
             <Button
               style="primary"
               size="md"
@@ -5103,90 +5144,87 @@ export default function SettingsPage() {
           </>
         )}
       >
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-col gap-[6px]">
-              <Label>Назва підтримки</Label>
-              <Input
-                value={qTicketPortal?.name || ''}
-                onChange={event => handleQTicketPortalField('name', event.target.value)}
-                placeholder={org?.name || 'Підтримка'}
-                size="md"
-                aria-label="Назва підтримки для клієнтів"
-              />
-              <p className="text-[11px] leading-relaxed text-muted">
-                Порожнє поле успадкує назву організації — «{org?.name || 'QuickTeam'}».
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-[8px]">
-              <Label>Логотип на порталі</Label>
-              {/* `showLabel` лишався за замовчуванням, тож під написом
-                  «Логотип на порталі» стояв другий — «Завантажити логотип»,
-                  від самого контролу. */}
-              <ImageUpload
-                value={qTicketPortal?.logo || ''}
-                organizationId={activeOrgId}
-                kind="logos"
-                theme="light"
-                showLabel={false}
-                showHint={false}
-                onChange={url => handleQTicketPortalField('logo', url || '')}
-                onError={message => showToast(message, 'error')}
-              />
-            </div>
-
-            <div className="flex flex-col gap-[10px]">
-              <Label>Колір бічної панелі порталу</Label>
-              <SidebarThemePicker
-                theme={qTicketPortal?.sidebarTheme || 'dark'}
-                color={qTicketPortal?.sidebarColor}
-                onThemeChange={value => handleQTicketPortalField('sidebarTheme', value)}
-                onColorChange={value => handleQTicketPortalField('sidebarColor', value)}
-                onCancel={() => handleQTicketPortalField(
-                  'sidebarColor',
-                  qTicketStatus.portal?.sidebarColor || org?.sidebarColor || SIDEBAR_PRESETS.dark,
-                )}
-                ariaPrefix="Колір бічної панелі порталу"
-              />
-            </div>
+        <div className="flex flex-col gap-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <OptionCard
+              icon={Building}
+              title="Як в організації"
+              description={`Назва, логотип і колір — ті самі, що у «${org?.name || 'QuickTeam'}» у QuickTeam.`}
+              selected={!qTicketPortal}
+              onClick={() => handleQTicketPortalToggle(false)}
+            />
+            <OptionCard
+              icon={Palette}
+              title="Свій вигляд"
+              description="Окрема назва, логотип і колір для порталу — наприклад «Назва Підтримка»."
+              selected={Boolean(qTicketPortal)}
+              onClick={() => { if (!qTicketPortal) handleQTicketPortalToggle(true); }}
+            />
           </div>
 
-          <PortalBrandPreview
-            name={qTicketPortal?.name || org?.name || 'Підтримка'}
-            logo={qTicketPortal?.logo || org?.logo || ''}
-            theme={qTicketPortal?.sidebarTheme || 'dark'}
-            color={qTicketPortal?.sidebarColor}
-          />
-        </div>
-      </Dialog>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+            {qTicketPortal ? (
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-[6px]">
+                  <Label>Назва підтримки</Label>
+                  <Input
+                    value={qTicketPortal.name || ''}
+                    onChange={event => handleQTicketPortalField('name', event.target.value)}
+                    placeholder={org?.name || 'Підтримка'}
+                    size="md"
+                    aria-label="Назва порталу підтримки"
+                  />
+                  <p className="text-[11px] leading-relaxed text-muted">
+                    Порожнє поле успадкує назву організації — «{org?.name || 'QuickTeam'}».
+                  </p>
+                </div>
 
-      {/* Журнал змін. Двадцять записів — і жодного дубля дати з екрана: дата
-          останньої зміни більше не стоїть ні в шапці, ні окремою клітинкою.
-          Вона тут, разом із тим, хто і що змінив, бо саме заради цього її
-          читають. */}
-      <Dialog
-        isOpen={qTicketLogOpen}
-        onClose={() => setQTicketLogOpen(false)}
-        size="md"
-        title="Журнал змін"
-        description="Хто і коли міняв склад підтримки чи бренд порталу."
-        footer={<Button style="secondary" size="md" onClick={() => setQTicketLogOpen(false)}>Закрити</Button>}
-      >
-        <div className="flex flex-col divide-y divide-line">
-          {qTicketStatus.history.slice(0, 20).map(entry => (
-            <div key={`${entry.at}-${entry.revision}`} className="py-3">
-              <p className="text-[13px] font-semibold text-ink">{qTicketMemberName(entry.by)}</p>
-              <p className="mt-[2px] text-[12px] leading-relaxed text-muted">
-                {new Date(entry.at).toLocaleString('uk-UA')} — {[
-                  entry.added?.length ? `додав ${entry.added.map(qTicketMemberName).join(', ')}` : '',
-                  entry.removed?.length ? `прибрав ${entry.removed.map(qTicketMemberName).join(', ')}` : '',
-                  entry.rolesChanged ? 'змінив ролі' : '',
-                  entry.brandChanged ? 'змінив бренд' : '',
-                ].filter(Boolean).join('; ') || 'оновив знімок'}
+                <div className="flex flex-col gap-[8px]">
+                  <Label>Логотип</Label>
+                  {/* `showLabel` лишався за замовчуванням, тож під написом
+                      «Логотип» стояв другий — «Завантажити логотип», від
+                      самого контролу. */}
+                  <ImageUpload
+                    value={qTicketPortal.logo || ''}
+                    organizationId={activeOrgId}
+                    kind="logos"
+                    theme="light"
+                    showLabel={false}
+                    showHint={false}
+                    onChange={url => handleQTicketPortalField('logo', url || '')}
+                    onError={message => showToast(message, 'error')}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-[10px]">
+                  <Label>Колір бічної панелі</Label>
+                  <SidebarThemePicker
+                    theme={qTicketPortal.sidebarTheme || 'dark'}
+                    color={qTicketPortal.sidebarColor}
+                    onThemeChange={value => handleQTicketPortalField('sidebarTheme', value)}
+                    onColorChange={value => handleQTicketPortalField('sidebarColor', value)}
+                    onCancel={() => handleQTicketPortalField(
+                      'sidebarColor',
+                      qTicketStatus.portal?.sidebarColor || org?.sidebarColor || SIDEBAR_PRESETS.dark,
+                    )}
+                    ariaPrefix="Колір бічної панелі порталу"
+                  />
+                </div>
+              </div>
+            ) : (
+              <p className="text-[12px] leading-relaxed text-muted">
+                Портал повторює назву, логотип і колір організації з «Загальних». Зміни там
+                потрапляють у qTicket з наступним збереженням команди чи вигляду.
               </p>
-            </div>
-          ))}
+            )}
+
+            <PortalBrandPreview
+              name={qTicketPortal ? (qTicketPortal.name || org?.name || 'Підтримка') : (org?.name || 'Підтримка')}
+              logo={qTicketPortal ? (qTicketPortal.logo || org?.logo || '') : (org?.logo || '')}
+              theme={qTicketPortal ? (qTicketPortal.sidebarTheme || 'dark') : (org?.sidebarTheme || 'dark')}
+              color={qTicketPortal ? qTicketPortal.sidebarColor : org?.sidebarColor}
+            />
+          </div>
         </div>
       </Dialog>
 

@@ -800,6 +800,7 @@
     ],
     "Pill": [
       "badges",
+      "surfaces",
       "charts",
       "chat-elements",
       "detail-layout",
@@ -985,6 +986,7 @@
     "UserAvatar": [
       "badges",
       "avatars",
+      "surfaces",
       "charts",
       "chat-elements",
       "task-elements",

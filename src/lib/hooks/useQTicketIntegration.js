@@ -18,7 +18,6 @@ const EMPTY_STATUS = Object.freeze({
   // Whom qTicket refused a seat because they already hold a client one. The
   // contract always returned these; the card never asked.
   conflicts: [],
-  history: [],
   qTicketOrganizationId: '',
   revision: 0,
   lastSyncAt: null,

@@ -94,14 +94,17 @@ Payload version 1:
   be an administrator of support alone. The owner is not overridable: the
   organization document names exactly one and qTicket refuses a snapshot that
   disagrees.
-- `organization.portal` is optional and carries the brand a *customer* sees.
-  The fields outside it are the organization — what the staff shell says over
-  the queue. qTicket has always kept the two apart and QuickTeam always sent one
-  value for both, so a company could not name its desk anything but itself.
-  Absent `portal` means «the same brand»; an empty field inside a present
-  `portal` inherits that one field, so renaming the desk does not cost you your
-  logo. QuickTeam still owns the value — qTicket does not edit it and overwrites
-  its copy from every snapshot.
+- `organization.portal` is optional and carries the brand qTicket wears — on
+  the staff rail, the client portal, the organization picker and the tab title
+  alike. The fields outside it are the organization as QuickTeam knows it, and
+  they are what qTicket shows when `portal` is absent; a present `portal` is
+  the desk allowed to look like «OneB Підтримка» rather than like the company.
+  It was documented on 2026-09-01 as «the brand a customer sees» beside a staff
+  shell that kept the organization's own name, and that split lasted one day:
+  the owner set a desk name and found it on the customer's rail only. An empty
+  field inside a present `portal` inherits that one field, so renaming the
+  desk does not cost you your logo. QuickTeam still owns the value — qTicket
+  does not edit it and overwrites its copy from every snapshot.
 - Never send `client_admin` or `client_member`. External accounts belong to
   qTicket and its project-scoped invitation flow.
 - Removing someone from the selection removes qTicket access on the next

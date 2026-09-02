@@ -1,10 +1,17 @@
 'use client';
 import Button from '@/components/ui/Button';
 import Surface from '@/components/ui/Surface';
-import { IconAction, Card, Input, ListRow, PlanCards, SettingRow, ToggleSwitch } from '@/components/ui';
+import { IconAction, Card, Input, ListRow, Pill, PlanCards, SettingRow, ToggleSwitch, UserAvatar } from '@/components/ui';
 import { useState } from 'react';
 import { Edit2, Trash2, Settings, X, Zap, MoreVertical } from 'lucide-react';
 import { PreviewBlock } from '../preview';
+
+// The faces on the «Команда підтримки» row: three, and a count for the rest.
+const DEMO_STAFF = [
+  { id: 'ui-kit-arthur', name: 'Артур Моспан' },
+  { id: 'ui-kit-olena', name: 'Олена Коваль' },
+  { id: 'ui-kit-ihor', name: 'Ігор Шевченко' },
+];
 
 export default function SurfacesSection() {
   return (
@@ -99,15 +106,20 @@ export default function SurfacesSection() {
           <SettingRow label="Назва організації" desc="Видима всім у вашій організації">
             <Input value="OneB" onChange={() => {}} size="md" aria-label="Назва організації" />
           </SettingRow>
-          <SettingRow label="Окремий бренд клієнтського порталу" desc="Клієнти бачать бренд організації">
-            <ToggleSwitch checked onChange={() => {}} size="md" ariaLabel="Окремий бренд" />
+          <SettingRow label="Сповіщення на пошту" desc="Дублювати важливе листом">
+            <ToggleSwitch checked onChange={() => {}} size="md" ariaLabel="Сповіщення на пошту" />
           </SettingRow>
           <SettingRow
             label="Команда підтримки"
             desc="Хто працює у зверненнях і з якою роллю"
             onClick={() => {}}
-            value="5 із 9"
-          />
+          >
+            <span className="flex items-center -space-x-1.5">
+              {DEMO_STAFF.map(member => <UserAvatar key={member.id} user={member} size="sm" stacked />)}
+              <Pill tone="neutral" size="md" preset="avatar-counter">+2</Pill>
+            </span>
+          </SettingRow>
+          <SettingRow label="Вигляд порталу" desc="Свій: «OneB Підтримка»" onClick={() => {}} />
           <SettingRow label="Відключити джерело" desc="Токен буде видалено. Перенесене залишиться." danger>
             <Button style="ghost" color="red" size="sm">Відключити</Button>
           </SettingRow>
