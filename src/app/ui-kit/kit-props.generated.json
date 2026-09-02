@@ -6,8 +6,8 @@
   },
   "totals": {
     "components": 121,
-    "props": 894,
-    "documentedProps": 894,
+    "props": 895,
+    "documentedProps": 895,
     "undocumentedProps": 0,
     "componentsWithoutSummary": 0
   },
@@ -5680,6 +5680,13 @@
           "type": "string",
           "values": [],
           "description": "Shared category selected on the personal board."
+        },
+        {
+          "name": "count",
+          "default": "1",
+          "type": "number",
+          "values": [],
+          "description": "How many tasks are being moved. More than one is"
         },
         {
           "name": "isOpen",

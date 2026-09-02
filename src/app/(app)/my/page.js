@@ -228,8 +228,45 @@ export default function MyTasksPage() {
     else setPendingStatusMove(current => current ? { ...current, busy: false } : current);
   };
 
+  // Which exact status, when there is one to choose.
+  //
+  // This board's columns are categories, because it spans every project a
+  // person is on and no two of them are guaranteed to share a status. For one
+  // card that ambiguity is already resolved by asking; for a selection it was
+  // resolved silently, per task, by `resolveCategoryStatusId` — so a bulk move
+  // into «У роботі» landed six tasks on whichever status of that category came
+  // first, and nobody was asked which.
+  //
+  // Only askable when there is a single answer to give: every task in one
+  // project, and that project offering more than one status in the category. A
+  // selection spanning two projects has no shared status to pick, so it keeps
+  // the per-project resolution — which is not a fallback, it is the only thing
+  // that can be true.
+  const [pendingBulkStatus, setPendingBulkStatus] = useState(null);
   const handleBulkUpdate = async (action, value, selectedIssues) => {
+    if (action === 'status' && value?.mode === 'category') {
+      const projectIds = [...new Set(selectedIssues.map(issue => issue.projectId).filter(Boolean))];
+      const project = projectIds.length === 1
+        ? (projects || []).find(item => item.id === projectIds[0])
+        : null;
+      const candidates = project
+        ? availableStatusesInCategory(value.id, statuses, {
+          hiddenStatusIds: Array.isArray(project.hiddenColumns) ? project.hiddenColumns : [],
+        })
+        : [];
+      if (candidates.length > 1) {
+        setPendingBulkStatus({ action, value, selectedIssues, project, candidates });
+        return;
+      }
+    }
     await applyBulkAction(action, value, selectedIssues);
+  };
+
+  const selectPendingBulkStatus = async statusId => {
+    const pending = pendingBulkStatus;
+    if (!pending) return;
+    setPendingBulkStatus(null);
+    await applyBulkAction(pending.action, { mode: 'status', id: statusId }, pending.selectedIssues);
   };
 
   // Group sprints by status
@@ -514,6 +551,20 @@ export default function MyTasksPage() {
           </div>
         </Dialog>
       )}
+
+      {/* The same dialog, asked of a selection. */}
+      {pendingBulkStatus ? (
+        <StatusTransitionPicker
+          isOpen
+          issue={pendingBulkStatus.selectedIssues[0]}
+          project={pendingBulkStatus.project}
+          statuses={pendingBulkStatus.candidates}
+          categoryLabel={statusCategoryLabel(pendingBulkStatus.value.id)}
+          count={pendingBulkStatus.selectedIssues.length}
+          onSelect={selectPendingBulkStatus}
+          onClose={() => setPendingBulkStatus(null)}
+        />
+      ) : null}
 
       {pendingStatusMove ? (
         <StatusTransitionPicker
