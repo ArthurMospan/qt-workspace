@@ -10,10 +10,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import useWorkspaceStore from '@/store/useWorkspaceStore';
 import { Button, Counter, IconAction } from '@/components/ui';
-import { can } from '@/lib/utils/can';
 import {
   Folder, PieChart, Menu, X,
-  Zap, Users, Settings, Plus, Clock, Square as StopIcon, ChevronsUpDown, CircleHelp, TicketCheck,
+  Zap, Users, Settings, Clock, Square as StopIcon, ChevronsUpDown, CircleHelp, TicketCheck,
 } from 'lucide-react';
 import { CalendarIcon, ChatIcon, TaskIcon } from '@/lib/design/icons';
 import OrgSwitcherScreen from '@/components/OrgSwitcherScreen';
@@ -97,7 +96,7 @@ function SheetTimerCapsule({ onNavigate, onStop }) {
 export default function MobileNav({ keyboardOpen = false }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { projects, activeOrg, activeOrgId, orgRole } = useAppContext();
+  const { projects, activeOrg, activeOrgId } = useAppContext();
   const [moreOpen, setMoreOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
@@ -370,20 +369,11 @@ export default function MobileNav({ keyboardOpen = false }) {
 
             <div className="mx-[16px] border-t border-white/[0.08] my-[10px]" />
 
-            {/* Projects */}
-            <div className="flex items-center justify-between px-[20px] pb-[8px]">
-              <p className="text-[11px] font-bold text-[var(--sb-muted)] uppercase tracking-wider">Проєкти</p>
-              {can(orgRole, 'create:project') && (
-                <IconAction
-                  label="Новий проєкт"
-                  icon={Plus}
-                  size="sm"
-                  appearance="quiet"
-                  onClick={() => { setMoreOpen(false); router.push('/?new=1'); }}
-                  className="-mr-[4px]"
-                />
-              )}
-            </div>
+            {/* Projects. No «ПРОЄКТИ» heading and no «+» over the list: the
+                rail dropped both in QUI-33 — the list of folders *is* the
+                projects, and a new one is made from «Проєкти» — and the sheet
+                kept its copy, so the two menus said different things about
+                the same list. */}
             <div className="flex flex-col gap-[2px] px-[8px]">
               {(projects || [])
                 .filter(p => p.status !== 'archived')

@@ -2952,7 +2952,7 @@
             "src/app/(app)/settings/page.js:918",
             "src/app/(app)/settings/page.js:929",
             "src/app/(app)/settings/page.js:933",
-            "src/components/MobileNav.jsx:433",
+            "src/components/MobileNav.jsx:423",
             "src/components/WorkspaceHelpMenu.jsx:87",
             "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/UnifiedTimeline.jsx:1708"
@@ -3313,7 +3313,7 @@
             "src/app/(app)/sprints/page.js:950",
             "src/app/(app)/sprints/page.js:974",
             "src/app/(app)/team/page.js:124",
-            "src/components/MobileNav.jsx:433",
+            "src/components/MobileNav.jsx:423",
             "src/components/UserStatusDialog.jsx:71",
             "src/components/WorkspaceHeader.jsx:378",
             "src/components/WorkspaceHeader.jsx:388",
@@ -3476,7 +3476,7 @@
             "src/components/CreateTaskModal.jsx:417",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:433",
+            "src/components/MobileNav.jsx:423",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
@@ -3710,7 +3710,7 @@
             "src/components/CreateTaskModal.jsx:417",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:433",
+            "src/components/MobileNav.jsx:423",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
@@ -3924,7 +3924,7 @@
             "src/components/CreateTaskModal.jsx:417",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/MobileNav.jsx:433",
+            "src/components/MobileNav.jsx:423",
             "src/components/TeamMemberSettingsDialog.jsx:126",
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/UserStatusDialog.jsx:114",
@@ -4298,7 +4298,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:433",
+            "src/components/MobileNav.jsx:423",
             "src/components/WorkspaceHelpMenu.jsx:87"
           ]
         },
@@ -4394,11 +4394,11 @@
           "files": [
             "src/app/(app)/settings/page.js:395",
             "src/app/(app)/settings/page.js:403",
-            "src/components/MobileNav.jsx:78"
+            "src/components/MobileNav.jsx:77"
           ]
         },
         "sm": {
-          "count": 7,
+          "count": 6,
           "routes": [
             "/",
             "/[projectId]",
@@ -4408,8 +4408,7 @@
           ],
           "files": [
             "src/components/AudioTaskPanel.jsx:216",
-            "src/components/MobileNav.jsx:330",
-            "src/components/MobileNav.jsx:377",
+            "src/components/MobileNav.jsx:329",
             "src/components/workspace/AttentionPanel.jsx:74",
             "src/components/workspace/QtPlusProjectTab.jsx:69",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:19",
@@ -4457,7 +4456,7 @@
       },
       "appearance": {
         "quiet": {
-          "count": 9,
+          "count": 8,
           "routes": [
             "/",
             "/[projectId]/issue/[issueId]",
@@ -4469,8 +4468,7 @@
             "src/app/(app)/calendar/page.js:383",
             "src/app/(app)/chat/page.js:400",
             "src/app/(app)/page.js:224",
-            "src/components/MobileNav.jsx:330",
-            "src/components/MobileNav.jsx:377",
+            "src/components/MobileNav.jsx:329",
             "src/components/workspace/UnifiedTimeline.jsx:1507",
             "src/components/workspace/UnifiedTimeline.jsx:1508",
             "src/components/workspace/UnifiedTimeline.jsx:1638",
@@ -4542,7 +4540,7 @@
           "count": 2,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:78",
+            "src/components/MobileNav.jsx:77",
             "src/components/WorkspaceSidebar.jsx:534"
           ]
         },
@@ -4601,7 +4599,7 @@
       },
       "shape": {
         "(default)": {
-          "count": 20,
+          "count": 19,
           "routes": [
             "/",
             "/[projectId]",
@@ -4625,8 +4623,7 @@
             "src/app/(app)/settings/page.js:403",
             "src/components/AudioTaskPanel.jsx:216",
             "src/components/AudioTaskPanel.jsx:274",
-            "src/components/MobileNav.jsx:330",
-            "src/components/MobileNav.jsx:377",
+            "src/components/MobileNav.jsx:329",
             "src/components/WorkspaceHeader.jsx:471",
             "src/components/WorkspaceHeader.jsx:489",
             "src/components/profile/ProfileView.jsx:328",
@@ -4643,7 +4640,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:467",
-            "src/components/MobileNav.jsx:78",
+            "src/components/MobileNav.jsx:77",
             "src/components/WorkspaceSidebar.jsx:534"
           ]
         },
@@ -4680,7 +4677,7 @@
       },
       "composition": {
         "(default)": {
-          "count": 25,
+          "count": 24,
           "routes": [
             "/",
             "/[projectId]",
@@ -4700,9 +4697,8 @@
             "src/app/(app)/settings/page.js:403",
             "src/components/AudioTaskPanel.jsx:216",
             "src/components/AudioTaskPanel.jsx:274",
-            "src/components/MobileNav.jsx:330",
-            "src/components/MobileNav.jsx:377",
-            "src/components/MobileNav.jsx:78",
+            "src/components/MobileNav.jsx:329",
+            "src/components/MobileNav.jsx:77",
             "src/components/WorkspaceHeader.jsx:471",
             "src/components/WorkspaceHeader.jsx:489",
             "src/components/WorkspaceSidebar.jsx:534",
@@ -6913,9 +6909,9 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:397",
-            "src/components/MobileNav.jsx:249",
-            "src/components/MobileNav.jsx:273",
-            "src/components/MobileNav.jsx:326",
+            "src/components/MobileNav.jsx:248",
+            "src/components/MobileNav.jsx:272",
+            "src/components/MobileNav.jsx:325",
             "src/components/WorkspaceSidebar.jsx:314",
             "src/components/WorkspaceSidebar.jsx:387",
             "src/components/WorkspaceSidebar.jsx:403",
@@ -6946,7 +6942,7 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:397",
-            "src/components/MobileNav.jsx:249",
+            "src/components/MobileNav.jsx:248",
             "src/components/OrgSwitcherScreen.jsx:72",
             "src/components/WorkspaceSidebar.jsx:387",
             "src/components/WorkspaceSidebar.jsx:403",
@@ -6957,8 +6953,8 @@
           "count": 4,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:273",
-            "src/components/MobileNav.jsx:326",
+            "src/components/MobileNav.jsx:272",
+            "src/components/MobileNav.jsx:325",
             "src/components/WorkspaceSidebar.jsx:314",
             "src/components/WorkspaceSidebar.jsx:483"
           ]
@@ -6975,8 +6971,8 @@
           ],
           "files": [
             "src/app/(app)/chat/page.js:397",
-            "src/components/MobileNav.jsx:273",
-            "src/components/MobileNav.jsx:326",
+            "src/components/MobileNav.jsx:272",
+            "src/components/MobileNav.jsx:325",
             "src/components/OrgSwitcherScreen.jsx:72",
             "src/components/WorkspaceSidebar.jsx:314",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:77"
@@ -6986,7 +6982,7 @@
           "count": 3,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:249",
+            "src/components/MobileNav.jsx:248",
             "src/components/WorkspaceSidebar.jsx:387",
             "src/components/WorkspaceSidebar.jsx:403"
           ]
@@ -7017,7 +7013,7 @@
             "/sprints"
           ],
           "files": [
-            "src/components/MobileNav.jsx:249",
+            "src/components/MobileNav.jsx:248",
             "src/components/WorkspaceSidebar.jsx:387",
             "src/components/WorkspaceSidebar.jsx:403",
             "src/components/WorkspaceSidebar.jsx:483",
@@ -7028,8 +7024,8 @@
           "count": 3,
           "routes": [],
           "files": [
-            "src/components/MobileNav.jsx:273",
-            "src/components/MobileNav.jsx:326",
+            "src/components/MobileNav.jsx:272",
+            "src/components/MobileNav.jsx:325",
             "src/components/WorkspaceSidebar.jsx:314"
           ]
         },

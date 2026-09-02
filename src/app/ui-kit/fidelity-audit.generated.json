@@ -129,7 +129,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:255",
+      "location": "src/components/MobileNav.jsx:254",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -145,7 +145,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:315",
+      "location": "src/components/MobileNav.jsx:314",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -160,7 +160,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:346",
+      "location": "src/components/MobileNav.jsx:345",
       "className": "flex h-[44px] items-center gap-[14px] rounded-[12px] px-[12px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)] disabled:opacity-50",
       "text": "",
       "childElements": [
@@ -176,7 +176,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:411",
+      "location": "src/components/MobileNav.jsx:401",
       "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
       "text": "",
       "childElements": [
@@ -514,12 +514,12 @@
       "context": "integration-copy-value"
     },
     {
-      "location": "src/components/MobileNav.jsx:346",
+      "location": "src/components/MobileNav.jsx:345",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
     {
-      "location": "src/components/MobileNav.jsx:411",
+      "location": "src/components/MobileNav.jsx:401",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
