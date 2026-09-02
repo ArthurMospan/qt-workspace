@@ -29,7 +29,7 @@ Recommended BotFather settings:
 
 ## Personal notifications
 
-In **Налаштування → Інтеграції → Telegram** («Підключити Telegram»), or through the channel switch in **Налаштування → Сповіщення**, the user opens a 15-minute deep link and presses Start in the private bot chat. The one-time token links only that Firebase UID to that Telegram chat. The settings screen polls for the webhook's answer and re-checks when the tab regains focus; linking also turns the Telegram delivery preference on.
+In **Налаштування → Сповіщення → Telegram**, the channel switch opens a 15-minute deep link; the user presses Start in the private bot chat. The one-time token links only that Firebase UID to that Telegram chat. The settings screen polls for the webhook's answer and re-checks when the tab regains focus; linking also turns the Telegram delivery preference on. This is a notification channel and stays in «Сповіщення»: the **Інтеграції → Telegram** screen is about the group alone.
 
 Disconnecting removes the server-only chat binding. The normal notification preference is also turned off in the UI.
 
