@@ -29,7 +29,7 @@ Recommended BotFather settings:
 
 ## Personal notifications
 
-In **Налаштування → Сповіщення → Telegram**, the user opens a 15-minute deep link and presses Start in the private bot chat. The one-time token links only that Firebase UID to that Telegram chat. The user then enables the Telegram delivery toggle.
+In **Налаштування → Інтеграції → Telegram** («Підключити Telegram»), or through the channel switch in **Налаштування → Сповіщення**, the user opens a 15-minute deep link and presses Start in the private bot chat. The one-time token links only that Firebase UID to that Telegram chat. The settings screen polls for the webhook's answer and re-checks when the tab regains focus; linking also turns the Telegram delivery preference on.
 
 Disconnecting removes the server-only chat binding. The normal notification preference is also turned off in the UI.
 
@@ -37,11 +37,13 @@ Local development normally omits the bot credentials and therefore cannot create
 
 ## Group task capture
 
-An owner or admin opens **Налаштування → Інтеграції → Telegram bot**, chooses the default project and adds the bot to a group. The UI provides a 30-minute one-time command:
+An owner or admin opens **Налаштування → Інтеграції → Telegram**, chooses the default project and presses «Додати бота в групу». The button opens a `startgroup` deep link carrying a 30-minute one-time token; once the bot is added, the Telegram client itself sends `/start qtg_<token>` into the group, the webhook links the group, and the screen — which polls while the setup is open — shows the group's name within seconds. The same token is also shown under the button as a fallback command for a client that did not send it:
 
 ```text
 /quickteam_connect qtg_<one-time-token>
 ```
+
+Either spelling is accepted only in a group, and `/start qt_<token>` only in a private chat (`telegramConnectToken` in `src/lib/utils/telegramTask.mjs`). Every member of the organization can read which group is linked and how to write a task; linking and unlinking stay owner/admin.
 
 After connection, group members can use:
 

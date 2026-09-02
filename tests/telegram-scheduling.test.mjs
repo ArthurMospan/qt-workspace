@@ -46,14 +46,23 @@ test('a schedule invokes the notification sweep independently of a browser', asy
 
 test('localhost can disconnect an existing Telegram binding without bot credentials', async () => {
   const settings = await read('../src/app/(app)/settings/page.js');
+  // The channel switch in «Сповіщення» is disabled only when there is nothing
+  // to link AND nothing to unlink: a missing bot token must never lock a
+  // person out of closing a binding production wrote.
   assert.match(
     settings,
     /\(!telegramBotStatus\.configured && !telegramBotStatus\.connected\)/,
   );
-  assert.match(
-    settings,
-    /\(!telegramGroupStatus\.configured && !telegramGroupStatus\.connected\)/,
-  );
+  // The group used to hang off one header switch with the same guard. Since
+  // 2026-09-02 it is a card with two buttons, and the rule reads as two
+  // facts: linking needs the bot («Додати бота в групу» is disabled without
+  // credentials), unlinking never asks for it. The private card says the same.
+  assert.match(settings, /disabled=\{!telegramGroupProjectId \|\| !telegramGroupStatus\.configured\}/);
+  for (const handler of ['disconnectTelegramGroup', 'disconnectTelegram']) {
+    const button = settings.match(new RegExp(`<Button[^>]*onClick=\\{${handler}\\}[^>]*>`))?.[0] || '';
+    assert.ok(button, `a disconnect button calls ${handler}`);
+    assert.doesNotMatch(button, /configured|disabled/, `${handler} is never disabled for a missing bot token`);
+  }
 
   const route = await read('../src/app/api/integrations/telegram/route.js');
   const deleteHandler = route.slice(route.indexOf('export async function DELETE'));

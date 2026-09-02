@@ -27,3 +27,34 @@ export function splitTelegramTask(content) {
   const lines = value.split(/\r?\n/);
   return { title: lines.shift()?.trim() || '', description: lines.join('\n').trim() };
 }
+
+// The one-time connection payloads, wherever Telegram puts them.
+//
+// A group is linked by `/quickteam_connect qtg_<token>` — the command the card
+// shows — but the client that added the bot through the `startgroup` deep link
+// has already sent `/start qtg_<token>` into the group on the person's behalf,
+// and the webhook let that one through as noise: `/start` was read for private
+// chats only. So the screen asked people for a command Telegram had just typed
+// for them, and the bot answered nothing until they did. Both spellings answer
+// here, each in the room it belongs to: a private `/start` carries `qt_`, a
+// group one `qtg_`, and a payload in the wrong kind of chat is nobody's token.
+const PRIVATE_CHAT = 'private';
+const GROUP_CHATS = new Set(['group', 'supergroup']);
+
+export function telegramConnectToken(text, chatType) {
+  const start = telegramCommandPayload(text, 'start');
+  if (start !== null) {
+    if (chatType === PRIVATE_CHAT && start.startsWith('qt_') && start.length > 3) {
+      return { kind: 'user', token: start.slice(3) };
+    }
+    if (GROUP_CHATS.has(chatType) && start.startsWith('qtg_') && start.length > 4) {
+      return { kind: 'organization', token: start.slice(4) };
+    }
+    return null;
+  }
+  const connect = telegramCommandPayload(text, 'quickteam_connect');
+  if (connect !== null && GROUP_CHATS.has(chatType) && connect.startsWith('qtg_') && connect.length > 4) {
+    return { kind: 'organization', token: connect.slice(4) };
+  }
+  return null;
+}

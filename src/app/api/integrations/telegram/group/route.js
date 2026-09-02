@@ -17,7 +17,10 @@ function organizationIdFrom(request) {
 export async function GET(request) {
   try {
     const organizationId = organizationIdFrom(request);
-    const authorization = await authorizeOrgRequest(request, organizationId, ['owner', 'admin']);
+    // Any member may read which group feeds which project: a person in that
+    // group needs the commands, and the screen used to draw them a form that
+    // could only fail. Linking and unlinking (POST, DELETE) stay owner/admin.
+    const authorization = await authorizeOrgRequest(request, organizationId);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     const snapshot = await getAdminDb().collection('organizations').doc(organizationId)
       .collection('private').doc('telegram').get();

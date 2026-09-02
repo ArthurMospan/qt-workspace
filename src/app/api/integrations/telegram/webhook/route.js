@@ -12,14 +12,12 @@ import {
 } from '@/lib/server/telegram';
 import {
   splitTelegramTask,
-  telegramCommandPayload,
+  telegramConnectToken,
   telegramTaskContent,
 } from '@/lib/utils/telegramTask.mjs';
 import { issuePath } from '@/lib/utils/issueKeys.mjs';
 
-async function connectPrivateChat(message, payload) {
-  if (message.chat?.type !== 'private' || !payload?.startsWith('qt_')) return false;
-  const token = payload.slice(3);
+async function connectPrivateChat(message, token) {
   const db = getAdminDb();
   const tokenRef = db.collection('telegramConnectTokens').doc(telegramTokenId(token));
   const connectionRefHolder = {};
@@ -47,9 +45,7 @@ async function connectPrivateChat(message, payload) {
   return Boolean(connectionRefHolder.ref);
 }
 
-async function connectGroup(message, payload) {
-  if (!['group', 'supergroup'].includes(message.chat?.type) || !payload?.startsWith('qtg_')) return false;
-  const token = payload.slice(4);
+async function connectGroup(message, token) {
   const db = getAdminDb();
   const tokenRef = db.collection('telegramConnectTokens').doc(telegramTokenId(token));
   await db.runTransaction(async transaction => {
@@ -159,26 +155,25 @@ export async function POST(request) {
     const message = update.message;
     if (!message?.text || !message.chat?.id) return NextResponse.json({ ok: true });
 
-    const start = telegramCommandPayload(message.text, 'start');
-    if (start !== null) {
+    // One reader for both one-time tokens — see `telegramConnectToken`. The
+    // group's arrives as `/start qtg_…`, typed by the Telegram client itself
+    // when the bot is added through the deep link, or as the
+    // `/quickteam_connect` fallback the screen shows; the private one only
+    // ever arrives as `/start qt_…`. The first spelling used to be dropped
+    // here, so a group added the way the button suggested stayed unlinked
+    // until somebody pasted the second.
+    const connect = telegramConnectToken(message.text, message.chat?.type);
+    if (connect) {
       try {
-        if (await connectPrivateChat(message, start)) return NextResponse.json({ ok: true });
+        const linked = connect.kind === 'user'
+          ? await connectPrivateChat(message, connect.token)
+          : await connectGroup(message, connect.token);
+        if (linked) return NextResponse.json({ ok: true });
       } catch (error) {
         if (error.message === 'LINK_EXPIRED') {
-          await sendTelegramMessage(message.chat.id, 'Посилання вже використане або протерміноване. Створіть нове в QuickTeam.');
-          return NextResponse.json({ ok: true });
-        }
-        throw error;
-      }
-    }
-
-    const groupConnect = telegramCommandPayload(message.text, 'quickteam_connect');
-    if (groupConnect !== null) {
-      try {
-        if (await connectGroup(message, groupConnect)) return NextResponse.json({ ok: true });
-      } catch (error) {
-        if (error.message === 'LINK_EXPIRED') {
-          await sendTelegramMessage(message.chat.id, 'Код підключення вже використаний або протермінований. Створіть новий у QuickTeam.');
+          await sendTelegramMessage(message.chat.id, connect.kind === 'user'
+            ? 'Посилання вже використане або протерміноване. Створіть нове в QuickTeam.'
+            : 'Код підключення вже використаний або протермінований. Створіть новий у QuickTeam.');
           return NextResponse.json({ ok: true });
         }
         throw error;
