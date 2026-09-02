@@ -37,13 +37,15 @@ Local development normally omits the bot credentials and therefore cannot create
 
 ## Group task capture
 
-An owner or admin opens **Налаштування → Інтеграції → Telegram**, chooses the default project and presses «Додати бота в групу». The button opens a `startgroup` deep link carrying a 30-minute one-time token; once the bot is added, the Telegram client itself sends `/start qtg_<token>` into the group, the webhook links the group, and the screen — which polls while the setup is open — shows the group's name within seconds. The same token is also shown under the button as a fallback command for a client that did not send it:
+An owner or admin opens **Налаштування → Інтеграції → Telegram** and presses «Підключити групу» (or the header switch). A dialog asks for the default project; «Додати бота в групу» opens a `startgroup` deep link carrying a 30-minute one-time token. Once the bot is added, the Telegram client itself sends `/start qtg_<token>` into the group, the webhook links the group, and the dialog — which polls while it waits — closes with the group's name within seconds. The same token is shown in the dialog as a fallback command for a client that did not send it:
 
 ```text
 /quickteam_connect qtg_<one-time-token>
 ```
 
-Either spelling is accepted only in a group, and `/start qt_<token>` only in a private chat (`telegramConnectToken` in `src/lib/utils/telegramTask.mjs`). Every member of the organization can read which group is linked and how to write a task; linking and unlinking stay owner/admin.
+Either spelling is accepted only in a group, and `/start qt_<token>` only in a private chat (`telegramConnectToken` in `src/lib/utils/telegramTask.mjs`). Every member of the organization can read which group is linked and how to write a task; linking, moving and unlinking stay owner/admin.
+
+Once linked, the default project changes in place (`PATCH /api/integrations/telegram/group` updates the organization record and the `telegramChats` routing record together), «Перевірити» asks Telegram `getChat` through `POST /api/integrations/telegram/group/check` instead of re-reading our own record, and the webhook stamps `lastIssueKey`, `lastIssueId`, `lastProjectId`, `lastTaskAt` and `taskCount` on the organization record after each task for the «Остання задача з групи» row. Linking a different group deletes the previous `telegramChats` record, so one organization feeds tasks from one group.
 
 After connection, group members can use:
 
@@ -63,7 +65,7 @@ The bot replies with the new issue key and link. Telegram message receipts preve
 ## Stored data
 
 - `users/{uid}/private/telegram` — personal chat binding, denied to browser Firestore.
-- `organizations/{orgId}/private/telegram` — organization group binding and default project, denied to browser Firestore.
+- `organizations/{orgId}/private/telegram` — organization group binding, default project and the last-task stamp, denied to browser Firestore.
 - `telegramChats/{chatId}` — webhook routing record, default-denied.
 - `telegramConnectTokens/{sha256}` — short-lived one-time connection tokens, default-denied.
 - `telegramMessageReceipts/{chatId_messageId}` — idempotency receipts, default-denied.

@@ -56,6 +56,15 @@ async function connectGroup(message, token) {
     }
     const organizationRef = db.collection('organizations').doc(data.organizationId).collection('private').doc('telegram');
     const chatRef = db.collection('telegramChats').doc(String(message.chat.id));
+    // One group per organization. Linking a second one replaces the first,
+    // and the first's routing record goes with it — otherwise the old group
+    // kept creating tasks in a project nobody had pointed it at any more.
+    // Read before any write, as the transaction demands.
+    const previous = await transaction.get(organizationRef);
+    const previousChatId = previous.exists ? String(previous.data().chatId || '') : '';
+    if (previousChatId && previousChatId !== String(message.chat.id)) {
+      transaction.delete(db.collection('telegramChats').doc(previousChatId));
+    }
     transaction.set(organizationRef, {
       provider: 'telegram',
       chatId: String(message.chat.id),
@@ -130,6 +139,15 @@ async function createGroupTask(message, content) {
       telegramChatId: message.chat.id,
     });
     await receiptRef.update({ status: 'created', issueId: createdIssue.id, issueKey: createdIssue.issueKey });
+    // The row that answers «а воно працює?» with a task rather than a status
+    // word. Best effort: a missed stamp is a stale row, not a lost task.
+    await db.collection('organizations').doc(data.organizationId).collection('private').doc('telegram').set({
+      lastIssueKey: createdIssue.issueKey,
+      lastIssueId: createdIssue.id,
+      lastProjectId: data.defaultProjectId,
+      lastTaskAt: FieldValue.serverTimestamp(),
+      taskCount: FieldValue.increment(1),
+    }, { merge: true }).catch(stampError => console.warn('[telegram] last task stamp failed:', stampError.message));
   } catch (error) {
     await receiptRef.update({ status: 'failed', error: String(error.message || error).slice(0, 500) });
     await sendTelegramMessage(message.chat.id, `Не вдалося створити задачу: ${error.message || 'невідома помилка'}`)

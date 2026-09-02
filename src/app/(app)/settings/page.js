@@ -1466,6 +1466,11 @@ export default function SettingsPage() {
   const [telegramGroupProjectId, setTelegramGroupProjectId] = useState('');
   const [telegramGroupConnect, setTelegramGroupConnect] = useState(null);
   const [telegramGroupSetupOpen, setTelegramGroupSetupOpen] = useState(false);
+  // The connect dialog: choose a project, add the bot, wait. Opened by the
+  // scene's button, the header switch and the «Робоча група» row; only an
+  // owner or administrator ever sees a way in.
+  const [telegramGroupDialogOpen, setTelegramGroupDialogOpen] = useState(false);
+  const [telegramProjectSaving, setTelegramProjectSaving] = useState(false);
 
   const apiKeysRequest = async (method = 'GET', body = null) => {
     if (!activeOrgId) throw new Error('Не вказано організацію');
@@ -1503,32 +1508,30 @@ export default function SettingsPage() {
     return status;
   }, [activeOrgId, telegramRequest]);
 
-  // «Перевірити підключення», яке справді відповідає.
+  // «Перевірити», яке справді питає Telegram.
   //
-  // Кнопка викликала `refreshTelegramGroup()` і більше нічого: успіх мовчав, бо
-  // перечитаний стан збігався з тим, що вже на екрані, і жоден піксель не
-  // рухався. Кнопка, яка на натискання не відповідає нічим, зламана — незалежно
-  // від того, що вона робить усередині.
-  //
-  // Відповідь тепер є в обох випадках, і вона називає те, що перевіряли: групу
-  // на тому боці. Тост, а не рядок у картці, бо це подія, яка сталась і минула,
-  // а не стан, що лишається чинним.
+  // Кнопка перечитувала власний запис організації й казала «бот відповідає» —
+  // про сервіс, до якого ніхто не звертався. Група, з якої бота викинули
+  // тиждень тому, проходила цю перевірку щоразу. Тепер сервер питає Telegram
+  // (`getChat`), і відповідь називає те, що перевіряли: групу на тому боці.
+  // Тост, а не рядок у картці, бо це подія, яка сталась і минула.
   const [telegramGroupChecking, setTelegramGroupChecking] = useState(false);
   const checkTelegramGroup = useCallback(async () => {
     setTelegramGroupChecking(true);
     try {
-      const status = await refreshTelegramGroup();
-      if (status?.connected) {
-        showToast(`Група «${status.chatTitle || 'Telegram-група'}» на місці, бот відповідає`);
+      const answer = await telegramRequest('/api/integrations/telegram/group/check', 'POST', { organizationId: activeOrgId });
+      if (answer.ok) {
+        setTelegramGroupStatus(previous => ({ ...previous, chatTitle: answer.chatTitle || previous.chatTitle }));
+        showToast(`Бот у групі «${answer.chatTitle || 'Telegram-група'}», усе працює`);
       } else {
-        showToast('Бот більше не бачить групу. Додайте його знову й надішліть команду підтвердження.', 'error');
+        showToast(answer.error || 'Бот більше не бачить групу', 'error');
       }
     } catch (error) {
       showToast(error.message || 'Не вдалося зв’язатися з Telegram', 'error');
     } finally {
       setTelegramGroupChecking(false);
     }
-  }, [refreshTelegramGroup, showToast]);
+  }, [activeOrgId, telegramRequest, showToast]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => refreshTelegram().catch(() => {}), 0);
@@ -1603,7 +1606,7 @@ export default function SettingsPage() {
       setTelegramGroupConnect(result);
       setTelegramGroupSetupOpen(true);
       window.open(result.addGroupLink, '_blank', 'noopener,noreferrer');
-      showToast('Додайте бота в групу та надішліть команду підключення');
+      showToast('Додайте бота в групу — далі підключиться саме');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -1625,6 +1628,7 @@ export default function SettingsPage() {
       setTelegramGroupStatus(previous => ({ ...previous, connected: false, chatTitle: '', defaultProjectId: '' }));
       setTelegramGroupConnect(null);
       setTelegramGroupSetupOpen(false);
+      setTelegramGroupDialogOpen(false);
       showToast('Telegram-групу відключено');
       return true;
     } catch (error) {
@@ -1635,17 +1639,47 @@ export default function SettingsPage() {
     }
   };
 
+  // Giving up on a link in progress: the token stays valid until it expires,
+  // but nothing here waits for it any more.
+  const cancelTelegramGroupSetup = () => {
+    setTelegramGroupSetupOpen(false);
+    setTelegramGroupConnect(null);
+    setTelegramGroupDialogOpen(false);
+  };
+
+  // The group's project changes in place. It was read-only once linked: to
+  // send the group's tasks elsewhere you had to disconnect the group and add
+  // the bot again.
+  const changeTelegramGroupProject = async projectId => {
+    if (!activeOrgId || !projectId || projectId === telegramGroupProjectId) return;
+    setTelegramProjectSaving(true);
+    try {
+      const status = await telegramRequest('/api/integrations/telegram/group', 'PATCH', {
+        organizationId: activeOrgId,
+        projectId,
+      });
+      setTelegramGroupStatus(status);
+      setTelegramGroupProjectId(status.defaultProjectId || projectId);
+      showToast(`Задачі з групи підуть у «${projects.find(project => project.id === projectId)?.name || 'проєкт'}»`);
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setTelegramProjectSaving(false);
+    }
+  };
+
+  // The switch is the standard one: on opens the connect dialog, off
+  // disconnects a linked group or gives up on a link in progress.
   const toggleTelegramGroup = async enabled => {
     if (enabled) {
-      setTelegramGroupSetupOpen(true);
+      if (isAdmin) setTelegramGroupDialogOpen(true);
       return;
     }
     if (telegramGroupStatus.connected) {
       await disconnectTelegramGroup();
       return;
     }
-    setTelegramGroupSetupOpen(false);
-    setTelegramGroupConnect(null);
+    cancelTelegramGroupSetup();
   };
   const [generatingKey, setGeneratingKey] = useState(false);
 
@@ -1742,7 +1776,10 @@ export default function SettingsPage() {
     const check = async () => {
       try {
         const status = await refreshTelegramGroup();
-        if (status?.connected) showToast(`Групу «${status.chatTitle || 'Telegram-група'}» підключено`);
+        if (status?.connected) {
+          setTelegramGroupDialogOpen(false);
+          showToast(`Групу «${status.chatTitle || 'Telegram-група'}» підключено`);
+        }
       } catch {
         // Transient failure: the next tick retries, and the token is still valid.
       }
@@ -3836,7 +3873,7 @@ export default function SettingsPage() {
                 {...(integrationDetail === 'telegram' ? {
                   enabled: telegramGroupStatus.connected || telegramGroupSetupOpen,
                   onToggle: toggleTelegramGroup,
-                  toggleDisabled: telegramGroupLoading
+                  toggleDisabled: telegramGroupLoading || !isAdmin
                     || (!telegramGroupStatus.configured && !telegramGroupStatus.connected),
                 } : {})}
                 {...(integrationDetail === 'buggybag' ? {
@@ -3971,26 +4008,49 @@ export default function SettingsPage() {
               />
             ))}
 
-            {/* Telegram — the standard integration screen, and only the group.
-                This screen exists to turn a working group's messages into
-                tasks. A person's own notification chat is a channel, and it
-                lives in «Сповіщення» beside the events it delivers; it was put
-                on this screen for one release and taken off the same evening,
-                on the owner's verdict, together with the two-card layout that
-                had replaced the switch every other integration has. What stays
-                from that release is invisible: the webhook accepts the `/start`
-                Telegram itself sends after the deep link, the scene waits and
-                polls for the group instead of asking for a reload, and a member
-                can read which group feeds which project. */}
+            {/* Telegram — the standard integration screen, and only the group:
+                the switch in the header, one scene with one action while no
+                group is linked, rows once it is. The work happens in a dialog,
+                the way «Команда підтримки» does on the qTicket screen: choose
+                a project, add the bot, wait — and the dialog closes by itself
+                with the group's name.
+
+                What the rows can do now, and could not: the project changes in
+                place instead of by disconnecting and re-adding the bot; «Остання
+                задача з групи» answers «а воно працює?» with a task rather than
+                a status word; and «Перевірити» asks Telegram whether the bot is
+                still in the group instead of re-reading our own record. */}
             {integrationDetail === 'telegram' && (telegramGroupStatus.connected ? (
               <Card preset="borderless" padding="lg">
-                <SettingRow label="Робоча група" desc="Звідки надходять задачі">
-                  <span className="text-[13px] text-muted">{telegramGroupStatus.chatTitle || 'Telegram-група'}</span>
-                </SettingRow>
+                {isAdmin ? (
+                  <SettingRow
+                    label="Робоча група"
+                    desc="Звідки надходять задачі. Натисніть, щоб підключити іншу групу"
+                    onClick={() => setTelegramGroupDialogOpen(true)}
+                    value={telegramGroupStatus.chatTitle || 'Telegram-група'}
+                  />
+                ) : (
+                  <SettingRow label="Робоча група" desc="Звідки надходять задачі">
+                    <span className="text-[13px] text-muted">{telegramGroupStatus.chatTitle || 'Telegram-група'}</span>
+                  </SettingRow>
+                )}
                 <SettingRow label="Проєкт за замовчуванням" desc="Куди потрапляють задачі з цієї групи">
-                  <span className="text-[13px] text-muted">
-                    {projects.find(project => project.id === telegramGroupProjectId)?.name || 'не обрано'}
-                  </span>
+                  {isAdmin ? (
+                    <Select
+                      value={telegramGroupProjectId}
+                      onChange={changeTelegramGroupProject}
+                      options={projects
+                        .filter(project => project.status !== 'archived' || project.id === telegramGroupProjectId)
+                        .map(project => ({ value: project.id, label: project.name }))}
+                      disabled={telegramProjectSaving}
+                      size="sm"
+                      ariaLabel="Проєкт за замовчуванням для задач із Telegram"
+                    />
+                  ) : (
+                    <span className="text-[13px] text-muted">
+                      {projects.find(project => project.id === telegramGroupProjectId)?.name || 'не обрано'}
+                    </span>
+                  )}
                 </SettingRow>
                 <SettingRow label="Як створити задачу" desc="Наступні рядки повідомлення стануть описом задачі">
                   <div className="flex flex-wrap items-center gap-2">
@@ -4005,14 +4065,23 @@ export default function SettingsPage() {
                     </IntegrationCode>
                   </div>
                 </SettingRow>
-                {/* Кнопка, яка мовчала.
-                    Вона викликала те саме перечитування стану, що й відкриття
-                    екрана, і не показувала нічого: якщо група була на місці, на
-                    екрані не змінювалось ані пікселя. Натиснути й не побачити
-                    нічого — це зламана кнопка, чим вона для читача і була.
-                    Тепер вона відповідає в обох випадках. */}
+                {telegramGroupStatus.lastIssueId ? (
+                  <SettingRow
+                    label="Остання задача з групи"
+                    desc={`Усього з групи: ${telegramGroupStatus.taskCount || 1}`}
+                    onClick={() => router.push(issuePath(
+                      { id: telegramGroupStatus.lastIssueId, issueKey: telegramGroupStatus.lastIssueKey },
+                      telegramGroupStatus.lastProjectId || telegramGroupProjectId,
+                    ))}
+                    value={`${telegramGroupStatus.lastIssueKey}${telegramGroupStatus.lastTaskAt ? ` · ${formatDate(new Date(telegramGroupStatus.lastTaskAt))}` : ''}`}
+                  />
+                ) : (
+                  <SettingRow label="Остання задача з групи" desc="Бот ще не створив жодної — напишіть у групі /task і назву">
+                    <span className="text-[13px] text-muted">ще не було</span>
+                  </SettingRow>
+                )}
                 {isAdmin && (
-                  <SettingRow label="Перевірка зв'язку" desc="Чи бачить QuickTeam групу просто зараз">
+                  <SettingRow label="Перевірка зв'язку" desc="Бот запитає Telegram, чи він досі в групі">
                     <Button
                       style="secondary"
                       size="sm"
@@ -4029,50 +4098,16 @@ export default function SettingsPage() {
               <IntegrationConnect
                 logoSrc="/integrations/telegram.svg"
                 title="Підключіть робочу групу"
-                description="Оберіть проєкт і додайте бота в групу. Далі задачі створюються командою /task прямо в чаті."
+                description="Бот створюватиме задачі з команди /task у вибраному проєкті. Інших повідомлень групи він не читає."
                 action={isAdmin ? {
-                  // One step. The button opens Telegram with the group picker;
-                  // once the bot is added, the Telegram client itself sends the
-                  // token into the group, the webhook links it, and this scene
-                  // — polling while the setup is open — closes on its own. The
-                  // command below is the fallback for a client that did not.
-                  label: telegramGroupSetupOpen ? 'Чекаємо на групу…' : 'Додати бота в групу',
-                  icon: ExternalLink,
-                  onClick: connectTelegramGroup,
-                  loading: telegramGroupLoading || telegramGroupSetupOpen,
-                  disabled: !telegramGroupProjectId || !telegramGroupStatus.configured,
+                  label: telegramGroupSetupOpen ? 'Продовжити підключення' : 'Підключити групу',
+                  onClick: () => setTelegramGroupDialogOpen(true),
+                  disabled: !telegramGroupStatus.configured,
                 } : null}
                 footnote={!isAdmin
                   ? 'Групу підключає власник або адміністратор організації.'
-                  : telegramGroupSetupOpen
-                    ? 'Додайте бота в групу — підключення підтвердиться саме. Якщо ні, надішліть у групі команду нижче; вона діє 30 хвилин.'
-                    : (telegramGroupStatus.configured ? null : 'Інтеграцію не налаштовано в цьому середовищі.')}
-              >
-                {isAdmin && (
-                  <>
-                    <Label>Проєкт за замовчуванням</Label>
-                    <Select
-                      value={telegramGroupProjectId}
-                      onChange={setTelegramGroupProjectId}
-                      options={[
-                        { value: '', label: 'Оберіть проєкт' },
-                        ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
-                      ]}
-                      disabled={telegramGroupSetupOpen}
-                      ariaLabel="Проєкт за замовчуванням для задач із Telegram"
-                    />
-                    {telegramGroupSetupOpen && telegramGroupConnect?.command && (
-                      <IntegrationCode
-                        value={telegramGroupConnect.command}
-                        label="Копіювати команду підтвердження"
-                        className="w-full break-all"
-                      >
-                        {telegramGroupConnect.command}
-                      </IntegrationCode>
-                    )}
-                  </>
-                )}
-              </IntegrationConnect>
+                  : (telegramGroupStatus.configured ? null : 'Інтеграцію не налаштовано в цьому середовищі.')}
+              />
             ))}
 
             {/* BuggyBag Portal */}
@@ -5071,6 +5106,103 @@ export default function SettingsPage() {
           setMemberSettingsId(null);
         }}
       />
+      {/* Підключення Telegram-групи — діалог, а не форма посеред екрана, так
+          само як склад підтримки в qTicket. Два стани, і кожен видно як стан,
+          а не як пронумерований абзац: обрати проєкт і додати бота; далі діалог
+          сам чекає на групу й закривається з її назвою. Закрити діалог, поки
+          триває очікування, — не скасувати: опитування триває, сцена пропонує
+          «Продовжити підключення», а скасовує перемикач у шапці або «Скасувати». */}
+      <Dialog
+        isOpen={telegramGroupDialogOpen}
+        onClose={() => setTelegramGroupDialogOpen(false)}
+        size="md"
+        title={telegramGroupStatus.connected ? 'Підключити іншу групу' : 'Підключення Telegram-групи'}
+        description="Бот читатиме команду /task у групі та створюватиме задачі у вибраному проєкті. Інших повідомлень він не читає."
+        footer={telegramGroupSetupOpen ? (
+          <>
+            <Button style="secondary" size="md" onClick={cancelTelegramGroupSetup}>Скасувати</Button>
+            <Button
+              style="primary"
+              size="md"
+              icon={ExternalLink}
+              disabled={!telegramGroupConnect?.addGroupLink}
+              onClick={() => window.open(telegramGroupConnect.addGroupLink, '_blank', 'noopener,noreferrer')}
+            >
+              Відкрити Telegram ще раз
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button style="secondary" size="md" onClick={() => setTelegramGroupDialogOpen(false)}>Скасувати</Button>
+            <Button
+              style="primary"
+              size="md"
+              icon={ExternalLink}
+              loading={telegramGroupLoading}
+              disabled={!telegramGroupProjectId || !telegramGroupStatus.configured}
+              onClick={connectTelegramGroup}
+            >
+              Додати бота в групу
+            </Button>
+          </>
+        )}
+      >
+        {telegramGroupSetupOpen ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <LoadingSpinner size="sm" />
+              <p className="text-[13px] font-medium text-ink">Чекаємо, поки бот з’явиться в групі…</p>
+            </div>
+            <p className="text-[12px] leading-relaxed text-muted">
+              У Telegram оберіть групу й додайте бота. Підключення підтвердиться саме за кілька
+              секунд: це вікно закриється, а екран покаже назву групи.
+            </p>
+            {telegramGroupConnect?.command && (
+              <div className="flex flex-col gap-[6px]">
+                <Label>Якщо не підтвердилось само</Label>
+                <IntegrationCode
+                  value={telegramGroupConnect.command}
+                  label="Копіювати команду підтвердження"
+                  className="w-full break-all"
+                >
+                  {telegramGroupConnect.command}
+                </IntegrationCode>
+                <p className="text-[11px] leading-relaxed text-muted">
+                  Надішліть цю команду в групі — вона діє 30 хвилин.
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-[6px]">
+              <Label>Проєкт для задач із групи</Label>
+              <Select
+                value={telegramGroupProjectId}
+                onChange={setTelegramGroupProjectId}
+                options={[
+                  { value: '', label: 'Оберіть проєкт' },
+                  ...projects.filter(project => project.status !== 'archived').map(project => ({ value: project.id, label: project.name })),
+                ]}
+                ariaLabel="Проєкт для задач із Telegram"
+              />
+              <p className="text-[11px] leading-relaxed text-muted">
+                Змінити проєкт можна й пізніше — у рядку «Проєкт за замовчуванням».
+              </p>
+            </div>
+            {telegramGroupStatus.connected && (
+              <p className="text-[12px] leading-relaxed text-muted">
+                Зараз підключено «{telegramGroupStatus.chatTitle || 'Telegram-група'}». Нова група замінить її:
+                задачі з попередньої більше не створюватимуться.
+              </p>
+            )}
+            {!telegramGroupStatus.configured && (
+              <p className="text-[12px] leading-relaxed text-muted">Інтеграцію не налаштовано в цьому середовищі.</p>
+            )}
+          </div>
+        )}
+      </Dialog>
+
       {/* Склад підтримки — діалог, а не шість блоків посеред налаштувань.
           Дев'ять людей із чекбоксом, аватаром, поштою, роллю в QuickTeam і
           селектом ролі в підтримці — це таблиця, і в рядок налаштувань вона не
