@@ -171,10 +171,11 @@ test('a notification names its chat conversation, by field or by link', () => {
 
 // The record that exists only to bring you somewhere you already are.
 test('a channel marks its own bell records read while it is open', async () => {
-  const [chatPage, route, chatHook] = await Promise.all([
+  const [chatPage, route, chatHook, hook] = await Promise.all([
     readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/app/api/notifications/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/lib/hooks/useWorkspaceChat.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/hooks/useNotifications.js', import.meta.url), 'utf8'),
   ]);
 
   // The field the record could not carry before, written by the one route that
@@ -184,13 +185,16 @@ test('a channel marks its own bell records read while it is open', async () => {
   assert.match(chatPage, /channelId: activeChannel\.id,/);
   assert.match(chatHook, /channelId: uid,/);
 
-  // Every conversation, not only the direct ones — that restriction is what
-  // left a channel's records counting while the channel was on screen.
-  assert.doesNotMatch(chatPage, /if \(activeChannel\.type !== 'dm' \|\| document\.visibilityState/);
-  assert.match(chatPage, /notificationConversationId\(notification\) === activeChannel\.id/);
-  assert.match(chatPage, /\(notification\.type === 'chat_message' \|\| notification\.type === 'mentioned'\)/);
-  // Nothing is read in a tab nobody is looking at.
-  assert.match(chatPage, /document\.visibilityState !== 'visible' \|\| !markNotificationRead/);
+  // The pane publishes the conversation it shows — both kinds, not only the
+  // direct one — and keeps no list of its own about which records to read. The
+  // notification stream settles them with the rule the popup already follows,
+  // and it answers the tab coming back, which the page's effect never did: it
+  // read `document.visibilityState` once, when it ran, so a record that arrived
+  // while the tab was in the background stayed unread in the open channel.
+  assert.match(chatPage, /kind: activeChannel\.type === 'dm' \? 'dm' : 'channel', id: activeChannel\.id/);
+  assert.doesNotMatch(chatPage, /notificationActions\?\.markRead/);
+  assert.doesNotMatch(chatPage, /document\.visibilityState !== 'visible' \|\| !markNotificationRead/);
+  assert.match(hook, /settleRecordsOnScreen\(/);
 });
 
 // The card in the corner said somebody had written to you, and clicking it did

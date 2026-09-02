@@ -47,7 +47,11 @@ export default function WorkspaceSidebar() {
   // publishes the number, everything else reads it.
   const unreadChats = useWorkspaceStore(s => s.unreadChatCount);
   const userId = currentUser?.id || currentUser?.uid;
-  const { unreadProjectIds, markProjectRead } = useProjectUnreadIndicators(userId, activeOrgId);
+  // Крапка біля проєкту гасне, коли прочитано записи за ним — відкривши ті
+  // задачі або в дзвонику. Не при вході в проєкт: раніше URL проєкту гасив усі
+  // його записи разом, і сповіщення про задачі, яких людина не відкривала,
+  // зникали, щойно вона зайшла в сусідню.
+  const { unreadProjectIds } = useProjectUnreadIndicators(userId, activeOrgId);
   // Число публікує `WorkspaceNotificationBridge` — і воно вже готове. Тут
   // стояла друга копія тієї самої підміни «сповіщення або курсори», накладена
   // поверх опублікованого числа, у якому підміна вже відбулася: та сама умова
@@ -97,14 +101,6 @@ export default function WorkspaceSidebar() {
   // організації невідомі. Замість того щоб на мить показати "Company name" /
   // биту картинку, показуємо скелетон; логотип рендериться лише коли готово.
   const brandingReady = Boolean(sidebarPreview) || Boolean(activeOrg);
-
-  useEffect(() => {
-    const match = pathname.match(/^\/([^/]+)/);
-    const projectId = match?.[1];
-    if (projectId && projects?.some(project => project.id === projectId)) {
-      markProjectRead(projectId).catch(error => console.error('[WorkspaceSidebar] mark project read', error));
-    }
-  }, [pathname, projects, markProjectRead]);
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const timerElapsed = useWorkspaceStore(s => s.timerElapsed);

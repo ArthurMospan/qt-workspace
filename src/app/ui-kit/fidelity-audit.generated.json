@@ -8,8 +8,8 @@
     "catalogContract": "Only source files reachable from src/app/(app) belong to the UI Kit product catalog."
   },
   "totals": {
-    "productFiles": 269,
-    "parsedFiles": 269,
+    "productFiles": 270,
+    "parsedFiles": 270,
     "parseErrors": 0,
     "nativeControls": 23,
     "structures": {
@@ -406,7 +406,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:334",
+      "location": "src/components/WorkspaceSidebar.jsx:330",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -421,7 +421,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:357",
+      "location": "src/components/WorkspaceSidebar.jsx:353",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -544,12 +544,12 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:334",
+      "location": "src/components/WorkspaceSidebar.jsx:330",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:357",
+      "location": "src/components/WorkspaceSidebar.jsx:353",
       "tag": "button",
       "context": "branding-action"
     }
@@ -565,7 +565,7 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/chat/page.js:393",
+      "location": "src/app/(app)/chat/page.js:392",
       "tag": "div",
       "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },
@@ -745,7 +745,7 @@
       "className": "flex items-center gap-2 bg-canvas rounded-full pl-[4px] pr-[6px] py-[4px]"
     },
     {
-      "location": "src/components/workspace/UnifiedTimeline.jsx:1656",
+      "location": "src/components/workspace/UnifiedTimeline.jsx:1633",
       "tag": "div",
       "className": "mb-2 flex items-start gap-2 rounded-[10px] border border-line/70 bg-canvas/90 px-3 py-2 backdrop-blur-xl"
     },
@@ -755,7 +755,7 @@
       "className": "mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-white p-2"
     },
     {
-      "location": "src/components/WorkspaceHeader.jsx:544",
+      "location": "src/components/WorkspaceHeader.jsx:557",
       "tag": "div",
       "className": "fixed w-[min(380px,calc(100vw-16px))] overflow-hidden rounded-[16px] border border-line bg-white shadow-[0_8px_40px_rgba(0,0,0,0.10)]"
     },

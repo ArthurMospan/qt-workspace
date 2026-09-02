@@ -451,11 +451,11 @@ test('sending a message reads the conversation and takes the line down', async (
   // One place decides what «read» means, so three callers cannot each remember
   // their own half of it.
   assert.match(timeline, /const consumeConversation = useCallback\(\(\) => \{/);
-  assert.match(timeline, /dismissIssueNotifications\(\);/);
-  // Including the records in the bell, which existed only to bring the reader
-  // to the conversation they are now standing in.
-  assert.match(timeline, /notification\.issueId === issueId/);
-  assert.match(timeline, /notification\.type === 'commented'\s*\|\| notification\.type === 'mentioned'/);
+  // The records in the bell are not this screen's to read: it publishes the
+  // conversation it shows, and the notification stream settles them with the
+  // same rule for every type the task produces.
+  assert.doesNotMatch(timeline, /dismissIssueNotifications/);
+  assert.match(timeline, /const conversation = \{ kind: 'issue', id: issueId \};/);
 });
 
 // One person speaking without interruption is drawn as one run.
@@ -600,7 +600,8 @@ test('the panes showing a conversation say so, and the popup asks before it fire
   assert.match(bridge, /document\.visibilityState === 'visible'/);
 });
 
-// The check that suppresses the card has to suppress the chime as well.
+// The check that suppresses the card has to suppress the chime as well — and
+// settle the record, which is the same question asked a third time.
 test('nothing announces a message arriving in the conversation on screen', async () => {
   const [hook, bridge] = await Promise.all([
     readFile(new URL('../src/lib/hooks/useNotifications.js', import.meta.url), 'utf8'),
@@ -610,33 +611,40 @@ test('nothing announces a message arriving in the conversation on screen', async
   // The gate stands before the chime, not between the chime and the popup —
   // which is where it used to stand, so the card was suppressed and the sound
   // played anyway on the very task page the message had landed on.
-  const announceGate = hook.indexOf('!announce(n)');
+  const announceGate = hook.indexOf('watching(n)) return;');
   const chime = hook.indexOf('playChime()', hook.indexOf('const prefs = prefsRef.current'));
-  assert.ok(announceGate > 0, 'the hook asks whether to announce at all');
+  assert.ok(announceGate > 0, 'the hook asks whether the reader is watching');
   assert.ok(announceGate < chime, 'and asks before it plays anything');
   // The bell keeps the record either way: the gate returns before the channels,
-  // never before the list the panel draws.
-  assert.match(hook, /setNotifications\(docs\);/);
+  // never before the list the panel draws — and that list is published with the
+  // records on screen already settled, so the counter never draws them unread.
+  assert.match(hook, /publish\(settleOnScreen\(docs\)/);
   // One decision, passed in by the only component that knows what is on screen.
-  assert.match(bridge, /shouldAnnounce,\s*\}\);/);
+  assert.match(bridge, /readerIsWatching,\s*\}\);/);
 });
 
 // A badge for something you are looking at is not information.
 test('the task chat clears its own bell records while it is open', async () => {
-  const [timeline, chatPage] = await Promise.all([
+  const [timeline, chatPage, hook, bridge] = await Promise.all([
     readFile(new URL('../src/components/workspace/UnifiedTimeline.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/app/(app)/chat/page.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/hooks/useNotifications.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/WorkspaceNotificationBridge.jsx', import.meta.url), 'utf8'),
   ]);
 
-  // Not on the intersection observer's schedule: that consumed the record about
-  // half a second after it arrived, so every message lit «(1)» and put it out
-  // again while the reader watched.
-  assert.match(timeline, /if \(!isActive \|\| !tabVisible\) return;\s*dismissIssueNotifications\(\);/);
-  // The reply record is one of the task's own, so it is dismissed with them.
-  assert.match(timeline, /notification\.type === 'chat_message'\)\s*\)\);/);
-  // The workspace chat has always done this for an open channel; the task chat
-  // is the same rule on the other screen.
-  assert.match(chatPage, /if \(unreadForConversation\.length === 0\) return;/);
+  // Neither pane marks anything read itself any more. Each publishes what it
+  // shows, and the stream settles the records — at the snapshot, so nothing
+  // lights «(1)» and puts it out again while the reader watches, and again when
+  // the pane in front changes or the tab comes back.
+  assert.doesNotMatch(timeline, /dismissIssueNotifications/);
+  assert.doesNotMatch(chatPage, /unreadForConversation/);
+  assert.match(timeline, /setVisibleConversation\(conversation\);/);
+  assert.match(chatPage, /setVisibleConversation\(conversation\);/);
+  assert.match(bridge, /\}, \[settleVisible, visibleConversation\]\);/);
+  assert.match(bridge, /document\.visibilityState === 'visible'\) settleVisible\(\);/);
+  // Every type the conversation produces, through the one presence rule — not a
+  // hand-kept list of three that left a status change silenced and unread.
+  assert.match(hook, /settleRecordsOnScreen\(\s*docs,\s*record => !settledIds\.has\(record\.id\) && watching\(record\),\s*\)/);
 });
 
 // Answering a person is addressed to that person.

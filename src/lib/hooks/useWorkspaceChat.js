@@ -349,6 +349,10 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
           })();
         }
       }
+      // The message's id, for whoever announces it: a notification keyed by the
+      // message it is about is written once however many times the send is
+      // retried, which `Date.now()` in the key never was.
+      return messageRef.id;
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -480,6 +484,7 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
         replyCount: increment(1)
       });
       await batch.commit();
+      return replyRef.id;
     } catch (e) {
       console.error(e);
       throw e;

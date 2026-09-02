@@ -35,7 +35,6 @@ import { uploadFile } from '@/lib/utils/uploadFile';
 import dynamic from 'next/dynamic';
 import { activeTypingUserIds, channelUnreadCount, directMessageRoomId } from '@/lib/utils/workspaceChat.mjs';
 import { extractMentionedUserIds } from '@/lib/utils/mentions';
-import { notificationConversationId } from '@/lib/utils/notificationNavigation.mjs';
 import { collectIssueMentions } from '@/lib/utils/messageTokens.mjs';
 import { formatLastSeenUk } from '@/lib/utils/presence.mjs';
 import { usePublishLocalSearchResults } from '@/lib/hooks/usePublishLocalSearchResults';
@@ -517,7 +516,6 @@ export default function ChatPage() {
   const setChatSearch = useWorkspaceStore(s => s.setChatSearch);
   const setChatOnlineUsers = useWorkspaceStore(s => s.setChatOnlineUsers);
   const notifications = useWorkspaceStore(s => s.notifications);
-  const markNotificationRead = useWorkspaceStore(s => s.notificationActions?.markRead);
   const setVisibleConversation = useWorkspaceStore(s => s.setVisibleConversation);
   const clearVisibleConversation = useWorkspaceStore(s => s.clearVisibleConversation);
 
@@ -759,38 +757,18 @@ export default function ChatPage() {
     markAsRead(getRoomId());
   }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // A notification exists to bring somebody to a conversation. Standing in that
-  // conversation, the record has already done its whole job — so it is marked
-  // read rather than left in the bell as a badge for something on screen. The
-  // task chat does the same thing for a task.
+  // The open conversation, published for the notification stream. A record
+  // about it is neither announced — a card announcing the message you are
+  // watching arrive is noise, and it lands on top of the conversation it
+  // describes — nor left unread in the bell: a notification exists to bring
+  // somebody to a conversation, and standing in it the record has done its job.
   //
-  // This used to reach direct messages only, because a `chat_message` record
-  // named its conversation nowhere but inside its link: a channel's records went
-  // on counting while their channel was open. They carry `channelId` now, and
-  // `notificationConversationId` reads the link for the ones written before it.
-  useEffect(() => {
-    if (!activeChannel.id || document.visibilityState !== 'visible' || !markNotificationRead) return;
-    const unreadForConversation = notifications.filter(notification => (
-      !notification.read
-      && notification.organizationId === activeOrgId
-      && (notification.type === 'chat_message' || notification.type === 'mentioned')
-      && (
-        notificationConversationId(notification) === activeChannel.id
-        // A direct message from before the field existed, whose link named the
-        // sender and whose sender is exactly what this pane calls the room.
-        // `!issueId` for the same reason the presence rule has it: a task chat
-        // also writes `chat_message` records, and they belong to the task.
-        || (activeChannel.type === 'dm' && notification.type === 'chat_message' && !notification.issueId && notification.actorId === activeChannel.id)
-      )
-    ));
-    if (unreadForConversation.length === 0) return;
-    Promise.allSettled(unreadForConversation.map(notification => markNotificationRead(notification.id)));
-  }, [activeChannel.id, activeChannel.type, activeOrgId, markNotificationRead, notifications]);
-
-  // The open conversation, published for the live notification popup: the same
-  // rule the read-marking above already follows, said once more where the popup
-  // can hear it. A card announcing the message you are watching arrive is noise,
-  // and it lands on top of the conversation it describes.
+  // The marking-read used to happen here too, with its own list of two types and
+  // its own reading of `document.visibilityState` — taken once, when the effect
+  // ran, so a record that arrived while the tab was in the background stayed
+  // unread after you came back to the open channel. `useNotifications` does it
+  // for every screen now, with the same rule the popup uses and a real answer
+  // to the tab coming back.
   useEffect(() => {
     if (!activeChannel.id) return undefined;
     const conversation = { kind: activeChannel.type === 'dm' ? 'dm' : 'channel', id: activeChannel.id };
@@ -996,7 +974,7 @@ export default function ChatPage() {
     clearTimeout(typingRef.current);
     setTyping(false);
     try {
-      await sendMessage(text, attachments, issueMentions);
+      const messageId = await sendMessage(text, attachments, issueMentions);
       if (activeChannel.type === 'channel') {
         const mentionedUserIds = extractMentionedUserIds(text, mentionMembers, myUid);
         if (mentionedUserIds.length) {
@@ -1008,7 +986,11 @@ export default function ChatPage() {
               link: `/chat?channel=${encodeURIComponent(activeChannel.id)}`,
               channelId: activeChannel.id,
               organizationId: activeOrgId,
-              dedupeKey: `channel_mention_${activeChannel.id}_${Date.now()}`,
+              // Keyed by the message, the way a direct message already is. A key
+              // that carried `Date.now()` was different on every call, so it
+              // deduplicated nothing: a retried send meant a second record and a
+              // second Telegram message about the same mention.
+              dedupeKey: `channel_mention_${messageId || Date.now()}`,
             }).catch(notificationError => {
             console.error('[workspace-chat] Mention notification failed:', notificationError);
             showToast('Повідомлення надіслано, але сповіщення про згадку не доставлено', 'error');
@@ -1035,7 +1017,7 @@ export default function ChatPage() {
   // and whoever has answered it before. That list is read off the replies this
   // pane already has open, so telling them costs nothing at all.
   const handleSendThread = async (text, attachments, issueMentions) => {
-    await sendThreadMessage(text, attachments, issueMentions);
+    const replyId = await sendThreadMessage(text, attachments, issueMentions);
     const parent = activeThreadParent;
     if (!parent) return;
     const followers = [...new Set([
@@ -1056,14 +1038,16 @@ export default function ChatPage() {
         type: 'chat_message',
         title: `${currentUser?.name || 'Колега'} відповів у гілці`,
         body: text.trim().slice(0, 500) || 'Надіслано вкладення',
-        dedupeKey: `thread_reply_${activeThreadId}_${Date.now()}`,
+        // Keyed by the reply itself — see the channel mention above for why a
+        // key with `Date.now()` in it was no key at all.
+        dedupeKey: `thread_reply_${replyId || Date.now()}`,
       },
       mentioned.length && {
         userIds: mentioned,
         type: 'mentioned',
         title: `${currentUser?.name || 'Колега'} згадав вас у гілці`,
         body: text.trim().slice(0, 500),
-        dedupeKey: `thread_mention_${activeThreadId}_${Date.now()}`,
+        dedupeKey: `thread_mention_${replyId || Date.now()}`,
       },
     ].filter(Boolean);
 
