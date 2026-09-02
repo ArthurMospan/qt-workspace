@@ -1508,31 +1508,6 @@ export default function SettingsPage() {
     return status;
   }, [activeOrgId, telegramRequest]);
 
-  // «Перевірити», яке справді питає Telegram.
-  //
-  // Кнопка перечитувала власний запис організації й казала «бот відповідає» —
-  // про сервіс, до якого ніхто не звертався. Група, з якої бота викинули
-  // тиждень тому, проходила цю перевірку щоразу. Тепер сервер питає Telegram
-  // (`getChat`), і відповідь називає те, що перевіряли: групу на тому боці.
-  // Тост, а не рядок у картці, бо це подія, яка сталась і минула.
-  const [telegramGroupChecking, setTelegramGroupChecking] = useState(false);
-  const checkTelegramGroup = useCallback(async () => {
-    setTelegramGroupChecking(true);
-    try {
-      const answer = await telegramRequest('/api/integrations/telegram/group/check', 'POST', { organizationId: activeOrgId });
-      if (answer.ok) {
-        setTelegramGroupStatus(previous => ({ ...previous, chatTitle: answer.chatTitle || previous.chatTitle }));
-        showToast(`Бот у групі «${answer.chatTitle || 'Telegram-група'}», усе працює`);
-      } else {
-        showToast(answer.error || 'Бот більше не бачить групу', 'error');
-      }
-    } catch (error) {
-      showToast(error.message || 'Не вдалося зв’язатися з Telegram', 'error');
-    } finally {
-      setTelegramGroupChecking(false);
-    }
-  }, [activeOrgId, telegramRequest, showToast]);
-
   useEffect(() => {
     const timeoutId = window.setTimeout(() => refreshTelegram().catch(() => {}), 0);
     return () => window.clearTimeout(timeoutId);
@@ -1658,7 +1633,9 @@ export default function SettingsPage() {
         organizationId: activeOrgId,
         projectId,
       });
-      setTelegramGroupStatus(status);
+      // Merged, not replaced: the PATCH answer carries the record, and the
+      // two facts Telegram answered on the last read stay as they were.
+      setTelegramGroupStatus(previous => ({ ...previous, ...status }));
       setTelegramGroupProjectId(status.defaultProjectId || projectId);
       showToast(`Задачі з групи підуть у «${projects.find(project => project.id === projectId)?.name || 'проєкт'}»`);
     } catch (error) {
@@ -3737,6 +3714,14 @@ export default function SettingsPage() {
         // екранах, і написати шостий нема де. Доти цей список писав їх руками
         // й розходився сам із собою: qTicket казав «Активовано» там, де сусіди
         // казали «Підключено».
+        // The «Робоча група» row says whether the bot is still there, which is
+        // what a «Перевірити» button used to be for — a question the screen can
+        // answer on its own every time it opens.
+        const telegramGroupDesc = telegramGroupStatus.botInGroup === false
+          ? 'Бота немає в групі — додайте його знову'
+          : telegramGroupStatus.botInGroup === true
+            ? 'Бот у групі, задачі надходять звідси'
+            : 'Звідки надходять задачі';
         const integrationRows = [
           {
             id: 'qticket',
@@ -4025,12 +4010,12 @@ export default function SettingsPage() {
                 {isAdmin ? (
                   <SettingRow
                     label="Робоча група"
-                    desc="Звідки надходять задачі. Натисніть, щоб підключити іншу групу"
+                    desc={`${telegramGroupDesc}. Натисніть, щоб підключити іншу`}
                     onClick={() => setTelegramGroupDialogOpen(true)}
                     value={telegramGroupStatus.chatTitle || 'Telegram-група'}
                   />
                 ) : (
-                  <SettingRow label="Робоча група" desc="Звідки надходять задачі">
+                  <SettingRow label="Робоча група" desc={telegramGroupDesc}>
                     <span className="text-[13px] text-muted">{telegramGroupStatus.chatTitle || 'Telegram-група'}</span>
                   </SettingRow>
                 )}
@@ -4057,12 +4042,18 @@ export default function SettingsPage() {
                     <IntegrationCode value="/task Назва задачі" label="Копіювати команду /task">
                       /task Назва задачі
                     </IntegrationCode>
-                    <IntegrationCode
-                      value={`@${telegramGroupStatus.username || 'quick_team_bot'} Назва`}
-                      label="Копіювати звернення до бота"
-                    >
-                      @{telegramGroupStatus.username || 'quick_team_bot'} Назва
-                    </IntegrationCode>
+                    {/* Offered only when it can work. With BotFather's privacy
+                        mode on — the default — a mention never reaches the
+                        webhook; only commands do. The screen used to show this
+                        form regardless, and it silently did nothing. */}
+                    {telegramGroupStatus.readsAllMessages === true && (
+                      <IntegrationCode
+                        value={`@${telegramGroupStatus.username || 'quick_team_bot'} Назва`}
+                        label="Копіювати звернення до бота"
+                      >
+                        @{telegramGroupStatus.username || 'quick_team_bot'} Назва
+                      </IntegrationCode>
+                    )}
                   </div>
                 </SettingRow>
                 {telegramGroupStatus.lastIssueId ? (
@@ -4078,19 +4069,6 @@ export default function SettingsPage() {
                 ) : (
                   <SettingRow label="Остання задача з групи" desc="Бот ще не створив жодної — напишіть у групі /task і назву">
                     <span className="text-[13px] text-muted">ще не було</span>
-                  </SettingRow>
-                )}
-                {isAdmin && (
-                  <SettingRow label="Перевірка зв'язку" desc="Бот запитає Telegram, чи він досі в групі">
-                    <Button
-                      style="secondary"
-                      size="sm"
-                      icon={RefreshCw}
-                      loading={telegramGroupChecking}
-                      onClick={checkTelegramGroup}
-                    >
-                      Перевірити
-                    </Button>
                   </SettingRow>
                 )}
               </Card>

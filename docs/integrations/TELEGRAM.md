@@ -24,7 +24,7 @@ The protected `/api/cron/notifications` route creates calendar and deadline noti
 Recommended BotFather settings:
 
 - allow adding the bot to groups;
-- keep privacy mode enabled — `/task`, `/quickteam_connect` and direct `@bot` mentions still reach the bot;
+- decide privacy mode deliberately. Enabled (the BotFather default) the bot receives only commands in a group, so `/task …` and `/quickteam_connect …` work and a `@bot …` mention never arrives — the screen offers the mention form only when `getMe` reports `can_read_all_group_messages`. Disabling it (`/setprivacy` → Disable, then remove and re-add the bot to every group) lets the bot read every message; the webhook ignores everything that is not a task and stores nothing else;
 - register `/task` as a bot command.
 
 ## Personal notifications
@@ -45,7 +45,7 @@ An owner or admin opens **Налаштування → Інтеграції → 
 
 Either spelling is accepted only in a group, and `/start qt_<token>` only in a private chat (`telegramConnectToken` in `src/lib/utils/telegramTask.mjs`). Every member of the organization can read which group is linked and how to write a task; linking, moving and unlinking stay owner/admin.
 
-Once linked, the default project changes in place (`PATCH /api/integrations/telegram/group` updates the organization record and the `telegramChats` routing record together), «Перевірити» asks Telegram `getChat` through `POST /api/integrations/telegram/group/check` instead of re-reading our own record, and the webhook stamps `lastIssueKey`, `lastIssueId`, `lastProjectId`, `lastTaskAt` and `taskCount` on the organization record after each task for the «Остання задача з групи» row. Linking a different group deletes the previous `telegramChats` record, so one organization feeds tasks from one group.
+Once linked, the default project changes in place (`PATCH /api/integrations/telegram/group` updates the organization record and the `telegramChats` routing record together). The status read carries two facts only Telegram can answer, cached per server instance for five minutes (`telegramBotInChat`, `telegramBotReadsAllMessages` in `src/lib/server/telegram.js`): `botInGroup` — the «Робоча група» row says «Бота немає в групі» once `getChat` is refused, which is what a manual «Перевірити» button used to be for — and `readsAllMessages`, which decides whether the mention form is shown. The webhook stamps `lastIssueKey`, `lastIssueId`, `lastProjectId`, `lastTaskAt` and `taskCount` on the organization record after each task for the «Остання задача з групи» row. Linking a different group deletes the previous `telegramChats` record, so one organization feeds tasks from one group.
 
 After connection, group members can use:
 

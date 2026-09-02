@@ -40,15 +40,22 @@ test('the default project moves in place, in both records the webhook and the sc
   assert.match(handlers.POST, /activeProject\(getAdminDb\(\), organizationId, projectId\)/);
 });
 
-test('«Перевірити» asks Telegram whether the bot is still in the group, and answers instead of throwing', async () => {
-  const check = await read('src/app/api/integrations/telegram/group/check/route.js');
-  assert.match(check, /telegramRequest\('getChat', \{ chat_id: data\.chatId \}\)/);
-  assert.doesNotMatch(check, /sendMessage/);
-  assert.match(check, /ok: false, error: explain\(error\.message\)/);
-  assert.match(check, /Бота вилучили з групи/);
+test('the bot answers for itself: still in the group, and whether it reads mentions', async () => {
+  const server = await read('src/lib/server/telegram.js');
+  assert.match(server, /can_read_all_group_messages/);
+  assert.match(server, /telegramRequest\('getChat', \{ chat_id: chatId \}\)/);
+  assert.match(server, /PROBE_TTL_MS = 5 \* 60 \* 1000/);
+  const handlers = handlersOf(await read('src/app/api/integrations/telegram/group/route.js'));
+  assert.match(handlers.GET, /telegramBotReadsAllMessages\(\)/);
+  assert.match(handlers.GET, /telegramBotInChat\(data\.chatId\)/);
+  assert.match(handlers.GET, /botInGroup: membership \? membership\.inChat : null/);
+  // No manual check: the row says it, and the mention form is offered only
+  // when a mention can reach the webhook at all.
+  await assert.rejects(read('src/app/api/integrations/telegram/group/check/route.js'), /ENOENT/);
   const settings = await read('src/app/(app)/settings/page.js');
-  assert.match(settings, /telegramRequest\('\/api\/integrations\/telegram\/group\/check', 'POST'/);
-  assert.doesNotMatch(settings, /на місці, бот відповідає/);
+  assert.doesNotMatch(settings, /Перевірка зв'язку|checkTelegramGroup/);
+  assert.match(settings, /telegramGroupStatus\.botInGroup === false/);
+  assert.match(settings, /telegramGroupStatus\.readsAllMessages === true && \(/);
 });
 
 test('the webhook stamps the last task and drops the previous group when another is linked', async () => {

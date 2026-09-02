@@ -6,6 +6,8 @@ import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { refuseWithoutCapability } from '@/lib/server/planLimits';
 import {
   ensureTelegramWebhook,
+  telegramBotInChat,
+  telegramBotReadsAllMessages,
   telegramStatus,
   telegramTokenId,
 } from '@/lib/server/telegram';
@@ -55,7 +57,21 @@ export async function GET(request) {
     const authorization = await authorizeOrgRequest(request, organizationId);
     if (authorization.error) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     const snapshot = await groupRef(getAdminDb(), organizationId).get();
-    return NextResponse.json(groupView(snapshot.exists ? snapshot.data() : {}));
+    const data = snapshot.exists ? snapshot.data() : {};
+    // Two facts only Telegram can answer, both cached (see telegramBotInChat):
+    // whether the bot is still in the group — the «Робоча група» row says so,
+    // which is what the «Перевірити» button used to be for — and whether it
+    // reads mentions, which decides if «@bot Назва» is offered at all.
+    const [readsAllMessages, membership] = await Promise.all([
+      telegramBotReadsAllMessages(),
+      telegramBotInChat(data.chatId),
+    ]);
+    return NextResponse.json({
+      ...groupView(data),
+      chatTitle: membership?.title || data.chatTitle || '',
+      botInGroup: membership ? membership.inChat : null,
+      readsAllMessages,
+    });
   } catch (error) {
     return routeErrorResponse(error, { context: 'telegram group status', fallbackMessage: 'Не вдалося перевірити Telegram-групу' });
   }

@@ -70,6 +70,52 @@ export async function telegramRequest(method, payload) {
   return result.result;
 }
 
+// Two facts about the bot that the screen shows and only Telegram can answer:
+// whether the bot is still a member of a chat (`getChat` is refused once it
+// has been kicked) and whether it reads every group message or only commands
+// (`getMe` → `can_read_all_group_messages`, which is BotFather's privacy
+// mode). The second is why «@bot Назва» silently did nothing: with privacy
+// mode on, a mention never reaches the webhook, and the screen advertised it
+// anyway. Both answers are cached per server instance for a few minutes — the
+// screen asks on every open, Telegram need not be asked as often. `null`
+// means «unknown»: not configured, or Telegram could not be reached.
+const PROBE_TTL_MS = 5 * 60 * 1000;
+const probeCache = new Map();
+
+async function cachedProbe(key, ask) {
+  const now = Date.now();
+  const hit = probeCache.get(key);
+  if (hit && hit.expiresAt > now) return hit.value;
+  const value = await ask();
+  probeCache.set(key, { value, expiresAt: now + PROBE_TTL_MS });
+  return value;
+}
+
+export async function telegramBotReadsAllMessages() {
+  if (!telegramStatus().configured) return null;
+  return cachedProbe('me', async () => {
+    try {
+      const me = await telegramRequest('getMe', {});
+      return Boolean(me?.can_read_all_group_messages);
+    } catch {
+      return null;
+    }
+  });
+}
+
+export async function telegramBotInChat(chatId) {
+  if (!telegramStatus().configured || !chatId) return null;
+  return cachedProbe(`chat:${chatId}`, async () => {
+    try {
+      const chat = await telegramRequest('getChat', { chat_id: chatId });
+      return { inChat: true, title: chat?.title || '' };
+    } catch (error) {
+      const reason = String(error?.message || '');
+      return /kicked|not a member|removed|chat not found/i.test(reason) ? { inChat: false, title: '' } : null;
+    }
+  });
+}
+
 export async function ensureTelegramWebhook() {
   const value = config();
   if (!telegramStatus().configured) throw new Error('Telegram integration is not configured');
