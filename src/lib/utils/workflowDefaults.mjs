@@ -15,7 +15,28 @@ import {
 } from './statusCategories.mjs';
 import { DEFAULT_TASK_TYPES } from './taskTypes.mjs';
 
-export const DEFAULT_STATUS_IDS = ['backlog', 'todo', 'in-progress', 'review', 'done'];
+// ── Стандартний workflow: один список, і він тут ──────────────────────────────
+//
+// Робочий простір, у якому адміністратор ще нічого не налаштовував, усе одно має
+// статуси, і кожен, кому вони потрібні, мусить бачити ті самі. Копій було дві, і
+// вони розійшлися рівно на «На перевірці»: екран вибору імпорту пропонував пʼять
+// статусів, а `prepareYouTrackImport` приймав чотири — і запуск падав із
+// «Статус QuickTeam для «X» більше не існує» над списком, у якому цей статус
+// стояв. Друга копія жила в `useWorkflowConfig.js`, який є `'use client'` і
+// серверу недоступний, тож importer завів собі третю.
+//
+// Тепер список один, ідентифікатори з нього виводяться, а не пишуться поруч.
+// Категорія — спільний шар статусу (див. `statusCategories.mjs`); назва й колір
+// належать організації й переписуються її документом workflow.
+export const DEFAULT_STATUSES = Object.freeze([
+  { id: 'backlog', label: 'Беклог', color: '#9a9a9a', category: 'backlog' },
+  { id: 'todo', label: 'До виконання', color: '#6366f1', category: 'todo' },
+  { id: 'in-progress', label: 'У роботі', color: '#f59e0b', category: 'in-progress' },
+  { id: 'review', label: 'На перевірці', color: '#8b5cf6', category: 'review' },
+  { id: 'done', label: 'Готово', color: '#10b981', category: 'done', isDone: true },
+]);
+
+export const DEFAULT_STATUS_IDS = DEFAULT_STATUSES.map(status => status.id);
 export const DEFAULT_TYPE_IDS = DEFAULT_TASK_TYPES.map(type => type.id);
 export const DEFAULT_PRIORITY_IDS = ['blocker', 'high', 'medium', 'low'];
 export const DEFAULT_LABEL_IDS = [];

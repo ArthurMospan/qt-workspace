@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { TASK_TYPE_ICONS } from '@/lib/design/taskTypeIcons';
 import {
+  DEFAULT_STATUSES,
   localizeBuiltInWorkflowItems,
   resolveClosedStatusIds,
   resolveDeliveredStatusIds,
@@ -57,33 +58,13 @@ export const STATUS_CATEGORY_ICONS = {
 // `category` is the shared layer of a status: the label is this organization's
 // business, the category is what «Мої завдання», analytics and billing read.
 // See src/lib/utils/statusCategories.mjs.
-export const DEFAULT_STATUSES = [{
-  id: 'backlog',
-  label: 'Беклог',
-  color: '#9a9a9a',
-  category: 'backlog',
-}, {
-  id: 'todo',
-  label: 'До виконання',
-  color: '#6366f1',
-  category: 'todo',
-}, {
-  id: 'in-progress',
-  label: 'У роботі',
-  color: '#f59e0b',
-  category: 'in-progress',
-}, {
-  id: 'review',
-  label: 'На перевірці',
-  color: '#8b5cf6',
-  category: 'review',
-}, {
-  id: 'done',
-  label: 'Готово',
-  color: '#10b981',
-  category: 'done',
-  isDone: true,
-}];
+// Список переїхав у `workflowDefaults.mjs` — серверний модуль, який уже володів
+// ідентифікаторами цих статусів. Тут лишається реекспорт, бо півдесятка екранів
+// і `/ui-kit` беруть його саме звідси; сам список більше не живе у файлі з
+// `'use client'`, куди сервер не дотягується. Копія тут і копія в importer'і
+// розійшлися на «На перевірці», і вибір імпорту пропонував статус, який запуск
+// відхиляв.
+export { DEFAULT_STATUSES };
 // ── The two ends of a task ─────────────────────────────────────────────────────
 // "Finished" is two questions, and the app used to answer both with one list.
 //

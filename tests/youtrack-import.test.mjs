@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   IMPORT_ABANDONED_AFTER_MS,
   IMPORT_STALLED_AFTER_MS,
@@ -476,4 +477,40 @@ test('пігулка стану називає окремо саме той зб
   assert.equal(tokenDead.tone, 'danger');
   assert.equal(describeImportJob({ id: 'j', status: 'prepared' }, NOW).label, 'Готово до запуску');
   assert.equal(describeImportJob(null, NOW).label, 'Не розпочато');
+});
+
+// ─── Один стандартний workflow ───────────────────────────────────────────────
+//
+// Копій було дві, і вони розійшлися рівно на «На перевірці»: екран вибору
+// імпорту пропонував пʼять статусів (`DEFAULT_STATUS_IDS`), а
+// `prepareYouTrackImport` приймав чотири зі своєї приватної таблиці — і запуск
+// падав із «Статус QuickTeam для «Closed» більше не існує» над списком, у якому
+// цей статус стояв. Тест тримає те, чого не видно з жодного окремого файлу.
+
+test('стандартні статуси існують в одному списку, і ідентифікатори виводяться з нього', async () => {
+  const defaults = await import('../src/lib/utils/workflowDefaults.mjs');
+
+  assert.deepEqual(
+    defaults.DEFAULT_STATUS_IDS,
+    defaults.DEFAULT_STATUSES.map(status => status.id),
+    'DEFAULT_STATUS_IDS має виводитися з DEFAULT_STATUSES, а не стояти поруч',
+  );
+  assert.ok(
+    defaults.DEFAULT_STATUSES.some(status => status.id === 'review'),
+    '«На перевірці» — одна з пʼяти категорій продукту й мусить бути серед стандартних',
+  );
+  defaults.DEFAULT_STATUSES.forEach(status => {
+    assert.ok(status.id && status.label && status.category, `${status.id}: неповний статус`);
+  });
+});
+
+test('importer YouTrack не тримає власного списку стандартних статусів', async () => {
+  const importer = await readFile(new URL('../src/lib/server/youtrackImporter.js', import.meta.url), 'utf8');
+
+  // Список береться зі спільного модуля...
+  assert.match(importer, /statuses:\s*DEFAULT_STATUSES,/);
+  assert.match(importer, /DEFAULT_STATUSES,\s*\n\s*resolveClosedStatusIds/);
+  // ...а не пишеться тут ще раз.
+  assert.doesNotMatch(importer, /id:\s*'backlog',\s*label:/, 'у importer знову зʼявився власний список статусів');
+  assert.doesNotMatch(importer, /id:\s*'blocker',\s*label:/, 'у importer знову зʼявився власний список пріоритетів');
 });

@@ -43,15 +43,14 @@ import {
   Card,
   Checkbox,
   Dialog,
-  EmptyState,
   Input,
   Label,
   Meter,
-  Pill,
   Select,
   SettingRow,
   SignalList,
   Skeleton,
+  TextAction,
   useConfirm,
 } from '@/components/ui';
 import { IntegrationConnect, IntegrationWork } from '@/components/integrations/IntegrationScreen';
@@ -92,17 +91,6 @@ const STATUS_FORMS = ['статус', 'статуси', 'статусів'];
 
 function memberId(member) {
   return member?.id || member?.uid || member?.userId || '';
-}
-
-// Підсумок називає лише те, що справді сталося. «Успішно: 0 · Помилок: 0 ·
-// Зв'язків: 0» — три нулі, які нічого не повідомляють; кількість перенесених
-// задач лишається завжди, бо це і є відповідь на питання «скільки вже».
-function jobSummaryParts(job) {
-  if (!job) return [];
-  const parts = [`Перенесено: ${job.processedIssues || 0}`];
-  if (job.failedIssues > 0) parts.push(`Помилок: ${job.failedIssues}`);
-  if (job.processedLinks > 0) parts.push(`Зв’язків: ${job.processedLinks}`);
-  return parts;
 }
 
 function progressShare(job) {
@@ -155,7 +143,6 @@ export default function YouTrackImportCard({
   // напис зник. Тост лишається там, де він доречний: на тому, що сталося й
   // минуло («YouTrack підключено»).
   const [failure, setFailure] = useState('');
-  const [dismissedError, setDismissedError] = useState('');
   const keepRunning = useRef(false);
   const confirmDialog = useConfirm();
   // Годинник тримається в стані, а не читається під час рендера: «Пауза» — це
@@ -798,18 +785,59 @@ export default function YouTrackImportCard({
     ? `${currentPlan.selectedProjectIds.length} ${plural(currentPlan.selectedProjectIds.length, PROJECT_NOMINATIVE)} · ${selectedStatusCount} ${plural(selectedStatusCount, STATUS_FORMS)}`
     : '';
 
+  // ── Що написано на картці перенесення ────────────────────────────────────
+  //
+  // Два рядки, і більше нічого. Перший каже, що зараз, і несе число; другий —
+  // що з цим робити або чого не станеться. Раніше те саме розповідали пігулка,
+  // речення-опис, порожній стан, підсумок і два списки-сигнали, і людина не
+  // могла знайти серед них відповідь на «а що від мене хочуть».
   const driving = action === 'run';
-  const panelDescription = {
-    none: 'Перенесемо проєкти, задачі, коментарі, вкладення й час. Уже перенесене оновлюється без дублів.',
-    ready: 'Порахували. Перевірте число й запускайте.',
+  const done = job ? job.processedIssues + job.failedIssues : 0;
+  const total = job?.totalIssues || 0;
+  const ofTotal = total ? `${done} із ${total} ${plural(total, ISSUE_GENITIVE)}` : '';
+
+  const HALT_HEADLINES = {
+    connection: 'Потрібен новий токен',
+    plan: 'Обраний статус або проєкт зник',
+    quota: 'Ліміт бази на сьогодні вичерпано',
+    links: 'Спинилось на звʼязках між задачами',
+  };
+
+  const jobHeadline = {
+    ready: total ? `Порахували: ${total} ${plural(total, ISSUE_FORMS)}` : 'Рахуємо задачі',
+    running: `Переносимо ${ofTotal}`,
+    stalled: `Спинилось на ${ofTotal}`,
+    blocked: HALT_HEADLINES[job?.blockedReason] || 'Перенесення спинилось',
+    completed: total
+      ? `Перенесено ${job?.processedIssues || 0} ${plural(job?.processedIssues || 0, ISSUE_FORMS)}`
+      : 'Жодна задача не підпала під вибір',
+    cancelled: `Зупинено на ${ofTotal}`,
+  }[jobState.state] || 'Перенесення';
+
+  const ownerNote = job && !jobIsMine
+    ? ` Запустив(ла) ${jobOwnerName}${abandoned
+      ? '; воно не рухається понад чверть години, тож зупинити може будь-який адміністратор.'
+      : isOrganizationOwner ? '; ви як власник можете його зупинити.' : '.'}`
+    : '';
+
+  const jobSubline = ({
+    ready: 'Це велике перенесення. Запуск запише ці задачі у QuickTeam.',
     running: driving
-      ? 'Іде з цієї вкладки. Якщо її закрити, перенесення спиниться на поточній задачі — продовжити можна тією ж кнопкою.'
-      : 'Іде просто зараз. Ця вкладка лише показує поступ.',
-    stalled: 'Перенесення спинилося. Уже перенесене на місці.',
-    blocked: 'Перенесення спинилося й нічого не втратило.',
-    completed: 'Готово. Це вікно можна закрити.',
-    cancelled: 'Зупинено вами. Уже перенесене залишилось у QuickTeam.',
-  }[jobState.state] || '';
+      ? 'Тримайте вкладку відкритою. Закриєте — продовжите тією ж кнопкою, дублів не буде.'
+      : 'Іде в іншій вкладці. Ця лише показує поступ.',
+    stalled: 'Уже перенесене на місці. Продовжте — дублів не буде.',
+    blocked: importHaltSentence(job?.blockedReason),
+    completed: job?.failedIssues
+      ? 'Готово. Частина задач не перенеслася — повторний запуск спробує їх ще раз.'
+      : 'Готово. Можна закривати.',
+    cancelled: 'Перенесене лишилось у QuickTeam. Нове почнеться спочатку й оновить те, що вже є.',
+  }[jobState.state] || '') + ownerNote;
+
+  // Одна головна кнопка. Якщо головної немає — нею стає єдина, що є: поки
+  // перенесення йде, це «Зупинити», і ховати її в текст було б неправильно.
+  const primaryAction = actions.find(item => item.kind === 'primary')
+    || (actions.length === 1 ? actions[0] : null);
+  const secondaryActions = actions.filter(item => item !== primaryAction);
 
   // Головна дія глухне лише тоді, коли поруч уже стоїть те, що її відмикає:
   // список розбіжностей, кожен рядок якого веде у вікно з виправленням, або
@@ -941,6 +969,34 @@ export default function YouTrackImportCard({
               </SettingRow>
             )}
 
+            {/* ── Дія, поки нічого не йде: рядок, а не панель ──────────────
+                У стані спокою окремого блока більше немає. Він малював пігулку
+                «Не розпочато», речення про себе, порожній стан із власним
+                заголовком і власним описом — і аж тоді кнопку: три написи про
+                одне й те саме й питання «а що від мене хочуть?». Звітувати в
+                спокої нема про що — є одна дія, і вона виглядає так само, як
+                «Проєкти й статуси» та «Люди» над нею. */}
+            {!job && (
+              <SettingRow
+                label="Перенести з YouTrack"
+                desc={currentPlan.selectedProjectIds.length
+                  ? 'Задачі, коментарі, файли й час. Повторний запуск оновлює вже перенесене — дублів не буде.'
+                  : 'Спершу оберіть хоча б один проєкт у «Проєкти й статуси».'}
+              >
+                <Button
+                  size="md"
+                  icon={Upload}
+                  onClick={start}
+                  loading={action === 'start'}
+                  disabled={primaryDisabled}
+                >
+                  {currentPlan.selectedProjectIds.length
+                    ? `Перенести ${currentPlan.selectedProjectIds.length} ${plural(currentPlan.selectedProjectIds.length, PROJECT_NOMINATIVE)}`
+                    : 'Перенести'}
+                </Button>
+              </SettingRow>
+            )}
+
             <SettingRow
               label="Відключити YouTrack"
               desc="Токен буде видалено. Уже перенесені проєкти й задачі залишаться у QuickTeam."
@@ -969,129 +1025,66 @@ export default function YouTrackImportCard({
             </Card>
           )}
 
-          <IntegrationWork
-            title="Перенесення"
-            description={panelDescription}
-            status={<Pill tone={jobState.tone} size="md">{jobState.label}</Pill>}
-          >
-            {jobState.state === 'none' ? (
-              <EmptyState
-                density="compact"
-                surface="transparent"
-                icon={Upload}
-                title={currentPlan.selectedProjectIds.length ? 'Готово до перенесення' : 'Оберіть, що переносимо'}
-                description={currentPlan.selectedProjectIds.length
-                  ? `Задачі, коментарі, вкладення й час із ${currentPlan.selectedProjectIds.length} ${plural(currentPlan.selectedProjectIds.length, PROJECT_FORMS)}. Скільки саме задач — порахуємо після натискання.`
-                  : 'Відкрийте «Проєкти й статуси» і оберіть хоча б один проєкт.'}
-              />
-            ) : (
-              <>
+          {/* ── Картка перенесення: лише коли є що показувати ───────────────
+              Вона триває пів години, показує поступ і може обірватись, тож
+              заслуговує власний обʼєкт на екрані — але має право рівно на три
+              речі: рядок про те, що зараз, смугу, поки є що міряти, і одну
+              головну кнопку. Пігулка стану пішла: рядок і так каже стан, а два
+              написи про одне — це те, з чого починалась плутанина. Решта —
+              попередження, перелік невдалих задач, причина зупинки — живе за
+              тихим посиланням, а не на екрані. */}
+          {job && (
+            <IntegrationWork title={jobHeadline} description={jobSubline}>
+              {job.totalIssues > 0 && jobState.state !== 'completed' && (
                 <Meter
                   value={progressShare(job)}
-                  label={job.totalIssues
-                    ? `${job.processedIssues + job.failedIssues} із ${job.totalIssues} ${plural(job.totalIssues, ISSUE_GENITIVE)}`
-                    : 'Жодна задача не підпала під вибір'}
+                  label={`${job.processedIssues + job.failedIssues} із ${job.totalIssues} ${plural(job.totalIssues, ISSUE_GENITIVE)}`}
                   reading={`${Math.round(progressShare(job) * 100)}%`}
                   tone={jobState.state === 'blocked' ? 'danger' : jobState.state === 'stalled' ? 'warning' : 'neutral'}
                 />
-                <p className="text-[12px] text-muted">{jobSummaryParts(job).join(' · ')}</p>
-              </>
-            )}
+              )}
 
-            {jobState.state === 'blocked' && (
-              <Alert variant="danger">
-                <span className="whitespace-pre-line">
-                  {`${importHaltSentence(job.blockedReason)}\n${errorTextUk(job.lastError, '')}`.trim()}
-                </span>
-              </Alert>
-            )}
-
-            {jobState.state === 'stalled' && (
-              <p className="text-[12px] leading-relaxed text-warning">
-                Останній крок був понад три хвилини тому. Продовжте — уже перенесене не задублюється.
-              </p>
-            )}
-
-            {/* Останню помилку кроку можна закрити: перенесення, яке після неї
-                пішло далі, не має показувати її вічно. Закритий текст
-                запам'ятовується, інакше наступне опитування повертало б його на
-                екран. */}
-            {jobState.state !== 'blocked' && job?.lastError && job.lastError !== dismissedError && (
-              <Alert variant="danger" onClose={() => setDismissedError(job.lastError)}>
-                {errorTextUk(job.lastError, 'Крок перенесення не вдався. Продовжіть — уже перенесене не дублюється.')}
-              </Alert>
-            )}
-
-            {job?.warningsCount > 0 && (
-              <SignalList
-                signals={[{
-                  id: 'warnings',
-                  tone: 'warning',
-                  title: `${job.warningsCount} ${plural(job.warningsCount, ['попередження', 'попередження', 'попереджень'])}`,
-                  description: (job.warnings || [])[0] || 'Дані без помилок перенеслися далі',
-                  count: job.warningsCount,
-                }]}
-              />
-            )}
-
-            {job?.failedIssues > 0 && (
-              <SignalList
-                signals={[{
-                  id: 'failed',
-                  tone: 'warning',
-                  title: `Не перенеслося задач: ${job.failedIssues}`,
-                  description: 'Подивіться, що саме — повторний запуск спробує їх ще раз',
-                  count: job.failedIssues,
-                }]}
-                onSelect={openFailedItems}
-              />
-            )}
-
-            {job && !jobIsMine && (
-              <p className="text-[12px] leading-relaxed text-muted">
-                Це перенесення запустив(ла) {jobOwnerName}. Продовжити його може лише той, хто розпочав
-                {abandoned
-                  ? '; воно не рухається понад чверть години, тож зупинити його може будь-який адміністратор.'
-                  : isOrganizationOwner
-                    ? '; ви як власник можете його зупинити.'
-                    : '; зупинити — він або власник організації.'}
-              </p>
-            )}
-
-            {actions.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {actions.map(item => (
+              {primaryAction && (
+                <div>
                   <Button
-                    key={item.id}
                     size="md"
-                    style={item.kind === 'primary' ? 'primary' : 'ghost'}
-                    color={item.kind === 'danger' ? 'red' : undefined}
-                    icon={item.id === 'start' || item.id === 'run' ? Upload : undefined}
-                    onClick={() => runAction(item.id)}
+                    style={primaryAction.kind === 'danger' ? 'ghost' : 'primary'}
+                    color={primaryAction.kind === 'danger' ? 'red' : undefined}
+                    icon={primaryAction.id === 'run' ? Upload : undefined}
+                    onClick={() => runAction(primaryAction.id)}
                     loading={
-                      (item.id === 'start' && action === 'start')
-                      || (item.id === 'run' && action === 'run')
-                      || (item.id === 'cancel' && action === 'cancel')
-                      || (item.id === 'acknowledge' && action === 'acknowledge')
+                      (primaryAction.id === 'run' && action === 'run')
+                      || (primaryAction.id === 'cancel' && action === 'cancel')
+                      || (primaryAction.id === 'acknowledge' && action === 'acknowledge')
                     }
-                    disabled={item.kind === 'primary' && primaryDisabled}
                   >
-                    {item.id === 'start' && currentPlan.selectedProjectIds.length
-                      ? `Перенести з ${currentPlan.selectedProjectIds.length} ${plural(currentPlan.selectedProjectIds.length, PROJECT_FORMS)}`
-                      : item.label}
+                    {primaryAction.label}
                   </Button>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
 
-            {locked && (
-              <p className="text-[12px] text-muted">
-                {jobState.state === 'running' || jobState.state === 'ready'
-                  ? 'Поки триває перенесення, налаштування закриті. Зупиніть його, щоб їх змінити.'
-                  : 'Поки це перенесення не завершене, налаштування закриті. Продовжіть або зупиніть його, щоб їх змінити.'}
-              </p>
-            )}
-          </IntegrationWork>
+              {/* Другорядне — тихим текстом. Три однакові кнопки в рядок
+                  читаються як три однакові рішення, а воно тут одне. */}
+              {(secondaryActions.length > 0 || job.failedIssues > 0) && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {job.failedIssues > 0 && (
+                    <TextAction onClick={openFailedItems}>
+                      Не перенеслося: {job.failedIssues} — подивитись
+                    </TextAction>
+                  )}
+                  {secondaryActions.map(item => (
+                    <TextAction
+                      key={item.id}
+                      tone={item.kind === 'danger' ? 'danger' : 'muted'}
+                      onClick={() => runAction(item.id)}
+                    >
+                      {item.label}
+                    </TextAction>
+                  ))}
+                </div>
+              )}
+            </IntegrationWork>
+          )}
         </>
       )}
 

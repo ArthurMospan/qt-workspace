@@ -67,29 +67,25 @@ import {
 } from '@/lib/utils/issueStatusTransition.mjs';
 import { existingParentIssueId } from '@/lib/utils/issueHierarchyModel.mjs';
 import {
+  DEFAULT_STATUSES,
   resolveClosedStatusIds,
   resolveEntryStatusId,
 } from '@/lib/utils/workflowDefaults.mjs';
+import { DEFAULT_SYSTEM_PRIORITIES } from '@/lib/utils/priorities.mjs';
+import { DEFAULT_TASK_TYPES } from '@/lib/utils/taskTypes.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 
+// Стандартний workflow береться зі спільного модуля, а не пишеться тут.
+//
+// Тут стояла власна копія, і вона розійшлася з тією, яку показує вибір імпорту,
+// рівно на «На перевірці»: екран пропонував пʼять статусів, `prepare` приймав
+// чотири, і запуск падав із «Статус QuickTeam для «Closed» більше не існує» над
+// списком, у якому цей статус був. Копія списку статусів — це друга думка про
+// те, які статуси існують, а їх не буває дві.
 const DEFAULT_WORKFLOW = {
-  statuses: [
-    { id: 'backlog', label: 'Беклог', category: 'backlog' },
-    { id: 'todo', label: 'До виконання', category: 'todo' },
-    { id: 'in-progress', label: 'У роботі', category: 'in-progress' },
-    { id: 'done', label: 'Готово', category: 'done', isDone: true },
-  ],
-  priorities: [
-    { id: 'blocker', label: 'Критичний' },
-    { id: 'high', label: 'Високий' },
-    { id: 'medium', label: 'Середній' },
-    { id: 'low', label: 'Низький' },
-  ],
-  types: [
-    { id: 'feature', label: 'Фіча' },
-    { id: 'task', label: 'Задача' },
-    { id: 'bug', label: 'Баг' },
-  ],
+  statuses: DEFAULT_STATUSES,
+  priorities: DEFAULT_SYSTEM_PRIORITIES,
+  types: DEFAULT_TASK_TYPES,
   labels: [],
 };
 
