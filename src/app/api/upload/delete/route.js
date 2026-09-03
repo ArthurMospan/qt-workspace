@@ -12,11 +12,13 @@ import { v2 as cloudinary } from 'cloudinary';
 import { authenticateRequest, enforceRateLimit } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import {
-  callerBelongsToPathOrganization,
+  callerMembershipInPathOrganization,
   isOrganizationChatStoragePath,
   isSafeStoragePath,
+  memberMayDeleteStoragePath,
   organizationIdFromPath,
 } from '@/lib/server/uploadPaths';
+import { isPrivilegedRole } from '@/lib/utils/projectAccess.mjs';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -48,7 +50,13 @@ export async function POST(req) {
       // of ownership, so nobody may delete them through this route.
       return NextResponse.json({ error: 'Storage path is not organization-scoped' }, { status: 403 });
     }
-    if (!(await callerBelongsToPathOrganization(authorization.user.uid, organizationId))) {
+    const membership = await callerMembershipInPathOrganization(authorization.user.uid, organizationId);
+    if (!membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    // The workspace's logo is set by an owner or admin; «member of the tenant»
+    // was enough to destroy it by naming the public id every page carries.
+    if (!isPrivilegedRole(membership.role) && !memberMayDeleteStoragePath(storagePath)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

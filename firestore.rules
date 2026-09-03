@@ -608,6 +608,34 @@ service cloud.firestore {
         return isOrgMember(orgId) && (!isDirectRoom() || isDirectRoomMember());
       }
 
+      // A channel with a `members` list is that list's room. The screen hides
+      // it from everybody else and the product's own predicate
+      // (`canAccessChatChannel`) says so — but until here the rule did not,
+      // and any member could read or post into a room the sidebar never
+      // showed them. The listing stays org-wide (a query cannot be filtered
+      // per document, see above), so what keeps a restricted room's text off
+      // the org-listable document is the same discipline a DM room keeps:
+      // sendMessage writes no preview for it.
+      function restrictedTo(room) {
+        return room.get('members', []) is list && room.get('members', []).size() > 0;
+      }
+
+      function roomOpenTo(room) {
+        return !restrictedTo(room) || request.auth.uid in room.get('members', []);
+      }
+
+      // For the content under a room. A DM room is settled by its id, and a
+      // room whose document does not exist yet (a DM created in the same batch
+      // as its first message) restricts nobody.
+      function roomAdmitsCaller() {
+        let roomPath = /databases/$(database)/documents/organizations/$(orgId)/channels/$(channelId);
+        return isDirectRoom() || !exists(roomPath) || roomOpenTo(get(roomPath).data);
+      }
+
+      function canAccessRoomContent() {
+        return canAccessRoom() && roomAdmitsCaller();
+      }
+
       // A DM room document is enumerable by the whole org (see above), so it
       // must never hold message content. Enforced here rather than trusted to
       // the client, because this is the only thing keeping the listing safe.
@@ -625,7 +653,7 @@ service cloud.firestore {
           !request.resource.data.keys().hasAny(['lastMessageText', 'lastMessageSender']);
       }
 
-      allow get: if canAccessRoom();
+      allow get: if canAccessRoom() && roomOpenTo(resource.data);
       allow list: if isOrgMember(orgId);
       allow create: if isOrgMember(orgId) &&
         keepsDirectRoomContentOut(request.resource.data.keys()) && (
@@ -643,6 +671,7 @@ service cloud.firestore {
       allow update: if canAccessRoom() &&
         keepsDirectRoomContentOut(request.resource.data.diff(resource.data).affectedKeys()) && (
         isOrgAdminOrOwner(orgId) || (
+          roomOpenTo(resource.data) &&
           request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly([
               'typing',
@@ -663,9 +692,9 @@ service cloud.firestore {
       allow delete: if isOrgAdminOrOwner(orgId) && !isDirectRoom();
 
       match /messages/{msgId} {
-        allow read: if canAccessRoom();
-        allow create: if canAccessRoom() && request.resource.data.senderId == request.auth.uid;
-        allow update: if canAccessRoom() &&
+        allow read: if canAccessRoomContent();
+        allow create: if canAccessRoomContent() && request.resource.data.senderId == request.auth.uid;
+        allow update: if canAccessRoomContent() &&
           request.resource.data.senderId == resource.data.senderId && (
             resource.data.senderId == request.auth.uid ||
             request.resource.data.diff(resource.data).affectedKeys()
@@ -673,18 +702,18 @@ service cloud.firestore {
           );
         // A direct message is not moderatable: an owner cannot read that room,
         // and must not be able to reach into it to delete either.
-        allow delete: if canAccessRoom() && (
+        allow delete: if canAccessRoomContent() && (
           resource.data.senderId == request.auth.uid ||
           (!isDirectRoom() && isOrgAdminOrOwner(orgId))
         );
 
         match /replies/{replyId} {
-          allow read: if canAccessRoom();
-          allow create: if canAccessRoom() && request.resource.data.senderId == request.auth.uid;
-          allow update: if canAccessRoom() &&
+          allow read: if canAccessRoomContent();
+          allow create: if canAccessRoomContent() && request.resource.data.senderId == request.auth.uid;
+          allow update: if canAccessRoomContent() &&
             resource.data.senderId == request.auth.uid &&
             request.resource.data.senderId == resource.data.senderId;
-          allow delete: if canAccessRoom() && (
+          allow delete: if canAccessRoomContent() && (
             resource.data.senderId == request.auth.uid ||
             (!isDirectRoom() && isOrgAdminOrOwner(orgId))
           );

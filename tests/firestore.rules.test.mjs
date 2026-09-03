@@ -1754,6 +1754,45 @@ test('a first sign-in seeds a profile with the token address and no identity bin
   await assertSucceeds(setDoc(doc(phoneDb, 'users', 'phone-only'), { ...seed, id: 'phone-only', email: null }, { merge: true }));
 });
 
+test('a channel with members is read and written by its members only', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'organizations', 'org-a', 'channels', 'leads'), {
+      name: 'leads', type: 'public', members: ['owner-a', 'member-a'],
+    });
+    await setDoc(doc(db, 'organizations', 'org-a', 'channels', 'leads', 'messages', 'm1'), {
+      senderId: 'owner-a', text: 'зарплати за квартал',
+    });
+  });
+  const insider = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(getDoc(doc(insider, 'organizations', 'org-a', 'channels', 'leads')));
+  await assertSucceeds(getDocs(collection(insider, 'organizations', 'org-a', 'channels', 'leads', 'messages')));
+  await assertSucceeds(setDoc(doc(insider, 'organizations', 'org-a', 'channels', 'leads', 'messages', 'm2'), {
+    senderId: 'member-a', text: 'ок',
+  }));
+  await assertSucceeds(updateDoc(doc(insider, 'organizations', 'org-a', 'channels', 'leads'), { typing: ['member-a'] }));
+
+  // The sidebar never showed this room to a member outside the list; the rule
+  // did not care until now.
+  const outsider = environment.authenticatedContext('member-offteam').firestore();
+  await assertFails(getDoc(doc(outsider, 'organizations', 'org-a', 'channels', 'leads')));
+  await assertFails(getDocs(collection(outsider, 'organizations', 'org-a', 'channels', 'leads', 'messages')));
+  await assertFails(setDoc(doc(outsider, 'organizations', 'org-a', 'channels', 'leads', 'messages', 'm3'), {
+    senderId: 'member-offteam', text: 'привіт',
+  }));
+  await assertFails(updateDoc(doc(outsider, 'organizations', 'org-a', 'channels', 'leads'), { typing: ['member-offteam'] }));
+  // The listing stays org-wide — a query cannot be filtered per document —
+  // which is why sendMessage keeps a restricted room's preview off the document.
+  await assertSucceeds(getDocs(collection(outsider, 'organizations', 'org-a', 'channels')));
+
+  // An admin who is not on the list manages the roster and still reads nothing.
+  const admin = environment.authenticatedContext('admin-a').firestore();
+  await assertFails(getDocs(collection(admin, 'organizations', 'org-a', 'channels', 'leads', 'messages')));
+  await assertSucceeds(updateDoc(doc(admin, 'organizations', 'org-a', 'channels', 'leads'), {
+    members: ['owner-a', 'member-a', 'admin-a'],
+  }));
+});
+
 test('the usage tally the AI ceiling reads is server-written', async () => {
   const adminDb = environment.authenticatedContext('admin-a').firestore();
   const organization = doc(adminDb, 'organizations', 'org-a');

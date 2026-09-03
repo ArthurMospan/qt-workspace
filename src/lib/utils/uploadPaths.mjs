@@ -35,6 +35,17 @@ export function isOrganizationChatStoragePath(path, organizationId = '') {
   return path.startsWith(`quickteam/organizations/${pathOrganizationId}/chat/`);
 }
 
+// What a plain member may remove. The organization's logo is the one asset
+// under the prefix that belongs to the workspace rather than to somebody's
+// work: it is set by an owner or admin, and «member of the tenant» was enough
+// to destroy it. Everything else — attachments, replies, chat files, call
+// recordings, avatars — is where a member's own files go.
+const MEMBER_UNTOUCHABLE_FOLDER = /^quickteam\/organizations\/[A-Za-z0-9_-]{1,128}\/logos(\/|$)/;
+
+export function memberMayDeleteStoragePath(storagePath) {
+  return isSafeStoragePath(storagePath) && !MEMBER_UNTOUCHABLE_FOLDER.test(storagePath);
+}
+
 export function isOrganizationChatUploadFolder(folder, organizationId = '') {
   if (!isSafeUploadFolder(folder)) return false;
   const pathOrganizationId = organizationIdFromPath(folder);

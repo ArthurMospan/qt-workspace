@@ -285,8 +285,19 @@ export function useWorkspaceChat(channelId, channelType = 'channel', dmPartnerId
         channelMetadata.lastMessageText = deleteField();
         channelMetadata.lastMessageSender = deleteField();
       } else {
-        channelMetadata.lastMessageText = text.trim().slice(0, 80);
-        channelMetadata.lastMessageSender = currentUser.name || 'Користувач';
+        // A channel with a `members` list keeps its text off the room document
+        // for the same reason a DM does: the document is listable by the whole
+        // organization, and the rules gate only what lies under messages/. The
+        // sidebar draws such a room without a preview, as it draws a DM.
+        const room = channels.find(channel => channel.id === channelId);
+        const restricted = Array.isArray(room?.members) && room.members.length > 0;
+        if (restricted) {
+          channelMetadata.lastMessageText = deleteField();
+          channelMetadata.lastMessageSender = deleteField();
+        } else {
+          channelMetadata.lastMessageText = text.trim().slice(0, 80);
+          channelMetadata.lastMessageSender = currentUser.name || 'Користувач';
+        }
         if (channelId === 'general') {
           channelMetadata.name = 'general';
           channelMetadata.type = 'public';
