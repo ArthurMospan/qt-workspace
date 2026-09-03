@@ -654,6 +654,7 @@
     "DatePicker": [
       "inputs",
       "task-attributes",
+      "variant-matrix",
       "states"
     ],
     "DescriptionPlaceholder": [
@@ -834,7 +835,8 @@
       "avatars"
     ],
     "PriorityBadge": [
-      "badges"
+      "badges",
+      "variant-matrix"
     ],
     "PriorityIcon": [
       "badges"
