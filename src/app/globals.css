@@ -2363,12 +2363,16 @@
 }
 
 /* And where that button was the only thing in the footer, the footer goes with
-   it. Four dialogs are shaped that way: a calendar event a member may only read
-   (both its «Деталі події» and its non-editable form), an invoice that cannot be
-   exported yet, and a timesheet day's breakdown — one «Закрити» and nothing else.
-   Hiding the button alone left `.ui-dialog-footer` itself behind: its border-top,
-   its `py-4` and the `bg-canvas` under them are a ~65px bar with nothing in it,
-   which costs a phone more than the row it was meant to save.
+   it. Six dialogs are shaped that way. Four say «Закрити» and nothing else: a
+   calendar event a member may only read (both its «Деталі події» and its
+   non-editable form), an invoice that cannot be exported yet, and a timesheet
+   day's breakdown. Two say «Готово», which sounds like a commit and is not — the
+   phone's filter sheet (PageHeader) and «Мої завдання»'s column-visibility sheet
+   both write every choice the moment it is made, so their last row was a second
+   × under a different word. Hiding the button alone left `.ui-dialog-footer`
+   itself behind: its border-top, its `py-4` and the `bg-canvas` under them are a
+   ~65px bar with nothing in it, which costs a phone more than the row it was
+   meant to save.
 
    Read the selector as "a footer with no child that is not a dismiss". One real
    action anywhere in the bar keeps the whole bar, which is what stops this from

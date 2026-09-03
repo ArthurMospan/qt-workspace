@@ -528,6 +528,12 @@ export default function MyTasksPage() {
             <Button
               style="primary"
               size="md"
+              // Nothing is pending here: `updateHiddenCategories` writes the
+              // new set to localStorage on every toggle, so «Готово» closes and
+              // does nothing else. It is also the whole footer, so below md the
+              // bar goes with it instead of leaving an empty ~65px strip under
+              // the picker — the × in the header is the way out.
+              dismiss
               onClick={() => setShowSettingsModal(false)}
             >
               Готово

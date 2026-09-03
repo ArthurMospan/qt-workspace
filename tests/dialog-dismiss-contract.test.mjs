@@ -23,11 +23,15 @@ import { parse } from '@babel/parser';
 //   3. The button was the only thing in its footer. Hiding it leaves
 //      `.ui-dialog-footer` itself — a ~65px bar of border, padding and canvas
 //      with nothing inside it, which costs the phone more than the row the rule
-//      was saving. Four dialogs are that shape, so the stylesheet carries a
+//      was saving. Six dialogs are that shape, so the stylesheet carries a
 //      companion rule that takes the bar when it takes the last thing in it,
 //      and the fourth assertion is what keeps the two together.
 // None of the three shows up in a screenshot, in the drift report, or in a code
 // review of the file that broke it. They show up here.
+//
+// And one the prop cannot state on its own: which dialogs have no footer at all
+// on a phone. That is a layout the author of the *next* dialog never sees and
+// the reviewer of this one cannot count, so the fifth assertion names them.
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SRC = join(ROOT, 'src');
@@ -321,5 +325,41 @@ test('a footer that can hold nothing but a dismiss goes with it', async () => {
   assert.ok(
     collapse,
     'globals.css must hide a `.ui-dialog-footer` with no child that is not a dismiss — without it these dialogs trade a repeated button for an empty bar. The negation is what spares every other footer: one real action in the bar and the bar stays',
+  );
+});
+
+// Which dialogs those are, by name. The fourth assertion proves the rule exists
+// and the first three prove each mark is honest; neither can tell you that a
+// dialog has quietly joined — or left — the set that shows a phone no footer at
+// all. That is the one consequence of `dismiss` nobody reviewing a one-word
+// diff will picture, and the two most recent entries are exactly why the list
+// is here: «Готово» reads like a commit, and on both of those sheets it is not
+// — the filter row and the column picker each write every choice as it is made,
+// so the last bar on the screen was a second × wearing a different word.
+//
+// Files, not lines: a footer moving down its own file is not a change to this
+// contract, and a dialog appearing in a new one is. CalendarEventDialog is
+// listed twice because it has two such footers — the read-only «Деталі події»
+// and the read-only form — and losing one of them is a real change.
+//
+// Adding a line here is the deliberate act. Before you do, check the three
+// things the scans above cannot: that nothing in the footer is an answer the
+// dialog is asking for, that the body is not the only place the person can act,
+// and that the header × is genuinely reachable on a phone.
+const FOOTERLESS_BELOW_MD = [
+  'src/app/(app)/my/page.js',                                   // column visibility — «Готово»
+  'src/components/ui/Layout/PageHeader.jsx',                    // the phone's filter sheet — «Готово»
+  'src/components/workspace/BillingTab.jsx',                    // an invoice that cannot be exported yet
+  'src/components/workspace/TimesheetTab.jsx',                  // a day's breakdown
+  'src/components/workspace/calendar/CalendarEventDialog.jsx',  // «Деталі події» for a reader
+  'src/components/workspace/calendar/CalendarEventDialog.jsx',  // …and the form they may not edit
+];
+
+test('the dialogs that show a phone no footer at all are the ones named here', async () => {
+  const { dismissOnly } = await collect();
+  assert.deepEqual(
+    dismissOnly.map(item => item.where).sort(),
+    [...FOOTERLESS_BELOW_MD].sort(),
+    'a dialog joined or left the set whose footer disappears below md — if that was intended, name it in FOOTERLESS_BELOW_MD above and say why in the comment',
   );
 });
