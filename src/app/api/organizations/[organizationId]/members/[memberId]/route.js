@@ -8,6 +8,12 @@ import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { can } from '@/lib/utils/can';
 import { reactivateMembership } from '@/lib/server/orgMembership';
 import {
+  countActiveMembers,
+  organizationPlan,
+  planLimitRefusalResponse,
+  recordPlanUsage,
+} from '@/lib/server/planLimits';
+import {
   MEMBERSHIP_ARCHIVE,
   MEMBERSHIP_COLLECTION,
   membershipId,
@@ -104,6 +110,29 @@ async function reactivateMember(organizationId, memberId, authorization) {
   if (!can(authorization.membership?.role, 'deactivate:member')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+  // A seat given back is a seat taken, and the plan is enforced where
+  // somebody is let in. Invitations, their acceptance and invite links all
+  // count against the ceiling; this door did not, so a workspace that had
+  // archived seats from a paid month could re-seat every one of them on Free.
+  // Same count as the invitation route, pending invitations included.
+  const db = getAdminDb();
+  const [organizationSnapshot, seatsTaken, pendingSeats] = await Promise.all([
+    db.collection('organizations').doc(organizationId).get(),
+    countActiveMembers(db, organizationId),
+    db.collection('invitations')
+      .where('organizationId', '==', organizationId)
+      .where('status', '==', 'pending')
+      .count()
+      .get()
+      .then(snapshot => snapshot.data().count),
+  ]);
+  await recordPlanUsage(db, organizationId, { members: seatsTaken });
+  const refusal = planLimitRefusalResponse(
+    organizationPlan(organizationSnapshot),
+    'members',
+    seatsTaken + pendingSeats,
+  );
+  if (refusal) return refusal;
   const outcome = await reactivateMembership({
     organizationId,
     userId: memberId,

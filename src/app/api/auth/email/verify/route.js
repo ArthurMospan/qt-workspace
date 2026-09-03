@@ -5,7 +5,7 @@ import {
   readJsonBody,
   routeErrorResponse,
 } from '@/lib/server/apiErrors';
-import { getAdminAuth } from '@/lib/server/firebaseAdmin';
+import { enforceRateLimit, getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
 import {
   EMAIL_OTP_MAX_ATTEMPTS,
   getEmailOtpRef,
@@ -30,32 +30,57 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Valid email and code are required' }, { status: 400 });
     }
 
-    const otpRef = getEmailOtpRef(email);
-    const otpSnap = await otpRef.get();
-    const otp = otpSnap.exists ? otpSnap.data() : null;
-    const expiresAt = otp?.expiresAt?.toMillis?.() || 0;
-
-    if (!otp || otp.email !== email || expiresAt <= Date.now()) {
-      if (otpSnap.exists) await otpRef.delete();
-      return NextResponse.json({ error: 'Login code expired' }, { status: 401 });
-    }
-
-    if ((otp.attempts || 0) >= EMAIL_OTP_MAX_ATTEMPTS) {
-      await otpRef.delete();
+    // A six-digit code with five tries is a ceiling only if the five are
+    // counted one at a time. Read-compare-increment let a burst of parallel
+    // guesses all see «four so far», and nothing else on this route counted
+    // anything — `start` is limited per address and per IP, `verify` was not.
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const [emailAllowed, ipAllowed] = await Promise.all([
+      enforceRateLimit('auth-email-verify-email', email, 10, 15 * 60),
+      enforceRateLimit('auth-email-verify-ip', ip, 30, 15 * 60),
+    ]);
+    if (!emailAllowed || !ipAllowed) {
       return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
     }
 
+    const otpRef = getEmailOtpRef(email);
     const codeHash = hashEmailOtp(email, token);
-    if (!safeCompareHex(codeHash, otp.codeHash)) {
-      await otpRef.update({
-        attempts: FieldValue.increment(1),
-        lastAttemptAt: FieldValue.serverTimestamp(),
-      });
+    // The compare and the count are one transaction, so the fifth wrong guess
+    // is the fifth whatever else is in flight, and a right guess consumes the
+    // code before anything is minted for it.
+    const verdict = await getAdminDb().runTransaction(async transaction => {
+      const otpSnap = await transaction.get(otpRef);
+      const otp = otpSnap.exists ? otpSnap.data() : null;
+      const expiresAt = otp?.expiresAt?.toMillis?.() || 0;
+      if (!otp || otp.email !== email || expiresAt <= Date.now()) {
+        if (otpSnap.exists) transaction.delete(otpRef);
+        return 'expired';
+      }
+      if ((otp.attempts || 0) >= EMAIL_OTP_MAX_ATTEMPTS) {
+        transaction.delete(otpRef);
+        return 'locked';
+      }
+      if (!safeCompareHex(codeHash, otp.codeHash)) {
+        transaction.update(otpRef, {
+          attempts: FieldValue.increment(1),
+          lastAttemptAt: FieldValue.serverTimestamp(),
+        });
+        return 'invalid';
+      }
+      transaction.delete(otpRef);
+      return 'ok';
+    });
+    if (verdict === 'expired') {
+      return NextResponse.json({ error: 'Login code expired' }, { status: 401 });
+    }
+    if (verdict === 'locked') {
+      return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
+    }
+    if (verdict === 'invalid') {
       return NextResponse.json({ error: 'Invalid login code' }, { status: 401 });
     }
 
     const userRecord = await upsertEmailAuthUser(email);
-    await otpRef.delete();
 
     const customToken = await getAdminAuth().createCustomToken(userRecord.uid, {
       auth_provider: 'email',

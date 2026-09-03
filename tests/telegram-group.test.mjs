@@ -69,6 +69,15 @@ test('the webhook stamps the last task and drops the previous group when another
   const connect = webhook.slice(webhook.indexOf('async function connectGroup'), webhook.indexOf('async function createGroupTask'));
   assert.match(connect, /transaction\.delete\(db\.collection\('telegramChats'\)\.doc\(previousChatId\)\)/);
   assert.ok(connect.indexOf('transaction.get(organizationRef)') < connect.indexOf('transaction.set(organizationRef'));
+  // And one organization per group: a token proves its holder may bind a
+  // group to their own organization, not that they may take a group already
+  // routed to somebody else's. The routing record is read before it is
+  // written, and a group bound elsewhere is refused with the token intact.
+  assert.ok(connect.indexOf('transaction.get(chatRef)') !== -1);
+  assert.ok(connect.indexOf('transaction.get(chatRef)') < connect.indexOf('transaction.set(chatRef'));
+  assert.match(connect, /boundTo && boundTo !== data\.organizationId[\s\S]{0,40}throw new Error\('CHAT_BOUND_ELSEWHERE'\)/);
+  assert.match(webhook, /error\.message === 'CHAT_BOUND_ELSEWHERE'/);
+  assert.match(webhook, /вже підключено до іншої організації/);
 });
 
 test('the screen keeps the standard shape and does its work in a dialog', async () => {

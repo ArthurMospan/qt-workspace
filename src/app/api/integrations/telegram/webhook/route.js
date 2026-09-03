@@ -60,7 +60,22 @@ async function connectGroup(message, token) {
     // and the first's routing record goes with it — otherwise the old group
     // kept creating tasks in a project nobody had pointed it at any more.
     // Read before any write, as the transaction demands.
-    const previous = await transaction.get(organizationRef);
+    const [previous, existingChat] = await Promise.all([
+      transaction.get(organizationRef),
+      transaction.get(chatRef),
+    ]);
+    // And one organization per group. The token proves its holder may bind a
+    // group to *their* organization; it says nothing about a group already
+    // routed to somebody else's. Without this read, anyone in a client's
+    // group who owned an organization of their own could re-point the
+    // client's «/task» into it — while the client's screen went on saying
+    // «підключено», and the client's later unlink deleted the other side's
+    // record. The token is left unconsumed: it is still good for a group of
+    // their own.
+    const boundTo = existingChat.exists ? String(existingChat.data().organizationId || '') : '';
+    if (boundTo && boundTo !== data.organizationId) {
+      throw new Error('CHAT_BOUND_ELSEWHERE');
+    }
     const previousChatId = previous.exists ? String(previous.data().chatId || '') : '';
     if (previousChatId && previousChatId !== String(message.chat.id)) {
       transaction.delete(db.collection('telegramChats').doc(previousChatId));
@@ -192,6 +207,11 @@ export async function POST(request) {
           await sendTelegramMessage(message.chat.id, connect.kind === 'user'
             ? 'Посилання вже використане або протерміноване. Створіть нове в QuickTeam.'
             : 'Код підключення вже використаний або протермінований. Створіть новий у QuickTeam.');
+          return NextResponse.json({ ok: true });
+        }
+        if (error.message === 'CHAT_BOUND_ELSEWHERE') {
+          await sendTelegramMessage(message.chat.id, 'Цю групу вже підключено до іншої організації QuickTeam. Спершу відключіть її там.')
+            .catch(sendError => console.warn('[telegram] bound-elsewhere notice failed:', sendError.message));
           return NextResponse.json({ ok: true });
         }
         throw error;
