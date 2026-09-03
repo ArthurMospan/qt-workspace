@@ -1699,3 +1699,65 @@ test('a member may refresh the typing heartbeat but not rewrite a channel', asyn
   await assertSucceeds(updateDoc(channel, { typing: ['member-a'], typingAt: { 'member-a': 1 } }));
   await assertFails(updateDoc(channel, { name: 'hijacked' }));
 });
+
+// ── The documents the server reads as identity or as a ceiling ──────────
+//
+// An invitation is accepted by seating whoever holds its `email` in its
+// `organizationId` with its `role`; a profile's `email` is what the invitation
+// route looks a person up by and what the qTicket add-on is told a staff
+// member's address is; `usage` is what the AI ceiling is enforced against.
+// All three were writable from the browser.
+
+test('an admin may cancel an invitation but not change whom, where or as what it seats', async () => {
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'invitations', 'pending-email'), {
+      organizationId: 'org-a', email: 'invited@example.com', role: 'member', status: 'pending',
+    });
+  });
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const invitation = doc(adminDb, 'invitations', 'pending-email');
+  await assertFails(updateDoc(invitation, { role: 'admin' }));
+  await assertFails(updateDoc(invitation, { organizationId: 'org-b' }));
+  await assertFails(updateDoc(invitation, { email: 'admin@example.com' }));
+  await assertFails(updateDoc(invitation, { type: 'link', tokenHash: 'b'.repeat(64), maxUses: 1000 }));
+  await assertFails(updateDoc(invitation, { status: 'accepted' }));
+  await assertFails(updateDoc(invitation, { status: 'cancelled', role: 'admin' }));
+  await assertSucceeds(updateDoc(invitation, { status: 'cancelled', updatedAt: serverTimestamp() }));
+});
+
+test('a profile keeps its own address and never a binding the server owns', async () => {
+  const memberDb = environment.authenticatedContext('member-a', { email: 'member@example.com' }).firestore();
+  const profile = doc(memberDb, 'users', 'member-a');
+  await assertSucceeds(updateDoc(profile, { name: 'Renamed', status: 'У відпустці', statusEmoji: '🏖️' }));
+  await assertSucceeds(updateDoc(profile, { email: 'member@example.com' }));
+  await assertSucceeds(updateDoc(profile, { email: 'Member@Example.com' }));
+  await assertFails(updateDoc(profile, { email: 'owner@example.com' }));
+  await assertFails(updateDoc(profile, { onebId: 'oneb-owner' }));
+  await assertFails(updateDoc(profile, { onebConnected: true }));
+  await assertFails(updateDoc(profile, { authProvider: 'oneb' }));
+  // A token that carries no address can still edit the profile it has, and
+  // still cannot claim one.
+  const bareDb = environment.authenticatedContext('member-a').firestore();
+  await assertSucceeds(setDoc(doc(bareDb, 'users', 'member-a'), { lastActive: '2026-09-03T00:00:00.000Z' }, { merge: true }));
+  await assertFails(updateDoc(doc(bareDb, 'users', 'member-a'), { email: 'owner@example.com' }));
+});
+
+test('a first sign-in seeds a profile with the token address and no identity binding', async () => {
+  // The shape useAuth writes on first sign-in, address included.
+  const newcomerDb = environment.authenticatedContext('newcomer', { email: 'newcomer@example.com' }).firestore();
+  const seed = { id: 'newcomer', name: 'Newcomer', avatar: '', role: 'user', createdAt: '2026-09-03T00:00:00.000Z' };
+  await assertFails(setDoc(doc(newcomerDb, 'users', 'newcomer'), { ...seed, email: 'owner@example.com' }, { merge: true }));
+  await assertFails(setDoc(doc(newcomerDb, 'users', 'newcomer'), { ...seed, email: 'newcomer@example.com', onebId: 'oneb-owner' }, { merge: true }));
+  await assertSucceeds(setDoc(doc(newcomerDb, 'users', 'newcomer'), { ...seed, email: 'newcomer@example.com' }, { merge: true }));
+  // A provider without an address seeds `email: null`, which claims nothing.
+  const phoneDb = environment.authenticatedContext('phone-only').firestore();
+  await assertSucceeds(setDoc(doc(phoneDb, 'users', 'phone-only'), { ...seed, id: 'phone-only', email: null }, { merge: true }));
+});
+
+test('the usage tally the AI ceiling reads is server-written', async () => {
+  const adminDb = environment.authenticatedContext('admin-a').firestore();
+  const organization = doc(adminDb, 'organizations', 'org-a');
+  await assertFails(updateDoc(organization, { 'usage.aiCalls': 0 }));
+  await assertFails(updateDoc(organization, { usage: { aiCalls: 0, aiCallsPeriod: '2026-09' } }));
+  await assertSucceeds(updateDoc(organization, { name: 'Org A, renamed' }));
+});
