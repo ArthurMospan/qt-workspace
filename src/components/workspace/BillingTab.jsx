@@ -533,7 +533,8 @@ function InvoicePreview({
             <Button onClick={handlePrint} style="primary" size="md" icon={Printer}>Друкувати</Button>
           </>
         ) : (
-          <Button onClick={onClose} style="secondary" size="md">Закрити</Button>
+          // Весь футер — і нижче md він зникає разом із кнопкою.
+          <Button onClick={onClose} style="secondary" size="md" dismiss>Закрити</Button>
         )
       }
     >

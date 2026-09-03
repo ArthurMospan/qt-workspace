@@ -90,6 +90,7 @@ import { safeExternalUrl } from '@/lib/utils/externalUrls.mjs';
 import { plural } from '@/lib/utils/plural.mjs';
 import { timerDraftNeedsDismissal, timerFeedbackVariant } from '@/lib/utils/timerState.mjs';
 import { navigateAfterOverlayClose } from '@/lib/hooks/useOverlayHistory';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 
 const VISIBILITY_OPTIONS = [
   { value: 'team', label: 'Уся команда' },
@@ -322,6 +323,10 @@ function CalendarEventTimeSheet({
 
 export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isModal = false, onClose }) {
   const router = useRouter();
+  // Which layout is on screen, resolved in JS: below md two of the header's
+  // four buttons live in the ••• menu instead of the row, and a media query
+  // cannot tell a component to render a different menu.
+  const isMobile = useIsMobile();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const confirm = useConfirm();
@@ -888,6 +893,15 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                   </>
                 ) : (
                   <>
+                    {/* The same fold the task quick-view does: below md this
+                        row is [•••][✕] and these two are rows in the menu. The
+                        event's title is not squeezed the way the task's was —
+                        these buttons already sit on a line of their own below
+                        sm — so this is agreement between the two quick-views,
+                        not a repair. The closing ✕ is NOT hidden while editing
+                        here, unlike the task's: this screen's cancel is a
+                        labelled «Скасувати» (below), so there are never two
+                        bare ✕ side by side to tell apart. */}
                     {canManage && (
                       <Button
                         style="secondary"
@@ -896,6 +910,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                         onClick={enterEdit}
                         aria-label="Редагувати текст події"
                         title="Редагувати назву й опис"
+                        className="max-md:hidden"
                       />
                     )}
                     <ContextMenu
@@ -916,6 +931,23 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                           { label: 'Редагувати текст', icon: Pencil, onClick: enterEdit },
                           { label: 'Видалити', icon: Trash2, onClick: handleDelete, isDanger: true },
                         ] : []),
+                        // The ⤢ from the row, which is not in the row below md.
+                        // «Редагувати текст» above already covers the pencil,
+                        // under the same `canManage` the pencil itself has.
+                        // `!== false`, not `=== true`: `max-md:hidden` takes
+                        // the ⤢ out of the row at the first paint, while
+                        // `useIsMobile` answers `null` until its effect runs,
+                        // so a strict `true` leaves the phone with no way to
+                        // open the full page while the answer is unresolved —
+                        // permanently, if it never resolves. Nothing is added
+                        // above md: `ContextMenu` portals its items only while
+                        // the menu is open, and the row is gone as soon as the
+                        // effect says desktop.
+                        ...(isMobile !== false && isModal && onClose ? [{
+                          label: 'Відкрити на повній сторінці',
+                          icon: Maximize2,
+                          onClick: () => { onClose(); navigateAfterOverlayClose(() => router.push(calendarEventHref(event))); },
+                        }] : []),
                       ]}
                     />
                     {isModal && onClose && (
@@ -927,6 +959,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                           onClick={() => { onClose(); navigateAfterOverlayClose(() => router.push(calendarEventHref(event))); }}
                           aria-label="Відкрити на повній сторінці"
                           title="Відкрити на повній сторінці"
+                          className="max-md:hidden"
                         />
                         <Button
                           style="secondary"
@@ -1042,6 +1075,7 @@ export default function CalendarEventPage({ eventId, occurrenceStartAt = '', isM
                       {canManage ? (
                         <DatePicker
                           compact
+                          composition="attribute-field"
                           hideIcon
                           disabled={attributeSaving}
                           value={view.startDate}

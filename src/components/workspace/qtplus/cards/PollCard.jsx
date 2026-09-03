@@ -7,7 +7,7 @@ export default function PollCard({ view }) {
 
   return (
     <div data-ui-surface="local" className="rounded-[12px] border border-line bg-surface flex flex-col overflow-hidden">
-      <div className="px-3 py-2 flex items-center gap-2 border-b border-line">
+      <div data-ui-surface="qtplus-card-row" className="ui-surface flex items-center gap-2 border-b border-line">
         <div className="w-7 h-7 rounded-[8px] bg-canvas flex items-center justify-center shrink-0">
           <BarChart3 size={14} className="text-muted" />
         </div>
@@ -17,7 +17,7 @@ export default function PollCard({ view }) {
         </div>
       </div>
 
-      <div className="px-3 py-2 flex flex-col gap-2">
+      <div data-ui-surface="qtplus-card-row" className="ui-surface flex flex-col gap-2">
         {results.map((r, i) => (
           <div key={`${i}-${r.option}`} className="text-[12px]">
             <div className="flex justify-between gap-2">

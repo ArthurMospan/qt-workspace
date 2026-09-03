@@ -78,6 +78,7 @@ export default function TaskAttributesSection() {
                   <span className={attributeLabelClass}>Дедлайн</span>
                   <DatePicker
                     compact
+                    composition="attribute-field"
                     hideIcon
                     inputClassName={compactInputClass}
                     value={dueDate}
@@ -124,6 +125,35 @@ export default function TaskAttributesSection() {
                   )}
                 >
                   <div className="flex w-[248px] max-w-full flex-col gap-4">
+                    {/* Нижче sm смуга ховає «Спринт» і «Дедлайн», і вони переїжджають
+                        сюди — той самий порядок і ті самі props, що в IssueDetail:
+                        ця історія дзеркалить сторінку завдання, тому вона повторює
+                        і шухляду. Дедлайн тут без inputClassName, як у продукті.
+                        Прев'ю самого варіанта composition="attribute-field" —
+                        не тут, а в «Матриці варіантів»: його рендерить маніфест
+                        із правила .ui-control[data-ui-composition='attribute-field']
+                        у globals.css. */}
+                    <div className="flex flex-col gap-1.5 sm:hidden">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Спринт</span>
+                      <Select
+                        value={sprintVal}
+                        onChange={setSprintVal}
+                        options={[
+                          { value: '', label: 'Без спринта' },
+                          { value: 'sprint-12', label: 'Спринт 12' },
+                        ]}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:hidden">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Дедлайн</span>
+                      <DatePicker
+                        compact
+                        composition="attribute-field"
+                        value={dueDate}
+                        onChange={setDueDate}
+                        placeholder="Без дедлайну"
+                      />
+                    </div>
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Пріоритет</span>
                       <Select value={priority} onChange={setPriority} options={prioritySelectOptions(DEFAULT_PRIORITIES)} buttonClassName="h-[36px] w-full rounded-[10px] bg-canvas px-3 text-[13px] font-medium" />
@@ -177,6 +207,7 @@ export default function TaskAttributesSection() {
                   <span className={attributeLabelClass}>Дата</span>
                   <DatePicker
                     compact
+                    composition="attribute-field"
                     hideIcon
                     value={dueDate}
                     onChange={setDueDate}

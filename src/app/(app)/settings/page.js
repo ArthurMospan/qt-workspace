@@ -306,6 +306,19 @@ const SectionBackContext = createContext(null);
 // глибину виглядав так, ніби ви потрапили не на той екран.
 function Section({ title, desc, icon, backLabel, rightAction, children }) {
   const mobileBack = useContext(SectionBackContext);
+  // Телефон: заголовок з описом і щось, що бореться з ним за ту саму ширину.
+  //
+  // Опис на екрані інтеграції отримував те, що лишалося після логотипа, стрілки
+  // назад і кнопки з перемикачем, — колонку завширшки з півтора слова, і речення
+  // ставало дев'ятирядковою драбиною. Тут шапка нижче 768px розпадається на два
+  // рядки: службове ліворуч і праворуч у першому, заголовок з описом разом — у
+  // другому, на всю ширину. Разом, а не окремо: якби розчинилася ще й текстова
+  // колонка, опис почався б від краю, а заголовок лишився б із відступом на
+  // стрілку — те саме «попливло», лише в інший бік.
+  //
+  // Лише там, де за ширину справді хтось бореться: секція без опису або без
+  // сусіда праворуч не отримує жодного зайвого символа в класі.
+  const stackHeader = Boolean(desc && (rightAction || icon));
   return (
     <div className="flex flex-col">
       {/* One control, one place, at every width.
@@ -314,8 +327,8 @@ function Section({ title, desc, icon, backLabel, rightAction, children }) {
           title. Two shapes for one action, and the labelled one cost a row of
           the screen to say what the title says already. The arrow is it now;
           where it goes is still spoken, as its accessible name. */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 items-start gap-[10px]">
+      <div className={`mb-6 flex items-start justify-between gap-4${stackHeader ? ' max-md:flex-wrap max-md:justify-start max-md:gap-[10px]' : ''}`}>
+        <div className={`flex min-w-0 flex-1 items-start gap-[10px]${stackHeader ? ' max-md:contents' : ''}`}>
           {mobileBack && (
             <MobilePaneBack
               onClick={mobileBack}
@@ -325,12 +338,12 @@ function Section({ title, desc, icon, backLabel, rightAction, children }) {
             />
           )}
           {icon}
-          <div className="min-w-0 flex-1">
+          <div className={`min-w-0 flex-1${stackHeader ? ' max-md:order-1 max-md:basis-full' : ''}`}>
             <h2 className="ui-type-detail-title text-ink tracking-tight">{title}</h2>
             {desc && <p className="text-[13px] text-muted mt-[4px] leading-relaxed">{desc}</p>}
           </div>
         </div>
-        {rightAction && <div className="shrink-0 flex items-center gap-2">{rightAction}</div>}
+        {rightAction && <div className={`shrink-0 flex items-center gap-2${stackHeader ? ' max-md:ml-auto' : ''}`}>{rightAction}</div>}
       </div>
       <div className="flex flex-col gap-[24px]">
         {children}
@@ -697,7 +710,7 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false
     <div 
       ref={provided?.innerRef}
       {...provided?.draggableProps}
-      data-ui-surface="local" className="flex items-center gap-3 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
+      data-ui-surface="local" className="flex items-center gap-3 max-md:gap-2 py-[8px] px-[8px] -mx-[8px] rounded-[12px] hover:bg-canvas transition-colors group bg-white"
     >
       {provided?.dragHandleProps && (
         <div {...provided.dragHandleProps} className="shrink-0 text-faint hover:text-ink cursor-grab active:cursor-grabbing">
@@ -782,10 +795,19 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false
           )}
         </div>
       ) : (
-        <span className="flex-1 text-[13px] font-semibold text-ink">{item.label}</span>
+        // Назва двічі в одному рядку — і на телефоні за це платить кнопка.
+        //
+        // Праворуч стоїть пігулка, яка друкує рівно цей самий рядок, і вона не
+        // стискається. На 393px «Читати Т33333333333» разом із власною копією
+        // не влазило в картку, і зайве виштовхувало останній нестисливий блок —
+        // олівець із урною — за білий край, на сіре тло. Нижче 768px лишається
+        // одна назва, та, що в пігулці: у ній ще й іконка та колір.
+        <span className="flex-1 text-[13px] font-semibold text-ink max-md:hidden">{item.label}</span>
       )}
 
-      {/* Badge preview */}
+      {/* Badge preview — `workflow-preview` is the kit preset that lets a pill
+          wrap below md; the wrapping itself is declared in globals.css beside
+          the rest of the pill family, not spelled out here. */}
       {!editing && variant === 'type' && (
         <Pill
           label={label}
@@ -795,11 +817,16 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false
           size="lg"
           shape="badge"
           weight="medium"
+          preset="workflow-preview"
           className="backdrop-blur-[2px]"
         />
       )}
       {!editing && variant === 'priority' && (
-        <PriorityBadge priority={{ ...priorityConfig, label, color }} priorities={priorityItems} />
+        <PriorityBadge
+          priority={{ ...priorityConfig, label, color }}
+          priorities={priorityItems}
+          preset="workflow-preview"
+        />
       )}
       {!editing && variant !== 'type' && variant !== 'priority' && (
         <Pill
@@ -810,6 +837,7 @@ function WorkflowItem({ item, onSave, onDelete, canDelete = true, locked = false
           size="lg"
           shape="badge"
           weight="medium"
+          preset="workflow-preview"
           className="backdrop-blur-[2px]"
         />
       )}
@@ -5115,7 +5143,7 @@ export default function SettingsPage() {
           </>
         ) : (
           <>
-            <Button style="secondary" size="md" onClick={() => setTelegramGroupDialogOpen(false)}>Скасувати</Button>
+            <Button style="secondary" size="md" onClick={() => setTelegramGroupDialogOpen(false)} dismiss>Скасувати</Button>
             <Button
               style="primary"
               size="md"
@@ -5203,7 +5231,7 @@ export default function SettingsPage() {
         description="Роль у підтримці не мусить збігатися з роллю в QuickTeam. Власник входить завжди."
         footer={(
           <>
-            <Button style="secondary" size="md" onClick={() => { resetQTicketDraft(); setQTicketTeamOpen(false); }}>Скасувати</Button>
+            <Button style="secondary" size="md" onClick={() => { resetQTicketDraft(); setQTicketTeamOpen(false); }} dismiss>Скасувати</Button>
             <Button
               style="primary"
               size="md"
@@ -5307,7 +5335,7 @@ export default function SettingsPage() {
         description="Назва, логотип і колір бічної панелі в qTicket. Їх бачать усі — і клієнти, і команда підтримки."
         footer={(
           <>
-            <Button style="secondary" size="md" onClick={() => { resetQTicketDraft(); setQTicketBrandOpen(false); }}>Скасувати</Button>
+            <Button style="secondary" size="md" onClick={() => { resetQTicketDraft(); setQTicketBrandOpen(false); }} dismiss>Скасувати</Button>
             <Button
               style="primary"
               size="md"

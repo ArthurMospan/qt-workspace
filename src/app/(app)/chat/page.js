@@ -1217,6 +1217,7 @@ export default function ChatPage() {
             <Button
               style="secondary"
               size="md"
+              dismiss
               onClick={closeCreateChannelDialog}
               disabled={isSubmittingChannel}
             >

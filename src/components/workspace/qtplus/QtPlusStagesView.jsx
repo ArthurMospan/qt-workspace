@@ -110,11 +110,16 @@ export default function QtPlusStagesView({ qtProjectId, header = null }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {headerNode && <div className="px-4 pb-3 pt-4">{headerNode}</div>}
+      {/* Нижче md уся панель стоїть на одному кроці в 16px: такі ж поля з боків,
+          така ж відстань над смугою етапів і під нею, така ж між картками
+          (`MaterialGrid`). На десктопі смуга лишається щільнішою — там панель
+          вужча за екран і 12px читаються як частина шапки, а на телефоні панель
+          і є екран, і той самий крок збивався на три різні. */}
+      {headerNode && <div className="px-4 pb-3 pt-4 max-md:pb-4">{headerNode}</div>}
       {hasStages && <StageStepper stages={stages} activeId={selectedId} onSelect={setSelectedId} />}
       {/* Колонка, а не просто скролпорт: заглушка займає всю висоту, що лишилась,
           і центрується в ній, а сітка матеріалів як була, так і лишається зверху. */}
-      <div className="hide-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-3">{body}</div>
+      <div className="hide-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-3 max-md:pt-4">{body}</div>
 
       <MediaLightbox view={lightbox} onClose={() => setLightbox(null)} />
     </div>

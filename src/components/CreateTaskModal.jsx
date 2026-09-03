@@ -411,7 +411,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSubmit, stages, tea
             label="Створити ще одне"
             className="mr-auto self-center"
           />
-          <Button style="secondary" size="md" onClick={closeAndReset} type="button">
+          <Button style="secondary" size="md" onClick={closeAndReset} type="button" dismiss>
             Скасувати
           </Button>
           <Button

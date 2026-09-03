@@ -2,10 +2,11 @@
 // Which tasks a sprint can still take, and in what order the picker offers them.
 //
 // Dragging a card from «Без спринта» into a sprint is one way to plan, and on a
-// phone it is not a way at all: the two lists are stacked, the backlog is four
-// hundred rows long, and a long-press drag cannot cross a scroll. The picker is
-// the same step made explicit, so this module answers the only question it has —
-// which tasks to show — for both the empty field and a typed query.
+// phone it is not a way at all: below md that column is not rendered — it exists
+// only as something to drag out of, and a long-press drag cannot cross a scroll.
+// The picker is the same step made explicit, so this module answers the only
+// question it has — which tasks to show — for both the empty field and a typed
+// query.
 
 const millis = (value) => {
   if (!value) return 0;

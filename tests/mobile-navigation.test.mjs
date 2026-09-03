@@ -128,7 +128,11 @@ test('every --qt-nav variable read in the stylesheet is one that exists', async 
   // by nobody, so it had been silently falling back to a 64px guess — a fallback
   // is a default for a value somebody supplies, not a place for a typo to live.
   assert.deepEqual([...consumed].filter(name => !declared.has(name)), []);
-  assert.match(css, /bottom: calc\(var\(--qt-nav-space\) \+ 16px\);/);
+  // Two things float above the bar — the toast layer and the bulk-action card —
+  // and they clear it by the same 8px, so the three of them read as one stack at
+  // the bottom of the screen rather than as slabs at unrelated heights. The bulk
+  // bar used to sit 16px up, and the extra void was what made it a second object.
+  assert.equal((css.match(/bottom: calc\(var\(--qt-nav-space\) \+ 8px\);/g) || []).length, 2);
 });
 
 test('the bar floats with real corners instead of sitting on the viewport edge', async () => {
@@ -178,12 +182,42 @@ test('the keyboard is watched by the shell, and the bar reacts to it', async () 
   // render no bar at all, and they are the two screens with the most typing on
   // them; while the hook lived in MobileNav those two went unmeasured.
   assert.match(layout, /const keyboardOpen = useKeyboardOpen\(\)/);
-  assert.match(layout, /<MobileNav keyboardOpen=\{keyboardOpen\} \/>/);
+  assert.match(layout, /<MobileNav keyboardOpen=\{keyboardOpen\} composerFocused=\{composerFocused\} \/>/);
   assert.doesNotMatch(nav, /useKeyboardOpen/);
-  assert.match(nav, /keyboardOpen \? 'pointer-events-none translate-y-\[140%\] opacity-0'/);
-  assert.match(nav, /aria-hidden=\{keyboardOpen\}/);
+  assert.match(nav, /const navHidden = keyboardOpen \|\| composerFocused;/);
+  assert.match(nav, /navHidden \? 'pointer-events-none translate-y-\[140%\] opacity-0'/);
+  assert.match(nav, /aria-hidden=\{navHidden\}/);
   // And the space it reserved collapses with it, so the composer gains the room.
   assert.match(css, /body\[data-keyboard='open'\] \{\s*\n\s*--qt-nav-space: 0px;/);
+});
+
+test('a caret in a composer takes the bar away, from the cause rather than the consequence', async () => {
+  const hook = await read('../src/lib/hooks/useComposerFocus.js');
+  const layout = await read('../src/app/(app)/layout.js');
+  const nav = await read('../src/components/MobileNav.jsx');
+  const css = await read('../src/app/globals.css');
+
+  // One listener, keyed on the shelf every composer already sits on, so the
+  // workspace chat, its threads, a task's timeline and the QuickTeam+ panel are
+  // all covered by being composers rather than by being wired up.
+  assert.match(hook, /'\.chat-composer-dock'/);
+  assert.match(hook, /addEventListener\('focusin'/);
+  assert.match(hook, /addEventListener\('focusout'/);
+  // Removing a focused element fires no focusout, so a dock that unmounts under
+  // the caret would strand the flag; the next touch anywhere corrects it.
+  assert.match(hook, /addEventListener\('pointerdown'/);
+  // And a client navigation, which need not fire any of the three.
+  assert.match(hook, /queueMicrotask\(\(\) => setFocused\(false\)\); \}, \[pathname\]\)/);
+  assert.match(hook, /document\.body\.dataset\.composer/);
+
+  // Watched by the shell, like the keyboard, and for the same reason.
+  assert.match(layout, /const composerFocused = useComposerFocus\(pathname\)/);
+  assert.doesNotMatch(nav, /useComposerFocus/);
+  // Off screen and aria-hidden is not out of the tab order.
+  assert.match(nav, /inert=\{navHidden \|\| undefined\}/);
+
+  // The space collapses with the bar, and only below md.
+  assert.match(css, /@media \(width < 48rem\) \{\s*\n\s*body\[data-composer='focused'\] \{\s*\n\s*--qt-nav-space: 0px;/);
 });
 
 test('the active tab is announced, not only tinted', async () => {

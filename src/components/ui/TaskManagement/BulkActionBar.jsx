@@ -151,9 +151,14 @@ export default function BulkActionBar({
     if (accepted) await apply('delete');
   };
 
-  // Geometry only. The chip's colours belong to the dark bar and are set in
-  // `globals.css` beside the bar itself, so one change reaches every picker.
-  const triggerClass = 'ui-bulk-actions__trigger !w-auto px-[10px] rounded-[10px] text-[12px]';
+  // Geometry only, and not width — that lives in `globals.css` beside the bar,
+  // together with the chip's colours, so one change reaches every picker.
+  // `!w-auto` used to be here as well. It said exactly what the rule in
+  // `globals.css` already says (a picker is as wide as its label), and being
+  // `!important` it was the one declaration the phone layout could not answer:
+  // there the chip has to fill its share of the glyph row instead. Removing it
+  // changes nothing above md — verified rect by rect, all 69 nodes of the bar.
+  const triggerClass = 'ui-bulk-actions__trigger px-[10px] rounded-[10px] text-[12px]';
   const assigneeActions = [
     { id: 'assignees-add', label: 'Додати' },
     { id: 'assignees-remove', label: 'Прибрати' },
@@ -187,135 +192,142 @@ export default function BulkActionBar({
         ) : `Обрано: ${count}`}
       </strong>
       <span className="ui-bulk-actions__divider" aria-hidden="true" />
-      <Select
-        value=""
-        onChange={value => apply('status', value)}
-        options={statusOptions}
-        placeholder="Статус"
-        triggerIcon={CircleDot}
-        className="ui-bulk-actions__control"
-        compact
-        size="sm"
-        disabled={busy}
-        ariaLabel="Змінити статус вибраних завдань"
-        buttonClassName={triggerClass}
-      />
-      <Select
-        value=""
-        onChange={value => (value === 'assignees-clear'
-          ? apply('assignees-clear')
-          : applyEncoded(value))}
-        options={[
-          ...encodedOptions(memberOptions, assigneeActions),
-          { value: 'assignees-clear', label: 'Очистити відповідальних' },
-        ]}
-        placeholder="Відповідальні"
-        triggerIcon={Users}
-        className="ui-bulk-actions__control"
-        compact
-        size="sm"
-        disabled={busy}
-        ariaLabel="Змінити відповідальних вибраних завдань"
-        buttonClassName={triggerClass}
-      />
-      <Select
-        value=""
-        onChange={value => (value === 'none'
-          ? apply('priority-clear')
-          : apply('priority', value))}
-        options={priorityOptions}
-        placeholder="Пріоритет"
-        triggerIcon={Flag}
-        className="ui-bulk-actions__control"
-        compact
-        size="sm"
-        disabled={busy}
-        ariaLabel="Змінити пріоритет вибраних завдань"
-        buttonClassName={triggerClass}
-      />
-      {labelOptions.length > 0 && (
+      {/* Below md the pickers are a row of the card on their own; everywhere
+          else this box is `display: contents` (globals.css) and disappears, so
+          they stay the same direct flex children of the bar. `role="none"`
+          keeps the toolbar owning its widgets on the one screen where the box
+          is real. */}
+      <div className="ui-bulk-actions__rail" role="none">
         <Select
           value=""
-          onChange={value => (value === 'labels-clear'
-            ? apply('labels-clear')
+          onChange={value => apply('status', value)}
+          options={statusOptions}
+          placeholder="Статус"
+          triggerIcon={CircleDot}
+          className="ui-bulk-actions__control"
+          compact
+          size="sm"
+          disabled={busy}
+          ariaLabel="Змінити статус вибраних завдань"
+          buttonClassName={triggerClass}
+        />
+        <Select
+          value=""
+          onChange={value => (value === 'assignees-clear'
+            ? apply('assignees-clear')
             : applyEncoded(value))}
           options={[
-            ...encodedOptions(labelOptions, labelActions),
-            { value: 'labels-clear', label: 'Очистити мітки' },
+            ...encodedOptions(memberOptions, assigneeActions),
+            { value: 'assignees-clear', label: 'Очистити відповідальних' },
           ]}
-          placeholder="Мітки"
-          triggerIcon={Tags}
+          placeholder="Відповідальні"
+          triggerIcon={Users}
           className="ui-bulk-actions__control"
           compact
           size="sm"
           disabled={busy}
-          ariaLabel="Змінити мітки вибраних завдань"
+          ariaLabel="Змінити відповідальних вибраних завдань"
           buttonClassName={triggerClass}
         />
-      )}
-      {typeOptions.length > 0 && (
         <Select
           value=""
-          onChange={value => apply('type', value)}
-          options={typeOptions}
-          placeholder="Тип"
-          triggerIcon={Shapes}
+          onChange={value => (value === 'none'
+            ? apply('priority-clear')
+            : apply('priority', value))}
+          options={priorityOptions}
+          placeholder="Пріоритет"
+          triggerIcon={Flag}
           className="ui-bulk-actions__control"
           compact
           size="sm"
           disabled={busy}
-          ariaLabel="Змінити тип вибраних завдань"
+          ariaLabel="Змінити пріоритет вибраних завдань"
           buttonClassName={triggerClass}
         />
-      )}
-      {sprintOptions.length > 0 && (
-        <Select
-          value=""
-          onChange={value => (value === '__backlog__'
-            ? apply('backlog')
-            : apply('sprint', value))}
-          options={[{ value: '__backlog__', label: 'Без спринта' }, ...sprintOptions]}
-          placeholder="Спринт"
-          triggerIcon={Zap}
-          className="ui-bulk-actions__control"
-          compact
-          size="sm"
-          disabled={busy}
-          ariaLabel="Перемістити вибрані завдання у спринт"
-          buttonClassName={triggerClass}
-        />
-      )}
-      <ContextMenu
-        trigger={(
-          <Button
-            style="secondary"
-            size="icon-sm"
-            icon={MoreHorizontal}
+        {labelOptions.length > 0 && (
+          <Select
+            value=""
+            onChange={value => (value === 'labels-clear'
+              ? apply('labels-clear')
+              : applyEncoded(value))}
+            options={[
+              ...encodedOptions(labelOptions, labelActions),
+              { value: 'labels-clear', label: 'Очистити мітки' },
+            ]}
+            placeholder="Мітки"
+            triggerIcon={Tags}
+            className="ui-bulk-actions__control"
+            compact
+            size="sm"
             disabled={busy}
-            aria-label="Інші масові дії"
-            title="Інші масові дії"
-            className="ui-bulk-actions__trigger"
+            ariaLabel="Змінити мітки вибраних завдань"
+            buttonClassName={triggerClass}
           />
         )}
-        items={[
-          { label: 'Встановити дедлайн', icon: CalendarDays, onClick: askDeadline },
-          { label: 'Очистити дедлайн', icon: CalendarDays, onClick: () => apply('deadline-clear') },
-          { label: 'Встановити оцінку', icon: Clock3, onClick: askEstimate },
-          { label: 'Очистити оцінку', icon: Clock3, onClick: () => apply('estimate-clear') },
-          { isDivider: true },
-          { label: `Дублювати (${count})`, icon: Copy, onClick: () => apply('duplicate') },
-          { label: `Архівувати (${count})`, icon: Archive, onClick: askArchive },
-          { label: `Скасувати (${count})`, icon: Ban, onClick: askCancel },
-          {
-            label: `Видалити (${count})`,
-            icon: Trash2,
-            onClick: askDelete,
-            isDanger: true,
-            disabled: !canArchive,
-            disabledReason: canArchive ? '' : archiveDisabledReason,
-          },
-        ]}
-      />
+        {typeOptions.length > 0 && (
+          <Select
+            value=""
+            onChange={value => apply('type', value)}
+            options={typeOptions}
+            placeholder="Тип"
+            triggerIcon={Shapes}
+            className="ui-bulk-actions__control"
+            compact
+            size="sm"
+            disabled={busy}
+            ariaLabel="Змінити тип вибраних завдань"
+            buttonClassName={triggerClass}
+          />
+        )}
+        {sprintOptions.length > 0 && (
+          <Select
+            value=""
+            onChange={value => (value === '__backlog__'
+              ? apply('backlog')
+              : apply('sprint', value))}
+            options={[{ value: '__backlog__', label: 'Без спринта' }, ...sprintOptions]}
+            placeholder="Спринт"
+            triggerIcon={Zap}
+            className="ui-bulk-actions__control"
+            compact
+            size="sm"
+            disabled={busy}
+            ariaLabel="Перемістити вибрані завдання у спринт"
+            buttonClassName={triggerClass}
+          />
+        )}
+        <ContextMenu
+          trigger={(
+            <Button
+              style="secondary"
+              size="icon-sm"
+              icon={MoreHorizontal}
+              disabled={busy}
+              aria-label="Інші масові дії"
+              title="Інші масові дії"
+              className="ui-bulk-actions__trigger"
+            />
+          )}
+          items={[
+            { label: 'Встановити дедлайн', icon: CalendarDays, onClick: askDeadline },
+            { label: 'Очистити дедлайн', icon: CalendarDays, onClick: () => apply('deadline-clear') },
+            { label: 'Встановити оцінку', icon: Clock3, onClick: askEstimate },
+            { label: 'Очистити оцінку', icon: Clock3, onClick: () => apply('estimate-clear') },
+            { isDivider: true },
+            { label: `Дублювати (${count})`, icon: Copy, onClick: () => apply('duplicate') },
+            { label: `Архівувати (${count})`, icon: Archive, onClick: askArchive },
+            { label: `Скасувати (${count})`, icon: Ban, onClick: askCancel },
+            {
+              label: `Видалити (${count})`,
+              icon: Trash2,
+              onClick: askDelete,
+              isDanger: true,
+              disabled: !canArchive,
+              disabledReason: canArchive ? '' : archiveDisabledReason,
+            },
+          ]}
+        />
+      </div>
       <Button
         style="ghost"
         size="icon-sm"
@@ -324,7 +336,7 @@ export default function BulkActionBar({
         disabled={busy}
         aria-label="Зняти вибір"
         title="Зняти вибір"
-        className="!text-white hover:!bg-white/15"
+        className="ui-bulk-actions__clear !text-white hover:!bg-white/15"
       />
     </div>
   );

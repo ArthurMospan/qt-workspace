@@ -92,8 +92,13 @@ function SheetTimerCapsule({ onNavigate, onStop }) {
  *   the viewport, so there is neither room for a tab bar nor a reason for one —
  *   the reader is typing, not navigating. Measured by the workspace layout,
  *   which watches for it on every route, including the two that render no bar.
+ * @param {boolean} props.composerFocused The caret is in a chat composer. The
+ *   same conclusion, reached from the cause rather than from the consequence:
+ *   it is true from the tap rather than from the moment the keys finish sliding
+ *   in, it stays true when the keyboard is dismissed under a still-focused
+ *   field, and it is true where no keyboard covers anything at all.
  */
-export default function MobileNav({ keyboardOpen = false }) {
+export default function MobileNav({ keyboardOpen = false, composerFocused = false }) {
   const pathname = usePathname();
   const router = useRouter();
   const { projects, activeOrg, activeOrgId } = useAppContext();
@@ -164,6 +169,9 @@ export default function MobileNav({ keyboardOpen = false }) {
   // «Ще» is highlighted when the current page lives in the sheet
   const moreActive = MORE_NAV.some(i => isActive(i.href));
 
+  // Two reasons, one bar. Both mean the screen belongs to what is being typed.
+  const navHidden = keyboardOpen || composerFocused;
+
   const handleStopTimer = async e => {
     e.stopPropagation();
     // The minutes ride in the store, not in the URL — see `stopTimer`.
@@ -201,7 +209,7 @@ export default function MobileNav({ keyboardOpen = false }) {
           never in the way of a thumb. */}
       <div
         aria-hidden="true"
-        className={`qt-nav-veil transition-opacity duration-200 ${keyboardOpen ? 'opacity-0' : 'opacity-100'}`}
+        className={`qt-nav-veil transition-opacity duration-200 ${navHidden ? 'opacity-0' : 'opacity-100'}`}
       />
 
       {/* ── Bottom tab bar ─────────────────────────────────────────────
@@ -215,9 +223,15 @@ export default function MobileNav({ keyboardOpen = false }) {
         data-app-sb
         data-nav-tone={barTheme.isDark ? 'dark' : 'light'}
         aria-label="Основна навігація"
-        aria-hidden={keyboardOpen}
+        aria-hidden={navHidden}
+        // `pointer-events-none` takes the bar out of a thumb's way and
+        // `aria-hidden` out of a screen reader's, but neither takes its five
+        // links out of the tab order — and a hidden-but-tabbable control inside
+        // an aria-hidden container is exactly what a hardware or split keyboard,
+        // the case `composerFocused` newly hides the bar for, would walk into.
+        inert={navHidden || undefined}
         className={`qt-nav-bar fixed z-40 flex items-stretch overflow-hidden transition-[transform,opacity] duration-200 ${
-          keyboardOpen ? 'pointer-events-none translate-y-[140%] opacity-0' : 'translate-y-0 opacity-100'
+          navHidden ? 'pointer-events-none translate-y-[140%] opacity-0' : 'translate-y-0 opacity-100'
         }`}
         style={{
           left: 'var(--qt-nav-gap)',

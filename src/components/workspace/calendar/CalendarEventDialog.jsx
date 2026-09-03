@@ -626,7 +626,12 @@ export default function CalendarEventDialog({
         footer={(
           <>
             {canManage && !event.readOnly && <Button style="secondary" size="md" icon={Pencil} onClick={() => setMode('edit')}>Редагувати</Button>}
-            <Button style="secondary" size="md" onClick={onClose}>Закрити</Button>
+            {/* «Закрити» is the same promise «Скасувати» makes elsewhere — it
+                closes and does nothing else — so `dismiss` belongs on it too.
+                With «Редагувати» beside it the footer keeps its bar below md
+                and loses only this row; to a reader who cannot edit, this is
+                the whole footer and the bar goes with it. */}
+            <Button style="secondary" size="md" onClick={onClose} dismiss>Закрити</Button>
           </>
         )}
       >
@@ -668,6 +673,10 @@ export default function CalendarEventDialog({
           Видалити
         </Button>
       )}
+      {/* Deliberately not `dismiss`: on an existing event this steps the form
+          back to «Деталі події» — or hands the step back to the page — and only
+          on a new one does it close. The × does one of those three things; this
+          button is not its copy, so a phone must keep it. */}
       <Button
         style="secondary"
         size="md"
@@ -684,7 +693,10 @@ export default function CalendarEventDialog({
       </Button>
     </>
   ) : (
-    <Button style="secondary" size="md" onClick={onClose}>Закрити</Button>
+    // The whole footer for a reader who cannot manage the event: one button
+    // that closes. Below md the header's × is that button, and the bar with
+    // nothing else in it goes too.
+    <Button style="secondary" size="md" onClick={onClose} dismiss>Закрити</Button>
   );
 
   return (

@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { Download, Play } from 'lucide-react';
 import { downloadMaterial } from '@/lib/portal/downloadMaterial';
-import { isViewableKind } from '@/lib/utils/attachmentKinds.mjs';
+import { isViewableKind, isVisualKind } from '@/lib/utils/attachmentKinds.mjs';
 import PdfThumb from '../previews/PdfThumb';
 import TextThumb from '../previews/TextThumb';
 import OfficeThumb from '../previews/OfficeThumb';
@@ -95,8 +95,21 @@ export default function FileCard({ view, onOpen }) {
         )}
       </div>
 
-      <div className="flex min-w-0 items-center gap-2 px-3 py-2">
-        <FileThumb attachment={view.attachment} density="sm" />
+      <div data-ui-surface="qtplus-card-row" className="ui-surface flex min-w-0 items-center gap-2">
+        {/* Той самий знімок не показується двічі. У родини, яка МАЄ картинку,
+            цей 28-піксельний квадрат — зменшена копія того, що вже стоїть над
+            ним на всю ширину картки: на десктопі в сітці з трьох колонок він
+            вирівнює рядок назви з рядками сусідніх карток-документів, а на
+            телефоні, де колонка одна, поруч із власним прев'ю картки він
+            лишався просто дублем — і тим, що відбирав 36px у назви, якою в
+            порталі часто-густо є сирий хеш. Гейт саме на `thumbFailed`, а не
+            лише на родині: коли картинка не завантажилась, зверху стоїть
+            піктограма-заглушка, і квадрат унизу вже нічого не дублює. */}
+        <FileThumb
+          attachment={view.attachment}
+          density="sm"
+          className={view.url && !thumbFailed && isVisualKind(view.kind) ? 'max-md:hidden' : ''}
+        />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-medium text-ink">{view.title}</span>
           <span className="block truncate text-[11px] text-faint">{view.meta}</span>

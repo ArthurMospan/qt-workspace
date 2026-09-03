@@ -67,7 +67,7 @@ export function IntegrationLogo({ src, alt = '', size = 'md' }) {
  * виглядає як посилання назовні, чим вона і є.
  *
  * @param {'connected'|'idle'|'connecting'|'error'|'unavailable'} props.status Стан підключення.
- * @param {{label: string, icon?: React.ComponentType, onClick: () => void}} props.action Вторинна дія шапки.
+ * @param {{label: string, icon: React.ComponentType, onClick: () => void}} props.action Вторинна дія шапки; `icon` обов'язкова — на телефоні кнопка згортається в квадрат, і без іконки він був би порожній.
  * @param {boolean} props.enabled Чи ввімкнена інтеграція.
  * @param {(next: boolean) => void} props.onToggle Вмикає й вимикає її.
  * @param {boolean} props.toggleDisabled Світч недоступний — немає прав або середовище не налаштоване.
@@ -97,8 +97,20 @@ export function IntegrationControls({
   return (
     <>
       {saysSomethingNew && <Pill tone={state.tone} size="md">{state.label}</Pill>}
+      {/* На телефоні напис іде, іконка лишається. «Відкрити BuggyBag» — це
+          двісті пікселів шапки, яких нізвідки взяти: заголовок і опис живуть у
+          тому ж рядку. Зі згорнутою кнопкою вторинна дія лишається на місці, а
+          те, куди вона веде, кажуть іконка й доступне ім'я. */}
       {action && (
-        <Button style="secondary" size="sm" icon={action.icon} onClick={action.onClick} disabled={action.disabled}>
+        <Button
+          style="secondary"
+          size="sm"
+          icon={action.icon}
+          onClick={action.onClick}
+          disabled={action.disabled}
+          collapseAt="md"
+          aria-label={action.label}
+        >
           {action.label}
         </Button>
       )}

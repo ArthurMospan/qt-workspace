@@ -97,8 +97,34 @@ export default function Tabs({
 
         const content = (
           <>
-            {Icon && <Icon size={14} />}
-            {tab.label}
+            {/* `shrink-0`, because otherwise the icon is the thing that gives
+                way. A `pane-switch` tab is `flex: 1; min-width: 0` (globals.css),
+                and on a phone that is narrower than the tab's own content — so
+                flexbox looks for an item to squeeze. An <svg> with a viewBox has
+                no content-based minimum, so it hands over its whole width and
+                `preserveAspectRatio` scales the glyph down with it: the audio
+                tab's icon measured 7.6px at a 393px viewport and nothing at all
+                at 375, beside a full-size 14px glyph on the tab next to it.
+                Below md the glyph keeps its box and the label gives way instead. */}
+            {Icon && <Icon size={14} className="max-md:shrink-0" />}
+            {/* A span, not a bare text node, so that below md the label is an
+                element that can be told to shrink: `overflow: hidden` is what
+                makes a flex item's automatic minimum size resolve to zero — so
+                this is the item that absorbs the squeeze, and it ellipsises
+                rather than the icon vanishing.
+
+                `.ui-tab-label` (globals.css) is `display: contents` at every
+                other width, so this wrapper generates no box above md and the
+                label's own children stay the direct flex children of the button
+                that they were before it existed. That is not decoration: a label
+                is not always a string — StageStepper passes a dot, a name and a
+                lock — and an inline wrapper would swallow the dot's box, close
+                the two 6px gaps and push the lock onto a second line.
+
+                Only when there is a label: below md an empty span would still be
+                a flex item and the strip's gap would open a 6px hole in every
+                icon-only tab. */}
+            {tab.label ? <span className="ui-tab-label">{tab.label}</span> : null}
             {Number(tab.count) > 0 && (
               <Counter
                 value={tab.count}

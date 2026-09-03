@@ -44,8 +44,18 @@ function QtPlusLoading() {
 function LinkedRow({ name, stale, menuItems, href, progress }) {
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <h2 className="ui-type-section-title min-w-0 truncate tracking-tight text-ink">
+      {/* Below md this is four things on one line, and three of them do not
+          shrink: «Прогрес: 0% (0/4)», «Перейти» and the kebab together take
+          about 220px of a 326px row, so the name — the one thing the row is
+          named after — was left with a couple of characters and an ellipsis.
+          Wrapping gives the name the first line to itself (`basis-full`) and
+          leaves the second to the progress and the actions; the `flex-1` spacer
+          already standing between them does the same job on either line, so
+          the progress keeps the left edge and the actions the right.
+          Above md nothing wraps: a flex row without `flex-wrap` is `nowrap`,
+          and `basis-full` never applies, so the row is the row it always was. */}
+      <div className="flex items-center gap-2 max-md:flex-wrap max-md:gap-y-2">
+        <h2 className="ui-type-section-title min-w-0 truncate tracking-tight text-ink max-md:basis-full">
           {name || 'Без назви'}
         </h2>
         {progress}

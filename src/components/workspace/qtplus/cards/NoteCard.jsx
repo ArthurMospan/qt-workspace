@@ -20,10 +20,15 @@ export default function NoteCard({ view, onOpen }) {
   return (
     <Card preset="bordered-compact" padding="none" interactive onClick={() => onOpen(view)}>
       <span className="flex flex-col overflow-hidden rounded-[12px]">
-        <span className="block h-[160px] overflow-hidden px-3 py-2.5" style={{ backgroundColor: color }}>
+        {/* Стікер бере лише горизонталь `qtplus-card-row` і робить це власною
+            утилітою, а не пресетом: вертикаль йому чіпати не можна. `line-clamp-[7]`
+            × 18px + 20px полів рівно вкладаються в його 160px, і 12px, які пресет
+            дав би нижче md, забрали б сьомий рядок. Лівий край при цьому лишається
+            там само, де й у підпису під ним. */}
+        <span className="block h-[160px] overflow-hidden px-3 py-2.5 max-md:px-4" style={{ backgroundColor: color }}>
           <span className="line-clamp-[7] block whitespace-pre-wrap text-[12px] leading-[18px] text-ink">{content}</span>
         </span>
-        <span className="flex min-w-0 items-center gap-2 px-3 py-2">
+        <span data-ui-surface="qtplus-card-row" className="ui-surface flex min-w-0 items-center gap-2">
           <span
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px]"
             style={{ backgroundColor: color }}
