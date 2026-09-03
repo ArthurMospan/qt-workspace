@@ -3758,8 +3758,12 @@ export default function SettingsPage() {
           },
           {
             id: 'buggybag',
-            title: 'BuggyBag Portal',
-            description: 'Баг-репорти клієнтів як задачі QuickTeam.',
+            // Ні «Portal», ні «клієнти». BuggyBag — інструмент розробників: у
+            // ньому команда позначає баги й проблеми, а зібрані звіти переносить
+            // сюди задачами. Слово «портал» стояло поруч із двома справжніми
+            // клієнтськими порталами (qTicket і QuickTeam+) і читалося як третій.
+            title: 'BuggyBag',
+            description: 'Звіти про баги з BuggyBag стають задачами QuickTeam.',
             logo: '/bug-logo.png',
             capability: 'integrations',
             status: buggyBagEnabled ? 'connected' : 'idle',
@@ -3826,7 +3830,7 @@ export default function SettingsPage() {
           qticket: 'Тікет-система для звернень клієнтів. Організація, бренд і команда беруться з QuickTeam.',
           'quickteam-plus': 'Портал для спільної роботи з клієнтом в одному просторі.',
           telegram: 'Задачі створюються прямо з робочої групи й потрапляють у вибраний проєкт.',
-          buggybag: 'Баг-репорти клієнтів стають задачами разом зі скриншотами й технічними даними.',
+          buggybag: 'Команда позначає баги в BuggyBag, а зібрані звіти переносить сюди — задачами зі скриншотами й технічними даними.',
         }[integrationDetail] || '';
 
         return (
@@ -4088,7 +4092,7 @@ export default function SettingsPage() {
               />
             ))}
 
-            {/* BuggyBag Portal */}
+            {/* BuggyBag */}
             {integrationDetail === 'buggybag' && (buggyBagEnabled ? (
               <Card preset="borderless" padding="lg">
                 <SettingRow label="API Token" desc="Вставте в налаштуваннях BuggyBag">
@@ -4111,8 +4115,8 @@ export default function SettingsPage() {
             ) : (
               <IntegrationConnect
                 logoSrc="/bug-logo.png"
-                title="Увімкніть приймання баг-репортів"
-                description="QuickTeam видасть ключ, який вставляють у налаштуваннях BuggyBag. Після цього репорти клієнтів стають задачами."
+                title="Увімкніть перенесення звітів"
+                description="QuickTeam видасть ключ, який вставляють у налаштуваннях BuggyBag. Після цього звіт, який зібрала команда, переноситься сюди задачею — зі скриншотами й технічними даними."
                 action={{ label: 'Увімкнути', onClick: () => toggleBuggyBag(true), loading: buggyBagLoading }}
               />
             ))}
