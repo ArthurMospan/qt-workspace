@@ -468,6 +468,19 @@
     .qt-nav-scroll {
       scroll-padding-bottom: var(--qt-nav-space);
     }
+    /* While the keyboard is up the bar is gone, so `--qt-nav-space` is 0 —
+       and since the shell stopped reserving the overlap, this scroller now
+       runs to the bottom of the layout viewport with its last rows under the
+       keys. Scroll padding is the one thing that may still read the overlap
+       below md: it moves no box and paints nothing, it only tells the browser
+       where "visible" ends, so it cannot correct a second time for a keyboard
+       the browser has already paid for. Without it `scrollIntoView` and the
+       chat's own scroll-to-latest park the newest row under the keyboard.
+       `body[data-keyboard=...]` rather than the bare variable, so the
+       declaration exists only in the state it is written for. */
+    body[data-keyboard='open'] .qt-nav-scroll {
+      scroll-padding-bottom: var(--qt-keyboard-inset, 0px);
+    }
     .qt-nav-scroll::after {
       content: '';
       display: block;
@@ -634,7 +647,7 @@
      the edges are nowhere near the field. */
   @media (width < 48rem) {
     .chat-composer-dock:not([data-ui-composition]) {
-      padding: 0 16px calc(16px + var(--sab));
+      padding: 12px 16px calc(20px + var(--sab));
     }
   }
   /* The four duration presets and the metric fields declared their own right

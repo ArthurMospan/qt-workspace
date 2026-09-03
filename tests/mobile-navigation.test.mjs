@@ -172,9 +172,9 @@ test('the keyboard is watched by the shell, and the bar reacts to it', async () 
   // and is not tripped by a collapsing URL bar.
   assert.match(hook, /KEYBOARD_FRACTION = 0\.3/);
   assert.match(hook, /document\.body\.dataset\.keyboard/);
-  // And how much of the viewport it covers, which is what keeps a composer
-  // above the keys on a platform that covers the layout viewport instead of
-  // shortening it.
+  // And how much of the viewport it covers. Read at md and above — a tablet in
+  // portrait is past that line and its keyboard does trip the fraction. Below md
+  // nothing subtracts it; the test under this one is why.
   assert.match(hook, /--qt-keyboard-inset/);
   assert.match(css, /height: calc\(100dvh - var\(--qt-keyboard-inset, 0px\)\)/);
 
@@ -189,6 +189,86 @@ test('the keyboard is watched by the shell, and the bar reacts to it', async () 
   assert.match(nav, /aria-hidden=\{navHidden\}/);
   // And the space it reserved collapses with it, so the composer gains the room.
   assert.match(css, /body\[data-keyboard='open'\] \{\s*\n\s*--qt-nav-space: 0px;/);
+});
+
+test('below md nothing corrects for the keyboard twice', async () => {
+  const css = await read('../src/app/globals.css');
+  const layout = await read('../src/app/(app)/layout.js');
+  const chat = await read('../src/app/(app)/chat/page.js');
+  const info = await read('../src/components/ui/Chat/ChannelInfoPanel.jsx');
+  const dialog = await read('../src/components/ui/Dialog.jsx');
+
+  // The rule this whole mechanism rests on. iOS covers the layout viewport with
+  // the keyboard rather than shortening it, and lets you pan the visual viewport
+  // down into the covered part. A document shorter than that pannable box is a
+  // strip of bare page waiting for the first drag, so below md the document goes
+  // back to the full height the moment the keyboard is measured.
+  assert.match(css, /@media \(width < 48rem\) \{[\s\S]*?body\[data-keyboard='open'\] \{\s*\n\s*height: 100dvh;/);
+
+  // Nothing inside that box then subtracts the overlap a second time. WebKit
+  // already scrolled the ancestor scrollers and panned the window to get the
+  // focused field out from under the keys; an app that shortens the shell one
+  // frame later moves the same field up by the same keyboard again, which is how
+  // a composer you have just tapped ends above the top edge — and the padding it
+  // vacates is the bare strip a drag exposes.
+  assert.doesNotMatch(layout, /pb-\[var\(--qt-keyboard-inset/);
+
+  // The two full-screen chat panes are `fixed inset-0` and stop there, which is
+  // the same box a Dialog's backdrop covers. They used to raise their own bottom
+  // edge by the overlap and had both symptoms for it.
+  for (const [name, source] of [['chat thread pane', chat], ['channel info panel', info]]) {
+    assert.match(source, /data-ui-overlay="responsive-pane" className="fixed inset-0 z-50 md:static/, name);
+    assert.doesNotMatch(source, /max-md:bottom-\[var\(--qt-keyboard-inset/, name);
+  }
+
+  // The reference implementation, stated as an assertion so it cannot drift into
+  // reading the variable and taking the page's bugs with it: a Dialog covers the
+  // layout viewport, caps itself in `dvh` — which the keyboard does not change —
+  // and knows nothing about the inset.
+  assert.match(dialog, /fixed inset-0 z-50 flex/);
+  assert.doesNotMatch(dialog, /qt-keyboard-inset/);
+});
+
+test('no phone-only rule reads the keyboard inset', async () => {
+  // The rot guard for the test above. Three call sites carried the second
+  // correction and all three are gone; a fourth would reintroduce the bug in one
+  // more place without failing anything else, because each one looks locally
+  // reasonable. Below md the inset is measurement only — MobileNav and
+  // `--qt-nav-space` read the `data-keyboard` attribute instead.
+  const { readdir } = await import('node:fs/promises');
+  const roots = [new URL('../src/', import.meta.url)];
+  const offenders = [];
+  while (roots.length) {
+    const dir = roots.pop();
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const child = new URL(entry.name + (entry.isDirectory() ? '/' : ''), dir);
+      if (entry.isDirectory()) { roots.push(child); continue; }
+      if (!/\.(js|jsx|css)$/.test(entry.name)) continue;
+      const source = await readFile(child, 'utf8');
+      // A `max-md:` utility, or a `(width < 48rem)` block, that spends the inset.
+      if (/max-md:[a-z-]*-\[[^\]]*--qt-keyboard-inset/.test(source)) {
+        offenders.push(`${entry.name}: max-md: utility`);
+      }
+      const phoneBlocks = source.match(/@media \(width < 48rem\) \{[\s\S]*?\n  \}/g) || [];
+      // `scroll-padding` is the one exception, and it is an exception because
+      // of what it is rather than because it was convenient: it generates no
+      // box, paints nothing and moves nothing — it only tells the browser
+      // where the visible end of a scrollport is. The bug this guard exists
+      // for is correcting for the keyboard a SECOND time in geometry the
+      // browser has already corrected; a scroll hint cannot do that. It is
+      // needed because the shell no longer reserves the overlap, so a phone
+      // scroller now runs to the bottom of the layout viewport with its last
+      // rows under the keys, and `scrollIntoView` would park them there.
+      const spendsInset = block => block
+        .split(/\r?\n/)
+        .filter(line => line.includes('var(--qt-keyboard-inset'))
+        .some(line => !/scroll-padding/.test(line));
+      if (phoneBlocks.some(spendsInset)) {
+        offenders.push(`${entry.name}: (width < 48rem) block`);
+      }
+    }
+  }
+  assert.deepEqual(offenders, []);
 });
 
 test('a caret in a composer takes the bar away, from the cause rather than the consequence', async () => {
