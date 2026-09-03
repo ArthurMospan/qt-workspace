@@ -246,7 +246,7 @@ export default function BoardConfigModal({
         size="sm"
         footer={(
           <>
-            <Button style="secondary" size="md" onClick={onClose}>
+            <Button style="secondary" size="md" onClick={onClose} dismiss>
               Скасувати
             </Button>
             <Button

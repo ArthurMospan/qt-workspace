@@ -492,6 +492,12 @@ function MemberWork({ stat, projects, members }) {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Segmented
+          // Four sentences, not four digits: «Усі за весь час 47» alone is
+          // wider than a third of a phone, and the strip is `shrink-0` with
+          // nothing to wrap on. At ~455px it stood outside the card and took
+          // the page sideways with it. Below md it is as wide as the card and
+          // folds onto a second row instead.
+          className="max-md:w-full max-md:flex-wrap"
           value={filter}
           onChange={setFilter}
           options={[

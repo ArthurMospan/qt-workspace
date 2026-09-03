@@ -266,8 +266,18 @@ export default function MemberAnalyticsPage() {
             // The filters live in the member header rather than in a page
             // header of their own — they read as controls for the analytics
             // they actually scope, next to the person being analysed.
+            //
+            // `max-md:w-full` because this is the one place the bar stands
+            // inside a screen's own header instead of a PageHeader row (that
+            // row is `hidden md:flex`, so no phone ever sees the bar there).
+            // The bar's own width is `max-content`, and a max-content box
+            // hands that size to its parent as a minimum it can never shrink
+            // through: project select (210) + divider + period switch + the
+            // refresh stamp came to ~566px inside a 318px card, so the whole
+            // member page sat parked sideways with the name cut off. Told to
+            // be as wide as the card, the bar's own `flex-wrap` folds instead.
             detailFilters={(
-              <FilterBar context="detail">
+              <FilterBar context="detail" className="max-md:w-full">
                 <MultiSelect
                   value={projectFilters}
                   onChange={setProjectFilters}

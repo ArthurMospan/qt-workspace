@@ -83,6 +83,18 @@ contracts, що й робочі екрани.
    exceptions.
 9. Typography — named contexts.
 10. Повнота каталогу — тільки authenticated workspace.
+11. Перенос рядка в `Segmented` на телефоні — позначений локальний виняток.
+    `MemberWork` (`src/components/workspace/WorkloadTab.jsx`) передає
+    `className="max-md:w-full max-md:flex-wrap"`, бо чотири опції-речення
+    («Відкриті N», «Завершені N», «Прострочені N», «Усі за весь час N» — разом
+    близько 455px) не стають у рядок телефона, а сам компонент — `shrink-0` без
+    переносу, тож він виходив за межі картки і тягнув сторінку вбік. Звичайний
+    шлях (named composition у `globals.css`) тут закритий: `flex-wrap: wrap`
+    усередині `@media (max-width: 767px)` обчислюється як `nowrap` на
+    десктопному viewport каталогу і падає в `dead` у перевірці мертвих
+    декларацій `tests/visual/ui-kit.spec.mjs`. Ширина (`max-md:w-full`) —
+    звичайне розміщення в батьку; переносом рядка компонент лишається таким
+    самим на будь-якій ширині від 768px.
 
 Попередні десять product-рішень (CTA dark/red, scale 24/18, sm/md/lg controls,
 shared chat core, task/calendar chrome, surface/filter presets, `StatusPill`,

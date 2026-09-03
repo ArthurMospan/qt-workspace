@@ -82,7 +82,7 @@ function SprintEditModal({ sprint, onClose, onSave }) {
       size="sm"
       footer={
         <>
-          <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
+          <Button style="secondary" size="md" onClick={onClose} type="button" dismiss>Скасувати</Button>
           <Button style="primary" size="md" type="submit" form="sprint-edit-form">Зберегти</Button>
         </>
       }
@@ -142,7 +142,7 @@ function SprintCreateModal({ onClose, onSave }) {
       size="sm"
       footer={
         <>
-          <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
+          <Button style="secondary" size="md" onClick={onClose} type="button" dismiss>Скасувати</Button>
           <Button style="primary" size="md" type="submit" form="sprint-create-form">Створити</Button>
         </>
       }
@@ -192,7 +192,7 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
       presentation="dialog"
       footer={
         <>
-          <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
+          <Button style="secondary" size="md" onClick={onClose} type="button" dismiss>Скасувати</Button>
           <Button style="primary" size="md" type="submit" form="sprint-complete-form">Завершити спринт</Button>
         </>
       }
@@ -218,8 +218,8 @@ function SprintCompleteModal({ sprint, sprints, incompleteIssues, onClose, onCon
 }
 
 // Планування без перетягування. Картку з беклогу у спринт тягнуть мишею — на
-// телефоні цього жесту немає взагалі (два списки стоять один під одним, і
-// довге натискання конкурує зі скролом), а на чотирьохстах завданнях він
+// телефоні цієї колонки немає взагалі (вона потрібна тільки як джерело для
+// перетягування, а перетягнути там нічим), а на чотирьохстах завданнях жест
 // повільний і на десктопі. Тому «+» у шапці спринта питає, що саме додати, і
 // другий варіант відкриває цей діалог. Дія одна для обох ширин: інакше в
 // продукті було б два різні способи зробити те саме.
@@ -262,7 +262,7 @@ function AddExistingIssuesDialog({
       bodyPadding="sticky-head"
       footer={
         <>
-          <Button style="secondary" size="md" onClick={onClose} type="button">Скасувати</Button>
+          <Button style="secondary" size="md" onClick={onClose} type="button" dismiss>Скасувати</Button>
           <Button
             style="primary"
             size="md"
@@ -681,9 +681,17 @@ export default function GlobalSprintsPage() {
                 </Draggable>
               );
             })}
+            {/* Перетягування — десктопний жест, і колонки «Без спринта» на
+                телефоні немає взагалі, тож друга половина поради там була б
+                вказівкою на те, чого на екрані нема. «+» у шапці працює на
+                обох ширинах і лишається завжди. Пробіл-роздільник живе всередині
+                рядка span: сусідній перенос рядка JSX зʼїдає, тому на десктопі
+                виходить той самий текст символ у символ, а на телефоні лінія
+                не тягне за собою хвостовий пробіл. */}
             {issueList.length === 0 && (
               <div className="py-8 text-center text-[12px] text-faint">
-                У цьому спринті ще немає задач — додайте їх кнопкою «+» у шапці спринта або перетягніть зі списку «Без спринта»
+                У цьому спринті ще немає задач — додайте їх кнопкою «+» у шапці спринта
+                <span className="max-md:hidden"> або перетягніть зі списку «Без спринта»</span>
               </div>
             )}
             {provided.placeholder}
@@ -725,9 +733,22 @@ export default function GlobalSprintsPage() {
   // екран, а завдання всі до одного лишаються і в скролі, і в drag-моделі.
   // Скролером тепер є сам Droppable: вимірювати вікно може тільки той, хто
   // ним володіє.
+  //
+  // Нижче lg панель беклогу обмежена 60vh (composition="scroll-pane"), тому на
+  // телефоні палець зупиняє саме цей список, а не сторінку: він доходить до
+  // свого кінця, поки сторінка ще не дійшла до свого, і остання картка лишалась
+  // під плаваючою панеллю навігації. Тому слід панелі закінчує цей список, а не
+  // лише сторінку. Стелю 60vh знімати не можна: measureViewport у
+  // VirtualDroppableColumn читає clientHeight, і без неї вікном стане весь
+  // список — усі чотири сотні карток змонтуються разом.
+  //
+  // Нижче md цей рендерер не викликається взагалі: колонки «Без спринта» на
+  // телефоні немає, вона не рендериться (див. гілку `!isPhone` праворуч).
+  // Стеля 60vh і слід під панеллю навігації лишаються чинними для планшета
+  // (md–lg), де колонка ще стоїть під спринтами.
   const renderBacklogList = () => {
     const sorted = getSortedIssues(backlogIssues);
-    const listClass = 'flex-1 overflow-y-auto hide-scrollbar px-[8px] pb-4 pt-1';
+    const listClass = 'qt-nav-scroll flex-1 overflow-y-auto hide-scrollbar px-[8px] pb-4 pt-1';
 
     if (sorted.length > COLUMN_VIRTUALIZATION_THRESHOLD) {
       return (
@@ -942,8 +963,11 @@ export default function GlobalSprintsPage() {
                             «+» не створює завдання одразу, а питає, що саме
                             додати: створити нове чи взяти вже наявне. Другий
                             варіант — це те саме перетягування з «Без спринта»,
-                            сказане словами; на телефоні цього жесту немає, а на
-                            чотирьохстах завданнях він повільний і на десктопі. */}
+                            сказане словами. На телефоні це єдиний шлях:
+                            колонки «Без спринта» там немає взагалі, вона існує
+                            лише як джерело для перетягування на великому
+                            екрані. На чотирьохстах завданнях перетягування
+                            повільне і на десктопі. */}
                         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                           <ContextMenu
                             trigger={(
@@ -1043,12 +1067,25 @@ export default function GlobalSprintsPage() {
                 )}
               </div>
 
-              {/* Right column mirrors the global board column contract.
-                  Collapsing it is a two-column idea: below lg the list is not
-                  beside anything, so a 48px vertical spine of text would be a
-                  stranger sitting under the sprints rather than a folded
-                  column. */}
-              {backlogCollapsed && !isPhone ? (
+              {/* Right column mirrors the global board column contract — and it
+                  is desktop furniture. Its whole job is being the thing a card
+                  is dragged out of, and a phone has no drag: below md the
+                  column is not rendered at all, and «Додати існуюче» у шапці
+                  кожного спринта — це шлях туди.
+
+                  Це `!isPhone`, а не `max-md:hidden`, навмисне: прихована
+                  колонка все одно монтує свій droppable і, вимірявши вікно
+                  нульової висоти, все одно будує вікно з ~75 карток, кожна з
+                  яких перебирає всі завдання сторінки. `max-md:hidden` нижче —
+                  лише щит на один кадр до того, як ефект розвʼяже медіазапит;
+                  щитом накрито тільки Surface, бо `backlogCollapsed` — це
+                  useState(false), який ніде не зберігається, тож перший кадр на
+                  телефоні може піти тільки в цю гілку, ніколи в рейку.
+
+                  Згортання ж — ідея двох колонок: нижче lg список ні з чим не
+                  стоїть поруч, і 48px вертикального корінця був би не згорнутою
+                  колонкою, а незнайомцем під спринтами. */}
+              {!isPhone && (backlogCollapsed ? (
                 <div
                   data-ui-surface="local"
                   className="flex w-[48px] shrink-0 cursor-pointer flex-col items-center justify-start rounded-[16px] bg-canvas pb-2 pt-4 transition-colors hover:bg-line"
@@ -1084,7 +1121,7 @@ export default function GlobalSprintsPage() {
                   preset="panel"
                   padding="none"
                   composition="scroll-pane"
-                  className="flex w-full shrink-0 flex-col overflow-hidden lg:w-[280px]"
+                  className="flex w-full shrink-0 flex-col overflow-hidden lg:w-[280px] max-md:hidden"
                 >
                   {/* A board column header, drawn exactly as the board draws
                       one: no rule under it. The panel already separates the
@@ -1137,7 +1174,7 @@ export default function GlobalSprintsPage() {
                   </div>
                   {renderBacklogList()}
                 </Surface>
-              )}
+              ))}
 
             </div>
           </DragDropContext>

@@ -45,7 +45,7 @@ const isSwitchNode = node => {
  * @param {React.ReactNode} props.desc Пояснення під назвою; одне речення.
  * @param {React.ReactNode} props.children Контрол справа — світч, селект, поле, кнопка.
  * @param {() => void} props.onClick Робить увесь рядок кнопкою, що відкриває наступний екран.
- * @param {React.ReactNode} props.value Поточне значення праворуч, коли рядок щось відкриває.
+ * @param {React.ReactNode} props.value Поточне значення праворуч, коли рядок щось відкриває; на телефоні воно переходить під назву й бере всю ширину.
  * @param {boolean} props.danger Незворотна дія: назва й пояснення беруть `danger`.
  */
 export default function SettingRow({ label, desc, children, onClick, value, danger = false }) {
@@ -74,10 +74,14 @@ export default function SettingRow({ label, desc, children, onClick, value, dang
       <button
         type="button"
         onClick={onClick}
-        className="group flex w-full items-center gap-3 py-[12px] text-left transition-colors sm:gap-6"
+        className="group flex w-full items-center gap-3 py-[12px] text-left transition-colors sm:gap-6 max-sm:flex-wrap max-sm:gap-y-1"
       >
         {text}
-        {value && <span className="shrink-0 text-[13px] text-muted">{value}</span>}
+        {/* Значення нестисливе, і на телефоні платила за це назва: «Остання
+            задача з групи» ламалася посеред фрази, щоб звільнити місце під
+            «QT-118 · 27 серп». Нижче 640px значення просто йде на свій рядок під
+            назвою — тим самим порогом, яким уже переноситься рядок із полем. */}
+        {value && <span className="shrink-0 text-[13px] text-muted max-sm:order-1 max-sm:w-full max-sm:shrink">{value}</span>}
         {children}
         <ChevronRight size={16} className="shrink-0 text-faint transition-colors group-hover:text-ink" aria-hidden />
       </button>

@@ -85,10 +85,11 @@ test('group 26 copy and layout contracts stay role-aware and concise', async () 
   assert.match(projects, /Попросіть адміністратора створити перший проєкт/);
   assert.match(projects, /<FilterBar context="projects">/);
   assert.match(sprints, /Попросіть адміністратора створити спринт/);
-  // The empty sprint names both ways in, because on a phone only one of them
-  // exists: dragging a card between two stacked lists is not a real gesture, so
-  // the header's «+» is what actually fills a sprint there.
-  assert.match(sprints, /У цьому спринті ще немає задач — додайте їх кнопкою «\+» у шапці спринта або перетягніть зі списку «Без спринта»/);
+  // The empty sprint names only the way in that exists on the reader's screen.
+  // The header's «+» is on both widths; the drag is desktop furniture and is
+  // wrapped in `max-md:hidden`, because below md the «Без спринта» column is
+  // not rendered at all.
+  assert.match(sprints, /У цьому спринті ще немає задач — додайте їх кнопкою «\+» у шапці спринта\s*<span className="max-md:hidden"> або перетягніть зі списку «Без спринта»<\/span>/);
   // The «Без спринта» header is a board column header — see ux-regressions.
   assert.match(filterBar, /projects:\s*\{[\s\S]*?w-max max-w-full/);
   assert.match(filtersStory, /<FilterBar context="projects">/);

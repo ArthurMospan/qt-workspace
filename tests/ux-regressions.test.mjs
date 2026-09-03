@@ -262,6 +262,12 @@ test('the planning board reads like the boards it borrows from', async () => {
   assert.doesNotMatch(sprints, /border-b border-line/);
   assert.match(sprints, /<Pill tone="count" size="md"/);
   assert.doesNotMatch(sprints, /<Counter/);
+
+  // «Без спринта» is the thing a card is dragged out of, so a phone has no use
+  // for it — and it is gone, not hidden: a hidden column still mounts its
+  // droppable and a window of cards that each scan every task on the page.
+  assert.match(sprints, /\{!isPhone && \(backlogCollapsed \?/);
+  assert.doesNotMatch(sprints, /backlogCollapsed && !isPhone/);
 });
 
 test('a collapsed sprint opens on the first click', async () => {

@@ -16,9 +16,15 @@ export default function LinkCard({ view }) {
 
   if (!url) {
     return (
-      <div data-ui-surface="local" className="rounded-[12px] border border-line bg-surface px-3 py-2">
-        <p className="text-[13px] text-ink font-medium truncate">{title}</p>
-        <p className="text-[12px] text-muted">Посилання недоступне</p>
+      // Той самий бокс, що й у картки з прев'ю, тільки без прев'ю: рамка й
+      // радіус на зовнішньому, а рядок із назвою — окремим `qtplus-card-row`,
+      // як і підпис під картинкою нижче. Поля не переїхали: вони просто
+      // перейшли з боксу на рядок усередині нього.
+      <div data-ui-surface="local" className="rounded-[12px] border border-line bg-surface">
+        <div data-ui-surface="qtplus-card-row" className="ui-surface">
+          <p className="text-[13px] text-ink font-medium truncate">{title}</p>
+          <p className="text-[12px] text-muted">Посилання недоступне</p>
+        </div>
       </div>
     );
   }
@@ -40,7 +46,7 @@ export default function LinkCard({ view }) {
           </div>
         )}
       </div>
-      <div className="px-3 py-2">
+      <div data-ui-surface="qtplus-card-row" className="ui-surface">
         <p className="text-[13px] text-ink font-medium truncate">{title}</p>
         <p className="text-[11px] text-muted truncate">{description || domain}</p>
       </div>

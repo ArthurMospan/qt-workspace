@@ -641,7 +641,7 @@ function NewProjectModal({ onClose, orgId, orgPlan, activeProjectsCount, members
         </div>
       ) : (
         <>
-          <Button onClick={onClose} style="secondary" size="md">Скасувати</Button>
+          <Button onClick={onClose} style="secondary" size="md" dismiss>Скасувати</Button>
           <Button onClick={handleCreate} disabled={saving} loading={saving} style="primary" size="md">Створити проєкт</Button>
         </>
       )
