@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
+  authenticateRequest,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -23,6 +24,12 @@ function voidError(code, status, message, details = {}) {
 export async function POST(request, context) {
   try {
     const { invoiceId } = await context.params;
+    // The token before the record: the read below is how the route learns
+    // which organization to authorize against.
+    const identity = await authenticateRequest(request);
+    if (identity.error) {
+      return NextResponse.json({ error: identity.error }, { status: identity.status });
+    }
     const db = getAdminDb();
     const invoiceRef = db.collection('invoices').doc(invoiceId);
     const initialSnapshot = await invoiceRef.get();
@@ -38,6 +45,7 @@ export async function POST(request, context) {
       request,
       initialInvoice.organizationId,
       ['owner', 'admin'],
+      { identity },
     );
     if (authorization.error) {
       return NextResponse.json(

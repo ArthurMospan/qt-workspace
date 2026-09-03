@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
+  authenticateRequest,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -77,6 +78,12 @@ async function transactionGetAll(transaction, references) {
 export async function PATCH(request, context) {
   try {
     const { issueId } = await context.params;
+    // The token before the record: the read below is how the route learns
+    // which organization to authorize against.
+    const identity = await authenticateRequest(request);
+    if (identity.error) {
+      return jsonError(identity.error, identity.status);
+    }
     const db = getAdminDb();
     const issueRef = db.collection('issues').doc(issueId);
     const initialIssueSnap = await issueRef.get();
@@ -93,6 +100,7 @@ export async function PATCH(request, context) {
       request,
       initialIssue.organizationId,
       ['owner', 'admin', 'member'],
+      { identity },
     );
     if (authorization.error) {
       return jsonError(

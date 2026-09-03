@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import {
+  authenticateRequest,
   authorizeOrgRequest,
   enforceRateLimit,
   getAdminDb,
@@ -22,6 +23,10 @@ function hierarchyTransactionError(details) {
 }
 
 async function loadAuthorizedIssue(request, issueId) {
+  // The token before the record: the read below is how the route learns
+  // which organization to authorize against.
+  const identity = await authenticateRequest(request);
+  if (identity.error) return identity;
   const db = getAdminDb();
   const issueRef = db.collection('issues').doc(issueId);
   const issueSnap = await issueRef.get();
@@ -34,6 +39,7 @@ async function loadAuthorizedIssue(request, issueId) {
     request,
     issue.organizationId,
     ['owner', 'admin', 'member'],
+    { identity },
   );
   if (authorization.error) {
     return {

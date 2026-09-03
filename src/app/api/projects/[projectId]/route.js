@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authenticateRequest, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { deleteProjectAnalyticsRollups } from '@/lib/server/analyticsRollups';
 import {
@@ -35,12 +35,16 @@ function projectTransactionError(code, status, message, details = {}) {
 }
 
 async function loadAuthorizedProject(request, projectId) {
+  // The token before the record: the read below is how the route learns
+  // which organization to authorize against.
+  const identity = await authenticateRequest(request);
+  if (identity.error) return identity;
   const db = getAdminDb();
   const ref = db.collection('projects').doc(projectId);
   const snap = await ref.get();
   if (!snap.exists) return { error: 'Project not found', status: 404 };
   const project = snap.data();
-  const authorization = await authorizeOrgRequest(request, project.organizationId, ['owner', 'admin']);
+  const authorization = await authorizeOrgRequest(request, project.organizationId, ['owner', 'admin'], { identity });
   if (authorization.error) return authorization;
   return { db, ref, project, authorization };
 }

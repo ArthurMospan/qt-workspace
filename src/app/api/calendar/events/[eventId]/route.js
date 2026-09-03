@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authenticateRequest, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { syncCalendarEventReminderRows } from '@/lib/server/reminderJobs';
 import { readJsonBody, routeErrorResponse } from '@/lib/server/apiErrors';
 import { assigneesOffProjectTeam, assigneesOutsideProject } from '@/lib/utils/projectAccess.mjs';
@@ -227,14 +227,24 @@ export async function PATCH(request, context) {
     // Adding a participant to the event's project is asked for, once, by the
     // dialog that names both — never inferred from an invitation.
     const addParticipantsToProjectTeam = body.addParticipantsToProjectTeam === true;
+    // The token before the record: the read below is how the route learns
+    // which organization to authorize against.
+    const identity = await authenticateRequest(request);
+    if (identity.error) {
+      return NextResponse.json({ error: identity.error }, { status: identity.status });
+    }
     const loaded = await loadEvent(eventId);
     if (!loaded.event) {
       return NextResponse.json({ error: 'Подію не знайдено' }, { status: 404 });
     }
 
+    // Any member — the default role list, left unnamed so the matrix test
+    // reads it as no claim, with the already-verified identity handed on.
     const authorization = await authorizeOrgRequest(
       request,
       loaded.event.organizationId,
+      undefined,
+      { identity },
     );
     if (authorization.error) {
       return NextResponse.json(
@@ -602,14 +612,22 @@ export async function DELETE(request, context) {
         code: 'CALENDAR_OCCURRENCE_INVALID',
       }, { status: 400 });
     }
+    const identity = await authenticateRequest(request);
+    if (identity.error) {
+      return NextResponse.json({ error: identity.error }, { status: identity.status });
+    }
     const loaded = await loadEvent(eventId);
     if (!loaded.event) {
       return NextResponse.json({ error: 'Подію не знайдено' }, { status: 404 });
     }
 
+    // Any member — the default role list, left unnamed so the matrix test
+    // reads it as no claim, with the already-verified identity handed on.
     const authorization = await authorizeOrgRequest(
       request,
       loaded.event.organizationId,
+      undefined,
+      { identity },
     );
     if (authorization.error) {
       return NextResponse.json(

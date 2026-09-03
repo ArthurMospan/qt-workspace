@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
-import { authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
+import { authenticateRequest, authorizeOrgRequest, getAdminDb } from '@/lib/server/firebaseAdmin';
 import { syncIssueReminderRows } from '@/lib/server/reminderJobs';
 import { routeErrorResponse } from '@/lib/server/apiErrors';
 import {
@@ -30,6 +30,13 @@ function apiTransactionError(code, status, message, details = {}) {
 export async function DELETE(request, context) {
   try {
     const { issueId } = await context.params;
+    // The token before the record: the read below is how the route learns
+    // which organization to authorize against, and it must not be made on
+    // behalf of a caller who has not yet said who they are.
+    const identity = await authenticateRequest(request);
+    if (identity.error) {
+      return NextResponse.json({ error: identity.error }, { status: identity.status });
+    }
     const db = getAdminDb();
     const issueRef = db.collection('issues').doc(issueId);
     const issueSnap = await issueRef.get();
@@ -50,6 +57,7 @@ export async function DELETE(request, context) {
       request,
       issue.organizationId,
       ['owner', 'admin', 'member'],
+      { identity },
     );
     if (authorization.error) {
       return NextResponse.json({
