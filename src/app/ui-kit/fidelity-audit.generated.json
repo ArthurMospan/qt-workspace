@@ -570,7 +570,7 @@
       "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },
     {
-      "location": "src/app/(app)/error.js:37",
+      "location": "src/app/(app)/error.js:53",
       "tag": "div",
       "className": "w-full max-w-[420px] bg-white border border-line rounded-[16px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center"
     },

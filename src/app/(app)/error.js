@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, DatabaseZap, RotateCcw } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { isQuotaExceededError } from '@/lib/utils/errors';
+import { isQuotaExceededError, isStaleDeploymentError } from '@/lib/utils/errors';
 import { isQuotaRefused, QUOTA_FAILURE_COPY } from '@/lib/utils/quotaState.mjs';
 
 // «Дані не вдалося відрендерити» is true of a component that threw and false of
@@ -24,6 +24,22 @@ export default function WorkspaceError({ error, unstable_retry, reset }) {
 
   useEffect(() => {
     console.error('[WorkspaceError]', error);
+
+    // A build that is no longer deployed cannot be retried into existence:
+    // the button would ask the same missing file for it again. One hard
+    // reload fetches the build that IS deployed and the person carries on,
+    // having seen a flicker instead of a dead end. Guarded by a key in
+    // sessionStorage so a genuinely broken deploy cannot become a reload
+    // loop — the second time, the boundary is shown and stays shown.
+    if (isStaleDeploymentError(error) || isStaleDeploymentError(error?.cause)) {
+      const KEY = 'qt-stale-deployment-reload';
+      let reloaded = true;
+      try {
+        reloaded = window.sessionStorage.getItem(KEY) === '1';
+        if (!reloaded) window.sessionStorage.setItem(KEY, '1');
+      } catch { /* private mode: fall through to the boundary */ }
+      if (!reloaded) { window.location.reload(); return; }
+    }
     queueMicrotask(() => setQuotaSpent(
       isQuotaExceededError(error) || isQuotaExceededError(error?.cause) || isQuotaRefused(),
     ));
