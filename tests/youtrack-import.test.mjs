@@ -1,8 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  IMPORT_ABANDONED_AFTER_MS,
+  IMPORT_STALLED_AFTER_MS,
+  describeImportJob,
   fieldMinutes,
   filterYouTrackIssuesByStatuses,
+  importActionsFor,
+  importHaltReason,
+  importJobIsOpen,
+  importJobState,
+  importPlanIssues,
   mapYouTrackPriority,
   mapYouTrackStatus,
   mapYouTrackType,
@@ -280,4 +288,192 @@ test('breaks equal-strength reciprocal relations deterministically', () => {
     strongestYouTrackRelationRow(outward, inward),
     strongestYouTrackRelationRow(inward, outward),
   );
+});
+
+// ─── Стан перенесення ────────────────────────────────────────────────────────
+//
+// Скарга, з якої це почалось: «блок імпорт незавершений до кінця… воно просто
+// висить, і ти не розумієш, а шо це таке і шо з ним робити». Причина була
+// структурна: панель малювалась для будь-якого найновішого job, а кнопки
+// стояли за списком активних статусів, до якого «скасовано» не належить.
+//
+// Тому правило перевіряється, а не обіцяється: для кожного стану й кожного
+// читача має бути хоча б одна дія.
+
+const STATES = [
+  { label: 'none', job: null },
+  { label: 'ready', job: { id: 'j', status: 'prepared', createdBy: 'author' } },
+  { label: 'running', job: { id: 'j', status: 'running', createdBy: 'author', updatedAt: '2026-09-03T10:00:00.000Z' } },
+  { label: 'stalled', job: { id: 'j', status: 'running', createdBy: 'author', updatedAt: '2026-09-03T09:00:00.000Z' } },
+  { label: 'blocked-connection', job: { id: 'j', status: 'blocked', blockedReason: 'connection', createdBy: 'author', updatedAt: '2026-09-03T10:00:00.000Z' } },
+  { label: 'blocked-plan', job: { id: 'j', status: 'blocked', blockedReason: 'plan', createdBy: 'author', updatedAt: '2026-09-03T10:00:00.000Z' } },
+  { label: 'blocked-failures', job: { id: 'j', status: 'blocked', blockedReason: 'failures', createdBy: 'author', updatedAt: '2026-09-03T10:00:00.000Z' } },
+  { label: 'completed', job: { id: 'j', status: 'completed', createdBy: 'author' } },
+  { label: 'cancelled', job: { id: 'j', status: 'cancelled', createdBy: 'author' } },
+];
+
+const NOW = Date.parse('2026-09-03T10:00:30.000Z');
+
+const READERS = [
+  { label: 'автор', viewer: { userId: 'author', isOrganizationOwner: false, isOrganizationAdmin: true } },
+  { label: 'власник', viewer: { userId: 'owner', isOrganizationOwner: true, isOrganizationAdmin: true } },
+  { label: 'адміністратор', viewer: { userId: 'admin', isOrganizationOwner: false, isOrganizationAdmin: true } },
+];
+
+test('жоден стан перенесення не лишається без дії', () => {
+  for (const { label, job } of STATES) {
+    const state = importJobState(job, NOW);
+    const offered = READERS.flatMap(reader => importActionsFor(job, state, {
+      ...reader.viewer,
+      abandoned: false,
+    }));
+    assert.ok(offered.length > 0, `${label}: жоден читач не має жодної дії`);
+  }
+});
+
+test('автор бачить вихід із кожного стану, а не лише зупинку', () => {
+  for (const { label, job } of STATES) {
+    const state = importJobState(job, NOW);
+    const actions = importActionsFor(job, state, {
+      userId: 'author',
+      isOrganizationOwner: false,
+      isOrganizationAdmin: true,
+      abandoned: false,
+    });
+    assert.ok(actions.length > 0, `${label}: авторові нічого не запропоновано`);
+    // Крім «іде» — там єдина осмислена дія справді одна: зупинити.
+    if (state !== 'running') {
+      assert.ok(
+        actions.some(action => action.kind === 'primary'),
+        `${label}: у автора немає головної дії`,
+      );
+    }
+  }
+});
+
+test('скасоване й завершене перенесення прибирається з екрана будь-ким, хто його бачить', () => {
+  for (const status of ['cancelled', 'completed']) {
+    const job = { id: 'j', status, createdBy: 'somebody-else' };
+    const state = importJobState(job, NOW);
+    for (const reader of READERS) {
+      const actions = importActionsFor(job, state, { ...reader.viewer, abandoned: false });
+      assert.ok(
+        actions.some(action => action.id === 'acknowledge'),
+        `${status}: ${reader.label} не може прибрати панель`,
+      );
+    }
+  }
+  // І щойно його прибрали, воно перестає бути тим, на що дивишся.
+  assert.equal(
+    importJobState({ id: 'j', status: 'cancelled', acknowledgedAt: '2026-09-03T10:00:00.000Z' }, NOW),
+    'none',
+  );
+});
+
+test('пауза — це прострочена оренда І тиша, а не одна лише тиша', () => {
+  const silent = '2026-09-03T09:00:00.000Z';
+  const withLease = {
+    id: 'j', status: 'running', updatedAt: silent, leaseUntil: '2026-09-03T10:01:00.000Z',
+  };
+  // Оренда ще діє: крок просто повільний — одна задача зі сотнею коментарів і
+  // вкладенням на 20 MB. Це не пауза.
+  assert.equal(importJobState(withLease, NOW), 'running');
+  assert.equal(importJobState({ ...withLease, leaseUntil: null }, NOW), 'stalled');
+  assert.ok(NOW - Date.parse(silent) > IMPORT_STALLED_AFTER_MS);
+});
+
+test('покинуте перенесення може зупинити будь-який адміністратор', () => {
+  const job = {
+    id: 'j', status: 'running', createdBy: 'author', updatedAt: '2026-09-03T09:00:00.000Z',
+  };
+  const state = importJobState(job, NOW);
+  const fresh = importActionsFor(job, state, {
+    userId: 'admin', isOrganizationOwner: false, isOrganizationAdmin: true, abandoned: false,
+  });
+  assert.equal(fresh.some(action => action.id === 'cancel'), false);
+  const abandoned = importActionsFor(job, state, {
+    userId: 'admin', isOrganizationOwner: false, isOrganizationAdmin: true, abandoned: true,
+  });
+  assert.ok(abandoned.some(action => action.id === 'cancel'));
+  assert.ok(IMPORT_ABANDONED_AFTER_MS > IMPORT_STALLED_AFTER_MS);
+});
+
+test('поки перенесення відкрите, налаштування закриті — і навпаки', () => {
+  assert.equal(importJobIsOpen('running'), true);
+  assert.equal(importJobIsOpen('ready'), true);
+  assert.equal(importJobIsOpen('stalled'), true);
+  assert.equal(importJobIsOpen('blocked'), true);
+  assert.equal(importJobIsOpen('completed'), false);
+  assert.equal(importJobIsOpen('cancelled'), false);
+  assert.equal(importJobIsOpen('none'), false);
+});
+
+test('відкликаний токен — це не зіпсована задача', () => {
+  // Саме ця різниця перетворювала 663 задачі на 663 помилки: обидва випадки
+  // ловив один catch, черга посувалась, і смуга доходила до ста відсотків з
+  // нулем перенесених.
+  const revoked = Object.assign(new Error('YouTrack 401: Unauthorized'), {
+    status: 401, source: 'youtrack',
+  });
+  assert.equal(importHaltReason(revoked), 'connection');
+  assert.equal(importHaltReason(new Error('Підключення YouTrack пошкоджене: …')), 'connection');
+  assert.equal(importHaltReason(new Error('Ліміт проєктів вичерпано')), 'plan');
+  assert.equal(importHaltReason(Object.assign(new Error('x'), { code: '8' })), 'quota');
+  // А це справді одна задача: її пропускають і йдуть далі.
+  assert.equal(importHaltReason(new Error('Вкладення перевищує 20 MB')), '');
+  assert.equal(importHaltReason(Object.assign(new Error('YouTrack 500: boom'), {
+    status: 500, source: 'youtrack',
+  })), '');
+});
+
+test('збережений вибір називає те, що в ньому розійшлося з дійсністю', () => {
+  const discovery = {
+    projects: [{ id: 'p1', name: 'Ядро', shortName: 'CORE', statuses: [{ name: 'Open' }] }],
+    users: [{ id: 'u1', name: 'Оксана', email: 'o@example.com' }],
+  };
+  const present = {
+    targetStatuses: [{ id: 'todo', label: 'До роботи' }],
+    projects: [{ id: 'qt1', name: 'Маркетинг', status: 'active', hiddenColumns: [] }],
+    memberIds: new Set(['member-1']),
+  };
+  const healthy = {
+    selectedProjectIds: ['p1'],
+    projectMappings: { p1: 'create' },
+    statusFilters: { p1: ['Open'] },
+    statusMappings: { p1: { Open: 'todo' } },
+    userMappings: { u1: 'member-1' },
+  };
+  assert.deepEqual(importPlanIssues(healthy, discovery, present), []);
+
+  const goneStatus = importPlanIssues({
+    ...healthy,
+    statusMappings: { p1: { Open: 'in-progress' } },
+  }, discovery, present);
+  assert.equal(goneStatus.length, 1);
+  assert.equal(goneStatus[0].opens, 'scope');
+
+  const goneMember = importPlanIssues({ ...healthy, userMappings: { u1: 'member-gone' } }, discovery, present);
+  assert.equal(goneMember.length, 1);
+  assert.equal(goneMember[0].opens, 'people');
+
+  const archivedTarget = importPlanIssues({
+    ...healthy,
+    projectMappings: { p1: 'qt-archived' },
+  }, discovery, present);
+  assert.equal(archivedTarget.length, 1);
+
+  // Порожній вибір — не помилка мапінгу, а просто нічого не обрано: про це
+  // говорить сама панель, а не список розбіжностей.
+  assert.deepEqual(importPlanIssues({ ...healthy, selectedProjectIds: [] }, discovery, present), []);
+});
+
+test('пігулка стану називає окремо саме той збій, який людина може полагодити', () => {
+  const tokenDead = describeImportJob({
+    id: 'j', status: 'blocked', blockedReason: 'connection', updatedAt: '2026-09-03T10:00:00.000Z',
+  }, NOW);
+  assert.equal(tokenDead.state, 'blocked');
+  assert.equal(tokenDead.label, 'Потрібен новий токен');
+  assert.equal(tokenDead.tone, 'danger');
+  assert.equal(describeImportJob({ id: 'j', status: 'prepared' }, NOW).label, 'Готово до запуску');
+  assert.equal(describeImportJob(null, NOW).label, 'Не розпочато');
 });

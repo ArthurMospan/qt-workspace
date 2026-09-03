@@ -23,11 +23,17 @@ import {
   suggestAvailableIssuePrefix,
 } from '@/lib/utils/issueKeys.mjs';
 import {
+  IMPORT_ABANDONED_AFTER_MS,
+  IMPORT_PROJECT_LIMIT,
+  IMPORT_FAILURE_STREAK_LIMIT,
+  IMPORT_STALLED_AFTER_MS,
   fieldMinutes,
   fieldPresentation,
   fieldTimestamp,
   filterYouTrackIssuesByStatuses,
   firstFieldValue,
+  importHaltReason,
+  importHaltSentence,
   mapYouTrackPriority,
   mapYouTrackType,
   normalizeYouTrackRelation,
@@ -120,6 +126,20 @@ function serializeJob(snapshot) {
   return {
     id: snapshot.id,
     organizationId: data.organizationId,
+    // До якого підключення належить це перенесення. Без цього поля екран
+    // показував job чужого YouTrack як свій: відключили один сервер, підключили
+    // інший — і зверху стояла панель від попереднього, з його числами.
+    connectionId: data.connectionId || '',
+    // Чому воно спинилось, якщо спинилось. Порожнє поле означає, що не спинялось.
+    blockedReason: data.blockedReason || '',
+    // Прибране з екрана. Це не статус: завершене перенесення лишається
+    // завершеним, просто більше не займає місце.
+    acknowledgedAt: data.acknowledgedAt?.toDate?.().toISOString() || null,
+    // Оренда кроку. Екран відрізняє «іде повільно» від «не рухається» саме за
+    // нею: без оренди живий імпорт, який робить одну задачу з вкладенням на
+    // 20 MB, оголошувався паузою.
+    leaseUntil: data.stepLeaseUntil?.toDate?.().toISOString() || null,
+    warningsCount: data.warningsCount || (data.warnings || []).length,
     // Who this import belongs to. The screen needs it to say whose it is and to
     // stop offering somebody else's import a «Продовжити» button; the server
     // does not trust that and checks the same field again on every step.
@@ -155,12 +175,38 @@ function serializeJob(snapshot) {
 // stoppable by somebody, and the owner is who that is.
 const IMPORT_NOT_YOURS = 'Імпорт запустив інший учасник';
 
-function assertImportControl(data, { userId, isOrganizationOwner = false, action }) {
+/**
+ * Чи не покинуте це перенесення.
+ *
+ * Автор пішов додому посеред імпорту — і поки правило знало лише про власника,
+ * `assertNoForeignActiveImport` тримало всю організацію: почати власне не міг
+ * ніхто, зупинити чуже не міг ніхто, крім однієї людини у відпустці. Покинутим
+ * вважається те, чия оренда кроку прострочена й чий останній рух був чверть
+ * години тому: обидві умови разом, бо повільний крок — це не покинутий крок.
+ */
+function importIsAbandoned(data, now = Date.now()) {
+  if (data?.status !== 'running' && data?.status !== 'prepared' && data?.status !== 'blocked') return false;
+  const leaseUntil = data?.stepLeaseUntil?.toMillis?.() || 0;
+  const updatedAt = data?.updatedAt?.toMillis?.() || 0;
+  return leaseUntil <= now && now - updatedAt > IMPORT_ABANDONED_AFTER_MS;
+}
+
+function assertImportControl(data, {
+  userId,
+  isOrganizationOwner = false,
+  isOrganizationAdmin = false,
+  action,
+}) {
   const createdBy = data?.createdBy || '';
   // A job written before this field existed has no author to defer to, so it
   // stays available to whoever the route already let through.
   if (!createdBy || createdBy === userId) return;
   if (action === 'cancel' && isOrganizationOwner) return;
+  // Прибрати з екрана чуже завершене чи скасоване перенесення — не керування
+  // чужою роботою. Це прибрати зі столу те, що вже сталося, і воно нічого не
+  // пише.
+  if (action === 'acknowledge') return;
+  if (action === 'cancel' && isOrganizationAdmin && importIsAbandoned(data)) return;
   throw new Error(action === 'cancel'
     ? `${IMPORT_NOT_YOURS}. Зупинити його може той, хто розпочав, або власник організації.`
     : `${IMPORT_NOT_YOURS}. Продовжити його може лише той, хто розпочав.`);
@@ -177,16 +223,29 @@ async function assertNoForeignActiveImport(organizationId, userId) {
     .orderBy('createdAt', 'desc')
     .limit(10)
     .get();
-  const foreign = snapshot.docs.find(doc => {
-    const data = doc.data();
-    if (data.status !== 'prepared' && data.status !== 'running') return false;
-    const createdBy = data.createdBy || '';
+  // `blocked` теж незавершене. Поки цього стану не було, зупинене перенесення
+  // просто лишалось `running` і сюди потрапляло; тепер воно називає себе
+  // окремо, і забути його тут означало б дозволити другу чергу поверх першої.
+  const open = snapshot.docs.filter(doc => (
+    ['prepared', 'running', 'blocked'].includes(doc.data().status)
+  ));
+  const foreign = open.find(doc => {
+    const createdBy = doc.data().createdBy || '';
     return createdBy && createdBy !== userId;
   });
   if (foreign) {
     throw new Error(
       `${IMPORT_NOT_YOURS} і він ще не завершений. Дочекайтеся його завершення або попросіть зупинити.`,
     );
+  }
+  // Своє незавершене — теж перешкода, і про неї треба сказати те, що є: воно
+  // існує, і його продовжують, а не починають поруч друге.
+  if (open.length) {
+    // Формулювання не довільне: `youTrackRouteErrorResponse` віддає читачеві
+    // лише ті повідомлення, чий початок є в списку безпечних. «Оберіть, що…» з
+    // комою повз префікс «Оберіть » не проходило — і замість пояснення людина
+    // отримувала 500 із загальним «щось пішло не так».
+    throw new Error('Незавершене перенесення вже є: продовжте його або зупиніть.');
   }
 }
 
@@ -220,9 +279,25 @@ async function claimImportStep(jobRef, organizationId, control) {
     transaction.update(jobRef, {
       stepLeaseId: leaseId,
       stepLeaseUntil: Timestamp.fromMillis(now + IMPORT_STEP_LEASE_MS),
+      // Продовження — це і є зняття зупинки. Причина й лічильник підряд невдалих
+      // задач стираються тут, у тій самій транзакції, що бере оренду: інакше
+      // перший же наступний крок знову впав би у ту саму стелю, з якої щойно
+      // вийшли.
+      ...(data.status === 'blocked' ? {
+        status: 'running',
+        blockedReason: FieldValue.delete(),
+        consecutiveFailures: 0,
+      } : {}),
       updatedAt: FieldValue.serverTimestamp(),
     });
-    claimedJob = { ...data, id: snapshot.id };
+    // Крок отримує те, що записала транзакція, а не те, що прочитала. Поки
+    // `consecutiveFailures` їхав у крок старим, зупинка через серію відмов
+    // ніколи не знімалась: у базі лічильник обнулявся, у пам'яті кроку лишалась
+    // десятка, і перша ж наступна невдала задача давала одинадцять — тобто
+    // блокувала знову, назавжди, на тій самій задачі.
+    claimedJob = data.status === 'blocked'
+      ? { ...data, id: snapshot.id, status: 'running', blockedReason: '', consecutiveFailures: 0 }
+      : { ...data, id: snapshot.id };
   });
 
   return { leaseId, claimedJob, terminalSnapshot, busySnapshot };
@@ -240,6 +315,7 @@ async function commitClaimedStep(jobRef, leaseId, {
     const updates = { ...jobUpdates };
     if (snapshot.data().status === 'cancelled') {
       delete updates.status;
+      delete updates.blockedReason;
       if (jobUpdates.status === 'completed') {
         delete updates.phase;
         delete updates.completedAt;
@@ -1580,8 +1656,18 @@ export async function prepareYouTrackImport({
   statusFilters = {},
   statusMappings = {},
 }) {
-  const selected = [...new Set((selectedProjectIds || []).filter(Boolean))].slice(0, 20);
+  // Стеля в двадцять проєктів була мовчазною: `slice(0, 20)` відрізав решту, і
+  // перевірка нижче порівнювала вже відрізаний список сама із собою, тож усе
+  // сходилось. Обрали двадцять п'ять — перенеслося двадцять, і ніде про це не
+  // було сказано. А відколи вибір за замовчуванням бере всі проєкти, у це
+  // впирається кожен, у кого їх більше двадцяти.
+  const selected = [...new Set((selectedProjectIds || []).filter(Boolean))];
   if (!selected.length) throw new Error('Оберіть хоча б один проєкт YouTrack');
+  if (selected.length > IMPORT_PROJECT_LIMIT) {
+    throw new Error(
+      `Оберіть не більше ${IMPORT_PROJECT_LIMIT} проєктів за один раз — зараз обрано ${selected.length}. Решту перенесете наступним запуском.`,
+    );
+  }
   // The same rule from the other side. Refusing to let somebody continue or
   // stop another person's import means nothing if they can simply start a
   // second one on top of it — two importers writing the same projects from two
@@ -1788,12 +1874,58 @@ export async function runYouTrackImportStep({ organizationId, jobId, userId }) {
             status: 'running',
             nextIndex: FieldValue.increment(1),
             processedIssues: FieldValue.increment(1),
-            ...(result.warnings.length ? { warnings: FieldValue.arrayUnion(...result.warnings.slice(0, 10)) } : {}),
+            // Одна вдала задача означає, що воно працює: серія обірвана.
+            consecutiveFailures: 0,
+            // `arrayUnion` на документі job був необмежений, а документ Firestore
+            // має 1 MiB. Імпорт із тисячею попереджень наповнював job власними
+            // попередженнями, доки не переставав записуватись узагалі. Тепер
+            // зберігається перша сотня, а рахунок ведеться окремим числом — на
+            // екрані все одно стоїть «і ще N».
+            ...(result.warnings.length ? {
+              warningsCount: FieldValue.increment(result.warnings.length),
+              ...((job.warnings || []).length < 100
+                ? { warnings: FieldValue.arrayUnion(...result.warnings.slice(0, 10)) }
+                : {}),
+            } : {}),
             updatedAt: FieldValue.serverTimestamp(),
           },
         });
       } catch (error) {
         const message = String(error.message || error).slice(0, 1_000);
+        // Зламалася задача — чи те, що під нею?
+        //
+        // Раніше різниці не було: один `catch` позначав задачу невдалою, посував
+        // чергу й вертав `running`, а вкладка бачила «running» і йшла по колу.
+        // Тому відкликаний токен перетворював 663 задачі на 663 помилки за
+        // десять хвилин — по HTTP-запиту на кожну, — смуга доходила до 100%,
+        // статус ставав «Завершено», і перенесено було нуль. Саме такий job і
+        // висів на екрані, з якого почалась ця робота.
+        //
+        // Тепер причина, що не належить задачі, спиняє перенесення: черга не
+        // рухається, задача лишається `pending`, а `blockedReason` каже одним
+        // словом, що саме треба полагодити. Продовження — та сама кнопка, і
+        // воно починається з тієї ж задачі.
+        const haltReason = importHaltReason(error);
+        const streak = (job.consecutiveFailures || 0) + 1;
+        const halt = haltReason || (streak >= IMPORT_FAILURE_STREAK_LIMIT ? 'failures' : '');
+        if (halt) {
+          await commitClaimedStep(jobRef, leaseId, {
+            itemRef,
+            itemUpdates: {
+              status: 'pending',
+              error: message,
+              completedAt: FieldValue.delete(),
+            },
+            jobUpdates: {
+              status: 'blocked',
+              blockedReason: halt,
+              consecutiveFailures: streak,
+              lastError: message,
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+          });
+          return serializeJob(await jobRef.get());
+        }
         await commitClaimedStep(jobRef, leaseId, {
           itemRef,
           itemUpdates: {
@@ -1805,6 +1937,7 @@ export async function runYouTrackImportStep({ organizationId, jobId, userId }) {
             status: 'running',
             nextIndex: FieldValue.increment(1),
             failedIssues: FieldValue.increment(1),
+            consecutiveFailures: streak,
             lastError: message,
             updatedAt: FieldValue.serverTimestamp(),
           },
@@ -1813,7 +1946,26 @@ export async function runYouTrackImportStep({ organizationId, jobId, userId }) {
       return serializeJob(await jobRef.get());
     }
 
-    const linkResult = await processPendingLink(jobRef, job);
+    // Фаза зв'язків ламається з тих самих причин, що й фаза задач, і поки вона
+    // не мала власного `catch`, виняток летів у роут: 500, статус лишався
+    // «running», і екран показував живе перенесення, яке нікуди не рухається.
+    let linkResult;
+    try {
+      linkResult = await processPendingLink(jobRef, job);
+    } catch (error) {
+      const message = String(error.message || error).slice(0, 1_000);
+      await commitClaimedStep(jobRef, leaseId, {
+        jobUpdates: {
+          status: 'blocked',
+          // Власна причина, а не позичена: тут не «десять задач поспіль», тут
+          // етап звʼязків, і задачі вже на місці.
+          blockedReason: importHaltReason(error) || 'links',
+          lastError: message,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+      });
+      return serializeJob(await jobRef.get());
+    }
     if (!linkResult) {
       await commitClaimedStep(jobRef, leaseId, {
         jobUpdates: {
@@ -1869,17 +2021,110 @@ export async function cancelYouTrackImport({
   jobId,
   userId,
   isOrganizationOwner = false,
+  isOrganizationAdmin = false,
+  reason = '',
 }) {
   const ref = importJobRef(jobId);
   const snapshot = await ref.get();
   if (!snapshot.exists || snapshot.data().organizationId !== organizationId) {
     throw new Error('Імпорт не знайдено');
   }
-  assertImportControl(snapshot.data(), { userId, isOrganizationOwner, action: 'cancel' });
+  assertImportControl(snapshot.data(), {
+    userId,
+    isOrganizationOwner,
+    isOrganizationAdmin,
+    action: 'cancel',
+  });
   if (snapshot.data().status === 'completed') return serializeJob(snapshot);
   await ref.update({
     status: 'cancelled',
+    ...(reason ? { cancelReason: reason } : {}),
+    blockedReason: FieldValue.delete(),
     updatedAt: FieldValue.serverTimestamp(),
   });
   return serializeJob(await ref.get());
+}
+
+/**
+ * Прибрати завершене або скасоване перенесення з екрана.
+ *
+ * Це не статус і не воскресіння: job лишається таким, яким закінчився, просто
+ * перестає бути тим, що екран показує. Без цього поля картка брала найновіший
+ * job, яким би він не був, і «Скасовано · 0 із 663» ставало назавжди меблями —
+ * рівно та скарга, з якої почалась ця робота.
+ */
+export async function acknowledgeYouTrackImport({ organizationId, jobId, userId }) {
+  const ref = importJobRef(jobId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists || snapshot.data().organizationId !== organizationId) {
+    throw new Error('Імпорт не знайдено');
+  }
+  const status = snapshot.data().status;
+  if (status !== 'completed' && status !== 'cancelled') {
+    throw new Error('Імпорт ще не завершено — спершу зупиніть його');
+  }
+  assertImportControl(snapshot.data(), { userId, action: 'acknowledge' });
+  await ref.update({
+    acknowledgedAt: FieldValue.serverTimestamp(),
+    acknowledgedBy: userId,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  return serializeJob(await ref.get());
+}
+
+/**
+ * Скасовує все незавершене цієї організації — коли відключають саме джерело.
+ *
+ * Раніше цей замок стояв у браузері: кнопка «Відключити» була `disabled`, поки
+ * job живий. Збережений токен мусить лишатися видаленним завжди, а замкнений
+ * екран із замороженим перенесенням — це глухий кут, а не запобіжник. Тепер
+ * відключення чесно спиняє перенесення, а не забороняє себе.
+ */
+export async function cancelOpenYouTrackImports({ organizationId, userId }) {
+  const snapshot = await getAdminDb().collection('imports')
+    .where('organizationId', '==', organizationId)
+    .where('provider', '==', 'youtrack')
+    .orderBy('createdAt', 'desc')
+    .limit(10)
+    .get();
+  const open = snapshot.docs.filter(doc => (
+    ['prepared', 'running', 'blocked'].includes(doc.data().status)
+  ));
+  await Promise.all(open.map(doc => doc.ref.update({
+    status: 'cancelled',
+    cancelReason: 'disconnected',
+    blockedReason: FieldValue.delete(),
+    acknowledgedAt: FieldValue.serverTimestamp(),
+    acknowledgedBy: userId,
+    updatedAt: FieldValue.serverTimestamp(),
+  })));
+  return open.length;
+}
+
+/**
+ * Задачі, які не перенеслися, — поіменно.
+ *
+ * Помилка кожної лежала на своєму документі черги від самого початку і не
+ * читалась нічим: екран показував число «Помилок: 23» і жодного способу
+ * дізнатися, що це за задачі. Читається на вимогу, за натисканням, і обмежене
+ * півсотнею рядків — це квитанція, а не журнал.
+ */
+export async function listFailedYouTrackImportItems({ organizationId, jobId }) {
+  const jobSnapshot = await importJobRef(jobId).get();
+  if (!jobSnapshot.exists || jobSnapshot.data().organizationId !== organizationId) {
+    throw new Error('Імпорт не знайдено');
+  }
+  const snapshot = await importJobRef(jobId).collection('items')
+    .where('status', '==', 'failed')
+    .limit(50)
+    .get();
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      sourceReadableId: data.sourceReadableId || '',
+      title: data.title || '',
+      error: data.error || '',
+    };
+  });
 }

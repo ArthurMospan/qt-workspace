@@ -47,6 +47,13 @@ export class YouTrackClient {
       const detail = (await response.text()).slice(0, 500);
       const error = new Error(`YouTrack ${response.status}: ${detail || response.statusText}`);
       error.status = response.status;
+      // Чия це відмова — вирішується тут, де вона сталася, а не за підрядком
+      // далі по дорозі. «YouTrack 401» проходив через `errorTextUk`, збігався з
+      // голкою `unauthorized` і виходив на екран як «Потрібно увійти заново» —
+      // тобто продукт казав людині, що протух її сеанс у QuickTeam, тоді як
+      // протух токен YouTrack, і з тієї фрази до справжнього виправлення не
+      // вело нічого.
+      error.source = 'youtrack';
       throw error;
     }
     return response.json();
@@ -97,12 +104,31 @@ export class YouTrackClient {
     }
   }
 
-  async issueStubs(projectShortName) {
+  /**
+   * Заготовки задач проєкту: id, назва й поточний статус.
+   *
+   * Використовується двічі й з різними намірами, і саме тому стеля — параметр.
+   * Черга імпорту має бути повною, тож за замовчуванням береться все. Розвідка
+   * лише збирає перелік статусів і рахує задачі в них — і поки стеля була
+   * спільною, вона тягнула до 50 000 задач по сто за раз, тобто 500
+   * послідовних сторінок на один проєкт проти `maxDuration = 60`. Розвідка
+   * просто не поверталась, а на екрані це виглядало як «воно висить».
+   *
+   * Порядок теж параметр, і теж через різницю намірів. Черга береться від
+   * найстарішої задачі, щоб історія лягала в тому порядку, у якому сталася.
+   * Розвідці ж потрібні статуси, якими команда користується **зараз**, тож
+   * обрізана вибірка мусить починатися зі свіжого краю: інакше стеля в дві
+   * тисячі задач показувала б перелік станів п'ятирічної давнини.
+   *
+   * @param {string} projectShortName Ключ проєкту YouTrack.
+   * @param {{limit?: number, sort?: string}} options Стеля й порядок; розвідка передає `YOUTRACK_DISCOVERY_PROBE`.
+   */
+  async issueStubs(projectShortName, { limit = 50_000, sort = 'created asc' } = {}) {
     return this.listAll('issues', {
       fields: 'id,idReadable,summary,created,updated,customFields(name,$type,value(name,presentation))',
-      query: `project: {${projectShortName}} sort by: created asc`,
+      query: `project: {${projectShortName}} sort by: ${sort}`,
       top: 100,
-      limit: 50_000,
+      limit,
     });
   }
 

@@ -389,3 +389,341 @@ export function strongestYouTrackRelationRow(left, right) {
 export function relationTypeFromYouTrack(linkType = {}, direction = '') {
   return normalizeYouTrackRelation(linkType, direction).relationType;
 }
+
+// ─── Стан перенесення: одне слово, один вихід ────────────────────────────────
+//
+// Екран мав власну таблицю станів — `statusLabel`, `JOB_TONES`, `progressFor` і
+// `ACTIVE_JOB_STATUSES` жили просто в JSX, — і саме тому в ньому був стан без
+// виходу. «Скасовано · 0 із 663 · 0%» малювалось, бо картка бере найновіший
+// job, яким би він не був, а всі кнопки стояли за `activeJob`, до якого
+// «скасовано» не належить. Панель була, дії не було, прибрати її не міг ніхто.
+//
+// Тепер словник станів один і він тут, поруч із рештою чистих правил імпорту.
+// Правило, яке його тримає, просте: для кожного стану й кожного читача
+// `importActionsFor` повертає непорожній список. Це перевіряє тест, а не
+// обіцянка в коментарі.
+
+// Крок імпорту тримає оренду 90 секунд (`IMPORT_STEP_LEASE_MS`), тож «не
+// рухається» — це прострочена оренда І тиша, довша за неї. Сам `updatedAt`, без
+// оренди, називав паузою живий імпорт, який просто робив одну повільну задачу
+// зі сотнею коментарів і вкладенням на 20 MB.
+export const IMPORT_STALLED_AFTER_MS = 180_000;
+
+// Покинуте перенесення — те, до якого автор не повернувся. Його має право
+// зупинити будь-який адміністратор: інакше `assertNoForeignActiveImport` тримає
+// цілу організацію в заручниках у людини, яка вже пішла.
+export const IMPORT_ABANDONED_AFTER_MS = 15 * 60_000;
+
+// Скільки задач переносимо, не перепитуючи. Більше — і перед записом у робочий
+// простір екран спиняється й називає число: «6 214 задач» — це вже рішення, а
+// не крок.
+export const IMPORT_AUTOSTART_LIMIT = 2_000;
+
+// Скільки проєктів переносить один запуск. Стеля була в importer'і як `slice`,
+// тобто мовчазна: обрали двадцять п'ять — перенеслося двадцять, і ніде про це
+// не було сказано. Тепер число одне на обидва боки: сервер відмовляє, а вибір
+// за замовчуванням не заводить людину в цю відмову з першого ж екрана.
+export const IMPORT_PROJECT_LIMIT = 20;
+
+// Скільки задач читає розвідка, щоб зібрати статуси проєкту. Без цієї стелі
+// один проєкт на 50 000 задач — це 500 послідовних сторінок, тобто дві хвилини
+// проти `maxDuration = 60`: розвідка просто не поверталась, і людина бачила
+// рівно те, на що скаржилась — «воно висить».
+export const YOUTRACK_DISCOVERY_PROBE = Object.freeze({ limit: 2_000, sort: 'updated desc' });
+
+const IMPORT_STATE_PRESENTATION = Object.freeze({
+  none: { label: 'Не розпочато', tone: 'neutral' },
+  ready: { label: 'Готово до запуску', tone: 'neutral' },
+  running: { label: 'Іде', tone: 'dark' },
+  stalled: { label: 'Пауза', tone: 'warning' },
+  blocked: { label: 'Спинилося', tone: 'danger' },
+  'blocked-connection': { label: 'Потрібен новий токен', tone: 'danger' },
+  completed: { label: 'Завершено', tone: 'dark' },
+  cancelled: { label: 'Скасовано', tone: 'neutral' },
+});
+
+function millisOf(value) {
+  if (!value) return 0;
+  const parsed = typeof value === 'number' ? value : Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/**
+ * Який це стан — єдина відповідь, якою користуються і екран, і тести.
+ *
+ * `prepared` лишається тим, що пише сервер, і читається як `ready`: міграції
+ * заради перейменування статусу не буває, а два слова про одне зводяться в
+ * одному місці — тут.
+ *
+ * @param {object} job Серіалізований job або null.
+ * @param {number} now Поточний час у мілісекундах; передається ззовні, щоб функція лишалась чистою.
+ */
+export function importJobState(job, now = 0) {
+  if (!job || job.acknowledgedAt) return 'none';
+  if (job.status === 'blocked') return 'blocked';
+  if (job.status === 'completed') return 'completed';
+  if (job.status === 'cancelled') return 'cancelled';
+  if (job.status === 'prepared' || job.status === 'ready') return 'ready';
+  if (job.status !== 'running') return 'none';
+  const silentFor = now - millisOf(job.updatedAt);
+  const leaseHeld = millisOf(job.leaseUntil) > now;
+  return !leaseHeld && silentFor > IMPORT_STALLED_AFTER_MS ? 'stalled' : 'running';
+}
+
+/** Стан, у якому перенесення ще може писати. Поки він такий — налаштування закриті. */
+export function importJobIsOpen(state) {
+  return state === 'ready' || state === 'running' || state === 'stalled' || state === 'blocked';
+}
+
+/** Стан, у якому цю вкладку має сенс крутити далі без участі людини. */
+export function importJobIsDrivable(state) {
+  return state === 'ready' || state === 'running';
+}
+
+/**
+ * Стан, у якому натискання «Продовжити» має що продовжувати.
+ *
+ * Ширший за `importJobIsDrivable`, і саме в цьому суть різниці. Крутити далі
+ * самому можна лише те, що рухається; а починати рух — і те, що спинилось, і
+ * те, що заблокувалось. Поки предикат був один, «Продовжити» на паузі й
+ * «Спробувати ще раз» на зупиненому не надсилали жодного запиту: цикл перевіряв
+ * умову перед першим кроком і виходив.
+ */
+export function importJobIsResumable(state) {
+  return state === 'ready' || state === 'running' || state === 'stalled' || state === 'blocked';
+}
+
+export function importJobIsAbandoned(job, state, now = 0) {
+  // `ready` теж покидають: чергу порахували, підтвердження не натиснули й пішли.
+  // Поки цього стану тут не було, порахований чужий job замикав налаштування й
+  // не давав нікому, крім автора та власника, жодної кнопки.
+  if (state !== 'ready' && state !== 'stalled' && state !== 'blocked') return false;
+  return now - millisOf(job?.updatedAt || job?.createdAt) > IMPORT_ABANDONED_AFTER_MS;
+}
+
+/**
+ * Слово в пігулці й тон, яким його малюють.
+ */
+export function describeImportJob(job, now = 0) {
+  const state = importJobState(job, now);
+  const key = state === 'blocked' && job?.blockedReason === 'connection'
+    ? 'blocked-connection'
+    : state;
+  const presentation = IMPORT_STATE_PRESENTATION[key] || IMPORT_STATE_PRESENTATION.none;
+  return { state, label: presentation.label, tone: presentation.tone };
+}
+
+/**
+ * Що можна зробити з цим перенесенням — з погляду того, хто на нього дивиться.
+ *
+ * Порядок у списку — це порядок на екрані, і перший елемент завжди головна дія.
+ * Для жодного стану список не буває порожнім одразу для всіх трьох читачів:
+ * саме це й означає «немає стану без виходу».
+ *
+ * @param {object} job Серіалізований job або null.
+ * @param {string} state Результат `importJobState`.
+ * @param {{userId: string, isOrganizationOwner: boolean, isOrganizationAdmin: boolean, abandoned: boolean}} viewer Хто дивиться.
+ */
+export function importActionsFor(job, state, viewer = {}) {
+  const {
+    userId = '',
+    isOrganizationOwner = false,
+    isOrganizationAdmin = true,
+    abandoned = false,
+  } = viewer;
+  const author = job?.createdBy || '';
+  const mine = !author || author === userId;
+  // Зупинити можна своє; чуже — власнику; покинуте — будь-якому адміністратору.
+  // Інакше один заморожений job тримає організацію в заручниках, бо
+  // `assertNoForeignActiveImport` не дасть нікому почати власний.
+  const mayStop = mine || isOrganizationOwner || (abandoned && isOrganizationAdmin);
+
+  if (state === 'none') {
+    return [{ id: 'start', label: 'Перенести', kind: 'primary' }];
+  }
+  if (state === 'ready') {
+    return [
+      ...(mine ? [{ id: 'run', label: 'Почати перенесення', kind: 'primary' }] : []),
+      ...(mayStop ? [{ id: 'cancel', label: 'Скасувати', kind: 'danger' }] : []),
+    ];
+  }
+  if (state === 'running') {
+    return mayStop ? [{ id: 'cancel', label: 'Зупинити', kind: 'danger' }] : [];
+  }
+  if (state === 'stalled') {
+    return [
+      ...(mine ? [{ id: 'run', label: 'Продовжити', kind: 'primary' }] : []),
+      ...(mayStop ? [{ id: 'cancel', label: 'Зупинити', kind: 'danger' }] : []),
+    ];
+  }
+  if (state === 'blocked') {
+    // Дві дії, а не одна: полагодити причину й піти далі — різні кроки, і після
+    // першого має лишитися чим зробити другий. Поки тут стояла сама лише
+    // причина, людина вставляла новий токен — і опинялась перед тією самою
+    // панеллю «Потрібен новий токен» без жодної кнопки, що продовжує.
+    const repair = job?.blockedReason === 'connection'
+      ? { id: 'token', label: 'Ввести новий токен', kind: 'primary' }
+      : job?.blockedReason === 'plan'
+        ? { id: 'scope', label: 'Відкрити «Проєкти й статуси»', kind: 'primary' }
+        : null;
+    const resume = repair
+      ? { id: 'run', label: 'Продовжити', kind: 'secondary' }
+      : { id: 'run', label: 'Спробувати ще раз', kind: 'primary' };
+    return [
+      ...(mine ? [repair, resume].filter(Boolean) : []),
+      ...(mayStop ? [{ id: 'cancel', label: 'Зупинити', kind: 'danger' }] : []),
+    ];
+  }
+  // Завершене й скасоване прибирає з екрана будь-хто, хто його бачить: це не
+  // керування чужою роботою, а прибрати зі столу те, що вже сталося.
+  return [
+    { id: 'acknowledge', label: 'Зрозуміло', kind: 'primary' },
+    { id: 'restart', label: state === 'cancelled' ? 'Почати заново' : 'Перенести ще раз', kind: 'secondary' },
+  ];
+}
+
+/**
+ * Чому перенесення спинилось, а не просто не змогло одну задачу.
+ *
+ * Різниця не косметична. Відкликаний токен ловився тим самим `catch`, що й
+ * зіпсована задача: importer позначав задачу невдалою, посував чергу й ішов
+ * далі — і 663 задачі ставали 663 помилками за десять хвилин, по одному
+ * HTTP-запиту на кожну. Смуга доходила до 100%, статус ставав «Завершено», а
+ * перенесено було нуль. Саме це й видно на скріншоті, з якого почалась ця
+ * робота.
+ *
+ * @param {Error} error Виняток кроку імпорту.
+ * @returns {'connection'|'plan'|'quota'|''} Порожній рядок означає, що зламалась саме ця задача.
+ */
+export function importHaltReason(error) {
+  const status = Number(error?.status);
+  const message = String(error?.message || '');
+  const code = String(error?.code || '').toLowerCase();
+  if (error?.source === 'youtrack' && (status === 401 || status === 403)) return 'connection';
+  if (/^YouTrack не підключено|^Підключення YouTrack пошкоджене/.test(message)) return 'connection';
+  if (/^Ліміт /.test(message)) return 'plan';
+  if (/^Організацію не знайдено|^Проєкт-призначення |^Джерельний проєкт не знайдено/.test(message)) return 'plan';
+  if (code === '8' || code.includes('resource-exhausted') || /resource_exhausted|quota exceeded/i.test(message)) {
+    return 'quota';
+  }
+  return '';
+}
+
+// Скільки поспіль невдалих задач означає, що ламається не задача, а щось під нею.
+export const IMPORT_FAILURE_STREAK_LIMIT = 10;
+
+// Речення, яке пояснює зупинку. Стоїть тут, а не в JSX, бо це частина словника
+// станів: сервер записує причину одним словом, екран читає її одним викликом.
+const HALT_SENTENCES = Object.freeze({
+  connection: 'YouTrack більше не приймає збережений токен. Перенесення спинилося й нічого не втратило — усе, що встигло перенестись, лишилось у QuickTeam.',
+  plan: 'Перенесення спинилося: обраний проєкт або статус більше не доступний у QuickTeam.',
+  quota: 'Сьогоднішній ліміт звернень до бази вичерпано. Перенесення можна продовжити завтра — воно почнеться з тієї задачі, на якій спинилося.',
+  failures: 'Кілька задач поспіль не перенеслися, тому перенесення спинилося, щоб не витратити чергу даремно.',
+  // Окрема причина, бо це окремий етап: задачі вже перенесені, лишилися звʼязки
+  // між ними. Казати тут «кілька задач поспіль не перенеслися» — неправда, і
+  // саме так воно й читалося, поки фаза звʼязків позичала чужий текст.
+  links: 'Задачі перенесено; спинилося на звʼязках між ними. Продовжте — задачі не дублюються.',
+});
+
+export function importHaltSentence(reason) {
+  return HALT_SENTENCES[reason] || HALT_SENTENCES.failures;
+}
+
+/**
+ * Що в збереженому виборі більше не сходиться з тим, що є зараз.
+ *
+ * Вибір тепер живе на сервері й переживає перезавантаження — а разом із цим
+ * переживає й редагування workflow, архівування проєкту та звільнення людини.
+ * Раніше такі розбіжності були рідкою гонкою, яку `prepare` ловив і повертав
+ * помилкою у той момент, коли натискали «Перевірити імпорт»; тепер вони —
+ * звичайний стан наступного ранку, тож їх називають до натискання, поіменно, і
+ * кожна веде у вікно, де її виправляють.
+ *
+ * @param {object} plan Збережений вибір.
+ * @param {object} discovery Знімок YouTrack.
+ * @param {{targetStatuses: object[], projects: object[], memberIds: Set<string>}} present Те, що є в QuickTeam зараз.
+ */
+export function importPlanIssues(plan, discovery, present = {}) {
+  const { targetStatuses = [], projects = [], memberIds = new Set() } = present;
+  const selected = (plan?.selectedProjectIds || []).filter(Boolean);
+  if (!selected.length) return [];
+
+  const sourceProjects = new Map((discovery?.projects || []).map(project => [project.id, project]));
+  const statusById = new Map(targetStatuses.map(status => [status.id, status]));
+  const projectById = new Map(projects.map(project => [project.id, project]));
+  const issues = [];
+
+  selected.forEach(sourceProjectId => {
+    const sourceProject = sourceProjects.get(sourceProjectId);
+    if (!sourceProject) {
+      issues.push({
+        id: `project-gone-${sourceProjectId}`,
+        tone: 'critical',
+        opens: 'scope',
+        title: 'Один із обраних проєктів більше не видно у YouTrack',
+        description: 'Оновіть список і оберіть заново',
+      });
+      return;
+    }
+    const targetId = plan?.projectMappings?.[sourceProjectId] || 'create';
+    const target = targetId === 'create' ? null : projectById.get(targetId);
+    if (targetId !== 'create' && (!target || target.status === 'archived')) {
+      issues.push({
+        id: `target-gone-${sourceProjectId}`,
+        tone: 'critical',
+        opens: 'scope',
+        title: `Проєкт-призначення для «${sourceProject.name}» недоступний`,
+        description: 'Оберіть інший проєкт або створіть новий',
+      });
+      return;
+    }
+    const hidden = new Set(target?.hiddenColumns || []);
+    const chosenStatuses = plan?.statusFilters?.[sourceProjectId] || [];
+    if (!chosenStatuses.length) {
+      issues.push({
+        id: `no-status-${sourceProjectId}`,
+        tone: 'critical',
+        opens: 'scope',
+        title: `У проєкті «${sourceProject.name}» не обрано жодного статусу`,
+        description: 'Оберіть хоча б один — інакше переносити нічого',
+      });
+      return;
+    }
+    chosenStatuses.forEach(sourceStatus => {
+      const mapped = plan?.statusMappings?.[sourceProjectId]?.[sourceStatus] || '';
+      if (!mapped || !statusById.has(mapped)) {
+        issues.push({
+          id: `status-gone-${sourceProjectId}-${sourceStatus}`,
+          tone: 'critical',
+          opens: 'scope',
+          title: `Статус QuickTeam для «${sourceStatus}» більше не існує`,
+          description: `Проєкт «${sourceProject.name}» — оберіть інший статус`,
+        });
+        return;
+      }
+      if (hidden.has(mapped)) {
+        issues.push({
+          id: `status-hidden-${sourceProjectId}-${sourceStatus}`,
+          tone: 'critical',
+          opens: 'scope',
+          title: `Статус для «${sourceStatus}» приховано у проєкті-призначенні`,
+          description: `Проєкт «${sourceProject.name}» — оберіть видимий статус`,
+        });
+      }
+    });
+  });
+
+  Object.entries(plan?.userMappings || {}).forEach(([sourceId, memberId]) => {
+    if (!memberId || memberId === 'external' || memberIds.has(memberId)) return;
+    const user = (discovery?.users || []).find(candidate => sourceUserId(candidate) === sourceId);
+    issues.push({
+      id: `member-gone-${sourceId}`,
+      tone: 'critical',
+      opens: 'people',
+      title: `${sourceUserName(user) || 'Користувач YouTrack'} прив’язаний до того, кого вже немає в організації`,
+      description: 'Оберіть іншого учасника або лишіть зовнішнім автором',
+    });
+  });
+
+  return issues;
+}

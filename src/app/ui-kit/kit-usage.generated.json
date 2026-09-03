@@ -366,6 +366,7 @@
       "ColorSwatch",
       "DatePicker",
       "Dialog",
+      "EmptyState",
       "IconAction",
       "ImageUpload",
       "InnerNavigation",
@@ -386,6 +387,8 @@
       "Select",
       "SettingRow",
       "SidebarLayout",
+      "SignalList",
+      "Skeleton",
       "Tabs",
       "Tag",
       "TaskCounters",
@@ -1215,7 +1218,7 @@
     },
     "EmptyState": {
       "file": "src/components/ui/Feedback/EmptyState.jsx",
-      "count": 16,
+      "count": 17,
       "showcased": true,
       "usedByKit": [
         "ChatMessageList",
@@ -1231,6 +1234,7 @@
         "/analytics/team/[memberId]",
         "/calendar",
         "/calendar/event/[eventId]",
+        "/settings",
         "/sprints",
         "/team"
       ],
@@ -1241,6 +1245,7 @@
         "src/app/(app)/page.js",
         "src/app/(app)/team/page.js",
         "src/components/WorkspaceInfoCenter.jsx",
+        "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/profile/ProfileView.jsx",
         "src/components/workspace/AnalyticsTab.jsx",
         "src/components/workspace/BillingTab.jsx",
@@ -2207,25 +2212,30 @@
     },
     "SignalList": {
       "file": "src/components/ui/Feedback/SignalList.jsx",
-      "count": 1,
+      "count": 2,
       "showcased": true,
       "usedByKit": [],
       "routes": [
         "/[projectId]",
-        "/analytics"
+        "/analytics",
+        "/settings"
       ],
       "usedIn": [
+        "src/components/integrations/YouTrackImportCard.jsx",
         "src/components/workspace/AttentionPanel.jsx"
       ]
     },
     "Skeleton": {
       "file": "src/components/ui/Feedback/Skeleton.jsx",
-      "count": 1,
+      "count": 2,
       "showcased": true,
       "usedByKit": [],
-      "routes": [],
+      "routes": [
+        "/settings"
+      ],
       "usedIn": [
-        "src/components/WorkspaceSidebar.jsx"
+        "src/components/WorkspaceSidebar.jsx",
+        "src/components/integrations/YouTrackImportCard.jsx"
       ]
     },
     "Sparkline": {
@@ -2900,9 +2910,9 @@
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/IntegrationScreen.jsx:101",
-            "src/components/integrations/YouTrackImportCard.jsx:517",
-            "src/components/integrations/YouTrackImportCard.jsx:534",
-            "src/components/integrations/YouTrackImportCard.jsx:545",
+            "src/components/integrations/YouTrackImportCard.jsx:889",
+            "src/components/integrations/YouTrackImportCard.jsx:896",
+            "src/components/integrations/YouTrackImportCard.jsx:949",
             "src/components/workspace/AgileBoard.jsx:65",
             "src/components/workspace/AgileBoard.jsx:68",
             "src/components/workspace/BillingTab.jsx:1480",
@@ -2969,7 +2979,7 @@
           ]
         },
         "md": {
-          "count": 63,
+          "count": 64,
           "routes": [
             "/",
             "/[projectId]",
@@ -3017,10 +3027,11 @@
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/integrations/IntegrationScreen.jsx:152",
-            "src/components/integrations/YouTrackImportCard.jsx:594",
-            "src/components/integrations/YouTrackImportCard.jsx:599",
-            "src/components/integrations/YouTrackImportCard.jsx:622",
-            "src/components/integrations/YouTrackImportCard.jsx:715",
+            "src/components/integrations/YouTrackImportCard.jsx:1064",
+            "src/components/integrations/YouTrackImportCard.jsx:1108",
+            "src/components/integrations/YouTrackImportCard.jsx:1207",
+            "src/components/integrations/YouTrackImportCard.jsx:1256",
+            "src/components/integrations/YouTrackImportCard.jsx:1283",
             "src/components/workspace/BillingTab.jsx:511",
             "src/components/workspace/BillingTab.jsx:518",
             "src/components/workspace/BillingTab.jsx:533",
@@ -3102,7 +3113,7 @@
             "src/components/WorkspaceInfoCenter.jsx:138",
             "src/components/WorkspaceOrganizationRouteGuard.jsx:65",
             "src/components/integrations/IntegrationScreen.jsx:152",
-            "src/components/integrations/YouTrackImportCard.jsx:594",
+            "src/components/integrations/YouTrackImportCard.jsx:1064",
             "src/components/workspace/BillingTab.jsx:1480",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:387",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:682",
@@ -3113,7 +3124,7 @@
           ]
         },
         "secondary": {
-          "count": 68,
+          "count": 67,
           "routes": [
             "/",
             "/[projectId]",
@@ -3163,8 +3174,7 @@
             "src/components/CreateTaskModal.jsx:414",
             "src/components/TeamMemberSettingsDialog.jsx:80",
             "src/components/integrations/IntegrationScreen.jsx:101",
-            "src/components/integrations/YouTrackImportCard.jsx:517",
-            "src/components/integrations/YouTrackImportCard.jsx:534",
+            "src/components/integrations/YouTrackImportCard.jsx:896",
             "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/BillingTab.jsx:1566",
             "src/components/workspace/BillingTab.jsx:536",
@@ -3200,7 +3210,7 @@
           ]
         },
         "primary": {
-          "count": 45,
+          "count": 47,
           "routes": [
             "/",
             "/[projectId]",
@@ -3242,8 +3252,10 @@
             "src/components/CreateTaskModal.jsx:417",
             "src/components/InviteLinkSection.jsx:104",
             "src/components/InviteMemberDialog.jsx:149",
-            "src/components/integrations/YouTrackImportCard.jsx:622",
-            "src/components/integrations/YouTrackImportCard.jsx:715",
+            "src/components/integrations/YouTrackImportCard.jsx:1108",
+            "src/components/integrations/YouTrackImportCard.jsx:1207",
+            "src/components/integrations/YouTrackImportCard.jsx:1256",
+            "src/components/integrations/YouTrackImportCard.jsx:1283",
             "src/components/workspace/AgileBoard.jsx:68",
             "src/components/workspace/BillingTab.jsx:1545",
             "src/components/workspace/BillingTab.jsx:533",
@@ -3318,8 +3330,8 @@
             "src/components/WorkspaceHelpMenu.jsx:87",
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/WorkspaceSidebar.jsx:410",
-            "src/components/integrations/YouTrackImportCard.jsx:545",
-            "src/components/integrations/YouTrackImportCard.jsx:599",
+            "src/components/integrations/YouTrackImportCard.jsx:889",
+            "src/components/integrations/YouTrackImportCard.jsx:949",
             "src/components/workspace/AgileBoard.jsx:413",
             "src/components/workspace/AgileBoard.jsx:494",
             "src/components/workspace/AgileBoard.jsx:510",
@@ -3356,7 +3368,7 @@
       },
       "shape": {
         "(default)": {
-          "count": 193,
+          "count": 194,
           "routes": [
             "/",
             "/[projectId]",
@@ -3485,13 +3497,14 @@
             "src/components/WorkspaceSidebar.jsx:410",
             "src/components/integrations/IntegrationScreen.jsx:101",
             "src/components/integrations/IntegrationScreen.jsx:152",
-            "src/components/integrations/YouTrackImportCard.jsx:517",
-            "src/components/integrations/YouTrackImportCard.jsx:534",
-            "src/components/integrations/YouTrackImportCard.jsx:545",
-            "src/components/integrations/YouTrackImportCard.jsx:594",
-            "src/components/integrations/YouTrackImportCard.jsx:599",
-            "src/components/integrations/YouTrackImportCard.jsx:622",
-            "src/components/integrations/YouTrackImportCard.jsx:715",
+            "src/components/integrations/YouTrackImportCard.jsx:1064",
+            "src/components/integrations/YouTrackImportCard.jsx:1108",
+            "src/components/integrations/YouTrackImportCard.jsx:1207",
+            "src/components/integrations/YouTrackImportCard.jsx:1256",
+            "src/components/integrations/YouTrackImportCard.jsx:1283",
+            "src/components/integrations/YouTrackImportCard.jsx:889",
+            "src/components/integrations/YouTrackImportCard.jsx:896",
+            "src/components/integrations/YouTrackImportCard.jsx:949",
             "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/AgileBoard.jsx:413",
             "src/components/workspace/AgileBoard.jsx:494",
@@ -3589,7 +3602,7 @@
       },
       "surface": {
         "(default)": {
-          "count": 195,
+          "count": 196,
           "routes": [
             "/",
             "/[projectId]",
@@ -3719,13 +3732,14 @@
             "src/components/WorkspaceSidebar.jsx:410",
             "src/components/integrations/IntegrationScreen.jsx:101",
             "src/components/integrations/IntegrationScreen.jsx:152",
-            "src/components/integrations/YouTrackImportCard.jsx:517",
-            "src/components/integrations/YouTrackImportCard.jsx:534",
-            "src/components/integrations/YouTrackImportCard.jsx:545",
-            "src/components/integrations/YouTrackImportCard.jsx:594",
-            "src/components/integrations/YouTrackImportCard.jsx:599",
-            "src/components/integrations/YouTrackImportCard.jsx:622",
-            "src/components/integrations/YouTrackImportCard.jsx:715",
+            "src/components/integrations/YouTrackImportCard.jsx:1064",
+            "src/components/integrations/YouTrackImportCard.jsx:1108",
+            "src/components/integrations/YouTrackImportCard.jsx:1207",
+            "src/components/integrations/YouTrackImportCard.jsx:1256",
+            "src/components/integrations/YouTrackImportCard.jsx:1283",
+            "src/components/integrations/YouTrackImportCard.jsx:889",
+            "src/components/integrations/YouTrackImportCard.jsx:896",
+            "src/components/integrations/YouTrackImportCard.jsx:949",
             "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/AgileBoard.jsx:413",
             "src/components/workspace/AgileBoard.jsx:494",
@@ -3813,7 +3827,7 @@
       },
       "color": {
         "(default)": {
-          "count": 179,
+          "count": 181,
           "routes": [
             "/",
             "/[projectId]",
@@ -3932,11 +3946,13 @@
             "src/components/WorkspaceSidebar.jsx:410",
             "src/components/integrations/IntegrationScreen.jsx:101",
             "src/components/integrations/IntegrationScreen.jsx:152",
-            "src/components/integrations/YouTrackImportCard.jsx:517",
-            "src/components/integrations/YouTrackImportCard.jsx:534",
-            "src/components/integrations/YouTrackImportCard.jsx:594",
-            "src/components/integrations/YouTrackImportCard.jsx:622",
-            "src/components/integrations/YouTrackImportCard.jsx:715",
+            "src/components/integrations/YouTrackImportCard.jsx:1064",
+            "src/components/integrations/YouTrackImportCard.jsx:1108",
+            "src/components/integrations/YouTrackImportCard.jsx:1207",
+            "src/components/integrations/YouTrackImportCard.jsx:1256",
+            "src/components/integrations/YouTrackImportCard.jsx:1283",
+            "src/components/integrations/YouTrackImportCard.jsx:889",
+            "src/components/integrations/YouTrackImportCard.jsx:896",
             "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/AgileBoard.jsx:413",
             "src/components/workspace/AgileBoard.jsx:494",
@@ -4024,7 +4040,7 @@
           ]
         },
         "red": {
-          "count": 15,
+          "count": 14,
           "routes": [
             "/",
             "/[projectId]",
@@ -4045,8 +4061,7 @@
             "src/app/(app)/settings/page.js:933",
             "src/components/TeamMemberSettingsDialog.jsx:142",
             "src/components/UserStatusDialog.jsx:71",
-            "src/components/integrations/YouTrackImportCard.jsx:545",
-            "src/components/integrations/YouTrackImportCard.jsx:599",
+            "src/components/integrations/YouTrackImportCard.jsx:949",
             "src/components/workspace/BillingTab.jsx:518",
             "src/components/workspace/BoardConfigModal.jsx:232",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:659"
@@ -4067,7 +4082,7 @@
           ]
         },
         "(default)": {
-          "count": 178,
+          "count": 179,
           "routes": [
             "/",
             "/[projectId]",
@@ -4185,13 +4200,14 @@
             "src/components/WorkspaceInfoCenter.jsx:87",
             "src/components/integrations/IntegrationScreen.jsx:101",
             "src/components/integrations/IntegrationScreen.jsx:152",
-            "src/components/integrations/YouTrackImportCard.jsx:517",
-            "src/components/integrations/YouTrackImportCard.jsx:534",
-            "src/components/integrations/YouTrackImportCard.jsx:545",
-            "src/components/integrations/YouTrackImportCard.jsx:594",
-            "src/components/integrations/YouTrackImportCard.jsx:599",
-            "src/components/integrations/YouTrackImportCard.jsx:622",
-            "src/components/integrations/YouTrackImportCard.jsx:715",
+            "src/components/integrations/YouTrackImportCard.jsx:1064",
+            "src/components/integrations/YouTrackImportCard.jsx:1108",
+            "src/components/integrations/YouTrackImportCard.jsx:1207",
+            "src/components/integrations/YouTrackImportCard.jsx:1256",
+            "src/components/integrations/YouTrackImportCard.jsx:1283",
+            "src/components/integrations/YouTrackImportCard.jsx:889",
+            "src/components/integrations/YouTrackImportCard.jsx:896",
+            "src/components/integrations/YouTrackImportCard.jsx:949",
             "src/components/profile/ProfileView.jsx:274",
             "src/components/workspace/AgileBoard.jsx:494",
             "src/components/workspace/AgileBoard.jsx:510",
@@ -4815,7 +4831,7 @@
           ]
         },
         "md": {
-          "count": 8,
+          "count": 10,
           "routes": [
             "/[projectId]/issue/[issueId]",
             "/analytics",
@@ -4826,8 +4842,10 @@
             "src/app/(app)/settings/page.js:475",
             "src/app/(app)/settings/page.js:5217",
             "src/app/(app)/settings/page.js:5342",
-            "src/components/integrations/YouTrackImportCard.jsx:478",
-            "src/components/integrations/YouTrackImportCard.jsx:488",
+            "src/components/integrations/YouTrackImportCard.jsx:1209",
+            "src/components/integrations/YouTrackImportCard.jsx:1262",
+            "src/components/integrations/YouTrackImportCard.jsx:860",
+            "src/components/integrations/YouTrackImportCard.jsx:870",
             "src/components/workspace/BillingTab.jsx:139",
             "src/components/workspace/BillingTab.jsx:321",
             "src/components/workspace/IssueDetail.jsx:2228"
@@ -4871,7 +4889,7 @@
       },
       "composition": {
         "(default)": {
-          "count": 41,
+          "count": 43,
           "routes": [
             "/",
             "/[projectId]",
@@ -4902,8 +4920,10 @@
             "src/components/CreateTaskModal.jsx:601",
             "src/components/InviteMemberDialog.jsx:137",
             "src/components/WorkspaceInfoCenter.jsx:127",
-            "src/components/integrations/YouTrackImportCard.jsx:478",
-            "src/components/integrations/YouTrackImportCard.jsx:488",
+            "src/components/integrations/YouTrackImportCard.jsx:1209",
+            "src/components/integrations/YouTrackImportCard.jsx:1262",
+            "src/components/integrations/YouTrackImportCard.jsx:860",
+            "src/components/integrations/YouTrackImportCard.jsx:870",
             "src/components/workspace/BillingTab.jsx:1215",
             "src/components/workspace/BillingTab.jsx:1218",
             "src/components/workspace/BillingTab.jsx:139",
@@ -4993,7 +5013,7 @@
       },
       "preset": {
         "(default)": {
-          "count": 50,
+          "count": 52,
           "routes": [
             "/",
             "/[projectId]",
@@ -5026,8 +5046,10 @@
             "src/components/InviteMemberDialog.jsx:137",
             "src/components/UserStatusDialog.jsx:105",
             "src/components/WorkspaceInfoCenter.jsx:127",
-            "src/components/integrations/YouTrackImportCard.jsx:478",
-            "src/components/integrations/YouTrackImportCard.jsx:488",
+            "src/components/integrations/YouTrackImportCard.jsx:1209",
+            "src/components/integrations/YouTrackImportCard.jsx:1262",
+            "src/components/integrations/YouTrackImportCard.jsx:860",
+            "src/components/integrations/YouTrackImportCard.jsx:870",
             "src/components/workspace/BillingTab.jsx:1215",
             "src/components/workspace/BillingTab.jsx:1218",
             "src/components/workspace/BillingTab.jsx:1447",
@@ -5227,9 +5249,9 @@
             "src/components/CreateTaskModal.jsx:560",
             "src/components/CreateTaskModal.jsx:568",
             "src/components/CreateTaskModal.jsx:581",
-            "src/components/integrations/YouTrackImportCard.jsx:642",
-            "src/components/integrations/YouTrackImportCard.jsx:678",
-            "src/components/integrations/YouTrackImportCard.jsx:726",
+            "src/components/integrations/YouTrackImportCard.jsx:1130",
+            "src/components/integrations/YouTrackImportCard.jsx:1171",
+            "src/components/integrations/YouTrackImportCard.jsx:1232",
             "src/components/workspace/BillingTab.jsx:1299",
             "src/components/workspace/BillingTab.jsx:1309",
             "src/components/workspace/BillingTab.jsx:1440",
@@ -5345,9 +5367,9 @@
             "src/components/CreateTaskModal.jsx:560",
             "src/components/CreateTaskModal.jsx:568",
             "src/components/CreateTaskModal.jsx:581",
-            "src/components/integrations/YouTrackImportCard.jsx:642",
-            "src/components/integrations/YouTrackImportCard.jsx:678",
-            "src/components/integrations/YouTrackImportCard.jsx:726",
+            "src/components/integrations/YouTrackImportCard.jsx:1130",
+            "src/components/integrations/YouTrackImportCard.jsx:1171",
+            "src/components/integrations/YouTrackImportCard.jsx:1232",
             "src/components/workspace/BillingTab.jsx:117",
             "src/components/workspace/BillingTab.jsx:1299",
             "src/components/workspace/BillingTab.jsx:1309",
@@ -5501,9 +5523,9 @@
             "src/components/CreateTaskModal.jsx:560",
             "src/components/CreateTaskModal.jsx:568",
             "src/components/CreateTaskModal.jsx:581",
-            "src/components/integrations/YouTrackImportCard.jsx:642",
-            "src/components/integrations/YouTrackImportCard.jsx:678",
-            "src/components/integrations/YouTrackImportCard.jsx:726",
+            "src/components/integrations/YouTrackImportCard.jsx:1130",
+            "src/components/integrations/YouTrackImportCard.jsx:1171",
+            "src/components/integrations/YouTrackImportCard.jsx:1232",
             "src/components/workspace/BillingTab.jsx:117",
             "src/components/workspace/BillingTab.jsx:1440",
             "src/components/workspace/IssueDetail.jsx:1742",
@@ -5892,7 +5914,7 @@
             "src/app/(app)/settings/page.js:790",
             "src/app/(app)/settings/page.js:805",
             "src/components/integrations/IntegrationScreen.jsx:99",
-            "src/components/integrations/YouTrackImportCard.jsx:555",
+            "src/components/integrations/YouTrackImportCard.jsx:975",
             "src/components/migrations/DataMigrationSettings.jsx:77",
             "src/components/migrations/DataMigrationSettings.jsx:89",
             "src/components/workspace/IssueCard.jsx:322"
@@ -6063,7 +6085,7 @@
             "src/app/(app)/sprints/page.js:1080",
             "src/app/(app)/sprints/page.js:1105",
             "src/components/integrations/IntegrationScreen.jsx:99",
-            "src/components/integrations/YouTrackImportCard.jsx:555",
+            "src/components/integrations/YouTrackImportCard.jsx:975",
             "src/components/migrations/DataMigrationSettings.jsx:180",
             "src/components/migrations/DataMigrationSettings.jsx:189",
             "src/components/workspace/AgileBoard.jsx:503",
@@ -6217,7 +6239,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:56",
             "src/components/WorkspaceHeader.jsx:576",
             "src/components/integrations/IntegrationScreen.jsx:99",
-            "src/components/integrations/YouTrackImportCard.jsx:555",
+            "src/components/integrations/YouTrackImportCard.jsx:975",
             "src/components/migrations/DataMigrationSettings.jsx:180",
             "src/components/migrations/DataMigrationSettings.jsx:189",
             "src/components/migrations/DataMigrationSettings.jsx:77",
@@ -6292,7 +6314,7 @@
             "src/components/WorkspaceHeader.jsx:576",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/integrations/IntegrationScreen.jsx:99",
-            "src/components/integrations/YouTrackImportCard.jsx:555",
+            "src/components/integrations/YouTrackImportCard.jsx:975",
             "src/components/migrations/DataMigrationSettings.jsx:189",
             "src/components/migrations/DataMigrationSettings.jsx:77",
             "src/components/workspace/AgileBoard.jsx:503",
@@ -6390,7 +6412,7 @@
             "src/components/WorkspaceHeader.jsx:576",
             "src/components/WorkspaceInfoCenter.jsx:111",
             "src/components/integrations/IntegrationScreen.jsx:99",
-            "src/components/integrations/YouTrackImportCard.jsx:555",
+            "src/components/integrations/YouTrackImportCard.jsx:975",
             "src/components/migrations/DataMigrationSettings.jsx:180",
             "src/components/migrations/DataMigrationSettings.jsx:189",
             "src/components/migrations/DataMigrationSettings.jsx:77",
@@ -6496,7 +6518,7 @@
             "src/components/TeamMemberSettingsDialog.jsx:56",
             "src/components/WorkspaceHeader.jsx:576",
             "src/components/integrations/IntegrationScreen.jsx:99",
-            "src/components/integrations/YouTrackImportCard.jsx:555",
+            "src/components/integrations/YouTrackImportCard.jsx:975",
             "src/components/migrations/DataMigrationSettings.jsx:180",
             "src/components/migrations/DataMigrationSettings.jsx:189",
             "src/components/migrations/DataMigrationSettings.jsx:77",
@@ -7035,7 +7057,7 @@
     "Dialog": {
       "size": {
         "md": {
-          "count": 7,
+          "count": 8,
           "routes": [
             "/[projectId]/issue/[issueId]",
             "/analytics",
@@ -7049,14 +7071,15 @@
             "src/app/(app)/chat/page.js:1210",
             "src/app/(app)/settings/page.js:5093",
             "src/components/TeamMemberSettingsDialog.jsx:48",
-            "src/components/integrations/YouTrackImportCard.jsx:709",
+            "src/components/integrations/YouTrackImportCard.jsx:1201",
+            "src/components/integrations/YouTrackImportCard.jsx:1277",
             "src/components/workspace/IssueDetail.jsx:2000",
             "src/components/workspace/TimesheetTab.jsx:287",
             "src/components/workspace/calendar/CalendarEventPage.jsx:207"
           ]
         },
         "sm": {
-          "count": 10,
+          "count": 11,
           "routes": [
             "/",
             "/[projectId]",
@@ -7075,6 +7098,7 @@
             "src/app/(app)/sprints/page.js:78",
             "src/components/SupportDialog.jsx:48",
             "src/components/WorkspaceHeader.jsx:539",
+            "src/components/integrations/YouTrackImportCard.jsx:1249",
             "src/components/workspace/BoardConfigModal.jsx:242",
             "src/components/workspace/TimesheetTab.jsx:697"
           ]
@@ -7098,7 +7122,7 @@
             "src/components/CreateTaskModal.jsx:397",
             "src/components/InviteMemberDialog.jsx:95",
             "src/components/WorkspaceInfoCenter.jsx:245",
-            "src/components/integrations/YouTrackImportCard.jsx:616",
+            "src/components/integrations/YouTrackImportCard.jsx:1099",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:621",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:691"
@@ -7125,7 +7149,7 @@
       },
       "bodyPadding": {
         "(default)": {
-          "count": 19,
+          "count": 21,
           "routes": [
             "/",
             "/[projectId]",
@@ -7149,8 +7173,10 @@
             "src/app/(app)/sprints/page.js:78",
             "src/components/SupportDialog.jsx:48",
             "src/components/TeamMemberSettingsDialog.jsx:48",
-            "src/components/integrations/YouTrackImportCard.jsx:616",
-            "src/components/integrations/YouTrackImportCard.jsx:709",
+            "src/components/integrations/YouTrackImportCard.jsx:1099",
+            "src/components/integrations/YouTrackImportCard.jsx:1201",
+            "src/components/integrations/YouTrackImportCard.jsx:1249",
+            "src/components/integrations/YouTrackImportCard.jsx:1277",
             "src/components/workspace/BillingTab.jsx:497",
             "src/components/workspace/BoardConfigModal.jsx:242",
             "src/components/workspace/TimesheetTab.jsx:287",
@@ -7219,7 +7245,7 @@
       },
       "titleContext": {
         "(default)": {
-          "count": 24,
+          "count": 26,
           "routes": [
             "/",
             "/[projectId]",
@@ -7249,8 +7275,10 @@
             "src/components/SupportDialog.jsx:48",
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/WorkspaceHeader.jsx:539",
-            "src/components/integrations/YouTrackImportCard.jsx:616",
-            "src/components/integrations/YouTrackImportCard.jsx:709",
+            "src/components/integrations/YouTrackImportCard.jsx:1099",
+            "src/components/integrations/YouTrackImportCard.jsx:1201",
+            "src/components/integrations/YouTrackImportCard.jsx:1249",
+            "src/components/integrations/YouTrackImportCard.jsx:1277",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:497",
             "src/components/workspace/BoardConfigModal.jsx:242",
@@ -7287,7 +7315,7 @@
       },
       "presentation": {
         "(default)": {
-          "count": 24,
+          "count": 26,
           "routes": [
             "/",
             "/[projectId]",
@@ -7316,8 +7344,10 @@
             "src/components/InviteMemberDialog.jsx:95",
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/WorkspaceHeader.jsx:539",
-            "src/components/integrations/YouTrackImportCard.jsx:616",
-            "src/components/integrations/YouTrackImportCard.jsx:709",
+            "src/components/integrations/YouTrackImportCard.jsx:1099",
+            "src/components/integrations/YouTrackImportCard.jsx:1201",
+            "src/components/integrations/YouTrackImportCard.jsx:1249",
+            "src/components/integrations/YouTrackImportCard.jsx:1277",
             "src/components/profile/ProfileModal.jsx:28",
             "src/components/workspace/BillingTab.jsx:497",
             "src/components/workspace/BoardConfigModal.jsx:242",
@@ -7378,7 +7408,7 @@
           ]
         },
         "warning": {
-          "count": 12,
+          "count": 13,
           "routes": [
             "/",
             "/[projectId]",
@@ -7394,7 +7424,8 @@
           "files": [
             "src/components/CreateTaskModal.jsx:507",
             "src/components/InviteMemberDialog.jsx:162",
-            "src/components/integrations/YouTrackImportCard.jsx:699",
+            "src/components/integrations/YouTrackImportCard.jsx:1145",
+            "src/components/integrations/YouTrackImportCard.jsx:1186",
             "src/components/migrations/DataMigrationSettings.jsx:232",
             "src/components/workspace/BillingTab.jsx:1279",
             "src/components/workspace/BillingTab.jsx:1462",
@@ -7407,13 +7438,14 @@
           ]
         },
         "danger": {
-          "count": 2,
+          "count": 3,
           "routes": [
             "/settings"
           ],
           "files": [
-            "src/components/integrations/YouTrackImportCard.jsx:446",
-            "src/components/integrations/YouTrackImportCard.jsx:571"
+            "src/components/integrations/YouTrackImportCard.jsx:1002",
+            "src/components/integrations/YouTrackImportCard.jsx:1020",
+            "src/components/integrations/YouTrackImportCard.jsx:828"
           ]
         },
         "info": {
@@ -7433,12 +7465,13 @@
     "EmptyState": {
       "context": {
         "(default)": {
-          "count": 16,
+          "count": 17,
           "routes": [
             "/analytics",
             "/analytics/team/[memberId]",
             "/calendar",
             "/calendar/event/[eventId]",
+            "/settings",
             "/team"
           ],
           "files": [
@@ -7450,6 +7483,7 @@
             "src/app/(app)/calendar/page.js:587",
             "src/app/(app)/calendar/page.js:778",
             "src/app/(app)/team/page.js:167",
+            "src/components/integrations/YouTrackImportCard.jsx:978",
             "src/components/profile/ProfileView.jsx:575",
             "src/components/profile/ProfileView.jsx:607",
             "src/components/workspace/BillingTab.jsx:1183",
@@ -7552,15 +7586,17 @@
           ]
         },
         "compact": {
-          "count": 2,
+          "count": 3,
           "routes": [
             "/[projectId]",
             "/[projectId]/issue/[issueId]",
             "/calendar",
+            "/settings",
             "/sprints"
           ],
           "files": [
             "src/app/(app)/calendar/page.js:587",
+            "src/components/integrations/YouTrackImportCard.jsx:978",
             "src/components/workspace/qtplus/chat/QtPlusChatPanel.jsx:92"
           ]
         }
@@ -7615,6 +7651,15 @@
             "src/components/workspace/QtPlusProjectTab.jsx:290",
             "src/components/workspace/QtPlusProjectTab.jsx:302",
             "src/components/workspace/QtPlusProjectTab.jsx:310"
+          ]
+        },
+        "transparent": {
+          "count": 1,
+          "routes": [
+            "/settings"
+          ],
+          "files": [
+            "src/components/integrations/YouTrackImportCard.jsx:978"
           ]
         }
       }
@@ -7690,6 +7735,15 @@
             "src/components/WorkspaceSidebar.jsx:208",
             "src/components/WorkspaceSidebar.jsx:211"
           ]
+        },
+        "control": {
+          "count": 1,
+          "routes": [
+            "/settings"
+          ],
+          "files": [
+            "src/components/integrations/YouTrackImportCard.jsx:940"
+          ]
         }
       },
       "width": {
@@ -7708,10 +7762,13 @@
           ]
         },
         "half": {
-          "count": 1,
-          "routes": [],
+          "count": 2,
+          "routes": [
+            "/settings"
+          ],
           "files": [
-            "src/components/WorkspaceSidebar.jsx:211"
+            "src/components/WorkspaceSidebar.jsx:211",
+            "src/components/integrations/YouTrackImportCard.jsx:940"
           ]
         }
       },
@@ -7723,6 +7780,15 @@
             "src/components/WorkspaceSidebar.jsx:202",
             "src/components/WorkspaceSidebar.jsx:208",
             "src/components/WorkspaceSidebar.jsx:211"
+          ]
+        },
+        "(default)": {
+          "count": 1,
+          "routes": [
+            "/settings"
+          ],
+          "files": [
+            "src/components/integrations/YouTrackImportCard.jsx:940"
           ]
         }
       }
@@ -7850,7 +7916,7 @@
     "Card": {
       "padding": {
         "lg": {
-          "count": 21,
+          "count": 22,
           "routes": [
             "/analytics",
             "/settings"
@@ -7874,7 +7940,8 @@
             "src/app/(app)/settings/page.js:4811",
             "src/components/integrations/IntegrationScreen.jsx:141",
             "src/components/integrations/IntegrationScreen.jsx:183",
-            "src/components/integrations/YouTrackImportCard.jsx:501",
+            "src/components/integrations/YouTrackImportCard.jsx:883",
+            "src/components/integrations/YouTrackImportCard.jsx:962",
             "src/components/migrations/DataMigrationSettings.jsx:63",
             "src/components/workspace/BillingTab.jsx:1433"
           ]
@@ -7959,13 +8026,13 @@
             "src/app/(app)/settings/page.js:4722",
             "src/app/(app)/settings/page.js:4811",
             "src/components/integrations/IntegrationScreen.jsx:141",
-            "src/components/integrations/YouTrackImportCard.jsx:501",
+            "src/components/integrations/YouTrackImportCard.jsx:883",
             "src/components/migrations/DataMigrationSettings.jsx:63",
             "src/components/workspace/BillingTab.jsx:1433"
           ]
         },
         "bordered": {
-          "count": 6,
+          "count": 7,
           "routes": [
             "/analytics",
             "/analytics/team/[memberId]",
@@ -7976,6 +8043,7 @@
             "src/app/(app)/settings/page.js:3777",
             "src/app/(app)/settings/page.js:4206",
             "src/components/integrations/IntegrationScreen.jsx:183",
+            "src/components/integrations/YouTrackImportCard.jsx:962",
             "src/components/migrations/DataMigrationSettings.jsx:151",
             "src/components/profile/ProfileView.jsx:623",
             "src/components/workspace/TimesheetTab.jsx:371"
@@ -8347,7 +8415,7 @@
     "Label": {
       "context": {
         "(default)": {
-          "count": 33,
+          "count": 34,
           "routes": [
             "/",
             "/[projectId]",
@@ -8377,8 +8445,9 @@
             "src/components/CreateTaskModal.jsx:623",
             "src/components/CreateTaskModal.jsx:664",
             "src/components/InviteMemberDialog.jsx:131",
-            "src/components/integrations/YouTrackImportCard.jsx:477",
-            "src/components/integrations/YouTrackImportCard.jsx:487",
+            "src/components/integrations/YouTrackImportCard.jsx:1261",
+            "src/components/integrations/YouTrackImportCard.jsx:859",
+            "src/components/integrations/YouTrackImportCard.jsx:869",
             "src/components/workspace/BillingTab.jsx:116",
             "src/components/workspace/BillingTab.jsx:137",
             "src/components/workspace/BillingTab.jsx:84",
@@ -8670,7 +8739,7 @@
           ],
           "files": [
             "src/app/(app)/analytics/page.js:429",
-            "src/components/integrations/YouTrackImportCard.jsx:557",
+            "src/components/integrations/YouTrackImportCard.jsx:989",
             "src/components/workspace/AnalyticsTab.jsx:297",
             "src/components/workspace/WorkloadTab.jsx:245"
           ]
@@ -8695,7 +8764,7 @@
             "/settings"
           ],
           "files": [
-            "src/components/integrations/YouTrackImportCard.jsx:557",
+            "src/components/integrations/YouTrackImportCard.jsx:989",
             "src/components/workspace/AnalyticsTab.jsx:297"
           ]
         }

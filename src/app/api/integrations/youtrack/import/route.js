@@ -4,8 +4,10 @@ import { authorizeOrgRequest, enforceRateLimit, getAdminDb } from '@/lib/server/
 import { refuseWithoutCapability } from '@/lib/server/planLimits';
 import { youTrackRouteErrorResponse } from '@/lib/server/youtrackRouteErrors';
 import {
+  acknowledgeYouTrackImport,
   cancelYouTrackImport,
   getYouTrackImport,
+  listFailedYouTrackImportItems,
   prepareYouTrackImport,
   runYouTrackImportStep,
 } from '@/lib/server/youtrackImporter';
@@ -25,6 +27,14 @@ export async function GET(request) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     }
     const jobId = url.searchParams.get('jobId')?.trim() || '';
+    // Що саме не перенеслося — на вимогу, за натисканням. Помилка кожної задачі
+    // лежала на своєму документі черги від самого початку, і прочитати її не
+    // міг ніхто: екран показував лише число «Помилок: 23».
+    if (jobId && url.searchParams.get('items') === 'failed') {
+      return NextResponse.json({ items: await listFailedYouTrackImportItems({ organizationId, jobId }) }, {
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
     const result = await getYouTrackImport({ organizationId, jobId });
     return NextResponse.json(jobId ? { job: result } : { jobs: result }, {
       headers: { 'Cache-Control': 'private, no-store' },
@@ -83,6 +93,19 @@ export async function POST(request) {
         // Being admin of the organization is not being the author of somebody
         // else's migration. Only the owner is given the stop button for one.
         isOrganizationOwner: authorization.membership?.role === 'owner',
+        // Одне послаблення, і воно про покинуте, а не про чуже: перенесення, чия
+        // оренда прострочена й чий останній рух був чверть години тому, може
+        // зупинити будь-який адміністратор. Без цього автор, який пішов додому,
+        // блокував організації будь-яке перенесення назавжди.
+        isOrganizationAdmin: ['owner', 'admin'].includes(authorization.membership?.role),
+      });
+      return NextResponse.json({ job });
+    }
+    if (body.action === 'acknowledge') {
+      const job = await acknowledgeYouTrackImport({
+        organizationId,
+        jobId: String(body.jobId || ''),
+        userId: authorization.user.uid,
       });
       return NextResponse.json({ job });
     }

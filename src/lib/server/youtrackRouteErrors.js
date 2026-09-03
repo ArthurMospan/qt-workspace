@@ -19,6 +19,8 @@ const SAFE_INPUT_PREFIXES = [
   'Імпорт не знайдено',
   'Імпорт скасовано',
   'Імпорт запустив',
+  'Імпорт ще не завершено',
+  'Незавершене перенесення',
 ];
 
 export function youTrackRouteErrorResponse(error, { context, fallbackMessage }) {
