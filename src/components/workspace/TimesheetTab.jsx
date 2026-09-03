@@ -293,9 +293,9 @@ function DayBreakdownDialog({ cell, logs, members = [], issuesById, eventsByKey,
         : ''}
       description={cell ? `Зафіксовано ${fmtMin(total)}` : ''}
       // Розбивка дня нічого не змінює — її футер це одна кнопка, яка лише
-      // закриває. Нижче md за неї відповідає × у шапці, і смуга футера, у якій
-      // не лишається нічого, зникає разом із кнопкою.
-      footer={<Button style="secondary" size="md" onClick={onClose} dismiss>Закрити</Button>}
+      // закриває. Без `dismiss`: самотня кнопка в смузі не заважає, а на
+      // телефоні одразу показує, що звідси можна зробити.
+      footer={<Button style="secondary" size="md" onClick={onClose}>Закрити</Button>}
     >
       {entries.length === 0 ? (
         <p className="py-6 text-center text-[13px] text-faint">За цей день записів немає</p>

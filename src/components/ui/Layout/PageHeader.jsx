@@ -196,17 +196,15 @@ export function PageHeader({
           onClose={() => setMobileFiltersOpen(false)}
           title="Фільтри"
           size="sm"
-          // «Готово» is a `dismiss`: every control in this sheet is the live
+          // «Готово» confirms nothing: every control in this sheet is the live
           // filter itself — `sheetContent` hands each one the caller's own
           // `onChange` — so a choice is already applied by the time anybody
-          // reaches the bottom. The button confirms nothing; it repeats the ×
-          // in the header, which is the one thing this sheet's footer holds.
-          // Below md that makes the whole bar redundant, and the collapse rule
-          // in globals.css takes it: ~65px of border, padding and canvas back,
-          // on the one screen where the filters barely fit. The × above, the
-          // backdrop and Escape are all still the way out.
+          // reaches the bottom. It is not `dismiss` even so: it is the whole
+          // footer, and one full-width button at the end of a sheet reads as
+          // the way to finish rather than as a second ×. The × above, the
+          // backdrop and Escape close it too.
           footer={(
-            <Button style="primary" size="md" className="w-full" onClick={() => setMobileFiltersOpen(false)} dismiss>
+            <Button style="primary" size="md" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
               Готово
             </Button>
           )}

@@ -2324,23 +2324,30 @@
    an unlayered rule beats Tailwind's last layer — the same reason
    `.hide-scrollbar` and the 16px field rule sit down here.
 
-   The query is the range syntax Tailwind 4.3 compiles `max-md:` to, and all
-   three rules keyed on `dismiss` — the two here and the footer-collapse one
-   below them — use it, because the last of them hides the bar that holds the
-   button the first two hide. `(max-width: 767px)` is not the same query — at a
-   viewport of 767.5px, ordinary under browser zoom or a fractional device pixel
-   ratio, one fires and the other does not — and the bar and its only occupant
-   must never disagree about which side of md they are on. At 767 all three are
-   true and at 768 all three are false, so nothing at or above md moves.
+   The query is the range syntax Tailwind 4.3 compiles `max-md:` to, and both
+   rules keyed on `dismiss` — the direct-child one here and the wrapped case
+   below it — use it, because they are one behaviour written twice: a marked
+   button and a wrapper round a marked button are the same row, and whichever
+   selector matches, that row goes. `(max-width: 767px)` is not the same query
+   — at a viewport of 767.5px, ordinary under browser zoom or a fractional
+   device pixel ratio, one fires and the other does not — and the two must
+   never land on opposite sides of md. At 767 both are true and at 768 both are
+   false, so nothing at or above md moves.
 
    The footer's own geometry — the column and the full-width rows this comment
    opens by quoting — is a separate `(max-width: 767px)` block up in @layer
-   components, and is deliberately not one of the three. It decides how the bar
-   lays out, never whether the bar or the button is drawn, so the sliver between
-   the two queries leaves a footer still shaped as a row with the dismiss
-   already gone: the wide arrangement minus one button, which is coherent rather
-   than broken. A rule that starts deciding what exists belongs in the range
-   query beside these three. */
+   components, and is deliberately not one of the two. It decides how the bar
+   lays out, never whether a button in it is drawn, so the sliver between the
+   two queries leaves a footer still shaped as a row with the dismiss already
+   gone: the wide arrangement minus one button, which is coherent rather than
+   broken. A rule that starts deciding what exists belongs in the range query
+   beside these two.
+
+   What these rules do not do is take the bar itself. A footer whose only child
+   is a dismiss keeps both: one button at the end of a sheet does not get in the
+   way, and it tells a phone what there is to do here — which is worth more than
+   the ~65px the bar costs. So `dismiss` is simply left off those buttons; there
+   is no rule to write. */
 @media (width < 48rem) {
   .ui-dialog-footer[data-ui-close-in-header='true'] > [data-ui-dismiss='true'] {
     display: none;
@@ -2358,40 +2365,6 @@
    including the direct-child case that is doing all of the actual work. */
 @media (width < 48rem) {
   .ui-dialog-footer[data-ui-close-in-header='true'] > *:has(> [data-ui-dismiss='true']) {
-    display: none;
-  }
-}
-
-/* And where that button was the only thing in the footer, the footer goes with
-   it. Six dialogs are shaped that way. Four say «Закрити» and nothing else: a
-   calendar event a member may only read (both its «Деталі події» and its
-   non-editable form), an invoice that cannot be exported yet, and a timesheet
-   day's breakdown. Two say «Готово», which sounds like a commit and is not — the
-   phone's filter sheet (PageHeader) and «Мої завдання»'s column-visibility sheet
-   both write every choice the moment it is made, so their last row was a second
-   × under a different word. Hiding the button alone left `.ui-dialog-footer`
-   itself behind: its border-top, its `py-4` and the `bg-canvas` under them are a
-   ~65px bar with nothing in it, which costs a phone more than the row it was
-   meant to save.
-
-   Read the selector as "a footer with no child that is not a dismiss". One real
-   action anywhere in the bar keeps the whole bar, which is what stops this from
-   touching the footers the rules above serve: «Редагувати» beside «Закрити» in a
-   calendar event the member can edit, «Друкувати» beside the invoice's, «Зберегти»
-   beside every «Скасувати» in the product. The dismiss inside still goes; only
-   the bar stays, because it still has something to carry.
-
-   `:has()` may not be nested inside `:has()`, so the wrapped case the rule above
-   covers is out of reach here — a footer whose one child is a wrapper round a
-   dismiss keeps its empty bar. Nothing in the product is shaped that way; when
-   something is, the wrapper is what carries `dismiss`, and this rule sees it.
-
-   `:has()` is asked of the browser here for the same reason the rule above asks
-   it: every `max-md:` utility in the bundle is already emitted as a range query,
-   so a browser too old to parse `:has()` (pre-2023) has no phone layout to gate
-   and lands on the footer it had before any of this. */
-@media (width < 48rem) {
-  .ui-dialog-footer[data-ui-close-in-header='true']:not(:has(> :not([data-ui-dismiss='true']))) {
     display: none;
   }
 }

@@ -695,7 +695,7 @@
       "className": "flex items-center gap-2.5 rounded-[12px] border border-black/[0.05] bg-white p-2.5"
     },
     {
-      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:790",
+      "location": "src/components/workspace/calendar/CalendarEventDialog.jsx:792",
       "tag": "div",
       "className": "overflow-hidden rounded-[14px] border border-line bg-white"
     },

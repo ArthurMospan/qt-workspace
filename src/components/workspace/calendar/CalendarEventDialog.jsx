@@ -623,16 +623,18 @@ export default function CalendarEventDialog({
         onClose={onClose}
         title="Деталі події"
         size="lg"
-        footer={(
+        footer={canManage && !event.readOnly ? (
           <>
-            {canManage && !event.readOnly && <Button style="secondary" size="md" icon={Pencil} onClick={() => setMode('edit')}>Редагувати</Button>}
-            {/* «Закрити» is the same promise «Скасувати» makes elsewhere — it
-                closes and does nothing else — so `dismiss` belongs on it too.
-                With «Редагувати» beside it the footer keeps its bar below md
-                and loses only this row; to a reader who cannot edit, this is
-                the whole footer and the bar goes with it. */}
+            <Button style="secondary" size="md" icon={Pencil} onClick={() => setMode('edit')}>Редагувати</Button>
+            {/* «Редагувати» is the action here, so «Закрити» is the redundant
+                repeat of the header × and goes below md. */}
             <Button style="secondary" size="md" onClick={onClose} dismiss>Закрити</Button>
           </>
+        ) : (
+          /* To a reader who cannot edit, «Закрити» is the whole footer. A lone
+             button reads as the action to take rather than as a second ×, so it
+             stays on every width — marking it would leave the bar empty. */
+          <Button style="secondary" size="md" onClick={onClose}>Закрити</Button>
         )}
       >
         <CalendarEventDetails
@@ -694,9 +696,9 @@ export default function CalendarEventDialog({
     </>
   ) : (
     // The whole footer for a reader who cannot manage the event: one button
-    // that closes. Below md the header's × is that button, and the bar with
-    // nothing else in it goes too.
-    <Button style="secondary" size="md" onClick={onClose} dismiss>Закрити</Button>
+    // that closes. Not `dismiss` — a lone button costs the phone nothing and
+    // shows it what there is to do here.
+    <Button style="secondary" size="md" onClick={onClose}>Закрити</Button>
   );
 
   return (
