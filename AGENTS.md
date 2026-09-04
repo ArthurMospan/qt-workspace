@@ -14,7 +14,7 @@ This is a single Next.js 16.3.0 App Router application with React 19 and Firebas
 
 ## Where things are written down
 
-Six documents, and nothing else. A plan, a session report or a description of
+Seven documents, and nothing else. A plan, a session report or a description of
 work already done is not one of them — that history belongs in Git.
 
 | Document | What it answers |
@@ -25,10 +25,14 @@ work already done is not one of them — that history belongs in Git.
 | [docs/UI_KIT_CONTRACT.md](docs/UI_KIT_CONTRACT.md) | The shared-UI contract and its generated reports |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Product guardrails and confirmed open work |
 | [docs/MIGRATIONS.md](docs/MIGRATIONS.md) | Runbooks for the one-time data migration scripts |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | What this product is connected to outside its own code, and what has to be done by hand to move it to another server |
 
 Cross-repository contracts live in `docs/integrations/` (QuickTeam+, Telegram,
-YouTrack). Add a seventh document only when a subject genuinely has no home
-above — a new file is a place for the next reader not to look.
+YouTrack). Add an eighth document only when a subject genuinely has no home
+above — a new file is a place for the next reader not to look. The seventh was
+added for a subject none of the other six could hold: the external accounts,
+domains and schedules the running product depends on, in both this repository
+and `../qTicket`, which is neither code, nor architecture, nor a migration.
 
 ## Framework and commands
 

@@ -196,6 +196,7 @@ A project board's columns are that project's statuses, and `projects/{id}.hidden
 - [UI Kit contract](docs/UI_KIT_CONTRACT.md)
 - [Product guardrails and open work](docs/ROADMAP.md)
 - [Data migration runbooks](docs/MIGRATIONS.md)
+- [Перенесення на власний сервер — вступ для розробника](docs/DEPLOYMENT.md)
 - [QuickTeam+ integration](docs/integrations/QUICKTEAM_PLUS.md)
 - [Telegram integration](docs/integrations/TELEGRAM.md)
 - [YouTrack migration](docs/integrations/YOUTRACK_MIGRATION.md)
