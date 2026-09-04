@@ -323,7 +323,12 @@ function MessageInput({
         ) : null}
         toolbar={(
           <>
+            {/* Desktop furniture: every phone keyboard carries an emoji key,
+                so on a phone this is a second one taking room from the field
+                — and it is the only thing that made this composer look
+                different from the one in a task. */}
             <IconAction
+              className="max-md:hidden"
               buttonRef={emojiBtnRef}
               onClick={() => setShowEmoji(v => !v)}
               icon={Smile}

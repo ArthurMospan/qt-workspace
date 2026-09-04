@@ -565,7 +565,7 @@
       "className": "w-full max-w-[420px] rounded-[20px] border border-line bg-white p-6 text-center shadow-sm"
     },
     {
-      "location": "src/app/(app)/chat/page.js:392",
+      "location": "src/app/(app)/chat/page.js:397",
       "tag": "div",
       "className": "relative z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-line/70 bg-canvas/90 px-5 backdrop-blur-xl md:rounded-t-[var(--ui-radius-surface)]"
     },

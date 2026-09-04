@@ -647,7 +647,15 @@
      the edges are nowhere near the field. */
   @media (width < 48rem) {
     .chat-composer-dock:not([data-ui-composition]) {
-      padding: 12px 16px calc(20px + var(--sab));
+      /* The bottom is what is LEFT once the tab bar has been cleared, not a
+         second clearance on top of it. This dock also carries `qt-nav-dock`,
+         whose margin already holds `--qt-nav-space` open, so adding a floor
+         of its own put the field a bar and a floor above the screen edge —
+         which is what made it sit so much higher than the task chat, where
+         there is no bar at all. When the bar goes (a caret in the composer,
+         or the keyboard) `--qt-nav-space` is 0 and the floor appears, so the
+         field never ends up flush against the keys either. */
+      padding: 12px 16px max(0px, calc(20px + var(--sab) - var(--qt-nav-space)));
     }
   }
   /* The four duration presets and the metric fields declared their own right
@@ -2153,6 +2161,16 @@
      showing underneath, and what makes it stand perfectly still: pinned it
      covers the last stretch of the scrollport, and at the end of the scroll it
      arrives at exactly the blank it was holding. */
+  /* The bottom fade says "there is more below" to a reader who scrolls with a
+     wheel and never sees the scrollbar move. A thumb already knows: the
+     content moves under it. On a phone it is one more grey edge on a screen
+     that is mostly edges, so it stays on the desktop, where it earns its
+     keep. The start/end fades on horizontal rails are untouched. */
+  @media (width < 48rem) {
+    .scroll-shadow--bottom {
+      display: none;
+    }
+  }
   .scroll-shadow--bottom {
     position: sticky;
     bottom: 0;

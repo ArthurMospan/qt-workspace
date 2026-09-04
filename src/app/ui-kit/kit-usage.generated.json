@@ -2991,8 +2991,8 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1217",
-            "src/app/(app)/chat/page.js:1226",
+            "src/app/(app)/chat/page.js:1222",
+            "src/app/(app)/chat/page.js:1231",
             "src/app/(app)/error.js:67",
             "src/app/(app)/my/page.js:528",
             "src/app/(app)/page.js:639",
@@ -3070,7 +3070,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1295",
+            "src/app/(app)/chat/page.js:1300",
             "src/app/(app)/sprints/page.js:1103",
             "src/app/(app)/sprints/page.js:1132",
             "src/app/(app)/sprints/page.js:1147",
@@ -3105,7 +3105,7 @@
           "files": [
             "src/app/(app)/[projectId]/ProjectBoardClient.jsx:356",
             "src/app/(app)/calendar/page.js:731",
-            "src/app/(app)/chat/page.js:1226",
+            "src/app/(app)/chat/page.js:1231",
             "src/app/(app)/layout.js:114",
             "src/app/(app)/layout.js:118",
             "src/components/UserStatusDialog.jsx:114",
@@ -3148,7 +3148,7 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1217",
+            "src/app/(app)/chat/page.js:1222",
             "src/app/(app)/my/page.js:370",
             "src/app/(app)/my/page.js:392",
             "src/app/(app)/my/page.js:420",
@@ -3295,7 +3295,7 @@
             "src/app/(app)/calendar/page.js:753",
             "src/app/(app)/calendar/page.js:754",
             "src/app/(app)/calendar/page.js:755",
-            "src/app/(app)/chat/page.js:1295",
+            "src/app/(app)/chat/page.js:1300",
             "src/app/(app)/settings/page.js:3203",
             "src/app/(app)/settings/page.js:4319",
             "src/app/(app)/settings/page.js:4405",
@@ -3404,9 +3404,9 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1217",
-            "src/app/(app)/chat/page.js:1226",
-            "src/app/(app)/chat/page.js:1295",
+            "src/app/(app)/chat/page.js:1222",
+            "src/app/(app)/chat/page.js:1231",
+            "src/app/(app)/chat/page.js:1300",
             "src/app/(app)/error.js:67",
             "src/app/(app)/layout.js:114",
             "src/app/(app)/layout.js:118",
@@ -3640,9 +3640,9 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1217",
-            "src/app/(app)/chat/page.js:1226",
-            "src/app/(app)/chat/page.js:1295",
+            "src/app/(app)/chat/page.js:1222",
+            "src/app/(app)/chat/page.js:1231",
+            "src/app/(app)/chat/page.js:1300",
             "src/app/(app)/error.js:67",
             "src/app/(app)/layout.js:114",
             "src/app/(app)/layout.js:118",
@@ -3867,9 +3867,9 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1217",
-            "src/app/(app)/chat/page.js:1226",
-            "src/app/(app)/chat/page.js:1295",
+            "src/app/(app)/chat/page.js:1222",
+            "src/app/(app)/chat/page.js:1231",
+            "src/app/(app)/chat/page.js:1300",
             "src/app/(app)/error.js:67",
             "src/app/(app)/layout.js:114",
             "src/app/(app)/layout.js:118",
@@ -4123,9 +4123,9 @@
             "src/app/(app)/calendar/page.js:766",
             "src/app/(app)/calendar/page.js:768",
             "src/app/(app)/calendar/page.js:769",
-            "src/app/(app)/chat/page.js:1217",
-            "src/app/(app)/chat/page.js:1226",
-            "src/app/(app)/chat/page.js:1295",
+            "src/app/(app)/chat/page.js:1222",
+            "src/app/(app)/chat/page.js:1231",
+            "src/app/(app)/chat/page.js:1300",
             "src/app/(app)/error.js:67",
             "src/app/(app)/my/page.js:308",
             "src/app/(app)/my/page.js:370",
@@ -4372,7 +4372,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:383",
-            "src/app/(app)/chat/page.js:467",
+            "src/app/(app)/chat/page.js:472",
             "src/app/(app)/settings/page.js:381",
             "src/app/(app)/settings/page.js:382",
             "src/components/WorkspaceHeader.jsx:471",
@@ -4385,9 +4385,9 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:326",
-            "src/app/(app)/chat/page.js:335",
-            "src/app/(app)/chat/page.js:400",
+            "src/app/(app)/chat/page.js:330",
+            "src/app/(app)/chat/page.js:340",
+            "src/app/(app)/chat/page.js:405",
             "src/components/WorkspaceSidebar.jsx:534"
           ]
         },
@@ -4485,7 +4485,7 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:383",
-            "src/app/(app)/chat/page.js:400",
+            "src/app/(app)/chat/page.js:405",
             "src/app/(app)/page.js:224",
             "src/components/MobileNav.jsx:343",
             "src/components/workspace/UnifiedTimeline.jsx:1507",
@@ -4501,8 +4501,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:326",
-            "src/app/(app)/chat/page.js:335",
+            "src/app/(app)/chat/page.js:330",
+            "src/app/(app)/chat/page.js:340",
             "src/components/workspace/QtPlusProjectTab.jsx:79",
             "src/components/workspace/qtplus/cards/AudioCard.jsx:19"
           ]
@@ -4515,7 +4515,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:467",
+            "src/app/(app)/chat/page.js:472",
             "src/components/workspace/UnifiedTimeline.jsx:1509",
             "src/components/workspace/UnifiedTimeline.jsx:289"
           ]
@@ -4632,9 +4632,9 @@
           ],
           "files": [
             "src/app/(app)/calendar/page.js:383",
-            "src/app/(app)/chat/page.js:326",
-            "src/app/(app)/chat/page.js:335",
-            "src/app/(app)/chat/page.js:400",
+            "src/app/(app)/chat/page.js:330",
+            "src/app/(app)/chat/page.js:340",
+            "src/app/(app)/chat/page.js:405",
             "src/app/(app)/page.js:224",
             "src/app/(app)/settings/page.js:381",
             "src/app/(app)/settings/page.js:382",
@@ -4658,7 +4658,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:467",
+            "src/app/(app)/chat/page.js:472",
             "src/components/MobileNav.jsx:77",
             "src/components/WorkspaceSidebar.jsx:534"
           ]
@@ -4740,8 +4740,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:326",
-            "src/app/(app)/chat/page.js:335"
+            "src/app/(app)/chat/page.js:330",
+            "src/app/(app)/chat/page.js:340"
           ]
         },
         "chat-panel-action": {
@@ -4750,7 +4750,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:400"
+            "src/app/(app)/chat/page.js:405"
           ]
         },
         "chat-micro-action": {
@@ -4761,7 +4761,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:467",
+            "src/app/(app)/chat/page.js:472",
             "src/components/workspace/UnifiedTimeline.jsx:1507",
             "src/components/workspace/UnifiedTimeline.jsx:1508",
             "src/components/workspace/UnifiedTimeline.jsx:1509",
@@ -4806,7 +4806,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1239",
+            "src/app/(app)/chat/page.js:1244",
             "src/app/(app)/settings/page.js:368",
             "src/app/(app)/sprints/page.js:152",
             "src/app/(app)/sprints/page.js:295",
@@ -4914,7 +4914,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1239",
+            "src/app/(app)/chat/page.js:1244",
             "src/app/(app)/settings/page.js:368",
             "src/app/(app)/settings/page.js:5249",
             "src/app/(app)/settings/page.js:5374",
@@ -5038,7 +5038,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1239",
+            "src/app/(app)/chat/page.js:1244",
             "src/app/(app)/settings/page.js:368",
             "src/app/(app)/settings/page.js:488",
             "src/app/(app)/settings/page.js:5249",
@@ -5119,7 +5119,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1255",
+            "src/app/(app)/chat/page.js:1260",
             "src/app/(app)/sprints/page.js:100",
             "src/app/(app)/sprints/page.js:161",
             "src/components/AudioTaskPanel.jsx:304",
@@ -5177,7 +5177,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1255",
+            "src/app/(app)/chat/page.js:1260",
             "src/app/(app)/settings/page.js:3279",
             "src/app/(app)/sprints/page.js:100",
             "src/app/(app)/sprints/page.js:161",
@@ -5634,7 +5634,7 @@
             "src/app/(app)/analytics/page.js:1071",
             "src/app/(app)/analytics/team/[memberId]/page.js:281",
             "src/app/(app)/calendar/page.js:736",
-            "src/app/(app)/chat/page.js:1267",
+            "src/app/(app)/chat/page.js:1272",
             "src/app/(app)/my/page.js:324",
             "src/app/(app)/sprints/page.js:820",
             "src/components/workspace/IssueDetail.jsx:1796",
@@ -5675,7 +5675,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1267",
+            "src/app/(app)/chat/page.js:1272",
             "src/components/workspace/IssueDetail.jsx:1796",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:773",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:871",
@@ -5714,7 +5714,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1267",
+            "src/app/(app)/chat/page.js:1272",
             "src/components/workspace/IssueDetail.jsx:1796",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:773",
             "src/components/workspace/calendar/CalendarEventDialog.jsx:871",
@@ -6671,8 +6671,8 @@
             "/settings"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:413",
-            "src/app/(app)/chat/page.js:444",
+            "src/app/(app)/chat/page.js:418",
+            "src/app/(app)/chat/page.js:449",
             "src/app/(app)/settings/page.js:5268",
             "src/components/workspace/BillingTab.jsx:106",
             "src/components/workspace/WorkloadTab.jsx:201",
@@ -7013,7 +7013,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:397",
+            "src/app/(app)/chat/page.js:402",
             "src/components/MobileNav.jsx:262",
             "src/components/MobileNav.jsx:286",
             "src/components/MobileNav.jsx:339",
@@ -7046,7 +7046,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:397",
+            "src/app/(app)/chat/page.js:402",
             "src/components/MobileNav.jsx:262",
             "src/components/OrgSwitcherScreen.jsx:72",
             "src/components/WorkspaceSidebar.jsx:387",
@@ -7075,7 +7075,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:397",
+            "src/app/(app)/chat/page.js:402",
             "src/components/MobileNav.jsx:286",
             "src/components/MobileNav.jsx:339",
             "src/components/OrgSwitcherScreen.jsx:72",
@@ -7107,7 +7107,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:397"
+            "src/app/(app)/chat/page.js:402"
           ]
         },
         "(default)": {
@@ -7157,7 +7157,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1210",
+            "src/app/(app)/chat/page.js:1215",
             "src/app/(app)/settings/page.js:5125",
             "src/components/TeamMemberSettingsDialog.jsx:48",
             "src/components/integrations/YouTrackImportCard.jsx:1194",
@@ -7251,7 +7251,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1210",
+            "src/app/(app)/chat/page.js:1215",
             "src/app/(app)/page.js:633",
             "src/app/(app)/settings/page.js:5048",
             "src/app/(app)/settings/page.js:5125",
@@ -7349,7 +7349,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1210",
+            "src/app/(app)/chat/page.js:1215",
             "src/app/(app)/page.js:633",
             "src/app/(app)/settings/page.js:5048",
             "src/app/(app)/settings/page.js:5125",
@@ -7420,7 +7420,7 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1210",
+            "src/app/(app)/chat/page.js:1215",
             "src/app/(app)/page.js:633",
             "src/app/(app)/settings/page.js:5048",
             "src/app/(app)/settings/page.js:5125",
@@ -8363,7 +8363,7 @@
             "/sprints"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1238",
+            "src/app/(app)/chat/page.js:1243",
             "src/app/(app)/sprints/page.js:103",
             "src/app/(app)/sprints/page.js:106",
             "src/app/(app)/sprints/page.js:151",
@@ -8503,8 +8503,8 @@
             "/team"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1254",
-            "src/app/(app)/chat/page.js:1266",
+            "src/app/(app)/chat/page.js:1259",
+            "src/app/(app)/chat/page.js:1271",
             "src/app/(app)/settings/page.js:5172",
             "src/app/(app)/settings/page.js:5189",
             "src/app/(app)/settings/page.js:5373",
@@ -8633,8 +8633,8 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1424",
-            "src/app/(app)/chat/page.js:494"
+            "src/app/(app)/chat/page.js:1429",
+            "src/app/(app)/chat/page.js:499"
           ]
         },
         "timeline-composer": {
@@ -8682,7 +8682,7 @@
             "/chat"
           ],
           "files": [
-            "src/app/(app)/chat/page.js:1283"
+            "src/app/(app)/chat/page.js:1288"
           ]
         },
         "settings": {
