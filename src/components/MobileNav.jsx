@@ -20,6 +20,7 @@ import { useWorkspaceHelp } from '@/components/WorkspaceHelpMenu';
 import WorkspacePlanLimitRail from '@/components/WorkspacePlanLimitRail';
 import { computeSidebarTheme, computeTranslucentSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
+import { isResolvedOrganization } from '@/lib/utils/organizationList.mjs';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 import { useModalFocus } from '@/lib/hooks/useModalFocus';
 import { useQTicketIntegration } from '@/lib/hooks/useQTicketIntegration';
@@ -159,8 +160,9 @@ export default function MobileNav({ keyboardOpen = false, composerFocused = fals
     [theme.bg],
   );
 
-  // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня.
-  useSidebarThemeBoot(theme, Boolean(activeOrg), activeOrgId);
+  // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня — тобто
+  // живий документ, а не заглушка на час читання.
+  useSidebarThemeBoot(theme, isResolvedOrganization(activeOrg), activeOrgId);
 
   useEffect(() => { queueMicrotask(() => setMoreOpen(false)); }, [pathname]);
 

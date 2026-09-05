@@ -19,6 +19,7 @@ import { useProjectUnreadIndicators } from '@/lib/hooks/useProjectUnreadIndicato
 import Tooltip from '@/components/ui/Navigation/Tooltip';
 import { computeSidebarTheme, SIDEBAR_PRESETS } from '@/lib/utils/sidebarTheme';
 import { useCachedOrgBranding, useSidebarThemeBoot } from '@/lib/hooks/useCachedOrgBranding';
+import { isResolvedOrganization } from '@/lib/utils/organizationList.mjs';
 import { timerTargetHref } from '@/lib/utils/timerNavigation.mjs';
 import WorkspaceHelpMenu from '@/components/WorkspaceHelpMenu';
 import WorkspacePlanLimitRail from '@/components/WorkspacePlanLimitRail';
@@ -94,13 +95,18 @@ export default function WorkspaceSidebar() {
     return computeSidebarTheme(bgColor);
   }, [isBranded, orgBrand?.sidebarTheme, orgBrand?.sidebarColor, sidebarPreview]);
 
-  // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня.
-  useSidebarThemeBoot(theme, Boolean(activeOrg), activeOrgId);
+  // Кеш теми + зняття boot-стилю з layout.js, щойно тема справжня. «Справжня» —
+  // це живий документ і тільки він: заглушка, яку список публікує за членство
+  // без документа, не має ні логотипа, ні кольору, тож записати її сюди
+  // означало покласти в кеш анти-мигання стандартну темну тему — і наступне
+  // завантаження стартувало б з неї.
+  useSidebarThemeBoot(theme, isResolvedOrganization(activeOrg), activeOrgId);
 
   // Поки не приїхали живі дані (чи live-preview з налаштувань) — лого й назва
   // організації невідомі. Замість того щоб на мить показати "Company name" /
   // биту картинку, показуємо скелетон; логотип рендериться лише коли готово.
-  const brandingReady = Boolean(sidebarPreview) || Boolean(activeOrg);
+  // Заглушка «готово» не означає: у ній тих полів немає.
+  const brandingReady = Boolean(sidebarPreview) || isResolvedOrganization(activeOrg);
 
   const activeTimer = useWorkspaceStore(s => s.activeTimer);
   const timerElapsed = useWorkspaceStore(s => s.timerElapsed);

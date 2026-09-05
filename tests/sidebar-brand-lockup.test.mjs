@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { isResolvedOrganization } from '../src/lib/utils/organizationList.mjs';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -50,4 +51,88 @@ test('the sidebar ships the split this file derives', async () => {
   assert.doesNotMatch(sidebar, /lineHeight: '20px'/);
   // The mark and the lines share a centre line rather than a top edge.
   assert.match(sidebar, /flex items-center min-w-0 flex-1/);
+});
+
+// Кут рейки на пару кадрів малювався з порожнечі, і це було не миготіння
+// завантаження, а помилка.
+//
+// Список організацій публікує за членство, чий документ ще не приїхав,
+// заглушку `{ id, pending: true }`: простір лишається досяжним, поки по
+// документ ідуть ще раз. Брендинг питав рівно «чи є організація», заглушка
+// відповідала «є», і логотип із кольором бралися з порожнечі. Гірше: кеш
+// анти-мигання записувався з тієї ж заглушки, тому наступне завантаження
+// стартувало зі стандартної темної теми знову — кеш, який існує проти
+// мигання, сам його й відтворював.
+test('заглушка на час читання не є брендом', async () => {
+  const [list, cache, sidebar, nav] = await Promise.all([
+    read('src/lib/utils/organizationList.mjs'),
+    read('src/lib/hooks/useCachedOrgBranding.js'),
+    read('src/components/WorkspaceSidebar.jsx'),
+    read('src/components/MobileNav.jsx'),
+  ]);
+
+  assert.equal(isResolvedOrganization({ id: 'a', name: 'Acme' }), true);
+  assert.equal(isResolvedOrganization({ id: 'a', pending: true }), false);
+  assert.equal(isResolvedOrganization(null), false);
+  assert.match(list, /export function isResolvedOrganization\(organization\)/);
+
+  // Кеш віддає бренд саме в ту мить, для якої він і є, і не пише в себе те,
+  // чого в заглушці немає.
+  assert.match(cache, /const organization = isResolvedOrganization\(activeOrg\) \? activeOrg : null;/);
+  assert.match(cache, /if \(!activeOrgId \|\| !organization\) return;/);
+  assert.match(cache, /writeCachedBrand\(activeOrgId, normalizeBrand\(organization\)\);/);
+  assert.match(cache, /if \(organization\) return normalizeBrand\(organization\);/);
+  assert.doesNotMatch(cache, /if \(activeOrg\) return normalizeBrand\(activeOrg\);/);
+
+  // Отруєні записи вже лежать у браузерах, тож старий зразок викидається разом.
+  assert.match(cache, /const BRAND_CACHE_VERSION = 1;/);
+  assert.match(cache, /if \(!stored \|\| stored\.v !== BRAND_CACHE_VERSION\) return null;/);
+
+  // Обидва читачі бренду: тема пишеться в кеш лише з живого документа.
+  for (const [surface, source] of [['rail', sidebar], ['phone', nav]]) {
+    assert.match(source, /useSidebarThemeBoot\(theme, isResolvedOrganization\(activeOrg\), activeOrgId\)/, surface);
+    assert.doesNotMatch(source, /useSidebarThemeBoot\(theme, Boolean\(activeOrg\)/, surface);
+  }
+  // А логотип і назва чекають на документ, а не на заглушку без обох.
+  assert.match(sidebar, /const brandingReady = Boolean\(sidebarPreview\) \|\| isResolvedOrganization\(activeOrg\);/);
+});
+
+// Анти-мигання не працювало рівно там, де воно найпотрібніше, — у новій
+// вкладці. Вибір організації живе в `sessionStorage`, нова вкладка його не
+// має, і boot-скрипт виходив ні з чим: рейка спалахувала стандартною темною
+// темою при кожному вході з нової вкладки, і тільки з неї.
+test('нова вкладка знає, який колір малювати до першого кадру', async () => {
+  const layout = await read('src/app/layout.js');
+
+  // Скрипт вбудований у сторінку рядком, тож і перевіряється він як код: цей
+  // шматок виймається з джерела й виконується. Інакше тест пильнував би текст,
+  // який ніхто не запускав, — а це саме той код, у якому помилка не падає, а
+  // мовчки нічого не фарбує.
+  assert.ok(layout.includes('${BOOT_ORGANIZATION}if(!o)return;'));
+  const [, lookup] = /const BOOT_ORGANIZATION = `([^`]*)`;/.exec(layout);
+
+  const storage = entries => {
+    const keys = Object.keys(entries);
+    return {
+      length: keys.length,
+      key: index => (index in keys ? keys[index] : null),
+      getItem: name => (name in entries ? entries[name] : null),
+    };
+  };
+  const chosen = (search, session, local) => new Function(
+    'location', 'sessionStorage', 'localStorage',
+    `${lookup} return o;`,
+  )({ search }, storage(session), storage(local));
+
+  // Адреса важить більше за вкладку, вкладка — більше за пам'ять браузера.
+  assert.equal(chosen('?org=from-link', { qt_active_org_id: 'from-tab' }, {}), 'from-link');
+  assert.equal(chosen('', { qt_active_org_id: 'from-tab' }, { 'qt_last_org_id:u1': 'from-memory' }), 'from-tab');
+  assert.equal(chosen('', {}, { 'qt_last_org_id:u1': 'from-memory' }), 'from-memory');
+  assert.equal(chosen('?org=%D1%84', {}, {}), 'ф');
+
+  // Рівно один запам'ятований акаунт. Два — і вгадувати нема з чого: кадр
+  // стандартної теми кращий за кадр чужого кольору.
+  assert.ok(!chosen('', {}, { 'qt_last_org_id:u1': 'one', 'qt_last_org_id:u2': 'two' }));
+  assert.ok(!chosen('', {}, { qt_sidebar_collapsed: '1' }));
+  assert.ok(!chosen('', {}, {}));
 });

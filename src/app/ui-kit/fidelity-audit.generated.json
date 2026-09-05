@@ -129,7 +129,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:268",
+      "location": "src/components/MobileNav.jsx:270",
       "className": "relative flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors active:bg-[var(--sb-active)] ${…}",
       "text": "",
       "childElements": [
@@ -145,7 +145,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:328",
+      "location": "src/components/MobileNav.jsx:330",
       "className": "flex items-center gap-[6px] text-[var(--sb-text)] min-w-0",
       "text": "",
       "childElements": [
@@ -160,7 +160,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:359",
+      "location": "src/components/MobileNav.jsx:361",
       "className": "flex h-[44px] items-center gap-[14px] rounded-[12px] px-[12px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)] disabled:opacity-50",
       "text": "",
       "childElements": [
@@ -176,7 +176,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/MobileNav.jsx:415",
+      "location": "src/components/MobileNav.jsx:417",
       "className": "flex items-center gap-[14px] h-[40px] px-[12px] rounded-[10px] text-left text-[var(--sb-muted)] transition-colors hover:text-[var(--sb-hover)] active:bg-[var(--sb-active)]",
       "text": "",
       "childElements": [
@@ -406,7 +406,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:330",
+      "location": "src/components/WorkspaceSidebar.jsx:336",
       "className": "flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -421,7 +421,7 @@
     },
     {
       "tag": "button",
-      "location": "src/components/WorkspaceSidebar.jsx:353",
+      "location": "src/components/WorkspaceSidebar.jsx:359",
       "className": "flex h-[36px] w-[36px] cursor-pointer items-center justify-center rounded-[10px] transition-colors",
       "text": "",
       "childElements": [
@@ -514,12 +514,12 @@
       "context": "integration-copy-value"
     },
     {
-      "location": "src/components/MobileNav.jsx:359",
+      "location": "src/components/MobileNav.jsx:361",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
     {
-      "location": "src/components/MobileNav.jsx:415",
+      "location": "src/components/MobileNav.jsx:417",
       "tag": "button",
       "context": "navigation-sheet-row"
     },
@@ -544,12 +544,12 @@
       "context": "chat-reply-quote"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:330",
+      "location": "src/components/WorkspaceSidebar.jsx:336",
       "tag": "button",
       "context": "branding-action"
     },
     {
-      "location": "src/components/WorkspaceSidebar.jsx:353",
+      "location": "src/components/WorkspaceSidebar.jsx:359",
       "tag": "button",
       "context": "branding-action"
     }
